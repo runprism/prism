@@ -18,6 +18,7 @@
 # Distribution / packaging
 *.egg-info/
 pip-wheel-metadata/
+dist/
 
 # Testing
 .mypy_cache
