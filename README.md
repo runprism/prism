@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="https://github.com/mtrivedi50/pipeline/blob/main/.github/prism_logo_light.png" alt="prism logo" width="350"/>
+  <img src="https://github.com/runprism/prism/blob/main/.github/prism_logo_light.png" alt="prism logo" width="350"/>
 </p>
 <p align="center">
-    <a href="https://github.com/mtrivedi50/pipeline/actions/workflows/ci-linux.yml">
-        <img src="https://github.com/mtrivedi50/pipeline/actions/workflows/ci-linux.yml/badge.svg" alt="linux tests badge">
+    <a href="https://github.com/runprism/prism/actions/workflows/ci-linux.yml">
+        <img src="https://github.com/runprism/prism/actions/workflows/ci-linux.yml/badge.svg" alt="linux tests badge">
     </a>
-    <a href="https://github.com/mtrivedi50/pipeline/actions/workflows/ci-macos.yml">
-        <img src="https://github.com/mtrivedi50/pipeline/actions/workflows/ci-macos.yml/badge.svg" alt="macos tests badge">
+    <a href="https://github.com/runprism/prism/actions/workflows/ci-macos.yml">
+        <img src="https://github.com/runprism/prism/actions/workflows/ci-macos.yml/badge.svg" alt="macos tests badge">
     </a>
-    <a href="https://github.com/mtrivedi50/pipeline/actions/workflows/ci-windows.yml">
-        <img src="https://github.com/mtrivedi50/pipeline/actions/workflows/ci-windows.yml/badge.svg" alt="windows tests badge">
+    <a href="https://github.com/runprism/prism/actions/workflows/ci-windows.yml">
+        <img src="https://github.com/runprism/prism/actions/workflows/ci-windows.yml/badge.svg" alt="windows tests badge">
     </a>
-        <a href="https://github.com/mtrivedi50/pipeline/actions/workflows/style.yml">
-        <img src="https://github.com/mtrivedi50/pipeline/actions/workflows/style.yml/badge.svg" alt="style tests badge">
+        <a href="https://github.com/runprism/prism/actions/workflows/style.yml">
+        <img src="https://github.com/runprism/prism/actions/workflows/style.yml/badge.svg" alt="style tests badge">
     </a>
 </p>
 <p align="center">
