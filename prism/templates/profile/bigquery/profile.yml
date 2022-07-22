@@ -1,0 +1,7 @@
+profile_name:
+  adapters:
+    bigquery:
+      creds: "{{ env('GOOGLE_APPLICATION_CREDENTIALS') }}"
+
+
+# EOF

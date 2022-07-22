@@ -1,0 +1,132 @@
+########################
+## Snowflake profiles ##
+########################
+
+profile_snowflake_normal:
+  adapters:
+    snowflake:
+      user: "{{ env('SNOWFLAKE_USER') }}"
+      password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+      account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+      role: "{{ env('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ env('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env('SNOWFLAKE_SCHEMA') }}"
+
+
+profile_snowflake_none_config:
+  adapters:
+    snowflake:
+      user: "{{ env('SNOWFLAKE_USER') }}"
+      password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+      account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+      role: "{{ env('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ env('SNOWFLAKE_DATABASE') }}"
+      schema:
+
+profile_snowflake_missing_config:
+  adapters:
+    snowflake:
+      user: "{{ env('SNOWFLAKE_USER') }}"
+      password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+      account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+      role: "{{ env('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env('SNOWFLAKE_WAREHOUSE') }}"
+      schema: "{{ env('SNOWFLAKE_SCHEMA') }}"
+
+profile_snowflake_extra_config:
+  adapters:
+    snowflake:
+      user: "{{ env('SNOWFLAKE_USER') }}"
+      password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+      account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+      role: "{{ env('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ env('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env('SNOWFLAKE_SCHEMA') }}"
+      extra_config: 'error'
+
+
+######################
+## PySpark profiles ##
+######################
+
+profile_pyspark_normal:
+  adapters:
+    pyspark:
+      alias: spark
+      config:
+        spark.driver.cores: 4
+        spark.driver.memory: 10g
+        spark.sql.broadcastTimeout:
+        # Add additional config variables here!
+
+profile_pyspark_none_alias:
+  adapters:
+    pyspark:
+      alias:
+      config:
+        spark.driver.cores: 4
+        spark.driver.memory: 10g
+        spark.sql.broadcastTimeout:
+        # Add additional config variables here
+
+profile_pyspark_missing_alias:
+  adapters:
+    pyspark:
+      config:
+        spark.driver.cores: 4
+        spark.driver.memory: 10g
+        spark.sql.broadcastTimeout:
+        # Add additional config variables here
+
+profile_snowflake_pyspark_normal:
+  adapters:
+    snowflake:
+      user: "{{ env('SNOWFLAKE_USER') }}"
+      password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+      account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+      role: "{{ env('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ env('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env('SNOWFLAKE_SCHEMA') }}"
+    pyspark:
+      alias: spark
+      config:
+        spark.driver.cores: 4
+        spark.driver.memory: 10g
+        spark.sql.broadcastTimeout:
+        # Add additional config variables here!
+
+
+###################
+## Miscellaneous ##
+###################
+
+profile_extra_invalid_connection:
+  adapters:
+    snowflake:
+      user: "{{ env('SNOWFLAKE_USER') }}"
+      password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+      account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+      role: "{{ env('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ env('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env('SNOWFLAKE_SCHEMA') }}"
+    postgres_sql:
+      alias: db
+
+profile_empty:
+
+profile_too_many_toplevel_keys:
+  adapters:
+  clusters:
+  this_does_not_belong:
+
+profile_invalid_toplevel_key:
+  adapters:
+  this_does_not_belong:
+
+  
+# EOF

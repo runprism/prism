@@ -1,0 +1,18 @@
+jinja_commands:
+  - '{% set BASE_PROFILE_NAME = "base" %}'
+  - '{% set CURR_PROFILE_NAME = concat(BASE_PROFILE_NAME, "_etl") %}'
+
+'{{ CURR_PROFILE_NAME }}':
+  snowflake:
+    alias: conn
+    config:
+      user:
+      password:
+      account:
+      role:
+      warehouse:
+      database:
+      schema:
+
+
+# EOF

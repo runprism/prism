@@ -1,0 +1,6 @@
+profile_name:
+  dbt:
+    project_dir:
+    profiles_dir: '{{ wkdir() }}'
+
+# EOF

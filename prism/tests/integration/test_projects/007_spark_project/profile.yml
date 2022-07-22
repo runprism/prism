@@ -1,0 +1,10 @@
+default:
+  adapters:
+    pyspark:
+      alias: spark
+      config:
+        spark.driver.cores: 4
+        spark.executor.cores: 4
+
+
+# EOF

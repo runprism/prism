@@ -1,0 +1,13 @@
+profile_name:
+  adapters:
+    snowflake:
+      user:
+      password:
+      account:
+      role:
+      warehouse:
+      database:
+      schema:
+
+
+# EOF

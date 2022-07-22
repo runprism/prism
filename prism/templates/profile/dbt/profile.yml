@@ -1,0 +1,9 @@
+profile_name:
+  adapters:
+    dbt:
+      project_dir:
+      profiles_dir:
+      profiles_target:
+
+
+# EOF

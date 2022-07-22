@@ -1,0 +1,14 @@
+jinja:
+  - "{% set PRISM_DIR = wkdir() %}"
+  - "{% set WKDIR = parent_dir(PRISM_DIR) %}"
+  - "{% set DBT_DIR = concat(WKDIR, '/jaffle_shop') %}"
+
+default:
+  adapters:
+    dbt:
+      project_dir: '{{ DBT_DIR }}'
+      profiles_dir: '{{ DBT_DIR }}'
+      profiles_target: 
+
+
+# EOF

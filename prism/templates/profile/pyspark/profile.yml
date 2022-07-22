@@ -1,0 +1,19 @@
+profile_name:
+  adapters:
+    pyspark:
+      alias: spark
+      loglevel: WARN
+      config:
+        spark.driver.cores:
+        spark.driver.memory:
+        spark.driver.memoryOverhead:
+        spark.executor.cores:
+        spark.executor.memory:
+        spark.executor.memoryOverhead:
+        spark.executor.instances:
+        spark.task.cpus:
+        spark.sql.broadcastTimeout:
+        # Add additional config variables here!
+
+
+# EOF

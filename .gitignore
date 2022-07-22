@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+**/.py[cod]
+**/__pycache__
+
+# OSX files
+**/.DS_Store
+
+# Blank files (for proper project structure)
+**/.exists
+
+# DBT artifacts
+**/.msgpack
+**/.user.yml
+
+# VSCode settings
+**/.vscode
+
+# Distribution / packaging
+*.egg-info/
+pip-wheel-metadata/
+
+# Testing
+.mypy_cache
+.pytest_cache
+
+
+# EOF

@@ -1,0 +1,14 @@
+profile_name:
+  snowflake:
+    alias: conn
+    config:
+      user: "{{ env('SHELL') }}"
+      password:
+      account:
+      role:
+      warehouse:
+      database:
+      schema:
+
+
+# EOF

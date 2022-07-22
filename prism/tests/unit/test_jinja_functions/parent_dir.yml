@@ -1,0 +1,11 @@
+jinja_commands:
+  - '{% set BASE_DIR = wkdir() %}'
+  - '{% set PARENT_DIR = parent_dir(BASE_DIR) %}'
+
+profile_name:
+  dbt:
+    project_dir:
+    profiles_dir: '{{ PARENT_DIR }}'
+
+
+# EOF
