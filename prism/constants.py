@@ -14,7 +14,7 @@ from pathlib import Path
 ###############
 
 # Version number
-VERSION = '0.1.0'
+VERSION = '0.1.0-alpha'
 
 # Root directory of project
 ROOT_DIR =  str(Path(os.path.dirname(__file__)).parent)
