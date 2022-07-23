@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/runprism/prism/blob/main/.github/prism_logo_light.png" alt="prism logo" width="350"/>
+  <img src="https://github.com/runprism/prism/raw/main/.github/prism_logo_light.png" alt="prism logo" width="350"/>
 </p>
 <p align="center">
     <a href="https://github.com/runprism/prism/actions/workflows/ci-linux.yml">
