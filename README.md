@@ -20,7 +20,7 @@
 </p>
 
 # :wave: Welcome to Prism!
-[Prism](https://runprism.com) is the easiest way to create data pipelines in Python.
+[Prism](https://docs.runprism.com) is the easiest way to create data pipelines in Python.
 
 ## Introduction
 Data projects often require multiple steps that need to be executed in sequence (think extract-transform-load, data wrangling, etc.). With Prism, users can break down their project into modular tasks, manage dependencies, and execute complex computations in sequence.
