@@ -16,7 +16,7 @@
     </a>
 </p>
 <p align="center">
-    <i>Prism is currently in <b>beta</b></i>
+    <i>Prism is currently in <b>alpha</b></i>.
 </p>
 
 # :wave: Welcome to Prism!
