@@ -36,6 +36,7 @@ Here are some of Prism's main features:
 Prism can be installed via ```pip```. Prism requires Python >= 3.7.
 
 ```
+pip install --upgrade pip
 pip install prism-ds
 ```
 
