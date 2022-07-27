@@ -47,7 +47,7 @@ To get started with Prism projects, check out our [documentation](https://docs.r
 - :electric_plug: [Integrations](https://docs.runprism.com/integrations)
 - :bulb: [Use Cases](https://docs.runprism.com/use-cases)
 
-In addition, check out some [example projects](https://github.com/mtrivedi50/prism_examples).
+In addition, check out some [example projects](https://github.com/runprism/prism_examples).
 
 
 ## Product Roadmap
