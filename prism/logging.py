@@ -427,7 +427,7 @@ class PrismExceptionErrorEvent(Event):
         return f'{RED}{msg}{RESET}'
 
 
-def fire_console_event(Event, event_list: List[Event] = [], sleep=0.25):
+def fire_console_event(Event, event_list: List[Event] = [], sleep=0):
     msg = Event.message()
     DEFAULT_LOGGER.info(msg)
     time.sleep(sleep)
