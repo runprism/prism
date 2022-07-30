@@ -17,6 +17,7 @@ from typing import Any, Dict
 # Prism-specific imports
 import prism.exceptions
 from prism.infra.psm import PrismFunctions
+from prism.infra.compiler import Manifest
 from prism.parsers.ast_parser import AstParser
 
 
@@ -29,7 +30,7 @@ class CompiledModule:
     Class for defining and executing a single compiled module
     """
 
-    def __init__(self, module_relative_path: Path, module_full_path: Path):
+    def __init__(self, module_relative_path: Path, module_full_path: Path, manifest: Manifest):
         self.module_relative_path = module_relative_path
         self.module_full_path = module_full_path
         with open(self.module_full_path, 'r') as f:
@@ -42,6 +43,21 @@ class CompiledModule:
 
         # Module name
         self.name = str(self.module_relative_path)
+
+        # Refs
+        self.manifest = manifest
+        self.refs = self._check_manifest(self.name, self.manifest)
+    
+
+    def _check_manifest(self, module_name: str, manifest: Manifest):
+        """
+        Check manifest and return list of refs associated with compiled
+        module
+        """
+        manifest_dict = manifest.manifest_dict
+        if module_name not in list(manifest_dict['manifest'].keys()):
+            raise prism.exceptions.CompileException(message = f'`{module_name}` not in manifest.yml')
+        return manifest_dict['manifest'][module_name]['refs']
     
 
     def instantiate_module_class(self,
