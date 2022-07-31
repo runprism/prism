@@ -30,6 +30,10 @@ from prism.event_managers import base as base_event_manager
 
 @dataclass
 class ExecutorOutput:
+    """
+    Class for defining output of DagExecutor. Looks very similar to the output of the EventManager. We only need this
+    because we need the error event and event list to cascade up to the PrismPipeline class. 
+    """
     success: int
     error_event: Optional[Event]
     event_list: List[Event]
@@ -202,6 +206,8 @@ class DagExecutor:
                 callback(result)
                 if self.psm==0:
                     return ExecutorOutput(0, self.error_event, self.event_list)
+
+            # We need the error event and event list to cascade up to the PrismPipeline class.
             return ExecutorOutput(1, self.error_event, self.event_list)
 
         # If the pool has multiple threads, then iterate through modules and add them to the Pool
@@ -239,17 +245,16 @@ class DagExecutor:
                             self.dag_module_objects.pop(0)
             pool.close()
             pool.join()
-            
-            # Wait until all tasks have finished before returning
-            [res.wait() for _, res in async_results.items()]
 
             # If error was found, then terminate pool
             if self._wait_and_return:
                 self._cancel_connections(pool)
+                # We need the error event and event list to cascade up to the PrismPipeline class. 
                 return ExecutorOutput(0, self.error_event, self.event_list)
             
             # Otherwise, pool should close automatically
             else:
+                # We need the error event and event list to cascade up to the PrismPipeline class. 
                 return ExecutorOutput(1, self.error_event, self.event_list)
 
 
