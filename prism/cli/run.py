@@ -152,11 +152,15 @@ class RunTask(prism.cli.compile.CompileTask):
         if isinstance(result, prism.cli.base.TaskRunReturnResult):
             return result
         
-        compiled_dag = result[0]
-        event_list = result[1]
+        compiled_dag = result.outputs
+        compiled_dag_error_event = result.event_to_fire
+        event_list = result.event_list
         
         # If no modules in DAG, return
-        if compiled_dag is None:
+        if compiled_dag==0:
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(compiled_dag_error_event, event_list)
+            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
 
 
@@ -170,14 +174,20 @@ class RunTask(prism.cli.compile.CompileTask):
             name='parsing config files',
             func=self.create_project
         )
-        prism_project, event_list = project_event_manager.manage_events_during_run(
+        project_event_manager_output = project_event_manager.manage_events_during_run(
             event_list=event_list,
             project_dir=project_dir,
             profiles_path=profiles_path,
             env="local",
             which=self.args.which
         )
+        prism_project = project_event_manager_output.outputs
+        prism_project_event_to_fire = project_event_manager_output.event_to_fire
+        event_list = project_event_manager_output.event_list
         if prism_project==0:
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(prism_project_event_to_fire)
+            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         
@@ -198,15 +208,21 @@ class RunTask(prism.cli.compile.CompileTask):
             name='creating pipeline, DAG executor',
             func=self.create_pipeline
         )
-        pipeline, event_list = pipeline_manager.manage_events_during_run(
+        pipeline_event_manager_output = pipeline_manager.manage_events_during_run(
             event_list=event_list,
             project=prism_project,
             dag_executor=dag_executor,
             pipeline_globals=self.globals_namespace
         )
+        pipeline = pipeline_event_manager_output.outputs
+        pipeline_event_to_fire = pipeline_event_manager_output.event_to_fire
+        event_list = pipeline_event_manager_output.event_list
         if pipeline==0:
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(pipeline_event_to_fire)
+            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
-
+        
 
         # ----------------------------------------------------------------------------------------------------------
         # Execute pipeline
@@ -221,18 +237,21 @@ class RunTask(prism.cli.compile.CompileTask):
             name='executing pipeline',
             func=pipeline.exec
         )
-        success, event_list = pipeline_exec_manager.manage_events_during_run(
+        exec_event_manager_output = pipeline_exec_manager.manage_events_during_run(
             fire_exec_events=False,
             event_list=event_list,
             args=self.args
         )
-        success_output = success[0]
-        success_events = success[1]
-        if success_output==0:
-            event_list.extend(success_events)
+        executor_output = exec_event_manager_output.outputs
+        success = executor_output.success
+        error_event = executor_output.error_event
+        executor_events = executor_output.event_list
+        event_list.extend(executor_events)
+        if success==0:
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(error_event, event_list)
+            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
-        else:
-            event_list.extend(success_events)
         
         
         # ----------------------------------------------------------------------------------------------------------

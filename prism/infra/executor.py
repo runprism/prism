@@ -11,8 +11,10 @@ Table of Contents
 #############
 
 # Standard library imports
+from dataclasses import dataclass
 from multiprocessing.dummy import Pool
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from unittest import runner
 
 # Prism-specific imports
 from prism.infra import module as prism_module
@@ -25,6 +27,13 @@ from prism.event_managers import base as base_event_manager
 ######################
 ## Class definition ##
 ######################
+
+@dataclass
+class ExecutorOutput:
+    success: int
+    error_event: Optional[Event]
+    event_list: List[Event]
+
 
 class DagExecutor:
     """
@@ -127,14 +136,14 @@ class DagExecutor:
             name=name,
             func=module.exec
         )
-        psm, event_list = script_manager.manage_events_during_run(
+        script_event_manager_result = script_manager.manage_events_during_run(
             event_list,
             fire_exec_events,
             globals_dict=self.executor_globals,
             psm=psm,
             explicit_run=relative_path not in self.nodes_not_explicitly_run
         )
-        return psm, event_list
+        return script_event_manager_result
 
     
     def _cancel_connections(self, pool):
@@ -167,13 +176,15 @@ class DagExecutor:
         self.event_list: List[Event] = []
         
         def callback(result):
-            psm = result[0]
-            runner_event_list = result[1]
+            psm = result.outputs
+            error_event = result.event_to_fire
+            runner_event_list = result.event_list
 
             # If psm==0, then we want to raise an error. However, if we do so here, it'll
             # get swallowed by the pool.
             if psm==0:
                 self._wait_and_return = True
+                self.error_event = error_event
             self.psm = psm
             self.event_list+=runner_event_list
             return
@@ -181,52 +192,65 @@ class DagExecutor:
         # Execute all statements, stopping at first error
         self.psm = self.executor_globals['psm']
         self._wait_and_return = False
-        while self.dag_module_objects!=[]:
+        self.error_event = None
 
-            # Get first module to execute
-            curr = self.dag_module_objects[0]
-            refs = self.check_task_refs(curr)
+        # If single-threaded, just run the modules in order
+        if self.threads==1:
+            while self.dag_module_objects!=[]:
+                curr = self.dag_module_objects.pop(0)
+                result = self.exec_single(args, curr, self.psm)
+                callback(result)
+                if self.psm==0:
+                    return ExecutorOutput(0, self.error_event, self.event_list)
+            return ExecutorOutput(1, self.error_event, self.event_list)
 
-            # If an error occurred, skip all remaining tasks
-            if self._wait_and_return:
-                break # do nothing
-            
-            else:
-
-                # If no refs, then add module to pool
-                if len(refs)==0:                
-                    res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
-                    async_results[curr.name] = res
-                    self.dag_module_objects.pop(0)
+        # If the pool has multiple threads, then iterate through modules and add them to the Pool
+        else:
+            while self.dag_module_objects!=[]:
                 
-                # Since DAG is run in order, refs should have been added to pool
-                # before current task. Wait for upstream tasks
+                # Get first module to execute
+                curr = self.dag_module_objects[0]
+                refs = self.check_task_refs(curr)
+
+                # If an error occurred, skip all remaining tasks
+                if self._wait_and_return:
+                    break # do nothing
+                
                 else:
-                    for ref in refs:
-                        async_results[ref].wait()
-                    
-                    # If an error occurred, skip all remaining tasks
-                    if self._wait_and_return:
-                        break # do nothing
-                    else:
+
+                    # If no refs, then add module to pool
+                    if len(refs)==0:                
                         res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
                         async_results[curr.name] = res
                         self.dag_module_objects.pop(0)
-        pool.close()
-        pool.join()
-        
-        # Wait until all tasks have finished before returning
-        for _, res in async_results.items():
-            res.wait()
+                    
+                    # Since DAG is run in order, refs should have been added to pool
+                    # before current task. Wait for upstream tasks
+                    else:
+                        for ref in refs:
+                            async_results[ref].wait()
+                        
+                        # If an error occurred, skip all remaining tasks
+                        if self._wait_and_return:
+                            break # do nothing
+                        else:
+                            res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
+                            async_results[curr.name] = res
+                            self.dag_module_objects.pop(0)
+            pool.close()
+            pool.join()
+            
+            # Wait until all tasks have finished before returning
+            [res.wait() for _, res in async_results.items()]
 
-        # If error was found, then terminate pool
-        if self._wait_and_return:
-            self._cancel_connections(pool)
-            return 0, self.event_list
-        
-        # Otherwise, pool should close automatically
-        else:
-            return 1, self.event_list
+            # If error was found, then terminate pool
+            if self._wait_and_return:
+                self._cancel_connections(pool)
+                return ExecutorOutput(0, self.error_event, self.event_list)
+            
+            # Otherwise, pool should close automatically
+            else:
+                return ExecutorOutput(1, self.error_event, self.event_list)
 
 
     # EOF
