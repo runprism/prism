@@ -11,12 +11,14 @@ Table of Contents
 #############
 
 # Standard library imports
+import argparse
 from dataclasses import dataclass
 from multiprocessing.dummy import Pool
-from typing import Any, Dict, List, Optional
-from unittest import runner
+from multiprocessing.pool import ApplyResult
+from typing import Any, Dict, List, Optional, Union
 
 # Prism-specific imports
+import prism.exceptions
 from prism.infra import module as prism_module
 from prism.infra import compiler as prism_compiler
 from prism.infra.psm import PrismFunctions
@@ -92,17 +94,23 @@ class DagExecutor:
         if isinstance(module.refs, str):
             return [module.refs]
         else:
+            if not isinstance(module.refs, list):
+                raise prism.exceptions.CompileException(message = f'invalid type `{type(module.refs)}`, must be list')
             return module.refs
 
 
-    def exec_single(self, args, module: prism_module.CompiledModule, psm: PrismFunctions):
+    def exec_single(self,
+        args: argparse.Namespace,
+        module: prism_module.CompiledModule, 
+        psm: Union[int, PrismFunctions]
+    ) -> base_event_manager.EventManagerOutput:
         """
         Callback used to get results of module execution in Pool
         """
         # Keep track of events
         event_list: List[Event] = []
         if psm==0:
-            return 0, event_list
+            base_event_manager.EventManagerOutput(0, None, event_list)
         name = module.name
         relative_path = module.module_relative_path
         full_path = module.module_full_path
@@ -140,7 +148,7 @@ class DagExecutor:
             name=name,
             func=module.exec
         )
-        script_event_manager_result = script_manager.manage_events_during_run(
+        script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(
             event_list,
             fire_exec_events,
             globals_dict=self.executor_globals,
@@ -179,7 +187,7 @@ class DagExecutor:
         # Keep track of events
         self.event_list: List[Event] = []
         
-        def callback(result):
+        def callback(result: base_event_manager.EventManagerOutput):
             psm = result.outputs
             error_event = result.event_to_fire
             runner_event_list = result.event_list
@@ -220,7 +228,7 @@ class DagExecutor:
 
                 # If an error occurred, skip all remaining tasks
                 if self._wait_and_return:
-                    break # do nothing
+                    break # type: ignore
                 
                 else:
 
@@ -238,7 +246,7 @@ class DagExecutor:
                         
                         # If an error occurred, skip all remaining tasks
                         if self._wait_and_return:
-                            break # do nothing
+                            break # type: ignore
                         else:
                             res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
                             async_results[curr.name] = res

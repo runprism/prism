@@ -310,7 +310,7 @@ class CompileTask(prism.cli.base.BaseTask):
         compiled_dir: Path,
         event_list: List[prism.logging.Event],
         fire_exec_events: bool = True
-    ) -> Union[prism.cli.base.TaskRunReturnResult, Tuple[Union[None, compiler.CompiledDag], List[Event]]]:
+    ) -> Union[prism.cli.base.TaskRunReturnResult, base_event_manager.EventManagerOutput]:
         """
         Run the compile task. This task is executed when the user runs a subclass of the CompileTask (e.g., the RunTask)
 
@@ -342,7 +342,7 @@ class CompileTask(prism.cli.base.BaseTask):
             func=self.compile_dag
         )
         
-        compiled_event_manager_output = compiler_manager.manage_events_during_run(
+        compiled_event_manager_output: base_event_manager.EventManagerOutput = compiler_manager.manage_events_during_run(
             event_list=event_list,
             fire_exec_events=fire_exec_events,
             project_dir=project_dir,
