@@ -26,7 +26,8 @@ import prism.exceptions
 import prism.constants
 import prism.logging
 from prism.logging import Event, fire_console_event, fire_empty_line_event
-from prism.templates.starter_project import STARTER_PROJECT_TEMPLATE_DIR as starter_project_template_dir
+from prism.templates.starter_project import STARTER_PROJECT_TEMPLATE_DIR
+from prism.templates.minimal_project import MINIMAL_PROJECT_TEMPLATE_DIR
 
 
 ###############
@@ -63,6 +64,7 @@ class InitTask(prism.cli.base.BaseTask):
 
 
     def create_starter_project_from_template(self,
+        template_dir: str,
         project_dir: Path,
         project_name: str
     ):
@@ -77,7 +79,7 @@ class InitTask(prism.cli.base.BaseTask):
 
         # Copy the starter project template into the project directory
         shutil.copytree(
-            starter_project_template_dir, 
+            template_dir, 
             project_dir, 
             ignore=shutil.ignore_patterns(*prism.constants.IGNORE_FILES)
         )
@@ -137,10 +139,16 @@ class InitTask(prism.cli.base.BaseTask):
             event_list = fire_console_event(e, event_list, 0)
             event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
-            
+        
+        # Define template to copy
+        if self.args.minimal:
+            template_dir = MINIMAL_PROJECT_TEMPLATE_DIR
+        else:
+            template_dir = STARTER_PROJECT_TEMPLATE_DIR
+
         # Copy starter project into project directory
         event_list = fire_console_event(prism.logging.CreatingProjectDirEvent(), event_list)
-        self.create_starter_project_from_template(project_dir, project_name)
+        self.create_starter_project_from_template(template_dir, project_dir, project_name)
         
         # Init task successful
         event_list = fire_empty_line_event(event_list)

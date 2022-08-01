@@ -75,6 +75,16 @@ def build_init_subparser(sub):
         """
     )
 
+    # Add argument for whether to create minimal project
+    init_sub.add_argument(
+        '--minimal',
+        required=False,
+        action='store_true',
+        help="""
+        Create minimal project (just `prism_project.py` and `modules`)
+        """
+    )
+
     # Set default class argument to InitTask()
     init_sub.set_defaults(cls=init.InitTask, which='init')
 
