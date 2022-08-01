@@ -1,20 +1,12 @@
 <p align="center">
   <img src="https://github.com/runprism/prism/raw/main/.github/prism_logo_light.png" alt="prism logo" width="350"/>
 </p>
-<p align="center">
-    <a href="https://github.com/runprism/prism/actions/workflows/ci-linux.yml">
-        <img src="https://github.com/runprism/prism/actions/workflows/ci-linux.yml/badge.svg" alt="linux tests badge">
-    </a>
-    <a href="https://github.com/runprism/prism/actions/workflows/ci-macos.yml">
-        <img src="https://github.com/runprism/prism/actions/workflows/ci-macos.yml/badge.svg" alt="macos tests badge">
-    </a>
-    <a href="https://github.com/runprism/prism/actions/workflows/ci-windows.yml">
-        <img src="https://github.com/runprism/prism/actions/workflows/ci-windows.yml/badge.svg" alt="windows tests badge">
-    </a>
-        <a href="https://github.com/runprism/prism/actions/workflows/style.yml">
-        <img src="https://github.com/runprism/prism/actions/workflows/style.yml/badge.svg" alt="style tests badge">
-    </a>
-</p>
+
+[![CI Linux](https://github.com/runprism/prism/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/runprism/prism/actions/workflows/ci-linux.yml)
+[![CI MacOS](https://github.com/runprism/prism/actions/workflows/ci-macos.yml/badge.svg)](https://github.com/runprism/prism/actions/workflows/ci-macos.yml)
+[![CI Windows](https://github.com/runprism/prism/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/runprism/prism/actions/workflows/ci-windows.yml)
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+
 <p align="center">
     <i>Prism is currently in <b>alpha</b></i>.
 </p>
