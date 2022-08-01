@@ -27,7 +27,7 @@ import prism.target as PrismTarget     # Not necessary; prism infrastructure aut
 class Module01(PrismTask):
 
     ## Run
-    @PrismTask.target(type=PrismTarget.Txt, loc=os.path.join(pp.OUTPUT, 'module01.txt'))
+    @PrismTask.target(type=PrismTarget.Txt, loc=os.path.join(prism_project.OUTPUT, 'module01.txt'))
     def run(self, psm):
         """
         Execute task.

@@ -245,13 +245,19 @@ class ConnectTask(prism.cli.base.BaseTask):
             name='connection setup',
             func=self.create_connection
         )
-        success, event_list = profile_connection_event_manager.manage_events_during_run(
+        event_manager_results = profile_connection_event_manager.manage_events_during_run(
             event_list=event_list,
             fire_exec_events=False,
             profile_type=profile_type,
             profiles_filepath=profiles_filepath
         )
+        success = event_manager_results.outputs
+        event_to_fire = event_manager_results.event_to_fire
+        event_list = event_manager_results.event_list
         if success==0:
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(event_to_fire, event_list)
+            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         # Fire footer events

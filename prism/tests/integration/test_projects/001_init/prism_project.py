@@ -23,6 +23,15 @@ import numpy as np
 
 
 ################
+# Thread count #
+################
+
+# Number of workers to use to execute tasks concurrently. If set to 1,
+# then 1 task is run at a time.
+threads = 1
+
+
+################
 # Profile name #
 ################
 

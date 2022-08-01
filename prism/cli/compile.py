@@ -279,14 +279,20 @@ class CompileTask(prism.cli.base.BaseTask):
             name='module DAG',
             func=self.compile_dag
         )
-        compiled_dag, event_list = compiler_manager.manage_events_during_run(
+        compiled_event_manager_output = compiler_manager.manage_events_during_run(
             event_list=event_list,
             project_dir=project_dir,
             compiled_dir=compiled_dir,
             all_modules=all_modules,
             user_arg_modules=user_arg_modules
         )
+        compiled_dag = compiled_event_manager_output.outputs
+        event_to_fire = compiled_event_manager_output.event_to_fire
+        event_list = compiled_event_manager_output.event_list
         if compiled_dag==0:
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(event_to_fire, event_list)
+            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         # Print output message if successfully executed
@@ -304,7 +310,7 @@ class CompileTask(prism.cli.base.BaseTask):
         compiled_dir: Path,
         event_list: List[prism.logging.Event],
         fire_exec_events: bool = True
-    ) -> Union[prism.cli.base.TaskRunReturnResult, Tuple[Union[None, compiler.CompiledDag], List[Event]]]:
+    ) -> Union[prism.cli.base.TaskRunReturnResult, base_event_manager.EventManagerOutput]:
         """
         Run the compile task. This task is executed when the user runs a subclass of the CompileTask (e.g., the RunTask)
 
@@ -335,7 +341,8 @@ class CompileTask(prism.cli.base.BaseTask):
             name='module DAG',
             func=self.compile_dag
         )
-        compiled_dag, event_list = compiler_manager.manage_events_during_run(
+        
+        compiled_event_manager_output: base_event_manager.EventManagerOutput = compiler_manager.manage_events_during_run(
             event_list=event_list,
             fire_exec_events=fire_exec_events,
             project_dir=project_dir,
@@ -343,13 +350,14 @@ class CompileTask(prism.cli.base.BaseTask):
             all_modules=all_modules,
             user_arg_modules=user_arg_modules
         )
+        compiled_dag = compiled_event_manager_output.outputs
         if compiled_dag==0:
-            return None, event_list
+            return compiled_event_manager_output
 
         # Update the paths using the compiled directory
         modules_dir = project_dir / 'modules'
         compiled_dag.add_full_path(modules_dir)
-        return compiled_dag, event_list
+        return compiled_event_manager_output
 
 
 # EOF

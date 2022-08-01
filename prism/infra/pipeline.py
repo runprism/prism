@@ -77,10 +77,10 @@ class PrismPipeline:
 
 
     def exec(self, args: argparse.Namespace):
-        success, event_list = self.dag_executor.exec(args)
+        executor_output = self.dag_executor.exec(args)
         self.pipeline_globals = self.sys_handler_obj.remove_sys_path(self.pipeline_globals)
         self.pipeline_globals = self.sys_handler_obj.remove_project_modules(self.pipeline_globals)
-        return success, event_list
+        return executor_output
 
 
 
