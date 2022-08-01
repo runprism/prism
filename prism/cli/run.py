@@ -195,7 +195,8 @@ class RunTask(prism.cli.compile.CompileTask):
         # Create pipeline
 
         # First, create DAG executor
-        dag_executor = prism_executor.DagExecutor(compiled_dag, self.args.all_upstream)
+        threads = prism_project.thread_count
+        dag_executor = prism_executor.DagExecutor(compiled_dag, self.args.all_upstream, threads)
 
         # Create pipeline
         self.globals_namespace = prism.constants.GLOBALS_DICT.copy()

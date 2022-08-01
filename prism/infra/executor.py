@@ -47,7 +47,7 @@ class DagExecutor:
     def __init__(self,
         compiled_dag: prism_compiler.CompiledDag,
         user_arg_all_upstream: bool,
-        threads: int = 1
+        threads: int
     ):
         self.compiled_dag = compiled_dag
         self.topological_sort_relative_path = self.compiled_dag.topological_sort

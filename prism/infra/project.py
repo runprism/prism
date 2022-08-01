@@ -64,6 +64,9 @@ class PrismProject:
         # Create Profile object
         self.profile = profile.Profile(self.profile_yml, self.profile_name, self.env)
 
+        # Thread count
+        self.thread_count = self.get_thread_count(self.prism_project_py_str)
+
         # Get adapters dict from profile
         self.profile.generate_adapters()
         self.adapters_object_dict = self.profile.get_adapters_obj_dict()
@@ -187,6 +190,30 @@ class PrismProject:
         if not isinstance(profile_name, str):
             return ""
         return profile_name
+
+    
+    def get_thread_count(self,
+        prism_project_py: str
+    ) -> int:
+        """
+        Get thread count from prism_project.py file. If thread count is not
+        specified, then default to 1.
+
+        args:
+            prism_project_py: prism_project.py file represented as string
+        returns:
+            profile_name  
+        """
+        thread_count = self.safe_eval_var_from_file(prism_project_py, 'threads')
+        if thread_count is None or thread_count<1:
+            return 1
+        if not isinstance(thread_count, int):
+            msg_list = [
+                f'invalid value `threads = {thread_count}`',
+                'must be an integer'
+            ]
+            raise prism.exceptions.InvalidProjectPyException(message='\n'.join(msg_list))
+        return thread_count
     
 
     def load_profile_yml(self,
