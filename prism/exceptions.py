@@ -10,6 +10,19 @@ class PrismException(Exception):
     pass
 
 
+class InvalidProjectException(PrismException):
+    """
+    Exception raised if project is not valid
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
 class RuntimeException(PrismException):
     """
     Exception raised during command runtime.
