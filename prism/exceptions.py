@@ -36,6 +36,19 @@ class RuntimeException(PrismException):
         return self.message
 
 
+class InvalidProfileException(PrismException):
+    """
+    Exception raised during command runtime.
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
 class ProjectPyNotFoundException(PrismException):
     """
     Exception raised if the prism_project.py isn't found
