@@ -1,5 +1,5 @@
 """
-PrismFactory class definition. This produces a PrismDAG object.
+PrismDAG class definition. This class can be used to manipulate Prism projects / tasks without the CLI
 
 Table of Contents
 - Imports
@@ -147,19 +147,6 @@ class PrismDAG(
         # Create args
         args = RunArgs(**kwargs)
         pipeline.exec(args)
-
-
-        
-
-        
-
-    
-
-
-
-
-
-    
 
 
 # EOF
