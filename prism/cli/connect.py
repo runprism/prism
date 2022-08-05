@@ -56,19 +56,19 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # Change working directory to project directory
         os.chdir(project_dir)
 
-        event_list = fire_empty_line_event(event_list)
+        event_list = fire_empty_line_event(self.args, event_list)
         
         # Define profile type
         profile_type = self.args.type
         if profile_type is None:
             e = prism.logging.InvalidProfileType(None)
-            event_list = fire_console_event(e, event_list, 0)
-            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(self.args, e, event_list, 0)
+            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
         elif profile_type not in prism.constants.VALID_CONNECTIONS:
             e = prism.logging.InvalidProfileType(profile_type)
-            event_list = fire_console_event(e, event_list, 0)
-            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(self.args, e, event_list, 0)
+            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         # Fire events
@@ -96,15 +96,15 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         event_to_fire = event_manager_results.event_to_fire
         event_list = event_manager_results.event_list
         if success==0:
-            event_list = fire_empty_line_event(event_list)
-            event_list = fire_console_event(event_to_fire, event_list)
-            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_empty_line_event(self.args, event_list)
+            event_list = fire_console_event(self.args, event_to_fire, event_list)
+            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         # Fire footer events
-        event_list = fire_empty_line_event(event_list)
-        event_list = fire_console_event(prism.logging.TaskSuccessfulEndEvent(), event_list, 0)
-        event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
+        event_list = fire_empty_line_event(self.args, event_list)
+        event_list = fire_console_event(self.args, prism.logging.TaskSuccessfulEndEvent(), event_list, 0)
+        event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
 
         return prism.cli.base.TaskRunReturnResult(event_list)
 

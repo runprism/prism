@@ -3,8 +3,8 @@ Create logger for console events
 
 Table of Contents
 - Imports
-- Create logger
 - Functions and utils
+- Create logger
 - Event classes
 """
 
@@ -13,6 +13,7 @@ Table of Contents
 #############
 
 # General package imports
+import argparse
 import re
 import os
 import copy
@@ -30,19 +31,6 @@ from typing import Any, Optional
 import prism.constants
 import prism.exceptions
 from prism.ui import BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE, RESET, BRIGHT_WHITE, BRIGHT_YELLOW, BRIGHT_GREEN, BOLD
-
-
-###################
-## Create logger ##
-###################
-
-DEFAULT_LOGGER = logging.getLogger('event_logger')
-DEFAULT_LOGGER.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-console_formatter = logging.Formatter(fmt="%(message)s")
-handler.setFormatter(console_formatter)
-DEFAULT_LOGGER.addHandler(handler)
 
 
 #########################
@@ -146,6 +134,33 @@ def format_console_output(message, index, total, status, execution_time):
     colorized_status = colorize_status(status)
     output = f"{justified} [{colorized_status}{status_time}]"
     return output
+
+
+###################
+## Create logger ##
+###################
+
+DEFAULT_LOGGER = logging.getLogger('event_logger')
+DEFAULT_LOGGER.setLevel(logging.INFO)
+
+# Stream handler
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+console_formatter = logging.Formatter(fmt="%(message)s")
+handler.setFormatter(console_formatter)
+
+# File handler -- remove ANSI codes
+class FileHandlerFormatter(logging.Formatter):
+    def format(self,record):
+        return escape_ansi(record.msg)
+
+file_handler = logging.FileHandler('logs.log')
+file_handler.setLevel(logging.INFO)
+file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
+file_handler.setFormatter(file_handler_formatter)
+
+DEFAULT_LOGGER.addHandler(handler)
+DEFAULT_LOGGER.addHandler(file_handler)
 
 
 ###################
@@ -427,20 +442,22 @@ class PrismExceptionErrorEvent(Event):
         return f'{RED}{msg}{RESET}'
 
 
-def fire_console_event(Event, event_list: List[Event] = [], sleep=0.01):
+def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] = [], sleep=0.01):
     msg = Event.message()
-    DEFAULT_LOGGER.info(msg)
-    time.sleep(sleep)
+    if args.quietly:
+        DEFAULT_LOGGER.info(msg)
+        time.sleep(sleep)
 
     # Return event list
     event_list.append(Event)
     return event_list
 
 
-def fire_empty_line_event(event_list: List[Event] = []):
+def fire_empty_line_event(args: argparse.Namespace, event_list: List[Event] = []):
     e = EmptyLineEvent()
     msg = e.message()
-    DEFAULT_LOGGER.info(msg)
+    if args.quietly:
+        DEFAULT_LOGGER.info(msg)
 
     # Return event list
     event_list.append(e)

@@ -110,18 +110,18 @@ class BaseTask:
         """
         Fire header events that should be displayed at the beginning of all tasks (except the init task)
         """
-        event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 1)
-        event_list = fire_console_event(prism.logging.TaskRunEvent(version=prism.constants.VERSION), event_list, 0)
+        event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 1)
+        event_list = fire_console_event(self.args, prism.logging.TaskRunEvent(version=prism.constants.VERSION), event_list, 0)
 
         try:
             project_dir = get_project_dir()
-            event_list = fire_console_event(prism.logging.CurrentProjectDirEvent(project_dir), event_list, 0)
+            event_list = fire_console_event(self.args, prism.logging.CurrentProjectDirEvent(project_dir), event_list, 0)
             return event_list, project_dir
         except prism.exceptions.ProjectPyNotFoundException as err:
-            event_list = fire_empty_line_event(event_list)
+            event_list = fire_empty_line_event(self.args, event_list)
             e = prism.logging.ProjectPyNotFoundEvent(err)
-            event_list = fire_console_event(e, event_list)
-            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(self.args, e, event_list)
+            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return event_list, None
 
 

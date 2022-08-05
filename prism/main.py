@@ -46,6 +46,17 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
         Display full traceback if errors arise at any stage of the pipeline
         """
     )
+
+    common_arguments_parser.add_argument(
+        '-q',
+        '--quietly',
+        required=False,
+        action='store_false',
+        help="""
+        Suppress logging
+        """
+
+    )
     return common_arguments_parser
 
 
