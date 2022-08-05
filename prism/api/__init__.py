@@ -13,9 +13,10 @@ Table of Contents
 #############
 
 # Standard library imports
+from dataclasses import dataclass
 import os
 from pathlib import Path
-from typing import Any, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 # Prism-specific imports
 import prism.constants
@@ -24,6 +25,7 @@ import prism.exceptions
 from prism.infra import project as prism_project
 from prism.infra import executor as prism_executor
 from prism.infra import module as prism_module
+from prism.infra import compiler as prism_compiler
 import prism.mixins.compile
 import prism.mixins.connect
 import prism.mixins.run
@@ -35,21 +37,17 @@ from prism.parsers import ast_parser
 ## Class definition ##
 ######################
 
+@dataclass
 class RunArgs:
     """
     The compile/connect CLI task only call EventManagers (which require an `args` param) within their class. However,
     the run task uses non-CLI classes that also EventManagers, such as the DAGExecutor. We need to supply an `args`
     param to the API run call, and we use this class to do so.
     """
-    def __init__(self, **kwargs):
-        for k,v in kwargs.items():
-            self.__setattr__(k, v)
-        
-        # Set attributes for specific args used by non-CLI classes. Kinda messy, but we can fix later.
-        if kwargs.get('full_tb') is None:
-            self.full_tb = False
-        if kwargs.get('quietly') is None:
-            self.quietly = True
+    module_paths: List[Path]
+    all_upstream: bool
+    full_tb: bool
+    quietly: bool = True
 
         
 class PrismDAG(
@@ -110,12 +108,13 @@ class PrismDAG(
         return True
 
     
-    def connect(self, **kwargs):
+    def connect(self,
+        connection_type: str
+    ):
         """
         Connect task to an adapter
         """
         # Parse arguments
-        connection_type = kwargs.get('type')
         if connection_type is None or not isinstance(connection_type, str):
             raise prism.exceptions.RuntimeException(message=f'connection type cannot be None')
         if connection_type not in prism.constants.VALID_ADAPTERS:
@@ -130,15 +129,17 @@ class PrismDAG(
         self.create_connection(connection_type, profiles_filepath)
 
 
-    def compile(self, **kwargs):
+    def compile(self,
+        modules: Optional[List[str]] = None
+    ) -> prism_compiler.CompiledDag:
         """
         Compile the Prism project
         """
-        # Parse arguments
-        user_arg_modules = kwargs.get('modules')
-        if user_arg_modules is None:
-            user_arg_modules = self.all_modules
-        self.user_arg_modules = user_arg_modules
+        if modules is None:
+            module_paths = self.all_modules
+        else:
+            module_paths = [Path(p) for p in modules]
+        self.user_arg_modules = module_paths
         
         # Create compiled directory and compile the DAG
         compiled_dir = self.create_compiled_dir(self.project_dir)
@@ -146,29 +147,30 @@ class PrismDAG(
         return self.compile_dag(self.project_dir, self.compiled_dir, self.all_modules, self.user_arg_modules)
 
     
-    def run(self, **kwargs):
+    def run(self,
+        modules: Optional[List[str]] = None,
+        all_upstream: bool = True,
+        full_tb: bool = True
+    ):
         """
         Run the Prism project
         """
-        # Parse arguments
-        env = kwargs.get('env')
-        if env is None:
-            env = "local"
-        all_upstream = kwargs.get('all_upstream')
-
         # Get compiled DAG
         profiles_path = self.profiles_dir / 'profile.yml'
-        compiled_dag = self.compile(**kwargs)
+        compiled_dag = self.compile(modules)
         compiled_dag.add_full_path(self.modules_dir)
 
         # Create Project, DAGExecutor, and Pipeline objects
-        prism_project = self.create_project(self.project_dir, profiles_path, env, "run")
+        prism_project = self.create_project(self.project_dir, profiles_path, "local", "run")
         threads = prism_project.thread_count
         dag_executor = prism_executor.DagExecutor(compiled_dag, all_upstream, threads)
         pipeline = self.create_pipeline(prism_project, dag_executor, self.globals_namespace)
 
+        # Convert string paths to Pathlib objects
+        module_paths = [Path(p) for p in modules]
+
         # Create args and exec
-        args = RunArgs(**kwargs)
+        args = RunArgs(module_paths, all_upstream, full_tb)
         output = pipeline.exec(args)
         if output.error_event is not None:
             event = output.error_event
