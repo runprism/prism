@@ -35,11 +35,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
     """
     Class for defining the "run" task
     """
-
-    def __init__(self, args):
-        # Initialize compile task
-        super().__init__(args)
-        self.args = args
  
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:

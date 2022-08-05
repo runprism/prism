@@ -97,6 +97,7 @@ class BaseTask:
 
     def __init__(self, args):
         self.args = args
+        prism.logging.set_up_logger(self.args)
 
 
     @classmethod

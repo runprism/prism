@@ -57,11 +57,6 @@ class InitTask(prism.cli.base.BaseTask):
     Class for initializing a prism project
     """
 
-    def __init__(self,
-        args: argparse.Namespace
-    ):
-        self.args = args
-
 
     def create_starter_project_from_template(self,
         template_dir: str,

@@ -38,9 +38,6 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
     Class for compiling a prism project and computing the DAG
     """
 
-    def __init__(self, args):
-        self.args = args
-
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
         """
