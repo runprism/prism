@@ -21,6 +21,23 @@ from prism.infra.compiler import Manifest
 from prism.parsers.ast_parser import AstParser
 
 
+#######################
+## Functions / utils ##
+#######################
+
+def get_task_var_name(module_path: Path) -> str:
+    """
+    Retrieve the variable used to store the PrismTask in `module_path` in our namespace
+
+    args:
+        module_path: path to module, relative to `modules/`
+    returns:
+        variable name
+    """
+    task_var_name = str(module_path).replace('/', '_').replace('.py', '')
+    return task_var_name
+
+
 ######################
 ## Class definition ##
 ######################
@@ -81,7 +98,7 @@ class CompiledModule:
         prism_task_class_name = prism_task_class.name
 
         # Variable name should just be the name of the module itself. A project shouldn't contain duplicate modules.
-        task_var_name = self.name.replace('/', '_').replace('.py', '')
+        task_var_name = get_task_var_name(self.module_relative_path)
 
         # Execute class definition and create task
         exec(self.module_str, globals_dict)
