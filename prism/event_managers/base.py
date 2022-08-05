@@ -55,6 +55,9 @@ class BaseEventManager:
         self.name = name
         self.func = func
 
+        # Set up logger
+        prism.logging.set_up_logger(self.args)
+
 
     def fire_running_exec_event(self,
         event_list: List[prism.logging.Event]
