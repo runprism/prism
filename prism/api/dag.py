@@ -249,6 +249,21 @@ class PrismDAG(
                 exec('\n'.join(code_str), temp_namespace)
                 output = temp_namespace[task_var_name].get_output()     # This should return an error if no target is specified
                 return output
+    
+
+    def get_pipeline_output(self, bool_run: bool = False) -> Any:
+        """
+        Get pipeline output, defined as the output associated with the last task in the project
+
+        args:
+            bool_run: boolean indicating whether to run the pipeline
+        returns:
+            output associated with last task in the project
+        """
+        # Compile the project and get the last task
+        compiled_dag = self.compile()
+        last_task = compiled_dag.topological_sort[-1]
+        return self.get_task_output(last_task, bool_run)
 
 
 # EOF
