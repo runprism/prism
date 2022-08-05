@@ -444,7 +444,7 @@ class PrismExceptionErrorEvent(Event):
 
 def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] = [], sleep=0.01):
     msg = Event.message()
-    if args.quietly:
+    if not args.quietly:
         DEFAULT_LOGGER.info(msg)
         time.sleep(sleep)
 
@@ -456,7 +456,7 @@ def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] 
 def fire_empty_line_event(args: argparse.Namespace, event_list: List[Event] = []):
     e = EmptyLineEvent()
     msg = e.message()
-    if args.quietly:
+    if not args.quietly:
         DEFAULT_LOGGER.info(msg)
 
     # Return event list

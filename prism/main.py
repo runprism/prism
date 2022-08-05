@@ -51,7 +51,7 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
         '-q',
         '--quietly',
         required=False,
-        action='store_false',
+        action='store_true',
         help="""
         Suppress logging
         """

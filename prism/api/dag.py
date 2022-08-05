@@ -48,6 +48,8 @@ class RunArgs:
         # Set attributes for specific args used by non-CLI classes. Kinda messy, but we can fix later.
         if kwargs.get('full_tb') is None:
             self.full_tb = False
+        if kwargs.get('quietly') is None:
+            self.quietly = True
 
         
 class PrismDAG(
@@ -62,12 +64,10 @@ class PrismDAG(
 
     def __init__(self,
         project_dir: Path,
-        profiles_dir: Optional[Path] = None,
-        logging: bool = False
+        profiles_dir: Optional[Path] = None
     ):
         self.project_dir = project_dir
         self.profiles_dir = project_dir if profiles_dir is None else profiles_dir
-        self.logging = logging
 
         # Check if project is valid
         self._is_valid_project(self.project_dir)
@@ -169,7 +169,16 @@ class PrismDAG(
 
         # Create args and exec
         args = RunArgs(**kwargs)
-        pipeline.exec(args)
+        output = pipeline.exec(args)
+        if output.error_event is not None:
+            event = output.error_event
+            try:
+                # Exception is a PrismException
+                exception = event.err
+            except AttributeError:
+                # All other exceptions
+                exception = event.value
+            raise exception
 
     
     def _get_task_cls_from_namespace(self, module_path: Path):
