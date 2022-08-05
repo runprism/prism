@@ -60,7 +60,7 @@ connect_task_successful_expected_events = header_events + [
 # Events associated with invalid profile type
 connect_task_invalid_expected_events = header_events + [
     'EmptyLineEvent',
-    'InvalidProfileType',
+    'InvalidAdapterType',
     'SeparatorEvent'
 ]
 
@@ -293,6 +293,9 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
             'SeparatorEvent'
         ])
         self.assertEqual(expected_results, connect_run_results)
+
+        # Set up wkdir for next test case
+        self._set_up_wkdir()
 
 
     def test_invalid_type(self):
