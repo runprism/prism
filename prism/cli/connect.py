@@ -59,20 +59,20 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         event_list = fire_empty_line_event(self.args, event_list)
         
         # Define profile type
-        profile_type = self.args.type
-        if profile_type is None:
-            e = prism.logging.InvalidProfileType(None)
+        adapter_type = self.args.type
+        if adapter_type is None:
+            e = prism.logging.InvalidAdapterType(None)
             event_list = fire_console_event(self.args, e, event_list, 0)
             event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
-        elif profile_type not in prism.constants.VALID_CONNECTIONS:
-            e = prism.logging.InvalidProfileType(profile_type)
+        elif adapter_type not in prism.constants.VALID_ADAPTERS:
+            e = prism.logging.InvalidAdapterType(prism.constants.VALID_ADAPTERS, adapter_type)
             event_list = fire_console_event(self.args, e, event_list, 0)
             event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         # Fire events
-        event_list = fire_console_event(prism.logging.SettingUpProfileEvent(), event_list)
+        event_list = fire_console_event(self.args, prism.logging.SettingUpProfileEvent(), event_list)
 
         # Create the profiles directory and profiles.yml file
         profiles_dir = project_dir if self.args.profiles_dir is None else self.args.profiles_dir
@@ -89,7 +89,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         event_manager_results = profile_connection_event_manager.manage_events_during_run(
             event_list=event_list,
             fire_exec_events=False,
-            profile_type=profile_type,
+            profile_type=adapter_type,
             profiles_filepath=profiles_filepath
         )
         success = event_manager_results.outputs

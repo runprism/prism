@@ -222,14 +222,16 @@ class InitErrorEvent(Event):
 
 
 @dataclass
-class InvalidProfileType(Event):
+class InvalidAdapterType(Event):
+    valid_adapters: List[str]
     type: Union[None, str]
 
     def message(self):
         if self.type is None:
             return f'{RED}Specify profile type with --type arg{RESET}'
         else:
-            return f'{RED}Invalid profile type; must be one of "snowflake", "pyspark", or "dbt"{RESET}'
+            valid_adapters_str = ','.join(f'`{a}`' for a in self.valid_adapters)
+            return f'{RED}Invalid adapter type; must be one of {valid_adapters_str}{RESET}'
 
 
 @dataclass

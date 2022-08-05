@@ -106,7 +106,7 @@ class ConnectMixin():
         
         # Profile type must be a valid adapter or cluster
         profile_type = list(new_profile.keys())[0]
-        if profile_type not in prism.constants.VALID_CONNECTIONS:
+        if profile_type not in prism.constants.VALID_ADAPTERS:
             raise prism.exceptions.InvalidProfileException(message=f"invalid type `{profile_type}`")
         
         # Check if profile already exists in adapters or clusters
