@@ -141,30 +141,31 @@ def format_console_output(message, index, total, status, execution_time):
 ###################
 
 def set_up_logger(args: argparse.Namespace):
-    global DEFAULT_LOGGER
+    if globals().get('DEFAULT_LOGGER', None) is None:
+        global DEFAULT_LOGGER
 
-    DEFAULT_LOGGER = logging.getLogger('event_logger')
-    DEFAULT_LOGGER.setLevel(logging.INFO)
+        DEFAULT_LOGGER = logging.getLogger('event_logger')
+        DEFAULT_LOGGER.setLevel(logging.INFO)
 
-    # Stream handler
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter(fmt="%(message)s")
-    handler.setFormatter(console_formatter)
+        # Stream handler
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.INFO)
+        console_formatter = logging.Formatter(fmt="%(message)s")
+        handler.setFormatter(console_formatter)
 
-    # File handler -- remove ANSI codes
-    class FileHandlerFormatter(logging.Formatter):
-        def format(self,record):
-            return escape_ansi(record.msg)
+        # File handler -- remove ANSI codes
+        class FileHandlerFormatter(logging.Formatter):
+            def format(self,record):
+                return escape_ansi(record.msg)
 
-    if not args.quietly:
-        file_handler = logging.FileHandler('logs.log')
-        file_handler.setLevel(logging.INFO)
-        file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
-        file_handler.setFormatter(file_handler_formatter)
-        DEFAULT_LOGGER.addHandler(file_handler)
+        if not args.quietly:
+            file_handler = logging.FileHandler('logs.log')
+            file_handler.setLevel(logging.INFO)
+            file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
+            file_handler.setFormatter(file_handler_formatter)
+            DEFAULT_LOGGER.addHandler(file_handler)
 
-    DEFAULT_LOGGER.addHandler(handler)
+        DEFAULT_LOGGER.addHandler(handler)
 
 
 ###################
