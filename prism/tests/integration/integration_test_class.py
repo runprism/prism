@@ -240,5 +240,23 @@ class IntegrationTestCase(unittest.TestCase):
         self.assertTrue(isinstance(if_name_main_block, ast.If))
         return astor.to_source(if_name_main_block)
 
+    
+    def _remove_profile_yml(self, wkdir):
+        """
+        Remove the profile.yml file, if it exists
+        """
+        if Path(wkdir / 'profile.yml').is_file():
+            os.unlink(Path(wkdir / 'profile.yml'))
+    
+
+    def _profile_yml_as_dict(self, wkdir):
+        """
+        Open the profile.yml file as a dict
+        """
+        with open(Path(wkdir / 'profile.yml'), 'r') as f:
+            yml_dict = yaml.safe_load(f)
+        f.close()
+        return yml_dict
+
 
 # EOF
