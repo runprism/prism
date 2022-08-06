@@ -166,11 +166,8 @@ class PrismDAG(
         dag_executor = prism_executor.DagExecutor(compiled_dag, all_upstream, threads)
         pipeline = self.create_pipeline(prism_project, dag_executor, self.globals_namespace)
 
-        # Convert string paths to Pathlib objects
-        module_paths = [Path(p) for p in modules]
-
         # Create args and exec
-        args = RunArgs(module_paths, all_upstream, full_tb)
+        args = RunArgs(self.user_arg_modules, all_upstream, full_tb)
         output = pipeline.exec(args)
         if output.error_event is not None:
             event = output.error_event
