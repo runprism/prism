@@ -1,0 +1,346 @@
+"""
+Integration tests.
+
+Table of Contents:
+- Imports
+- Test case directory and paths
+- Test case class definition
+"""
+
+#############
+## Imports ##
+#############
+
+# Standard library imports
+import os
+from pathlib import Path
+import shutil
+import pandas as pd
+
+# Prism imports
+import prism.api
+import prism.tests.integration.test_connect as test_connect
+import prism.tests.integration.integration_test_class as integration_test_class
+import prism.exceptions
+
+
+###################################
+## Test case directory and paths ##
+###################################
+
+# Directory containing all prism_project.py test cases
+TEST_CASE_WKDIR = os.path.dirname(__file__)
+TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
+
+# Project directories
+P002_NO_PROJECT_PY = Path(TEST_PROJECTS / '002_no_project_py')
+P003_PROJECT_WITH_CYCLE = Path(TEST_PROJECTS / '003_project_with_cycle')
+P004_SIMPLE_PROJECT = Path(TEST_PROJECTS / '004_simple_project')
+P005_SIMPLE_PROJECT_NO_NULL = Path(TEST_PROJECTS / '005_simple_project_no_null')
+P006_SIMPLE_PROJECT_WITH_PROFILE = Path(TEST_PROJECTS / '006_simple_project_with_profile')
+P007_SPARK_PROJECT = Path(TEST_PROJECTS / '007_spark_project')
+P009_SIMPLE_DBT_PROJECT = Path(TEST_PROJECTS / '009_simple_dbt_project' / 'prism')
+
+
+###############
+## Constants ##
+###############
+
+expected_snowflake_dict = test_connect.expected_snowflake_dict
+expected_snowflake_pyspark_dict = test_connect.expected_snowflake_pyspark_dict
+
+
+################################
+## Test case class definition ##
+################################
+
+class TestAPI(integration_test_class.IntegrationTestCase): 
+
+    
+    def test_prism_dag_init(self):
+        """
+        Test initialization of PrismDAG object.
+        """
+        # Invalid project
+        with self.assertRaises(prism.exceptions.ProjectPyNotFoundException) as cm:
+            prism.api.PrismDAG(P002_NO_PROJECT_PY)
+        expected_msg = 'prism_project.py file not found in current directory or any of its parents'
+        self.assertEqual(expected_msg, str(cm.exception))
+        
+        # Valid projects
+        for proj in [P004_SIMPLE_PROJECT, P005_SIMPLE_PROJECT_NO_NULL, P006_SIMPLE_PROJECT_WITH_PROFILE, P007_SPARK_PROJECT]:
+            prism.api.PrismDAG(proj)
+
+    
+    def test_prism_dag_compile_cycle(self):
+        """
+        PrismDAG compile function in a project with a cycle
+        """
+        dag = prism.api.PrismDAG(P003_PROJECT_WITH_CYCLE)
+
+        # Remove .compiled dir in project, if it exists
+        if Path(P003_PROJECT_WITH_CYCLE / '.compiled').is_dir():
+            shutil.rmtree(Path(P003_PROJECT_WITH_CYCLE / '.compiled'))
+        
+        # Compile
+        with self.assertRaises(prism.exceptions.DAGException) as cm:
+            dag.compile()
+        expected_msg = "invalid DAG, cycle found in"
+        self.assertTrue(expected_msg in str(cm.exception))
+        self.assertTrue('module02.py' in str(cm.exception))
+        self.assertTrue('module03.py' in str(cm.exception))
+        
+        # Check that manifest is not formed
+        self.assertFalse(Path(P003_PROJECT_WITH_CYCLE / '.compiled' / 'manifest.yml').is_file())
+
+        # Set up directory for next test
+        self._set_up_wkdir()
+
+    
+    def test_prism_dag_compile(self):
+        """
+        PrismDAG compile function
+        """
+        dag = prism.api.PrismDAG(P004_SIMPLE_PROJECT)
+
+        # Remove .compiled dir in project, if it exists
+        if Path(P004_SIMPLE_PROJECT / '.compiled').is_dir():
+            shutil.rmtree(Path(P004_SIMPLE_PROJECT / '.compiled'))
+        
+        # Compile
+        compiled_dag = dag.compile()
+        
+        # Check that .compiled directory is formed
+        self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled').is_dir())
+        self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.yml').is_file())
+
+        # Check topological sort
+        topsort = compiled_dag.topological_sort
+        topsort_str = [str(t) for t in topsort]
+        self.assertEqual(['module03.py', 'module01.py', 'module02.py'], topsort_str)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(P004_SIMPLE_PROJECT)
+
+        # Set up directory for next test
+        self._set_up_wkdir()
+
+    
+    def test_prism_dag_connect(self):
+        """
+        PrismDAG connect function
+        """
+        dag = prism.api.PrismDAG(P006_SIMPLE_PROJECT_WITH_PROFILE)
+
+        # Remove profile.yml
+        self._remove_profile_yml(P006_SIMPLE_PROJECT_WITH_PROFILE)
+
+        # Connect to snowflake
+        dag.connect(connection_type='snowflake')
+        profile_yml = self._profile_yml_as_dict(P006_SIMPLE_PROJECT_WITH_PROFILE)
+        self.assertEqual(expected_snowflake_dict, profile_yml)
+
+        # Try connecting to Snowflake again, this should produce an error
+        with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
+            dag.connect(connection_type='snowflake')
+        expected_msg = 'profile of type `snowflake` already found in profile.yml'
+        self.assertEqual(expected_msg, str(cm.exception))
+
+        # Connect to PySpark
+        dag.connect(connection_type='pyspark')
+        profile_yml = self._profile_yml_as_dict(P006_SIMPLE_PROJECT_WITH_PROFILE)
+        self.assertEqual(expected_snowflake_pyspark_dict, profile_yml)
+
+        # Remove and reconnect to Snowflake (to avoid recomitting to Git)
+        self._remove_profile_yml(P006_SIMPLE_PROJECT_WITH_PROFILE)
+        dag.connect(connection_type='snowflake')
+
+        # Set up directory for next test
+        self._set_up_wkdir()
+
+    
+    def test_prism_dag_run(self):
+        """
+        PrismDAG run function
+        """
+        dag4 = prism.api.PrismDAG(P004_SIMPLE_PROJECT)
+        dag5 = prism.api.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
+        dag9 = prism.api.PrismDAG(P009_SIMPLE_DBT_PROJECT)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # Try running P004_SIMPLE_PROJECT. It should produce an error because it has a Null output.
+
+        self._remove_compiled_dir(P004_SIMPLE_PROJECT)
+        with self.assertRaises(prism.exceptions.RuntimeException) as cm:
+            dag4.run()
+        expected_msg = '`run` method must produce a non-null output'
+        self.assertEqual(expected_msg, str(cm.exception))
+
+        # Confirm creation of manifest
+        self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled').is_dir())
+        self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.yml').is_file())
+
+        # Cleanup
+        self._remove_compiled_dir(P004_SIMPLE_PROJECT)
+
+
+        # --------------------------------------------------------------------------------------------------------------
+        # Run P005_SIMPLE_PROJECT_NO_NULL (with and without the `modules` param defined)
+        
+        # Remove compiled directory and outputs, if they exist
+        self._remove_compiled_dir(P005_SIMPLE_PROJECT_NO_NULL)
+        self._remove_files_in_output(P005_SIMPLE_PROJECT_NO_NULL)
+        
+        # -------------------------------------------------------
+        # With `module` param
+        
+        dag5.run(modules=['module01.py'])
+
+        # Confirm creation of manifest
+        self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / '.compiled').is_dir())
+        self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / '.compiled' / 'manifest.yml').is_file())
+
+        # Confirm creation of outputs
+        self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt').is_file())
+        self.assertFalse(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module02.txt').is_file())
+
+        # Confirm contents of outputs
+        module01_txt = self._file_as_str(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt'))
+        expected_output = 'Hello from module 1!'
+        self.assertEqual(expected_output, module01_txt)
+
+        # -------------------------------------------------------
+        # Without `module` param
+
+        dag5.run()
+
+        # Confirm creation of outputs
+        self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt').is_file())
+        self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module02.txt').is_file())
+
+        # Confirm contents of outputs
+        module02_txt = self._file_as_str(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module02.txt'))
+        expected_output = 'Hello from module 1!\nHello from module 2!'
+        self.assertEqual(expected_output, module02_txt)
+
+        # Remove compiled directory and outputs, if they exist
+        self._remove_compiled_dir(P005_SIMPLE_PROJECT_NO_NULL)
+        
+
+        # --------------------------------------------------------------------------------------------------------------
+        # Run P009_SIMPLE_DBT_PROJECT to confirm that projects with profiles run as expected
+
+        # Remove compiled directory and outputs, if they exist
+        self._remove_compiled_dir(P009_SIMPLE_DBT_PROJECT)
+        self._remove_files_in_output(P009_SIMPLE_DBT_PROJECT)
+
+        dag9.run()
+
+        self.assertTrue(Path(P009_SIMPLE_DBT_PROJECT / '.compiled').is_dir())
+        self.assertTrue(Path(P009_SIMPLE_DBT_PROJECT / '.compiled' / 'manifest.yml').is_file())
+        
+        # Check contents of output
+        df = pd.read_csv(P009_SIMPLE_DBT_PROJECT / 'output' / 'jaffle_shop_customers.csv')
+        expected_columns = [
+            'CUSTOMER_ID',
+            'FIRST_NAME',
+            'LAST_NAME',
+            'FIRST_ORDER',
+            'MOST_RECENT_ORDER',
+            'NUMBER_OF_ORDERS',
+            'CUSTOMER_LIFETIME_VALUE'
+        ]
+        self.assertEqual(expected_columns, list(df.columns))
+        id_1_first_name = df.loc[df['CUSTOMER_ID']==1, 'FIRST_NAME'][0]
+        self.assertEqual('Michael', id_1_first_name)
+
+        # Remove the 'target' -- it contains dbt artifacts
+        if Path(P009_SIMPLE_DBT_PROJECT / 'target').is_dir():
+            shutil.rmtree(Path(P009_SIMPLE_DBT_PROJECT / 'target'))
+
+        # Remove compiled folder
+        self._remove_compiled_dir(P009_SIMPLE_DBT_PROJECT)
+
+        # Set up directory for next test
+        self._set_up_wkdir()
+
+
+    def test_get_task_output(self):
+        """
+        Test task output retrieval
+        """
+
+        # Use P005_SIMPLE_PROJECT_NO_NULL for testing
+        dag5 = prism.api.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
+
+        # Get output of a task without a target (without running pipeline). This should result in an error.
+        with self.assertRaises(prism.exceptions.RuntimeException) as cm:
+            dag5.get_task_output('module03.py')
+        expected_msg_components = ['cannot access the output of', 'either explicitly running task or setting a target']
+        for comp in expected_msg_components:
+            self.assertTrue(comp in str(cm.exception))
+        
+        # Get output of a task with a target (without running pipeline)
+        module01_output = dag5.get_task_output('module01.py')
+        expected_output = str(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt'))
+        self.assertEqual(module01_output, expected_output)
+
+        # Get output of a task without a target (after running pipeline)
+        dag5.run()
+        output = dag5.get_task_output('module03.py')
+        expected_output = 'Hello from module 1!\nHello from module 2!\nHello from module 3!'
+        self.assertEqual(expected_output, output)
+
+        # Remove compiled directory and outputs, if they exist
+        self._remove_compiled_dir(P005_SIMPLE_PROJECT_NO_NULL)
+
+        # Set up directory for next test
+        self._set_up_wkdir()
+    
+
+    def test_get_pipeline_output(self):
+        """
+        Test pipeline output retrieval
+        """
+
+        # Use P005_SIMPLE_PROJECT_NO_NULL for testing
+        dag5 = prism.api.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
+
+        # Get output of a pipeline without running the pipeline. Since the last task does not have a target, this should
+        # result in an error.
+        with self.assertRaises(prism.exceptions.RuntimeException) as cm:
+            dag5.get_pipeline_output()
+        expected_msg_components = ['cannot access the output of', 'either explicitly running task or setting a target']
+        for comp in expected_msg_components:
+            self.assertTrue(comp in str(cm.exception))
+        
+        # Get output of a task with a target (without running pipeline)
+        dag5.run()
+        output = dag5.get_pipeline_output()
+        expected_output = 'Hello from module 1!\nHello from module 2!\nHello from module 3!\nHello from module 4!'
+        self.assertEqual(expected_output, output)
+
+        # Remove compiled directory and outputs, if they exist
+        self._remove_compiled_dir(P005_SIMPLE_PROJECT_NO_NULL)
+
+        # Set up directory for next test
+        self._set_up_wkdir()
+
+
+# EOF
+
+
+        
+
+
+        
+
+        
+
+
+
+        
+        
+
+
+# EOF

@@ -18,10 +18,10 @@ from typing import Any, Dict
 from prism.infra import project as prism_project
 from prism.infra import executor as prism_executor
 from prism.infra import psm
-from prism.infra import sys_handler
 import prism.constants
 import prism.exceptions
 import prism.logging
+from prism.mixins import sys_handler
 
 
 ######################
@@ -29,7 +29,7 @@ import prism.logging
 ######################
 
 
-class PrismPipeline:
+class PrismPipeline(sys_handler.SysHandlerMixin):
     """
     Class for managing prism project components and scope
     """
@@ -69,8 +69,7 @@ class PrismPipeline:
         self.pipeline_globals['psm'] = psm_obj
         
         # Create sys handler
-        self.sys_handler_obj = sys_handler.SysHandler(self.project)
-        self.pipeline_globals = self.sys_handler_obj.add_sys_path(self.pipeline_globals)
+        self.pipeline_globals = self.add_sys_path(self.project.project_dir, self.pipeline_globals)
 
         # Set the globals for the executor
         self.dag_executor.set_executor_globals(self.pipeline_globals)
@@ -78,8 +77,8 @@ class PrismPipeline:
 
     def exec(self, args: argparse.Namespace):
         executor_output = self.dag_executor.exec(args)
-        self.pipeline_globals = self.sys_handler_obj.remove_sys_path(self.pipeline_globals)
-        self.pipeline_globals = self.sys_handler_obj.remove_project_modules(self.pipeline_globals)
+        self.pipeline_globals = self.remove_sys_path(self.project.project_dir, self.pipeline_globals)
+        self.pipeline_globals = self.remove_project_modules(self.project.project_dir, self.pipeline_globals)
         return executor_output
 
 
