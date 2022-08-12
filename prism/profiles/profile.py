@@ -20,7 +20,7 @@ from .adapter import Adapter
 import prism.exceptions
 import prism.constants
 import prism.logging
-from prism.profiles import meta, adapter, pyspark, snowflake, bigquery, dbt
+from prism.profiles import meta, adapter, pyspark, snowflake, bigquery, dbt, redshift
 
 
 ######################

@@ -19,7 +19,7 @@ from .adapter import Adapter
 import prism.exceptions
 
 # From https://docs.aws.amazon.com/redshift/latest/mgmt/python-configuration-options.html
-ACCEPTABLE_ADAPTER_KEYS = {
+REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS = {
     'access_key_id': str,
     'allow_db_user_override': bool,
     'app_name': str,
@@ -68,6 +68,9 @@ ACCEPTABLE_ADAPTER_KEYS = {
     'web_identity_token': str
 }
 
+ADDITIONAL_CONFIGS = {
+    'autocommit': bool
+}
 
 ######################
 ## Class definition ##
@@ -90,10 +93,15 @@ class Redshift(Adapter):
         # Raise an error if config dictionary contains keys not in ACCEPTABLE_ADAPTER_KEYS or if the value
         # is not the correct type
         for k,v in config_dict.items():
-            if k not in list(ACCEPTABLE_ADAPTER_KEYS.keys()):
+            if k not in list(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS.keys()) and k not in list(ADDITIONAL_CONFIGS.keys()):
                 raise prism.exceptions.InvalidProfileException(message=f'invalid var `{k}` under redshift config in profile.yml')
-            if not isinstance(v, ACCEPTABLE_ADAPTER_KEYS[k]):
-                raise prism.exceptions.InvalidProfileException(message=f'var `{k}` is an invalid type, must be {str(ACCEPTABLE_ADAPTER_KEYS[k])}')
+            
+            if k in list(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS.keys()):
+                if not isinstance(v, REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS[k]):
+                    raise prism.exceptions.InvalidProfileException(message=f'var `{k}` is an invalid type, must be {str(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS[k])}')
+            elif k in list(ADDITIONAL_CONFIGS.keys()):
+                if not isinstance(v, ADDITIONAL_CONFIGS[k]):
+                    raise prism.exceptions.InvalidProfileException(message=f'var `{k}` is an invalid type, must be {str(ADDITIONAL_CONFIGS[k])}')
 
         # If no exception has been raised, return True
         return True
@@ -117,23 +125,41 @@ class Redshift(Adapter):
 
         # Connection. Define the connection code as a string so that we can parse the YAML dict and create the
         # configuration programatically.
-        connection = ',\n'.join([f"{k}={adapter_dict[k]}"])
+        connection_code_list = []
+        for k,v in adapter_dict.items():
+            if k in list(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS.keys()):
+                if isinstance(v, str):
+                    connection_code_list.append(f"{k}='{adapter_dict[k]}'")
+                else:
+                    connection_code_list.append(f"{k}={adapter_dict[k]}")
+        connection = ',\n'.join(connection_code_list)
         ctx_str_list = [
             'import redshift_connector',
             f'ctx = redshift_connector.connect({connection})'
         ]
+        exec('\n'.join(ctx_str_list))
+        
+        # Create cursor object
+        cursor = locals()['ctx'].cursor()
+        
+        # Autocommit. If no autocommit is specified, then set to True
+        try:
+            autocommit_config = adapter_dict['autocommit']
+            cursor.autocommit = autocommit_config
+        except KeyError:
+            cursor.autocommit = True
+        return cursor
 
-        #TODO: implement engine
 
-
-
-    def execute_sql(self, query: str) -> pd.DataFrame:
+    def execute_sql(self, query: str, return_type: str) -> pd.DataFrame:
         """
         Execute the SQL query
         """
-        # The Snowflake connection object behaves like a SQL alchemy engine. Therefore, we can use pd.read_sql(...)
-        df =  pd.read_sql(query, self.engine)
-        return df
+        # The engine is the Redshift cursor
+        self.engine.execute(query)
+        if return_type=="pandas":
+            df: pd.DataFrame = self.engine.fetch_dataframe()
+            return df
 
 
 # EOF
