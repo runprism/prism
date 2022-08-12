@@ -157,6 +157,7 @@ class Redshift(Adapter):
         """
         # The engine is the Redshift cursor
         self.engine.execute(query)
+        self.engine.close()
         if return_type=="pandas":
             df: pd.DataFrame = self.engine.fetch_dataframe()
             return df
