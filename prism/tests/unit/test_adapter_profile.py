@@ -295,5 +295,8 @@ class TestProfile(unittest.TestCase):
         profile = pr.Profile(profile_yml_tests, "profile_empty", env="local")
         self.assertFalse(profile.bool_all_profiles_exist)
 
+    
+    #TODO: test the BigQuery and Redshift adapters
+
 
 # EOF
