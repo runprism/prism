@@ -163,19 +163,6 @@ class ConsoleEventException(PrismException):
     def __str__(self):
         return self.message
 
-    
-class InvalidProfileException(PrismException):
-    """
-    Exception raised during command runtime.
-    """
-
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
-
-    def __str__(self):
-        return self.message
-
 
 class ParserException(PrismException):
     """
