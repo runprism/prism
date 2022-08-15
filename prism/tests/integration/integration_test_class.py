@@ -57,11 +57,7 @@ class IntegrationTestCase(unittest.TestCase):
             os.unlink(Path.cwd() / 'logs.log')
         
         os.chdir(TEST_PROJECTS)
-
-        # Remove logs.log from parent dir (if it exists)
-        if Path(TEST_PROJECTS.parent / 'logs.log').is_file():
-            os.unlink(TEST_PROJECTS.parent / 'logs.log')
-
+        
 
     def _is_valid_project(self, path):
         """
