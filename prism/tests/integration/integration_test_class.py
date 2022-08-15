@@ -179,7 +179,7 @@ class IntegrationTestCase(unittest.TestCase):
         Remove file outputs from `output` folder of project
         """
         for file in Path(wkdir / 'output').iterdir():
-            if Path(wkdir / 'output' / file).is_file():
+            if Path(wkdir / 'output' / file).is_file() and file.name!=".exists":
                 os.unlink(file)
     
 
