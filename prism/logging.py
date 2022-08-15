@@ -140,6 +140,8 @@ def format_console_output(message, index, total, status, execution_time):
 ## Create logger ##
 ###################
 
+DEFAULT_LOGGER: logging.Logger
+
 def set_up_logger(args: argparse.Namespace):
     if globals().get('DEFAULT_LOGGER', None) is None:
         global DEFAULT_LOGGER
@@ -229,7 +231,7 @@ class InitErrorEvent(Event):
 @dataclass
 class InvalidAdapterType(Event):
     valid_adapters: List[str]
-    type: Union[None, str]
+    type: Optional[str] = None
 
     def message(self):
         if self.type is None:
@@ -452,7 +454,7 @@ class PrismExceptionErrorEvent(Event):
 def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] = [], sleep=0.01):
     msg = Event.message()
     if not args.quietly:
-        DEFAULT_LOGGER.info(msg)
+        DEFAULT_LOGGER.info(msg) # type: ignore
         time.sleep(sleep)
 
     # Return event list
@@ -464,7 +466,7 @@ def fire_empty_line_event(args: argparse.Namespace, event_list: List[Event] = []
     e = EmptyLineEvent()
     msg = e.message()
     if not args.quietly:
-        DEFAULT_LOGGER.info(msg)
+        DEFAULT_LOGGER.info(msg) # type: ignore
 
     # Return event list
     event_list.append(e)

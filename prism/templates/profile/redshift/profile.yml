@@ -1,0 +1,12 @@
+profile_name:
+  adapters:
+    redshift:
+      autocommit: True
+      host:
+      port:
+      database:
+      user:
+      password:
+
+
+# EOF

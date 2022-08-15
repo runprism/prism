@@ -24,8 +24,8 @@ IGNORE_FILES = ["__init__.py", "__pycache__", '*checkpoint.ipynb', '.ipynb_check
 
 # Profile/adapter constants
 VALID_PROFILE_KEYS = ["adapters"]
-VALID_ADAPTERS = [ "snowflake", "pyspark", "dbt", "bigquery"]
-VALID_SQL_ADAPTERS = [ "snowflake", "bigquery"]
+VALID_ADAPTERS = [ "snowflake", "pyspark", "dbt", "bigquery", "redshift"]
+VALID_SQL_ADAPTERS = [ "snowflake", "bigquery", "redshift"]
 VALID_CONNECTIONS = VALID_ADAPTERS
 
 # UI

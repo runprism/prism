@@ -180,10 +180,6 @@ class DagExecutor:
                 - Once task has been added to queue, remove it from queue
         """
 
-        # Create pool
-        pool = Pool(processes=self.threads)
-        async_results = {}
-
         # Keep track of events
         self.event_list: List[Event] = []
         
@@ -220,39 +216,41 @@ class DagExecutor:
 
         # If the pool has multiple threads, then iterate through modules and add them to the Pool
         else:
-            while self.dag_module_objects!=[]:
-                
-                # Get first module to execute
-                curr = self.dag_module_objects[0]
-                refs = self.check_task_refs(curr)
-
-                # If an error occurred, skip all remaining tasks
-                if self._wait_and_return:
-                    break # type: ignore
-                
-                else:
-
-                    # If no refs, then add module to pool
-                    if len(refs)==0:                
-                        res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
-                        async_results[curr.name] = res
-                        self.dag_module_objects.pop(0)
+            async_results = {}
+            with Pool(processes=self.threads) as pool:
+                while self.dag_module_objects!=[]:
                     
-                    # Since DAG is run in order, refs should have been added to pool
-                    # before current task. Wait for upstream tasks
+                    # Get first module to execute
+                    curr = self.dag_module_objects[0]
+                    refs = self.check_task_refs(curr)
+
+                    # If an error occurred, skip all remaining tasks
+                    if self._wait_and_return:
+                        break # type: ignore
+                    
                     else:
-                        for ref in refs:
-                            async_results[ref].wait()
-                        
-                        # If an error occurred, skip all remaining tasks
-                        if self._wait_and_return:
-                            break # type: ignore
-                        else:
+
+                        # If no refs, then add module to pool
+                        if len(refs)==0:                
                             res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
                             async_results[curr.name] = res
                             self.dag_module_objects.pop(0)
-            pool.close()
-            pool.join()
+                        
+                        # Since DAG is run in order, refs should have been added to pool
+                        # before current task. Wait for upstream tasks
+                        else:
+                            for ref in refs:
+                                async_results[ref].wait()
+                            
+                            # If an error occurred, skip all remaining tasks
+                            if self._wait_and_return:
+                                break # type: ignore
+                            else:
+                                res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
+                                async_results[curr.name] = res
+                                self.dag_module_objects.pop(0)
+                pool.close()
+                pool.join()
 
             # If error was found, then terminate pool
             if self._wait_and_return:

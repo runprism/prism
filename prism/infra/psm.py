@@ -42,8 +42,9 @@ class PrismFunctions:
 
     def sql(self,
         adapter: str,
-        query: str
-    ) -> pd.DataFrame:
+        query: str,
+        return_type: str = "pandas"
+    ) -> Any:
         """
         Execute SQL query using adapter
 
@@ -61,8 +62,9 @@ class PrismFunctions:
             raise prism.exceptions.RuntimeException(message=f'adapter `{adapter}` not defined')
         if not hasattr(adapter_obj, "execute_sql"):
             raise prism.exceptions.RuntimeException(message=f'class for adapter `{adapter}` does not have `execute_sql` method')
-        df = adapter_obj.execute_sql(query)
-        return df
+        df = adapter_obj.execute_sql(query, return_type)
+        if return_type=="pandas":
+            return df
 
     
     def dbt_ref(self, 

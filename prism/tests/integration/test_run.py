@@ -529,45 +529,5 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
-    
-    def test_quietly(self):
-        """
-        `prism run` does not produce logs.log when --quietly is invoked
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '012_concurrency'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        if Path(wkdir / '.compiled').is_dir():
-            shutil.rmtree(Path(wkdir / '.compiled'))
-        self.maxDiff = None
-
-        # First, test verbose running. logs.log should be produced
-        args = ['run']
-        self._run_prism(args)
-        self.assertTrue(Path(wkdir / 'logs.log').is_file())
-
-        # Remove the logs
-        os.unlink(wkdir / 'logs.log')
-
-        # Now, try running quietly
-        args = ['run', '--quietly']
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-        self._run_prism(args)
-        self.assertFalse(Path(wkdir / 'logs.log').is_file())
-
-        # Remove compiled directory
-        self._remove_compiled_dir(wkdir)
-
-        # Remove stuff in output to avoid recommitting to github
-        self._remove_files_in_output(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
 
 # EOF
