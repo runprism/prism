@@ -15,6 +15,7 @@ Table of Contents:
 #############
 
 # Standard library imports
+import argparse
 import jinja2
 import os
 from pathlib import Path
@@ -50,15 +51,6 @@ ALL_TEST_CASE_YML_FILES = [
     PARENT_DIR,
     WKDIR
 ]
-
-
-#########################################################
-## Instances of compile and run task to call functions ##
-#########################################################
-
-# Set args = None
-compile_task = compile.CompileTask(args=None)
-run_task = run.RunTask(args=None)
 
 
 ################################
