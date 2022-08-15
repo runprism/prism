@@ -229,7 +229,7 @@ class InitErrorEvent(Event):
 @dataclass
 class InvalidAdapterType(Event):
     valid_adapters: List[str]
-    type: Union[None, str]
+    type: Optional[str] = None
 
     def message(self):
         if self.type is None:

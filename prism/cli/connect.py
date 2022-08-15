@@ -61,7 +61,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # Define profile type
         adapter_type = self.args.type
         if adapter_type is None:
-            e = prism.logging.InvalidAdapterType(None)
+            e = prism.logging.InvalidAdapterType(prism.constants.VALID_ADAPTERS)
             event_list = fire_console_event(self.args, e, event_list, 0)
             event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)

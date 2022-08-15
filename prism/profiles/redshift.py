@@ -80,7 +80,7 @@ class Redshift(Adapter):
 
 
     def is_valid_config(self,
-        config_dict: Dict[str, str]
+        config_dict: Dict[str, Any]
     ) -> bool:
         """
         Check that config dictionary for Redshift adapter only contains valid keys
@@ -96,9 +96,12 @@ class Redshift(Adapter):
             if k not in list(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS.keys()) and k not in list(ADDITIONAL_CONFIGS.keys()):
                 raise prism.exceptions.InvalidProfileException(message=f'invalid var `{k}` under redshift config in profile.yml')
             
+            # Check type of Redshift configuration options
             if k in list(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS.keys()):
                 if not isinstance(v, REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS[k]):
                     raise prism.exceptions.InvalidProfileException(message=f'var `{k}` is an invalid type, must be {str(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS[k])}')
+            
+            # Check type of any additional configs passed
             elif k in list(ADDITIONAL_CONFIGS.keys()):
                 if not isinstance(v, ADDITIONAL_CONFIGS[k]):
                     raise prism.exceptions.InvalidProfileException(message=f'var `{k}` is an invalid type, must be {str(ADDITIONAL_CONFIGS[k])}')

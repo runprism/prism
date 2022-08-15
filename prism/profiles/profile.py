@@ -11,6 +11,7 @@ Table of Contents
 #############
 
 # Standard library imports
+import argparse
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -29,7 +30,7 @@ from prism.profiles import meta, adapter, pyspark, snowflake, bigquery, dbt, red
 
 
 @dataclass
-class DummyArg:
+class DummyArg(argparse.Namespace):
     """
     `fire_console_event` needs to know whether the user wants to suppress logging. The only events fired here are
     warning events, which we will fire anyway.
