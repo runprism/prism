@@ -20,6 +20,7 @@ import os
 import sys
 import pandas as pd
 import numpy as np
+import logging
 
 
 ################
@@ -38,6 +39,15 @@ threads = 1
 # If connecting to a data warehouse (e.g., Snowflake), specify the profile you
 # want to use. Profiles can be created with the prism connect command.
 profile = None
+
+
+##########
+# Logger #
+##########
+
+# The logger used to record events is called PRISM_LOGGER. Use this logger
+# for your project
+PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
 ####################################

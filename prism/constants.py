@@ -20,7 +20,7 @@ VERSION = '0.1.3-alpha'
 ROOT_DIR =  str(Path(os.path.dirname(__file__)).parent)
 
 # Files to ignore when instantiating Prism project
-IGNORE_FILES = ["__init__.py", "__pycache__", '*checkpoint.ipynb', '.ipynb_checkpoints', '.exists']
+IGNORE_FILES = ["__init__.py", "__pycache__", '*checkpoint.ipynb', '.ipynb_checkpoints']
 
 # Profile/adapter constants
 VALID_PROFILE_KEYS = ["adapters"]
