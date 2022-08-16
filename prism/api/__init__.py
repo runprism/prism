@@ -16,7 +16,7 @@ Table of Contents
 from dataclasses import dataclass
 import os
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Prism-specific imports
 import prism.constants
@@ -47,7 +47,7 @@ class RunArgs:
     module_paths: List[Path]
     all_upstream: bool
     full_tb: bool
-    quietly: bool = True
+    quietly: bool
 
         
 class PrismDAG(
@@ -150,7 +150,9 @@ class PrismDAG(
     def run(self,
         modules: Optional[List[str]] = None,
         all_upstream: bool = True,
-        full_tb: bool = True
+        full_tb: bool = True,
+        quietly: bool = True,
+        config_dict: Optional[Dict[str, Any]] = None
     ):
         """
         Run the Prism project
@@ -166,8 +168,12 @@ class PrismDAG(
         dag_executor = prism_executor.DagExecutor(compiled_dag, all_upstream, threads)
         pipeline = self.create_pipeline(prism_project, dag_executor, self.globals_namespace)
 
+        # If config dictionary is specified, then update the prism_project globals
+        if config_dict is not None:
+            prism_project.adjust_prism_py_with_config(config_dict)
+
         # Create args and exec
-        args = RunArgs(self.user_arg_modules, all_upstream, full_tb)
+        args = RunArgs(self.user_arg_modules, all_upstream, full_tb, quietly)
         output = pipeline.exec(args)
         if output.error_event is not None:
             event = output.error_event
@@ -178,6 +184,7 @@ class PrismDAG(
                 # All other exceptions
                 exception = event.value
             raise exception
+    
 
     
     def _get_task_cls_from_namespace(self, module_path: Path):

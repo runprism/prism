@@ -49,6 +49,9 @@ class PrismProject:
         self.filename = filename
         self.prism_project_py_str = self.load_prism_project_py(self.project_dir, self.filename)
 
+        # Keep track of any adjustments made via configurations
+        self.prism_project_py_str_adjusted = None
+
     
     def setup(self):
         """
@@ -95,7 +98,33 @@ class PrismProject:
         f.close()
         return prism_project_py
 
-    
+
+    def adjust_prism_py_with_config(self,
+        config_dict: Dict[str, Any]
+    ):
+        """
+        Overwrite any variables in prism_project.py with those in config_dict.
+        This provides compatibility with Airflow.
+
+        args:
+            config_dict: configuration dictionary with var --> value mappings
+            globals_dict: namespace dictionary
+        returns:
+            None
+        """
+        self.prism_project_py_str_adjusted = self.prism_project_py_str + '\n'
+        for k,v in config_dict.items():
+            if isinstance(v, str):
+                self.prism_project_py_str_adjusted += f"{k} = '{v}'"
+            else:
+                self.prism_project_py_str_adjusted += f"{k} = '{v}'"
+        
+        # Re-write the prism_project.py file -- we undo this later
+        with open(Path(self.project_dir / 'prism_project.py'), 'w') as f:
+            f.write(self.prism_project_py_str_adjusted)
+        f.close()
+
+
     def num_var_assignments_in_file(self,
         python_file: str,
         var: str
@@ -246,7 +275,15 @@ class PrismProject:
     ) -> None:
         # This object is only instantiated within a project directory
         globals_dict['__file__'] = 'prism_project.py'
-        exec(self.prism_project_py_str, globals_dict)
+        if self.prism_project_py_str_adjusted is not None:
+            exec(self.prism_project_py_str_adjusted, globals_dict)
+
+            # Revert prism_project.py back
+            # with open(Path(self.project_dir / self.filename), 'w') as f:
+            #     f.write(self.prism_project_py_str)
+            # f.close()
+        else:
+            exec(self.prism_project_py_str, globals_dict)
 
 
 # EOF
