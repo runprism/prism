@@ -146,7 +146,7 @@ def set_up_logger(args: argparse.Namespace):
     if globals().get('DEFAULT_LOGGER', None) is None:
         global DEFAULT_LOGGER
 
-        DEFAULT_LOGGER = logging.getLogger('event_logger')
+        DEFAULT_LOGGER = logging.getLogger('PRISM_LOGGER')
         DEFAULT_LOGGER.setLevel(logging.INFO)
 
         # Stream handler
