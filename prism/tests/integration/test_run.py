@@ -13,15 +13,11 @@ Table of Contents:
 #############
 
 # Standard library imports
-import io
-import boto3
 import pandas as pd
 import os
 from pathlib import Path
-import re
 import shutil
-import unittest
-import yaml
+import math
 
 # Prism imports
 import prism.cli.base
@@ -512,13 +508,13 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Module 1 and 2 should start at the same time
         module2_start_time = int(module2_times['start_time'][0])
         module1_start_time = int(module1_times['start_time'][0])
-        self.assertEqual(module2_start_time, module1_start_time)
+        self.assertTrue(abs(module2_start_time - module1_start_time)<=1)
 
         # Module 2 should finish before module 1
         module2_end_time = int(module2_times['end_time'][0])
         module1_end_time = int(module1_times['end_time'][0])
         self.assertTrue(module2_end_time<module1_end_time)
-        self.assertEqual(10, module1_end_time-module2_end_time)
+        self.assertTrue(abs(10-(module1_end_time-module2_end_time))<=1)
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
