@@ -50,7 +50,7 @@ class PrismProject:
         self.prism_project_py_str = self.load_prism_project_py(self.project_dir, self.filename)
 
         # Keep track of any adjustments made via configurations
-        self.prism_project_py_str_adjusted = None
+        self.prism_project_py_str_adjusted: Optional[str] = None
 
     
     def setup(self):
