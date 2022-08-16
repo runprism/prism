@@ -24,7 +24,7 @@ Here are some of Prism's main features:
 - **Modules as tasks**: Unlike other orchestration platforms, Prism allows tasks to live within their own modules. This not only helps with readability and QC, but also enables users to build powerful, complex pipelines that scale alongside their project.
 - **Real-time dependency declaration**: With Prism, analysts can declare dependencies using a simple function call. No need to explicitly keep track of the pipeline order — at runtime, Prism automatically parses the function calls and builds the dependency graph.
 - **Flexible CLI**: Analysts can instantiate, compile, and run projects using a simple command-line interface.
-- **Integrations**: Prism integrates with several tools that are popular in the data community, including dbt, Snowflake, PySpark and Google BigQuery. We're adding more integrations every day, so let us know what you'd like to see!
+- **Integrations**: Prism integrates with several tools that are popular in the data community, including Snowflake, Google BigQuery, Redshift, PySpark, and dbt. We're adding more integrations every day, so let us know what you'd like to see!
 
 ## Getting Started
 
@@ -33,6 +33,16 @@ Prism can be installed via ```pip```. Prism requires Python >= 3.7.
 ```
 pip install --upgrade pip
 pip install prism-ds
+```
+
+Prism also supports a variety of adapters, including Snowflake, Google BigQuery, Google BigQuery, PySpark, and dbt. These can be installed via ```pip```:
+```
+pip install --upgrade pip
+pip install "prism-ds[snowflake]"
+pip install "prism-ds[bigquery]"
+pip install "prism-ds[redshift]"
+pip install "prism-ds[pyspark]"
+pip install "prism-ds[dbt]"
 ```
 
 To get started with Prism projects, check out our [documentation](https://docs.runprism.com). Some sections of interest include:
@@ -49,9 +59,8 @@ In addition, check out some [example projects](https://github.com/runprism/prism
 
 We're always looking to improve our product. Here's what we're working on at the moment:
 
-- **DAG visualizer**: a clean UI for visualizing the data flow between tasks
-- **Python API**: an API that packages projects into a single class that can be called in other programs
-- **Additional adapters**: Postgres, Redshift, and more!
-- **Cloud deployment**: deploying projects on Amazon EMR clusters, Docker containers, Databricks clusters, and more!
+- **DAG visualizer**: a clean UI for visualizing the data flow within and between tasks
+- **Additional adapters**: MySQL, Postgres, Redis, Slack, and more!
+- **Cloud deployment**: deploying and managing projects on Amazon EMR clusters, Docker containers, Databricks clusters, and more!
 
 Let us know if you'd like to see another feature!
