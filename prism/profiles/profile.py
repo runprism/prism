@@ -11,6 +11,8 @@ Table of Contents
 #############
 
 # Standard library imports
+import argparse
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 # Prism-specific imports
@@ -19,12 +21,22 @@ from .adapter import Adapter
 import prism.exceptions
 import prism.constants
 import prism.logging
-from prism.profiles import meta, adapter, pyspark, snowflake, bigquery, dbt
+from prism.profiles import meta, adapter, pyspark, snowflake, bigquery, dbt, redshift
 
 
 ######################
 ## Class definition ##
 ######################
+
+
+@dataclass
+class DummyArg(argparse.Namespace):
+    """
+    `fire_console_event` needs to know whether the user wants to suppress logging. The only events fired here are
+    warning events, which we will fire anyway.
+    """
+
+    quietly: bool = False
 
 
 class Profile:    
@@ -155,13 +167,13 @@ class Profile:
 
         # Handle cases where the profile.yml is non-empty
         else:
-
+            
             # If missing profile name, then the named profile will, by definition, be {}. Throw a warning and return 
             # False
             if flag_missing_profile_name:
                 if fire_warnings:
                     e1 = prism.logging.ProfileNameDoesNotExistYamlExists()
-                    prism.logging.fire_console_event(e1, [], 0)
+                    prism.logging.fire_console_event(DummyArg(), e1, [], 0)
                 return False
             
             # If the profile name is not missing, check if the named profile is empty. If it is, then raise a warning
@@ -170,7 +182,7 @@ class Profile:
                 if flag_missing_named_profile:
                     if fire_warnings:
                         e2 = prism.logging.ProfileNameExistsYamlDoesNotExist()
-                        prism.logging.fire_console_event(e2, [], 0)
+                        prism.logging.fire_console_event(DummyArg(), e2, [], 0)
                     return False
         
         # Nothing has been returned, return True

@@ -26,7 +26,8 @@ import prism.exceptions
 import prism.constants
 import prism.logging
 from prism.logging import Event, fire_console_event, fire_empty_line_event
-from prism.templates.starter_project import STARTER_PROJECT_TEMPLATE_DIR as starter_project_template_dir
+from prism.templates.starter_project import STARTER_PROJECT_TEMPLATE_DIR
+from prism.templates.minimal_project import MINIMAL_PROJECT_TEMPLATE_DIR
 
 
 ###############
@@ -56,13 +57,9 @@ class InitTask(prism.cli.base.BaseTask):
     Class for initializing a prism project
     """
 
-    def __init__(self,
-        args: argparse.Namespace
-    ):
-        self.args = args
-
 
     def create_starter_project_from_template(self,
+        template_dir: str,
         project_dir: Path,
         project_name: str
     ):
@@ -77,7 +74,7 @@ class InitTask(prism.cli.base.BaseTask):
 
         # Copy the starter project template into the project directory
         shutil.copytree(
-            starter_project_template_dir, 
+            template_dir, 
             project_dir, 
             ignore=shutil.ignore_patterns(*prism.constants.IGNORE_FILES)
         )
@@ -118,36 +115,42 @@ class InitTask(prism.cli.base.BaseTask):
 
         # For the MVP, we assume that the user wants to create a project within the current working diretory. Get
         # project_name from the args.
-        event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
-        event_list = fire_console_event(prism.logging.TaskRunEvent(prism.constants.VERSION), event_list)
-        event_list = fire_empty_line_event(event_list)
+        event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+        event_list = fire_console_event(self.args, prism.logging.TaskRunEvent(prism.constants.VERSION), event_list)
+        event_list = fire_empty_line_event(self.args, event_list)
 
         project_name = self.args.project_name
 
         # If the project name wasn't provided by the user, prompt them 
         if project_name is None:
             project_name = click.prompt("What is the desired project name?")
-            event_list = fire_empty_line_event(event_list)
+            event_list = fire_empty_line_event(self.args, event_list)
 
         # If the project_name already exists witin the working directory, throw an error
         wkdir = Path.cwd()
         project_dir = wkdir / project_name
         if project_dir.is_dir():
             e = prism.logging.ProjectAlreadyExistsEvent(str(project_dir))
-            event_list = fire_console_event(e, event_list, 0)
-            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(self.args, e, event_list, 0)
+            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
-            
+        
+        # Define template to copy
+        if self.args.minimal:
+            template_dir = MINIMAL_PROJECT_TEMPLATE_DIR
+        else:
+            template_dir = STARTER_PROJECT_TEMPLATE_DIR
+
         # Copy starter project into project directory
-        event_list = fire_console_event(prism.logging.CreatingProjectDirEvent(), event_list)
-        self.create_starter_project_from_template(project_dir, project_name)
+        event_list = fire_console_event(self.args, prism.logging.CreatingProjectDirEvent(), event_list)
+        self.create_starter_project_from_template(template_dir, project_dir, project_name)
         
         # Init task successful
-        event_list = fire_empty_line_event(event_list)
-        event_list = fire_console_event(prism.logging.InitSuccessfulEvent(
+        event_list = fire_empty_line_event(self.args, event_list)
+        event_list = fire_console_event(self.args, prism.logging.InitSuccessfulEvent(
             msg = TASK_COMPLETE_MSG.format(project_name = project_name, docs_url = 'docs.runprism.com')
         ), event_list, 0)
-        event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
+        event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
 
         # Change working directory to the project directory
         os.chdir(project_dir)

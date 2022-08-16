@@ -94,13 +94,14 @@ class BigQuery(Adapter):
         return ctx
 
 
-    def execute_sql(self, query: str) -> pd.DataFrame:
+    def execute_sql(self, query: str, return_type: str) -> pd.DataFrame:
         """
         Execute the SQL query
         """
         # The Snowflake connection object behaves like a SQL alchemy engine. Therefore, we can use pd.read_sql(...)
         df =  self.engine.query(query).to_dataframe()
-        return df
+        if return_type=="pandas":
+            return df
 
 
 # EOF

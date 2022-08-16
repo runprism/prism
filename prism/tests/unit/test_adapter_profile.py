@@ -13,6 +13,7 @@ Table of Contents:
 #############
 
 # Standard library imports
+import argparse
 import jinja2
 import os
 from pathlib import Path
@@ -29,6 +30,7 @@ from prism.parsers import yml_parser
 import prism.profiles
 from prism.profiles import meta, adapter, snowflake as prism_snowflake, pyspark as prism_pyspark
 import prism.profiles.profile as pr
+import prism.logging
 
 
 ###################################
@@ -90,6 +92,11 @@ def _load_named_profile_adapters(
 
 profile_yml_tests = _load_profile_yml(PROFILE_YML_TEST_CASES)
 profile_yml_empty = _load_profile_yml(PROFILE_YML_EMPTY)
+
+# Logger isn't used for tests, but is needed for certain functions to run
+dummy_args = argparse.Namespace()
+dummy_args.quietly = True
+prism.logging.set_up_logger(dummy_args)
 
 
 ######################
@@ -294,6 +301,9 @@ class TestProfile(unittest.TestCase):
         """
         profile = pr.Profile(profile_yml_tests, "profile_empty", env="local")
         self.assertFalse(profile.bool_all_profiles_exist)
+
+    
+    #TODO: test the BigQuery and Redshift adapters
 
 
 # EOF

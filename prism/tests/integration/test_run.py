@@ -13,15 +13,11 @@ Table of Contents:
 #############
 
 # Standard library imports
-import io
-import boto3
 import pandas as pd
 import os
 from pathlib import Path
-import re
 import shutil
-import unittest
-import yaml
+import math
 
 # Prism imports
 import prism.cli.base
@@ -484,6 +480,47 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+    
+
+    def test_concurrency(self):
+        """
+        Test concurrent behavior when threads>1
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '012_concurrency'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        if Path(wkdir / '.compiled').is_dir():
+            shutil.rmtree(Path(wkdir / '.compiled'))
+        self.maxDiff = None
+        args = ['run']
+        self._run_prism(args)
+        
+        # Get times
+        module2_times = pd.read_csv(wkdir / 'output' / 'module02.csv')
+        module1_times = pd.read_csv(wkdir / 'output' / 'module01.csv')
+        
+        # Module 1 and 2 should start at the same time
+        module2_start_time = int(module2_times['start_time'][0])
+        module1_start_time = int(module1_times['start_time'][0])
+        self.assertTrue(abs(module2_start_time - module1_start_time)<=1)
+
+        # Module 2 should finish before module 1
+        module2_end_time = int(module2_times['end_time'][0])
+        module1_end_time = int(module1_times['end_time'][0])
+        self.assertTrue(module2_end_time<module1_end_time)
+        self.assertTrue(abs(10-(module1_end_time-module2_end_time))<=1)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove stuff in output to avoid recommitting to github
+        self._remove_files_in_output(wkdir)
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()

@@ -1,56 +1,56 @@
 """
-SysHander class
+Mixin classes for SysHandler
 
 Table of Contents
 - Imports
 - Class definition
 """
 
+
 #############
 ## Imports ##
 #############
 
 # Standard library imports
-from pathlib import Path
+import os
+import argparse
 from typing import Any, Dict
+from pathlib import Path
 
 # Prism-specific imports
-from prism.infra import project as prism_project
+import prism.cli.compile
+import prism.exceptions
+import prism.constants
+import prism.logging
 
 
 ######################
 ## Class definition ##
 ######################
 
-
-class SysHandler:
+class SysHandlerMixin:
     """
     Class for managing sys.path and sys.modules
     """
 
-    def __init__(self, project: prism_project.PrismProject):
-        self.project = project
-        self.project_dir = self.project.project_dir
-
-
-    def add_sys_path(self, globals_dict: Dict[Any, Any]):
+    def add_sys_path(self, project_dir: Path, globals_dict: Dict[Any, Any]):
         """
         Add project directory to sys.path
         """
         exec('import sys', globals_dict)
-        globals_dict['sys'].path.insert(0, str(self.project_dir))
+        globals_dict['sys'].path.insert(0, str(project_dir))
         return globals_dict
     
     
-    def remove_sys_path(self, globals_dict: Dict[Any, Any]):
+    def remove_sys_path(self, project_dir: Path, globals_dict: Dict[Any, Any]):
         """
         Remove project directory from sys.path
         """
-        globals_dict['sys'].path.remove(str(self.project_dir))
+        globals_dict['sys'].path.remove(str(project_dir))
         return globals_dict
 
     
-    def remove_project_modules(self, globals_dict: Dict[Any, Any]):
+    def remove_project_modules(self, project_dir: Path, globals_dict: Dict[Any, Any]):
         """
         Remove modules contained within project directory from sys.modules. This usually isn't necessary, because prism
         projects run in their own Python session. However, there may be cases where the user runs multiple prism
@@ -66,7 +66,7 @@ class SysHandler:
             try:
                 if mod_obj.__file__ is None:
                     pass
-                elif self.project_dir in Path(mod_obj.__file__).parents:
+                elif project_dir in Path(mod_obj.__file__).parents:
                     mods_to_del.append(mod_name)
             except AttributeError:
                 pass

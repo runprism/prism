@@ -3,8 +3,8 @@ Create logger for console events
 
 Table of Contents
 - Imports
-- Create logger
 - Functions and utils
+- Create logger
 - Event classes
 """
 
@@ -13,6 +13,7 @@ Table of Contents
 #############
 
 # General package imports
+import argparse
 import re
 import os
 import copy
@@ -30,19 +31,6 @@ from typing import Any, Optional
 import prism.constants
 import prism.exceptions
 from prism.ui import BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE, RESET, BRIGHT_WHITE, BRIGHT_YELLOW, BRIGHT_GREEN, BOLD
-
-
-###################
-## Create logger ##
-###################
-
-DEFAULT_LOGGER = logging.getLogger('event_logger')
-DEFAULT_LOGGER.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-console_formatter = logging.Formatter(fmt="%(message)s")
-handler.setFormatter(console_formatter)
-DEFAULT_LOGGER.addHandler(handler)
 
 
 #########################
@@ -149,6 +137,40 @@ def format_console_output(message, index, total, status, execution_time):
 
 
 ###################
+## Create logger ##
+###################
+
+DEFAULT_LOGGER: logging.Logger
+
+def set_up_logger(args: argparse.Namespace):
+    if globals().get('DEFAULT_LOGGER', None) is None:
+        global DEFAULT_LOGGER
+
+        DEFAULT_LOGGER = logging.getLogger('PRISM_LOGGER')
+        DEFAULT_LOGGER.setLevel(logging.INFO)
+
+        # Stream handler
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.INFO)
+        console_formatter = logging.Formatter(fmt="%(message)s")
+        handler.setFormatter(console_formatter)
+
+        # File handler -- remove ANSI codes
+        class FileHandlerFormatter(logging.Formatter):
+            def format(self,record):
+                return escape_ansi(record.msg)
+
+        if not args.quietly:
+            file_handler = logging.FileHandler('logs.log')
+            file_handler.setLevel(logging.INFO)
+            file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
+            file_handler.setFormatter(file_handler_formatter)
+            DEFAULT_LOGGER.addHandler(file_handler)
+
+        DEFAULT_LOGGER.addHandler(handler)
+
+
+###################
 ## Event classes ##
 ###################
 
@@ -207,14 +229,16 @@ class InitErrorEvent(Event):
 
 
 @dataclass
-class InvalidProfileType(Event):
-    type: Union[None, str]
+class InvalidAdapterType(Event):
+    valid_adapters: List[str]
+    type: Optional[str] = None
 
     def message(self):
         if self.type is None:
             return f'{RED}Specify profile type with --type arg{RESET}'
         else:
-            return f'{RED}Invalid profile type; must be one of "snowflake", "pyspark", or "dbt"{RESET}'
+            valid_adapters_str = ','.join(f'`{a}`' for a in self.valid_adapters)
+            return f'{RED}Invalid adapter type; must be one of {valid_adapters_str}{RESET}'
 
 
 @dataclass
@@ -427,20 +451,22 @@ class PrismExceptionErrorEvent(Event):
         return f'{RED}{msg}{RESET}'
 
 
-def fire_console_event(Event, event_list: List[Event] = [], sleep=0.25):
+def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] = [], sleep=0.01):
     msg = Event.message()
-    DEFAULT_LOGGER.info(msg)
-    time.sleep(sleep)
+    if not args.quietly:
+        DEFAULT_LOGGER.info(msg) # type: ignore
+        time.sleep(sleep)
 
     # Return event list
     event_list.append(Event)
     return event_list
 
 
-def fire_empty_line_event(event_list: List[Event] = []):
+def fire_empty_line_event(args: argparse.Namespace, event_list: List[Event] = []):
     e = EmptyLineEvent()
     msg = e.message()
-    DEFAULT_LOGGER.info(msg)
+    if not args.quietly:
+        DEFAULT_LOGGER.info(msg) # type: ignore
 
     # Return event list
     event_list.append(e)

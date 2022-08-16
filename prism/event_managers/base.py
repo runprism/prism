@@ -12,9 +12,10 @@ Table of Contents
 
 # Standard library imports
 import argparse
+from dataclasses import dataclass
 import sys
 import time
-from typing import Callable, List
+from typing import Any, Callable, List, Optional
 
 # Prism-specific imports
 import prism.logging
@@ -27,6 +28,13 @@ from typing import Any, Union
 ######################
 ## Class definition ##
 ######################
+
+@dataclass
+class EventManagerOutput:
+    outputs: Any
+    event_to_fire: Optional[prism.logging.Event]
+    event_list: List[prism.logging.Event]
+
 
 class BaseEventManager:
     """
@@ -47,6 +55,9 @@ class BaseEventManager:
         self.name = name
         self.func = func
 
+        # Set up logger
+        prism.logging.set_up_logger(self.args)
+
 
     def fire_running_exec_event(self,
         event_list: List[prism.logging.Event]
@@ -61,7 +72,7 @@ class BaseEventManager:
             status="RUN",
             execution_time=None
         )
-        event_list = fire_console_event(e, event_list)
+        event_list = fire_console_event(self.args, e, event_list)
         return event_list
 
 
@@ -80,7 +91,7 @@ class BaseEventManager:
             status="DONE",
             execution_time=execution_time
         )
-        event_list = fire_console_event(e, event_list)
+        event_list = fire_console_event(self.args, e, event_list)
         return event_list
 
 
@@ -99,7 +110,7 @@ class BaseEventManager:
             status="ERROR",
             execution_time=execution_time
         )
-        event_list = fire_console_event(e, event_list)
+        event_list = fire_console_event(self.args, e, event_list)
         return event_list
 
 
@@ -126,53 +137,40 @@ class BaseEventManager:
                 event_list = self.fire_success_exec_event(start_time, event_list)
             
             # Return output of task execution
-            return outputs, event_list
+            return EventManagerOutput(outputs, None, event_list)
         
         # If PrismException, then create PrismExceptionErrorEvent
         except prism.exceptions.PrismException as err:
             if fire_exec_events:
                 event_list = self.fire_error_exec_event(start_time, event_list)
-            event_list = fire_empty_line_event(event_list)
             prism_exception_event = prism.logging.PrismExceptionErrorEvent(err, self.name)
-            event_list = fire_console_event(prism_exception_event, event_list, 0)
-            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
-            
-            # Return 0 to indicate error
-            return 0, event_list
+            return EventManagerOutput(0, prism_exception_event, event_list)
 
         # If SyntaxError, then create ExecutionSyntaxErrorEvent
         except SyntaxError:
             if fire_exec_events:
                 event_list = self.fire_error_exec_event(start_time, event_list)
-            event_list = fire_empty_line_event(event_list)
+            event_list = fire_empty_line_event(self.args, event_list)
             exc_type, exc_value, exc_tb = sys.exc_info()
             full_tb = self.args.full_tb
             if full_tb:
                 syntax_error_event = prism.logging.ExecutionSyntaxErrorEvent(self.name, exc_type, exc_value, exc_tb, True)
             else:
                 syntax_error_event = prism.logging.ExecutionSyntaxErrorEvent(self.name, exc_type, exc_value, exc_tb, False)
-            event_list = fire_console_event(syntax_error_event, event_list, 0)
-            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
-            
-            # Return 0 to indicate error
-            return 0, event_list
+            return EventManagerOutput(0, syntax_error_event, event_list)
         
         # If any other Exception, then create ExecutionErrorEvent
         except Exception:
             if fire_exec_events:
                 event_list = self.fire_error_exec_event(start_time, event_list)
-            event_list = fire_empty_line_event(event_list)
+            event_list = fire_empty_line_event(self.args, event_list)
             exc_type, exc_value, exc_tb = sys.exc_info()
             full_tb = self.args.full_tb
             if full_tb:
                 exception_event = prism.logging.ExecutionErrorEvent(self.name, exc_type, exc_value, exc_tb, True)
             else:
                 exception_event = prism.logging.ExecutionErrorEvent(self.name, exc_type, exc_value, exc_tb, False)
-            event_list = fire_console_event(exception_event, event_list, 0)
-            event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 0)
-            
-            # Return 0 to indicate error
-            return 0, event_list
+            return EventManagerOutput(0, exception_event, event_list)
 
 
 # EOF

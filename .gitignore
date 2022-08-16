@@ -5,9 +5,6 @@
 # OSX files
 **/.DS_Store
 
-# Blank files (for proper project structure)
-**/.exists
-
 # DBT artifacts
 **/.msgpack
 **/.user.yml

@@ -89,5 +89,58 @@ class TestInitIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
+    
+    def test_init_minimal(self):
+        """
+        `prism init --minimal`
+        """
+        # Set working directory
+        os.chdir(TEST_PROJECTS)
+
+        # Remove folder '001a_init_minimal' if it already exists
+        init_path = Path(TEST_PROJECTS) / '001a_init_minimal'
+        if init_path.is_dir():
+            shutil.rmtree(init_path)
+
+        # Execute init command
+        args = ['init', '--project-name', '001a_init_minimal', '--minimal']
+        init_run = self._run_prism(args)
+        init_run_results = init_run.get_results()
         
+        # Since project has not been created, the events should align with a successful task creation
+        expected_events = ' | '.join([
+            'SeparatorEvent',
+            'TaskRunEvent',
+            'EmptyLineEvent',
+            'CreatingProjectDirEvent',
+            'EmptyLineEvent',
+            'InitSuccessfulEvent',
+            'SeparatorEvent',
+        ])
+        self.assertEqual(expected_events, init_run_results)
+        self.assertTrue(init_path.is_dir())
+        self._is_valid_project(init_path)
+
+        # Check that data and output directory do not exist
+        self.assertFalse(Path(init_path / 'data').is_dir())
+        self.assertFalse(Path(init_path / 'output').is_dir())
+        self.assertFalse(Path(init_path / 'functions.py').is_file())
+
+        # Try creating the project again. This time, we should see a `ProjectAlreadyExistsEvent`
+        os.chdir(TEST_PROJECTS)
+        init_run_already_exists = self._run_prism(args)
+        init_run_already_exists_results = init_run_already_exists.get_results()
+        expected_events_already_exists = ' | '.join([
+            'SeparatorEvent',
+            'TaskRunEvent',
+            'EmptyLineEvent',
+            'ProjectAlreadyExistsEvent',
+            'SeparatorEvent',
+        ])
+        self.assertEqual(expected_events_already_exists, init_run_already_exists_results)
+        
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
+
 # EOF

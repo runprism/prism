@@ -70,6 +70,10 @@ class TestPrismProject(unittest.TestCase):
         profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'profile')
         expected_profile = 'this_is_a_test!!!'
         self.assertEqual(expected_profile, profile)
+
+        # Remove logs.log
+        if Path(Path(TEST_CASE_WKDIR) / 'logs.log').is_file():
+            os.unlink(Path(TEST_CASE_WKDIR) / 'logs.log')    
     
 
     def test_null_profile(self):

@@ -54,6 +54,7 @@ class CompiledDag:
 
     topological_sort: List[Path]
     user_arg_modules: List[Path]
+    manifest: Manifest
 
     def add_full_path(self, module_dir: Path):
         self.module_dir = module_dir
@@ -342,7 +343,7 @@ class DagCompiler:
 
         # Dump manifest
         self.manifest.yaml_dump(self.compiled_dir)
-        return CompiledDag(all_topological_sorts_list, self.user_arg_modules)
+        return CompiledDag(all_topological_sorts_list, self.user_arg_modules, self.manifest)
 
 
 # EOF
