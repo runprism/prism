@@ -1,4 +1,1 @@
--e .[snowflake]
--e .[pyspark]
--e .[dbt]
 -e .[testing]
