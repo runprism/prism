@@ -1,4 +1,4 @@
-name: Imports (MacOS)
+name: Imports (Linux)
 
 on:
   - push
@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    runs-on: macos-latest
+    runs-on: linux-latest
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9']
