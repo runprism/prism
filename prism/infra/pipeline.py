@@ -77,6 +77,16 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
 
     def exec(self, args: argparse.Namespace):
         executor_output = self.dag_executor.exec(args)
+        
+        # Close SQL adapter connections
+        if "snowflake" in list(self.project.adapters_object_dict.keys()):
+            self.project.adapters_object_dict["snowflake"].engine.close()
+        if "redshift" in list(self.project.adapters_object_dict.keys()):
+            self.project.adapters_object_dict["redshift"].engine.close()
+        if "bigquery" in list(self.project.adapters_object_dict.keys()):
+            self.project.adapters_object_dict["bigquery"].engine.close()
+        
+        # Remove project dir and all associated modules from sys path
         self.pipeline_globals = self.remove_sys_path(self.project.project_dir, self.pipeline_globals)
         self.pipeline_globals = self.remove_project_modules(self.project.project_dir, self.pipeline_globals)
         return executor_output

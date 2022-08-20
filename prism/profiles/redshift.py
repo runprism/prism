@@ -13,59 +13,20 @@ Table of Contents
 # Standard library imports
 import pandas as pd
 from typing import Any, Dict, Union
+import psycopg2
+from pyrsistent import optional
 
 # Prism-specific imports
 from .adapter import Adapter
 import prism.exceptions
 
 # From https://docs.aws.amazon.com/redshift/latest/mgmt/python-configuration-options.html
-REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS = {
-    'access_key_id': str,
-    'allow_db_user_override': bool,
-    'app_name': str,
-    'auth_profile': str,
-    'auto_create': bool,
-    'client_id': str,
-    'client_secret': str,
-    'cluster_identifier': str,
-    'credentials_provider': str,
+REDSHIFT_PSYCOPG_CONFIG_OPTIONS = {
     'database': str,
-    'database_metadata_current_db_only': bool,
-    'db_groups': str,
-    'db_user': str,
-    'endpoint_url': str,
-    'group_federation': bool,
     'host': str,
-    'iam': bool,
-    'iam_disable_cache': bool,
-    'idpPort': int,
-    'idp_response_timeout': int,
-    'idp_tenant': str,
-    'listen_port': int,
-    'login_url': str,
-    'max_prepared_statements': int,
-    'numeric_to_float': bool,
-    'partner_sp_id': str,
     'password': str,
     'port': int,
-    'preferred_role': str,
-    'principal_arn': str,
-    'profile': str,
-    'provider_name': str,
-    'region': str,
-    'role_arn': str,
-    'role_session_name': str,
-    'scope': str,
-    'secret_access_key_id': str,
-    'session_token': str,
-    'serverless_acct_id': str,
-    'serverless_work_group': str,
-    'ssl': bool,
-    'ssl_insecure': bool,
-    'sslmode': str,
-    'timeout': int,
-    'user': str,
-    'web_identity_token': str
+    'user': str
 }
 
 ADDITIONAL_CONFIGS = {
@@ -78,33 +39,47 @@ ADDITIONAL_CONFIGS = {
 
 class Redshift(Adapter):
 
-
     def is_valid_config(self,
-        config_dict: Dict[str, Any]
+        config_dict: Dict[str, str]
     ) -> bool:
         """
-        Check that config dictionary for Redshift adapter only contains valid keys
+        Check that config dictionary is profile.yml is valid
 
         args:
-            config_dict: config dictionary under redshift adapter in profile.yml
+            config_dict: config dictionary under Redshift adapter in profile.yml
         returns:
             boolean indicating whether config dictionary in profile.yml is valid
         """
-        # Raise an error if config dictionary contains keys not in ACCEPTABLE_ADAPTER_KEYS or if the value
-        # is not the correct type
+
+        # Required config vars
+        required_config_vars = [
+            'user',
+            'password',
+            'port',
+            'host',
+            'database'
+        ]
+
+        # Optional config vars
+        optional_config_vars = [
+            'autocommit'
+        ]
+
+        # Raise an error if:
+        #   1. Config doesn't contain any of the required vars or contains additional config vars
+        #   2. Any of the config values are None
+        actual_config_vars = []
         for k,v in config_dict.items():
-            if k not in list(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS.keys()) and k not in list(ADDITIONAL_CONFIGS.keys()):
+            if k not in required_config_vars and k not in optional_config_vars:
                 raise prism.exceptions.InvalidProfileException(message=f'invalid var `{k}` under redshift config in profile.yml')
-            
-            # Check type of Redshift configuration options
-            if k in list(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS.keys()):
-                if not isinstance(v, REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS[k]):
-                    raise prism.exceptions.InvalidProfileException(message=f'var `{k}` is an invalid type, must be {str(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS[k])}')
-            
-            # Check type of any additional configs passed
-            elif k in list(ADDITIONAL_CONFIGS.keys()):
-                if not isinstance(v, ADDITIONAL_CONFIGS[k]):
-                    raise prism.exceptions.InvalidProfileException(message=f'var `{k}` is an invalid type, must be {str(ADDITIONAL_CONFIGS[k])}')
+            if k in required_config_vars:
+                actual_config_vars.append(k)
+            if v is None:
+                raise prism.exceptions.InvalidProfileException(message=f'var `{k}` under redshift config cannot be None in profile.yml')
+        vars_not_defined = list(set(required_config_vars) - set(actual_config_vars))
+        if len(vars_not_defined)>0:
+            v = vars_not_defined.pop()
+            raise prism.exceptions.InvalidProfileException(message=f'need to define `{v}` under redshift config in profile.yml')
 
         # If no exception has been raised, return True
         return True
@@ -126,44 +101,41 @@ class Redshift(Adapter):
         # Get configuration and check if config is valid
         self.is_valid_config(adapter_dict)
 
-        # Connection. Define the connection code as a string so that we can parse the YAML dict and create the
-        # configuration programatically.
-        connection_code_list = []
-        for k,v in adapter_dict.items():
-            if k in list(REDSHIFT_CONFIGURATION_OPTIONS_FROM_DOCS.keys()):
-                if isinstance(v, str):
-                    connection_code_list.append(f"{k}='{adapter_dict[k]}'")
-                else:
-                    connection_code_list.append(f"{k}={adapter_dict[k]}")
-        connection = ',\n'.join(connection_code_list)
-        ctx_str_list = [
-            'import redshift_connector',
-            f'ctx = redshift_connector.connect({connection})'
-        ]
-        exec('\n'.join(ctx_str_list))
-        
-        # Create cursor object
-        cursor = locals()['ctx'].cursor()
+        # Create psycopg2 connection
+        conn = psycopg2.connect(
+            dbname=adapter_dict['database'],
+            host=adapter_dict['host'],
+            port=adapter_dict['port'],
+            user=adapter_dict['user'],
+            password=adapter_dict['password']
+        )
         
         # Autocommit. If no autocommit is specified, then set to True
         try:
-            autocommit_config = adapter_dict['autocommit']
-            cursor.autocommit = autocommit_config
+            autocommit_config = bool(adapter_dict['autocommit'])
+            conn.set_session(autocommit=autocommit_config)
         except KeyError:
-            cursor.autocommit = True
-        return cursor
-
+            conn.set_session(autocommit=True)
+        return conn
+        
 
     def execute_sql(self, query: str, return_type: str) -> pd.DataFrame:
         """
         Execute the SQL query
         """
-        # The engine is the Redshift cursor
-        self.engine.execute(query)
-        self.engine.close()
+        # Create cursor for every SQL query -- this ensures thread safety
+        cursor = self.engine.cursor()
+        cursor.execute(query)
         if return_type=="pandas":
-            df: pd.DataFrame = self.engine.fetch_dataframe()
+            data = cursor.fetchall()
+            cols = []
+            for elts in cursor.description:
+                cols.append(elts[0])
+            df: pd.DataFrame = pd.DataFrame(data=data, columns=cols)
+            cursor.close()
             return df
-
+        else:
+            cursor.close
+        
 
 # EOF
