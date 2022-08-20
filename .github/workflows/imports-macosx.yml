@@ -11,7 +11,6 @@ jobs:
       matrix:
         python-version: ['3.7', '3.8', '3.9']
     steps:
-    - name: Install Python
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -21,7 +20,6 @@ jobs:
     #   run: |
     #     brew install postgresql
     - name: Test imports
-      run:
         python -m pip install --upgrade pip
         pip install .
         pip install .[snowflake]
