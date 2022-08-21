@@ -104,10 +104,15 @@ class Snowflake(Adapter):
         """
         Execute the SQL query
         """
-        # The Snowflake connection object behaves like a SQL alchemy engine. Therefore, we can use pd.read_sql(...)
-        df =  pd.read_sql(query, self.engine)
+        # Create cursor for every SQL query -- this ensures thread safety
+        cursor = self.engine.cursor()
+        cursor.execute(query)
         if return_type=="pandas":
+            df: pd.DataFrame = cursor.fetch_pandas_all()
+            cursor.close()
             return df
+        else:
+            cursor.close()
 
 
 # EOF

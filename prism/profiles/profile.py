@@ -11,6 +11,7 @@ Table of Contents
 #############
 
 # Standard library imports
+import importlib
 import argparse
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -21,7 +22,7 @@ from .adapter import Adapter
 import prism.exceptions
 import prism.constants
 import prism.logging
-from prism.profiles import meta, adapter, pyspark, snowflake, bigquery, dbt, redshift
+from prism.profiles import meta, adapter
 
 
 ######################
@@ -222,6 +223,9 @@ class Profile:
                 # Check that adapters only include supported connections
                 if conn not in prism.constants.VALID_ADAPTERS:
                     raise prism.exceptions.InvalidProfileException(message=f"invalid adapter `{conn}` in profile.yml")
+                
+                adapter_import = importlib.import_module(f'prism.profiles.{conn}')
+                globals()[conn] = adapter_import
                 adapter = MetaAdapter.get_adapter(conn)(conn, adapters_dict[conn])
                 self.adapters_obj_dict[conn] = adapter
     
