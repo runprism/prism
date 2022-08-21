@@ -1,8 +1,7 @@
 name: Imports (Linux)
 
 on:
-  push
-  pull_request
+  - push
 
 jobs:
   test:

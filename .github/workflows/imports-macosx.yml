@@ -1,12 +1,7 @@
 name: Imports (MacOS)
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  - push
 
 jobs:
   test:
