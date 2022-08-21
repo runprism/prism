@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    runs-on: linux-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.9']
