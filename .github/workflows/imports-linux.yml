@@ -1,7 +1,12 @@
 name: Imports (Linux)
 
 on:
-  - push
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test:
