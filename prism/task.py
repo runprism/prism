@@ -16,6 +16,10 @@ import prism.exceptions
 from typing import Tuple
 from pathlib import Path
 
+# Prism logging
+import prism.logging
+from prism.logging import fire_console_event
+
 
 ######################
 ## Class definition ##
@@ -64,6 +68,40 @@ class PrismTask:
         """
         raise prism.exceptions.RuntimeException("`run` method not implemented")
 
+
+    @prism.logging.deprecated('PrismTask.target', 'prism.task.target')
+    def target(type, loc, **kwargs):
+        """
+        Decorator to use if task requires user to iterate through several different objects and save each object
+        to an external location
+        """
+
+        def decorator_target(func):
+            
+            def wrapper_target(self, psm):
+                
+                # Decorator should only be called on the `run` function
+                if func.__name__!="run":
+                    raise prism.exceptions.RuntimeException(message="`target` decorator can only be called on `run` function")
+
+                # If the task should be run in full, then call the run function
+                if self.bool_run:
+                    obj = func(self, psm)
+
+                    # Initialize an instance of the target class and save the object using the target's `save` method
+                    target = type(obj, loc)
+                    target.save(**kwargs)
+
+                    # If a target is set, just assume that the user wants to reference the location of the target
+                    # when they call `mod`
+                    return loc
+                
+                # If the task should not be run in full, then just return the location of the target
+                else:
+                    return loc
+            return wrapper_target
+        return decorator_target
+        
     
     def get_output(self):
         """

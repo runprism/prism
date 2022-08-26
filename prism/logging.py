@@ -26,6 +26,9 @@ from datetime import datetime
 import traceback
 import types
 from typing import Any, Optional
+import functools
+import warnings
+import linecache
 
 # Prism imports
 import prism.constants
@@ -449,6 +452,30 @@ class PrismExceptionErrorEvent(Event):
         detail = self.err.args[0]
         msg = "%s in `%s`: %s" % (error_class, self.name, detail)
         return f'{RED}{msg}{RESET}'
+
+
+def deprecated(deprecated_fn: str, updated_fn: str):
+    """
+    Decorator used to mark deprecated target function
+    """
+    def decorator_deprecated(func):
+        
+        @functools.wraps(func)
+        def new_func(*args, **kwargs):
+
+            # Suppress warning using context manager; capture line no. information
+            with warnings.catch_warnings(record=True) as w:
+                warnings.warn(f"{YELLOW}WARNING: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",
+                        category=DeprecationWarning,
+                        stacklevel=2)
+                for wi in w:
+                    lineno = wi.lineno
+            DEFAULT_LOGGER.warning(f"{YELLOW}WARNING <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
+            return func(*args, **kwargs)
+        
+        return new_func
+    
+    return decorator_deprecated
 
 
 def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] = [], sleep=0.01):
