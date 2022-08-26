@@ -87,7 +87,8 @@ class CompiledModule:
 
         args:
             globals_dict: globals dictionary
-            upstream_dict: dictionary with upstream task information
+            psm: PrismFunctions object
+            explicit run: boolean indicating whether to run the Task. Default is True
         returns:
             variable used to store task instantiation
         """
