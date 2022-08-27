@@ -15,8 +15,8 @@ Table of Contents:
 #############
 
 import prism_project
-from prism.task import PrismTask       # Not necessary; prism infrastructure automatically imported on the back-end
-import prism.target as PrismTarget     # Not necessary; prism infrastructure automatically imported on the back-end
+from prism.task import PrismTask
+from prism.target import target, PandasCsv
 import pandas as pd
 
 
@@ -27,9 +27,10 @@ import pandas as pd
 class Module03(PrismTask):
 
     ## Run    
-    @PrismTask.target(type=PrismTarget.PandasCsv, loc=f'{prism_project.OUTPUT}/module03.csv', index=False)
+    @target(type=PandasCsv, loc=f'{prism_project.OUTPUT}/target_csv_mult_df1.csv', index=False)
+    @target(type=PandasCsv, loc=f'{prism_project.OUTPUT}/target_csv_mult_df2.csv', index=False)
     def run(self, psm):
-        data = {
+        data1 = {
             'col1': ['col1_value1', 'col1_value2', 'col1_value3'],
             'col2': ['col2_value1', 'col2_value2', 'col2_value3'],
             'col3': ['col3_value1', 'col3_value2', 'col3_value3'],
@@ -37,8 +38,19 @@ class Module03(PrismTask):
             'col5': ['col5_value1', 'col5_value2', 'col5_value3'],
             'col6': ['col6_value1', 'col6_value2', 'col6_value3']
         }
-        df = pd.DataFrame(data)
-        return df
+
+        data2 = {
+            'colA': ['colA_value1', 'colA_value2', 'colA_value3'],
+            'colB': ['colB_value1', 'colB_value2', 'colB_value3'],
+            'colC': ['colC_value1', 'colC_value2', 'colC_value3'],
+            'colD': ['colD_value1', 'colD_value2', 'colD_value3'],
+            'colE': ['colE_value1', 'colE_value2', 'colE_value3'],
+            'colF': ['colF_value1', 'colF_value2', 'colF_value3']
+        }
+        df1 = pd.DataFrame(data1)
+        df2 = pd.DataFrame(data2)
+        
+        return df1, df2
 
 
 # EOF

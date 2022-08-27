@@ -20,8 +20,8 @@ Table of Contents:
 import os
 from pyspark.sql.types import StructType, StructField, StringType
 import prism_project
-from prism.task import PrismTask       # Not necessary; prism infrastructure automatically imported on the back-end
-import prism.target as PrismTarget     # Not necessary; prism infrastructure automatically imported on the back-end
+from prism.task import PrismTask
+from prism.target import target, PySparkParquet
 
 
 ######################
@@ -31,7 +31,7 @@ import prism.target as PrismTarget     # Not necessary; prism infrastructure aut
 class Module01(PrismTask):
 
     ## Run
-    @PrismTask.target(type=PrismTarget.PySparkParquet, loc=os.path.join(prism_project.OUTPUT, 'module01'), mode='overwrite')
+    @target(type=PySparkParquet, loc=os.path.join(prism_project.OUTPUT, 'target_parquet'), mode='overwrite')
     def run(self, psm):
         """
         Execute task.
