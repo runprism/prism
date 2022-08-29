@@ -61,6 +61,12 @@ class Txt(PrismTarget):
         f.close()
 
 
+class MatplotlibPNG(PrismTarget):
+
+    def save(self, **kwargs):
+        self.obj.savefig(self.loc, **kwargs)
+
+
 #######################
 ## Target decorators ##
 #######################
