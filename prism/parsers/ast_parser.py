@@ -123,7 +123,7 @@ class AstParser:
         return None
     
 
-    def get_all_funcs(slef, prism_task: ast.ClassDef) -> List[ast.FunctionDef]:
+    def get_all_funcs(self, prism_task: ast.ClassDef) -> List[ast.FunctionDef]:
         """
         Get all functions from PrismTask class
 
