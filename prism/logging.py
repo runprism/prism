@@ -468,9 +468,12 @@ def deprecated(deprecated_fn: str, updated_fn: str):
                 warnings.warn(f"{YELLOW}WARNING: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",
                         category=DeprecationWarning,
                         stacklevel=2)
+                
+                # Iterate through warnings
                 for wi in w:
+                    wi = w[0]
                     lineno = wi.lineno
-            DEFAULT_LOGGER.warning(f"{YELLOW}WARNING <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
+                    DEFAULT_LOGGER.warning(f"{YELLOW}WARNING <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
             return func(*args, **kwargs)
         
         return new_func
