@@ -165,7 +165,7 @@ class PrismDAG(
         # Create Project, DAGExecutor, and Pipeline objects
         prism_project = self.create_project(self.project_dir, profiles_path, "local", "run")
         threads = prism_project.thread_count
-        dag_executor = prism_executor.DagExecutor(compiled_dag, all_upstream, threads)
+        dag_executor = prism_executor.DagExecutor(self.project_dir, compiled_dag, all_upstream, threads)
         pipeline = self.create_pipeline(prism_project, dag_executor, self.globals_namespace)
 
         # If config dictionary is specified, then update the prism_project globals

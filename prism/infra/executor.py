@@ -14,7 +14,7 @@ Table of Contents
 import argparse
 from dataclasses import dataclass
 from multiprocessing.dummy import Pool
-from multiprocessing.pool import ApplyResult
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 # Prism-specific imports
@@ -47,10 +47,12 @@ class DagExecutor:
     """
 
     def __init__(self,
+        project_dir: Path,
         compiled_dag: prism_compiler.CompiledDag,
         user_arg_all_upstream: bool,
         threads: int
     ):
+        self.project_dir = project_dir
         self.compiled_dag = compiled_dag
         self.topological_sort_relative_path = self.compiled_dag.topological_sort
         self.topological_sort_full_path = self.compiled_dag.topological_sort_full_path
@@ -140,7 +142,7 @@ class DagExecutor:
 
         # Event manager. We want '__file__' to be the path to the un-compiled module. Instances of DagExecutor will
         # only be called within the project directory. Therefore, __files__ should be modules/{name of script}
-        self.executor_globals['__file__'] = f'modules/{str(relative_path)}'
+        self.executor_globals['__file__'] = str(self.project_dir / f'modules/{str(relative_path)}')
         script_manager = base_event_manager.BaseEventManager(
             args=args,
             idx=idx,
