@@ -7,9 +7,10 @@
 --------------------------------------------------------------------------------
 Table of Contents
 - Imports
-- Profile
-- Variables / parameters
-- Paths
+- Thread count
+- Profile name
+- Logger
+- Global variables / paths
 """
 
 ###########
@@ -21,6 +22,7 @@ import sys
 import pandas as pd
 import numpy as np
 import logging
+from pathlib import Path
 
 
 ################
@@ -50,9 +52,9 @@ profile = None
 PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
-####################################
-# Variables, parameters, and paths #
-####################################
+############################
+# Global variables / paths #
+############################
 
 # Specify global variables, parameters and paths to be used in the analysis. 
 # Capitalize all names.
@@ -61,9 +63,9 @@ VAR_2 = 200
 VAR_3 = '2015-01-01'
 
 # Paths
-WKDIR = os.path.dirname(__file__)
-DATA = os.path.join(WKDIR, 'data')
-OUTPUT = os.path.join(WKDIR, 'output')
+WKDIR = Path(__file__).parent
+DATA = WKDIR / 'data'
+OUTPUT = WKDIR / 'output'
 
 
 # EOF
