@@ -17,7 +17,8 @@ from pathlib import Path
 
 # Prism logging
 import prism.logging
-from prism.logging import fire_console_event
+import prism.infra.hooks
+import prism.infra.mods
 
 
 ######################
@@ -43,6 +44,14 @@ class PrismTask:
         self.psm = psm
 
     
+    def set_mods(self, mods: prism.infra.mods.PrismMods):
+        self.mods = mods
+
+    
+    def set_hooks(self, hooks: prism.infra.hooks.PrismHooks):
+        self.hooks = hooks
+
+    
     def exec(self):
         
         # If the `target` decorator isn't applied, then only execute the `run` function of bool_run is true
@@ -50,7 +59,7 @@ class PrismTask:
             
             # If bool_run, then execute the `run` function and set the `output` attribute to its result
             if self.bool_run:
-                self.output = self.run(self.psm)
+                self.output = self.run(self.mods, self.hooks)
                 if self.output is None:
                     raise prism.exceptions.RuntimeException("`run` method must produce a non-null output")
 
@@ -61,12 +70,12 @@ class PrismTask:
         
         # Otherwise, the decorator uses bool_run in its internal computation
         else:
-            self.output = self.run(self.psm)
+            self.output = self.run(self.mods, self.hooks)
             if self.output is None:
                 raise prism.exceptions.RuntimeException("`run` method must produce a non-null output")
 
 
-    def run(self, psm):
+    def run(self, psm, hooks: prism.infra.hooks.PrismHooks):
         """
         Run the task. The user should override this function definition when creating their own tasks.
         """
@@ -82,7 +91,7 @@ class PrismTask:
 
         def decorator_target(func):
             
-            def wrapper_target(self, psm):
+            def wrapper_target(self, mods: prism.infra.mods.PrismMods, hooks: prism.infra.hooks.PrismHooks):
                 
                 # Decorator should only be called on the `run` function
                 if func.__name__!="run":
@@ -90,7 +99,7 @@ class PrismTask:
 
                 # If the task should be run in full, then call the run function
                 if self.bool_run:
-                    obj = func(self, psm)
+                    obj = func(self, mods, hooks)
 
                     # Initialize an instance of the target class and save the object using the target's `save` method
                     target = type(obj, loc)

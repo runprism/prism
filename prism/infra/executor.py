@@ -21,9 +21,11 @@ from typing import Any, Dict, List, Optional, Union
 import prism.exceptions
 from prism.infra import module as prism_module
 from prism.infra import compiler as prism_compiler
-from prism.infra.psm import PrismFunctions
+from prism.infra.mods import PrismMods
+from prism.infra.hooks import PrismHooks
 from prism.logging import Event
 from prism.event_managers import base as base_event_manager
+from prism.constants import INTERNAL_MODS_VARNAME, INTERNAL_HOOKS_VARNAME
 
 
 ######################
@@ -104,14 +106,15 @@ class DagExecutor:
     def exec_single(self,
         args: argparse.Namespace,
         module: prism_module.CompiledModule, 
-        psm: Union[int, PrismFunctions]
+        mods: Union[int, PrismMods],
+        hooks: PrismHooks
     ) -> base_event_manager.EventManagerOutput:
         """
         Callback used to get results of module execution in Pool
         """
         # Keep track of events
         event_list: List[Event] = []
-        if psm==0:
+        if mods==0:
             base_event_manager.EventManagerOutput(0, None, event_list)
         name = module.name
         relative_path = module.module_relative_path
@@ -154,7 +157,8 @@ class DagExecutor:
             event_list,
             fire_exec_events,
             globals_dict=self.executor_globals,
-            psm=psm,
+            mods=mods,
+            hooks=hooks,
             explicit_run=relative_path not in self.nodes_not_explicitly_run
         )
         return script_event_manager_result
@@ -186,21 +190,22 @@ class DagExecutor:
         self.event_list: List[Event] = []
         
         def callback(result: base_event_manager.EventManagerOutput):
-            psm = result.outputs
+            mods = result.outputs
             error_event = result.event_to_fire
             runner_event_list = result.event_list
 
-            # If psm==0, then we want to raise an error. However, if we do so here, it'll
+            # If mods==0, then we want to raise an error. However, if we do so here, it'll
             # get swallowed by the pool.
-            if psm==0:
+            if mods==0:
                 self._wait_and_return = True
                 self.error_event = error_event
-            self.psm = psm
+            self.mods = mods
             self.event_list+=runner_event_list
             return
 
         # Execute all statements, stopping at first error
-        self.psm = self.executor_globals['psm']
+        self.mods = self.executor_globals[INTERNAL_MODS_VARNAME]
+        self.hooks = self.executor_globals[INTERNAL_HOOKS_VARNAME]
         self._wait_and_return = False
         self.error_event = None
 
@@ -208,9 +213,9 @@ class DagExecutor:
         if self.threads==1:
             while self.dag_module_objects!=[]:
                 curr = self.dag_module_objects.pop(0)
-                result = self.exec_single(args, curr, self.psm)
+                result = self.exec_single(args, curr, self.mods, self.hooks)
                 callback(result)
-                if self.psm==0:
+                if self.mods==0:
                     return ExecutorOutput(0, self.error_event, self.event_list)
 
             # We need the error event and event list to cascade up to the PrismPipeline class.
@@ -234,7 +239,7 @@ class DagExecutor:
 
                         # If no refs, then add module to pool
                         if len(refs)==0:                
-                            res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
+                            res = pool.apply_async(self.exec_single, args=(args,curr,self.mods,self.hooks), callback=callback)
                             async_results[curr.name] = res
                             self.dag_module_objects.pop(0)
                         
@@ -248,7 +253,7 @@ class DagExecutor:
                             if self._wait_and_return:
                                 break # type: ignore
                             else:
-                                res = pool.apply_async(self.exec_single, args=(args,curr,self.psm), callback=callback)
+                                res = pool.apply_async(self.exec_single, args=(args,curr,self.mods,self.hooks), callback=callback)
                                 async_results[curr.name] = res
                                 self.dag_module_objects.pop(0)
                 pool.close()

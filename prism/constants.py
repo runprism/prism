@@ -34,5 +34,9 @@ TERMINAL_WIDTH = 80
 # Scope dictionary
 GLOBALS_DICT = {'__name__': '__main__'}
 
+# Internal names for mods and hooks
+INTERNAL_MODS_VARNAME = '__PRISM_MODS__'
+INTERNAL_HOOKS_VARNAME = '__PRISM_HOOKS__'
+
 
 # EOF

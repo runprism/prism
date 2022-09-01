@@ -25,7 +25,8 @@ import prism.exceptions
 ######################
 
 # Constant
-prism_function_alias = 'psm'
+prism_mods_alias = 'mods'
+prism_hooks_alias = 'hooks'
 
 class AstParser:
     """
@@ -169,7 +170,7 @@ class AstParser:
 
     def get_prism_mod_calls(self, func: ast.FunctionDef) -> List[Path]:
         f"""
-        Get calls to `{prism_function_alias}.mod` from `func`
+        Get calls to `mods.ref` from `func`
         
         args:
             func: run function represented as an ast.FunctionDef object
@@ -190,10 +191,10 @@ class AstParser:
                 continue
             else:
                 try:
-                    if c.func.value.id==prism_function_alias and c.func.attr=='mod': # type: ignore
+                    if c.func.value.id==prism_mods_alias and c.func.attr=='ref': # type: ignore
                         args = c.args
                         if len(args)>1:
-                            raise prism.exceptions.ParserException(f'too many arguments in `{prism_function_alias}.mod` call')
+                            raise prism.exceptions.ParserException(f'too many arguments in `mods.ref()` call')
                         if Path(args[0].s) not in mod_calls: # type: ignore
                             if args[0].s==str(self.module_relative_path): # type: ignore
                                 raise prism.exceptions.ParserException(message=f'self-references found in `{str(self.module_relative_path)}`')
@@ -265,10 +266,10 @@ class AstParser:
         if run_func is None:
             raise prism.exceptions.ParserException(message=f"no `run` function in PrismTask in `{str(self.module_relative_path)}`")
         run_args = self.get_func_args(run_func)
-        if sorted(run_args)!=sorted([prism_function_alias, 'self']):
+        if sorted(run_args)!=sorted([prism_mods_alias, prism_hooks_alias, 'self']):
             msg_list = [
                 f'invalid arguments in `run` function in PrismTask in {str(self.module_relative_path)}',
-                f'should only be `self` and `{prism_function_alias}`'
+                f'should only be "self", "{prism_mods_alias}", and "{prism_hooks_alias}"'
             ]
             raise prism.exceptions.ParserException(message='\n'.join(msg_list))
 

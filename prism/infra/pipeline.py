@@ -17,11 +17,12 @@ from typing import Any, Dict
 # Prism-specific imports
 from prism.infra import project as prism_project
 from prism.infra import executor as prism_executor
-from prism.infra import psm
+from prism.infra import mods, hooks
 import prism.constants
 import prism.exceptions
 import prism.logging
 from prism.mixins import sys_handler
+from prism.constants import INTERNAL_MODS_VARNAME, INTERNAL_HOOKS_VARNAME
 
 
 ######################
@@ -56,17 +57,19 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
             if self.project.which=='run':
                 raise prism.exceptions.RuntimeException(message='`pyspark` adapter found in profile.yml, use `spark-submit` command')
 
-        # Create PSM object
-        psm_obj = psm.PrismFunctions(self.project, upstream={})
+        # Create mods and hooks objects
+        mods_obj = mods.PrismMods(upstream={})
+        hooks_obj = hooks.PrismHooks(self.project)
         
         # If PySpark adapter is specified in the profile, then explicitly add SparkSession to psm object
         if 'pyspark' in list(self.project.adapters_object_dict.keys()):
             pyspark_adapter = self.project.adapters_object_dict['pyspark']
             pyspark_alias = pyspark_adapter.get_alias()
             pyspark_spark_session = pyspark_adapter.engine
-            setattr(psm_obj, pyspark_alias, pyspark_spark_session)
+            setattr(hooks_obj, pyspark_alias, pyspark_spark_session)
 
-        self.pipeline_globals['psm'] = psm_obj
+        self.pipeline_globals[INTERNAL_MODS_VARNAME] = mods_obj
+        self.pipeline_globals[INTERNAL_HOOKS_VARNAME] = hooks_obj
         
         # Create sys handler
         self.pipeline_globals = self.add_sys_path(self.project.project_dir, self.pipeline_globals)

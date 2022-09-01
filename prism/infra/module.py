@@ -16,7 +16,8 @@ from typing import Any, Dict
 
 # Prism-specific imports
 import prism.exceptions
-from prism.infra.psm import PrismFunctions
+from prism.infra.mods import PrismMods
+from prism.infra.hooks import PrismHooks
 from prism.infra.compiler import Manifest
 from prism.parsers.ast_parser import AstParser
 
@@ -79,7 +80,8 @@ class CompiledModule:
 
     def instantiate_module_class(self,
         globals_dict: Dict[Any, Any],
-        psm: PrismFunctions,
+        mods: PrismMods,
+        hooks: PrismHooks,
         explicit_run: bool = True
     ):
         """
@@ -87,7 +89,8 @@ class CompiledModule:
 
         args:
             globals_dict: globals dictionary
-            psm: PrismFunctions object
+            mods: PrismMods object
+            hooks: PrismHooks object
             explicit run: boolean indicating whether to run the Task. Default is True
         returns:
             variable used to store task instantiation
@@ -105,8 +108,9 @@ class CompiledModule:
         exec(self.module_str, globals_dict)
         exec(f'{task_var_name}={prism_task_class_name}({explicit_run})', globals_dict)
 
-        # Set PrismFunctions object
-        globals_dict[task_var_name].set_psm(psm)
+        # Set mods and hooks
+        globals_dict[task_var_name].set_mods(mods)
+        globals_dict[task_var_name].set_hooks(hooks)
         
         # Return name of variable used to store task instantiation
         return task_var_name
@@ -114,13 +118,14 @@ class CompiledModule:
 
     def exec(self,
         globals_dict: Dict[Any, Any],
-        psm: PrismFunctions,
+        mods: PrismMods,
+        hooks: PrismHooks,
         explicit_run: bool = True
-    ) -> PrismFunctions:
-        task_var_name = self.instantiate_module_class(globals_dict, psm, explicit_run)
+    ) -> PrismMods:
+        task_var_name = self.instantiate_module_class(globals_dict, mods, hooks, explicit_run)
         globals_dict[task_var_name].exec()
-        psm.upstream[self.name] = globals_dict[task_var_name]
-        return psm
+        mods.upstream[self.name] = globals_dict[task_var_name]
+        return mods
 
 
 # EOF
