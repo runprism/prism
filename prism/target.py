@@ -11,13 +11,8 @@ Table of Contents
 ## Imports ##
 #############
 
-# Standard library imports
-from pathlib import Path
-from typing import Tuple
-
 # Prism imports
 import prism.exceptions
-from prism.task import PrismTask
 import prism.infra.hooks
 import prism.infra.mods
 

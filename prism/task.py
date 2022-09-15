@@ -102,7 +102,7 @@ class PrismTask:
                     obj = func(self, mods, hooks)
 
                     # Initialize an instance of the target class and save the object using the target's `save` method
-                    target = type(obj, loc)
+                    target = type(obj, loc, hooks=None)
                     target.save(**kwargs)
 
                     # If a target is set, just assume that the user wants to reference the location of the target
