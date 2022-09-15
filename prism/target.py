@@ -28,31 +28,32 @@ import prism.infra.mods
 
 class PrismTarget:
 
-	def __init__(self, obj, loc):
-		self.obj = obj
-		self.loc = loc
+    def __init__(self, obj, loc, hooks):
+        self.obj = obj
+        self.loc = loc
+        self.hooks = hooks
 
-	def save(self):
-		raise prism.exceptions.RuntimeException(message="`save` method not implemented")
+    def save(self):
+        raise prism.exceptions.RuntimeException(message="`save` method not implemented")
 
 
 class PySparkParquet(PrismTarget):
 
-	def save(self, **kwargs):
-		self.obj.write.parquet(self.loc, **kwargs)
+    def save(self, **kwargs):
+        self.obj.write.parquet(self.loc, **kwargs)
 
 
 class PandasCsv(PrismTarget):
 
-	def save(self, **kwargs):
-		self.obj.to_csv(self.loc, **kwargs)
+    def save(self, **kwargs):
+        self.obj.to_csv(self.loc, **kwargs)
 
 
 class NumpyTxt(PrismTarget):
-	
-	def save(self, **kwargs):
-		import numpy as np
-		np.savetxt(self.loc, self.obj, **kwargs)
+    
+    def save(self, **kwargs):
+        import numpy as np
+        np.savetxt(self.loc, self.obj, **kwargs)
 
 
 class Txt(PrismTarget):
@@ -127,7 +128,7 @@ def target(type, loc, **kwargs):
                             t = zipped[1]
                             l = zipped[2]
                             k = zipped[3]
-                            target = t(o, l)
+                            target = t(o, l, hooks)
                             target.save(**k)
 
                         # If a target is set, just assume that the user wants to reference the location of the target
@@ -138,7 +139,7 @@ def target(type, loc, **kwargs):
                     else:
 
                         # Initialize an instance of the target class and save the object using the target's `save` method
-                        target = type(obj, loc)
+                        target = type(obj, loc, hooks)
                         target.save(**kwargs)
 
                         # If a target is set, just assume that the user wants to reference the location of the target
