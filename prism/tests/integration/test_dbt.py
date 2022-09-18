@@ -40,7 +40,7 @@ TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 ## Test case class definition ##
 ################################
 
-class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase): 
+class TestDbtIntegration(integration_test_class.IntegrationTestCase): 
 
     
     def test_simple_dbt_project(self):
