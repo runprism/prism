@@ -37,11 +37,11 @@ class Module01(PrismTask):
         Execute task.
 
         args:
-            psm: built-in prism fns. These include:
-                - psm.mod     --> for referencing output of other tasks
-                - psm.dbt_ref --> for getting dbt models as a pandas DataFrame
-                - psm.sql     --> for executing sql query using an adapter in profile.yml
-                - psm.spark   --> for accessing SparkSession (if pyspark specified in profile.yml)
+            mods: used to reference output of other tasks --> mods.ref('...')
+            hooks: built-in Prism hooks. These include:
+                - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
+                - hooks.sql     --> for executing sql query using an adapter in profile.yml
+                - hooks.spark   --> for accessing SparkSession (if pyspark specified in profile.yml)
         returns:
             task output
         """
