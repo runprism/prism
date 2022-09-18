@@ -13,7 +13,6 @@ Table of Contents:
 
 # Standard library imports
 import ast
-from modulefinder import Module
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
