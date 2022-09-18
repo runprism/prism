@@ -27,7 +27,7 @@ class Module02(PrismTask):
 
     ## Run    
     @target(type=Txt, loc=f'{prism_project.OUTPUT}/target_txt.txt')
-    def run(self, psm):
+    def run(self, mods, hooks):
         string = "Hello, world!"
         return string
 

@@ -28,7 +28,7 @@ class Module02(PrismTask):
     
     ## Run
     @PrismTask.target(type=PrismTarget.Txt, loc=os.path.join(prism_project.OUTPUT, 'module02.txt'))
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 
@@ -41,7 +41,7 @@ class Module02(PrismTask):
         returns:
             task output
         """
-        with open(psm.mod('extract/this_is_an_error.py'), 'r') as f:
+        with open(mods.ref('extract/this_is_an_error.py'), 'r') as f:
             lines = f.read()
         f.close()
         return lines + "\n" + "Hello from module 2!"

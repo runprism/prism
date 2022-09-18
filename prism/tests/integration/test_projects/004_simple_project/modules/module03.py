@@ -26,7 +26,7 @@ import prism.target as PrismTarget     # Not necessary; prism infrastructure aut
 class Module03(PrismTask):
     
     ## Run
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 

@@ -32,7 +32,7 @@ class Module01(PrismTask):
 
     ## Run
     @target(type=PySparkParquet, loc=os.path.join(prism_project.OUTPUT, 'target_parquet'), mode='overwrite')
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 

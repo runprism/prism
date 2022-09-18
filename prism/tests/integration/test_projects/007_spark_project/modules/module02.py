@@ -32,7 +32,7 @@ class Module02(PrismTask):
 
     ## Run
     @PrismTask.target(type=PrismTarget.PySparkParquet, loc=os.path.join(prism_project.OUTPUT, 'module02'), mode='overwrite')
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 
@@ -45,7 +45,7 @@ class Module02(PrismTask):
         returns:
             task output
         """
-        df = psm.spark.read.parquet(psm.mod('module01.py'))
+        df = psm.spark.read.parquet(mods.ref('module01.py'))
         df_new = df.filter(F.col('col1')>=F.lit('col1_value2'))
         return df_new
 

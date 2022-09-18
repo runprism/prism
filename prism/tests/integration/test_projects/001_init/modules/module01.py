@@ -28,7 +28,7 @@ class Module01(PrismTask):
 
     ## Run
     @PrismTask.target(type=PrismTarget.Txt, loc=os.path.join(prism_project.OUTPUT, 'hello_world.txt'))
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 

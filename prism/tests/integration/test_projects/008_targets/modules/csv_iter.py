@@ -28,7 +28,7 @@ class Module03(PrismTask):
 
     ## Run    
     @target_iterator(type=PandasCsv, loc=prism_project.OUTPUT, index=False)
-    def run(self, psm):
+    def run(self, mods, hooks):
         data1 = {
             'col1': ['col1_value1', 'col1_value2', 'col1_value3'],
             'col2': ['col2_value1', 'col2_value2', 'col2_value3'],

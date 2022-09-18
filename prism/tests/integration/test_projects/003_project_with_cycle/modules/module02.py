@@ -27,7 +27,7 @@ import prism.target as PrismTarget     # Not necessary; prism infrastructure aut
 class Module02(PrismTask):
 
     ## Run
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 
@@ -40,7 +40,7 @@ class Module02(PrismTask):
         returns:
             task output
         """
-        return psm.mod('module03.py') + '\n' + 'Hello fro module 3!'
+        return mods.ref('module03.py') + '\n' + 'Hello fro module 3!'
 
 
 # EOF

@@ -28,7 +28,7 @@ class Module01(PrismTask):
 
     ## Run
     @PrismTask.target(type=PrismTarget.PandasCsv, loc=os.path.join(prism_project.OUTPUT, 'module01.csv'), index=False)
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 

@@ -32,7 +32,7 @@ class Module03(PrismTask):
         return lines
     
     ## Run
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 
@@ -45,8 +45,8 @@ class Module03(PrismTask):
         returns:
             task output
         """
-        module1_times = pd.read_csv(psm.mod('module01.py'))
-        module2_times = pd.read_csv(psm.mod('module02.py'))
+        module1_times = pd.read_csv(mods.ref('module01.py'))
+        module2_times = pd.read_csv(mods.ref('module02.py'))
         return 'Hello from module 3!'
 
 

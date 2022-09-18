@@ -30,7 +30,7 @@ import prism.target as PrismTarget     # Not necessary; prism infrastructure aut
 class Module03(PrismTask):
 
     ## Run
-    def run(self, psm):
+    def run(self, mods, hooks):
         """
         Execute task.
 
@@ -43,7 +43,7 @@ class Module03(PrismTask):
         returns:
             task output
         """
-        df = psm.spark.read.parquet(psm.mod('module02.py'))
+        df = psm.spark.read.parquet(mods.ref('module02.py'))
         df_new = df.filter(F.col('col1')>=F.lit('col1_value3'))
         return df_new
 
