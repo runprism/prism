@@ -24,8 +24,7 @@ class Module01(PrismTask):
         Execute task.
 
         args:
-            mods: object used to access the output of other tasks, e.g.,:
-                mods.ref('some_other_task.py')
+            mods: used to reference output of other tasks --> mods.ref('...')
             hooks: hooks used to augment Prism functionality. These include:
                 hooks.sql     --> for executing sql query using an adapter in profile.yml
                 hooks.spark   --> for accessing SparkSession (if pyspark specified in profile.yml)
