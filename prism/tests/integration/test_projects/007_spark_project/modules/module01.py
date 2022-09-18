@@ -63,7 +63,7 @@ class Module01(PrismTask):
         ]
 
         # Load data into schema
-        df = psm.spark.createDataFrame(data, schema)
+        df = hooks.spark.createDataFrame(data, schema)
         return df
 
 

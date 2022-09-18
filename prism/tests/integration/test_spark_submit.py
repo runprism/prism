@@ -99,15 +99,17 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # Check manifest
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        for module in ['module01.py', 'module02.py', 'module03.py', 'module04.py']:
-            self.assertEqual('success', manifest_elems[module]['status'])
-        self.assertEqual([], manifest_elems['module01.py']['refs'])
-        self.assertEqual('module01.py', manifest_elems['module02.py']['refs'])
-        self.assertEqual('module02.py', manifest_elems['module03.py']['refs'])
-        self.assertEqual('module03.py', manifest_elems['module04.py']['refs'])
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        module01_refs = self._load_module_refs("module01.py", manifest)
+        module02_refs = self._load_module_refs("module02.py", manifest)
+        module03_refs = self._load_module_refs("module03.py", manifest)
+        module04_refs = self._load_module_refs("module04.py", manifest)
+
+        self.assertEqual([], module01_refs)
+        self.assertEqual('module01.py', module02_refs)
+        self.assertEqual('module02.py', module03_refs)
+        self.assertEqual('module03.py', module04_refs)
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
@@ -146,14 +148,17 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # Check manifest
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('module01.py' in manifest_elems.keys())
-        for module in ['module02.py', 'module03.py', 'module04.py']:
-            self.assertFalse(module in manifest_elems.keys())
-        self.assertEqual('success', manifest_elems['module01.py']['status'])
-        self.assertEqual([], manifest_elems['module01.py']['refs'])
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        module01_refs = self._load_module_refs("module01.py", manifest)
+        module02_refs = self._load_module_refs("module02.py", manifest)
+        module03_refs = self._load_module_refs("module03.py", manifest)
+        module04_refs = self._load_module_refs("module04.py", manifest)
+
+        self.assertEqual([], module01_refs)
+        self.assertEqual('module01.py', module02_refs)
+        self.assertEqual('module02.py', module03_refs)
+        self.assertEqual('module03.py', module04_refs)
 
         # Check the results of the output directory
         self.assertTrue(Path(wkdir / 'output' / 'module01').is_dir())

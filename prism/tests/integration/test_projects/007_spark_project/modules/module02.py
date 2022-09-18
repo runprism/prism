@@ -45,7 +45,7 @@ class Module02(PrismTask):
         returns:
             task output
         """
-        df = psm.spark.read.parquet(mods.ref('module01.py'))
+        df = hooks.spark.read.parquet(mods.ref('module01.py'))
         df_new = df.filter(F.col('col1')>=F.lit('col1_value2'))
         return df_new
 
