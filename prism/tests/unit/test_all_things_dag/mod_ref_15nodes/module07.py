@@ -3,8 +3,8 @@ import prism.target as PrismTarget
 
 class Module07(PrismTask):
 
-    def run(self, psm):
-        return psm.mod('module04.py') + psm.mod('module06.py') + "This is module 07. "
+    def run(self, mods, hooks):
+        return mods.ref('module04.py') + mods.ref('module06.py') + "This is module 07. "
 
 
 # EOF

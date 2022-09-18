@@ -3,8 +3,8 @@ import prism.target as PrismTarget
 
 class Modulee(PrismTask):
 
-    def run(self, psm):
-        return psm.mod('moduleA.py') + psm.mod('moduleC.py') + psm.mod('moduleD.py') + " This is module E."
+    def run(self, mods, hooks):
+        return mods.ref('moduleA.py') + mods.ref('moduleC.py') + mods.ref('moduleD.py') + " This is module E."
 
 
 # EOF

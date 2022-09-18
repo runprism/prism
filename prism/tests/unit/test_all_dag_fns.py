@@ -114,7 +114,7 @@ class TestAllDagFunctions(unittest.TestCase):
             Path('moduleA.py'): None,
             Path('moduleB.py'): Path('moduleA.py'),
             Path('moduleC.py'): Path('moduleA.py'),
-            Path('moduleD.py'): [Path('moduleB.py'), Path('moduleA.py'), Path('moduleC.py')],    # We list psm.mod('moduleB.py') before psm.mod('moduleA.py')
+            Path('moduleD.py'): [Path('moduleB.py'), Path('moduleA.py'), Path('moduleC.py')],    # We list mods.ref('moduleB.py') before mods.ref('moduleA.py')
             Path('moduleE.py'): [Path('moduleA.py'), Path('moduleC.py'), Path('moduleD.py')]
         }
 
