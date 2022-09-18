@@ -21,7 +21,8 @@ import os
 from pyspark.sql.types import StructType, StructField, StringType
 import prism_project
 from prism.task import PrismTask
-from prism.target import target, PySparkParquet
+from prism.target import PySparkParquet
+from prism.decorators import target
 
 
 ######################

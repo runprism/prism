@@ -16,7 +16,8 @@ Table of Contents:
 
 import prism_project
 from prism.task import PrismTask
-from prism.target import target, Txt
+from prism.target import Txt
+from prism.decorators import target
 
 
 ######################

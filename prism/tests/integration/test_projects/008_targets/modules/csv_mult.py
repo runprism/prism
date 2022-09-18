@@ -16,7 +16,8 @@ Table of Contents:
 
 import prism_project
 from prism.task import PrismTask
-from prism.target import target, PandasCsv
+from prism.target import PandasCsv
+from prism.decorators import target
 import pandas as pd
 
 

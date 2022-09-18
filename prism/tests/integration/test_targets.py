@@ -67,13 +67,11 @@ class TestTargetIntegration(integration_test_class.IntegrationTestCase):
         args = ['spark-submit']
         spark_submit = self._run_prism(args)
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
         for module in ['parquet.py', 'txt.py', 'csv.py', 'csv_mult.py']:
-            self.assertTrue(module in manifest_elems.keys())
-            self.assertEqual('success', manifest_elems[module]['status'])
-            self.assertEqual([], manifest_elems[module]['refs'])
+            refs = self._load_module_refs(module, manifest)
+            self.assertEqual([], refs)
 
         # Check contents of output
 
