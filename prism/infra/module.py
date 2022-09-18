@@ -18,7 +18,7 @@ from typing import Any, Dict
 import prism.exceptions
 from prism.infra.mods import PrismMods
 from prism.infra.hooks import PrismHooks
-from prism.infra.compiler import Manifest
+from prism.infra.manifest import Manifest, ModuleManifest
 from prism.parsers.ast_parser import AstParser
 
 
@@ -48,7 +48,11 @@ class CompiledModule:
     Class for defining and executing a single compiled module
     """
 
-    def __init__(self, module_relative_path: Path, module_full_path: Path, manifest: Manifest):
+    def __init__(self,
+        module_relative_path: Path,
+        module_full_path: Path,
+        module_manifest: ModuleManifest
+    ):
         self.module_relative_path = module_relative_path
         self.module_full_path = module_full_path
         with open(self.module_full_path, 'r') as f:
@@ -62,20 +66,22 @@ class CompiledModule:
         # Module name
         self.name = str(self.module_relative_path)
 
-        # Refs
-        self.manifest = manifest
-        self.refs = self._check_manifest(self.name, self.manifest)
+        # Set manifest
+        self.module_manifest = module_manifest
+        self.refs = self._check_manifest(self.module_manifest)
     
 
-    def _check_manifest(self, module_name: str, manifest: Manifest):
+    def _check_manifest(self, module_manifest: ModuleManifest):
         """
         Check manifest and return list of refs associated with compiled
         module
         """
-        manifest_dict = manifest.manifest_dict
-        if module_name not in list(manifest_dict['manifest'].keys()):
-            raise prism.exceptions.CompileException(message = f'`{module_name}` not in manifest.yml')
-        return manifest_dict['manifest'][module_name]['refs']
+        refs = []
+        manifest_refs = module_manifest.manifest_dict["refs"]
+        for ref_obj in manifest_refs: refs.append(ref_obj["source"])
+        if len(refs)==1:
+            refs = refs[0]
+        return refs
     
 
     def instantiate_module_class(self,

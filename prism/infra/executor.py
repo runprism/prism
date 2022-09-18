@@ -56,6 +56,9 @@ class DagExecutor:
     ):
         self.project_dir = project_dir
         self.compiled_dag = compiled_dag
+        
+        # Extract attributes from compiled_dag instance
+        self.compiled_modules = self.compiled_dag.compiled_modules
         self.topological_sort_relative_path = self.compiled_dag.topological_sort
         self.topological_sort_full_path = self.compiled_dag.topological_sort_full_path
         self.user_arg_modules = self.compiled_dag.user_arg_modules
@@ -66,11 +69,6 @@ class DagExecutor:
             self.nodes_not_explicitly_run = list(set(self.topological_sort_relative_path)-set(self.user_arg_modules))
         else:
             self.nodes_not_explicitly_run = []
-
-        # Create module objects
-        self.dag_module_objects = []
-        for relative, full in zip(self.topological_sort_relative_path, self.topological_sort_full_path):
-            self.dag_module_objects.append(prism_module.CompiledModule(relative, full, self.compiled_dag.manifest))
         
         # Number of processes used to run concurrent tasks
         self.threads = threads
@@ -211,8 +209,8 @@ class DagExecutor:
 
         # If single-threaded, just run the modules in order
         if self.threads==1:
-            while self.dag_module_objects!=[]:
-                curr = self.dag_module_objects.pop(0)
+            while self.compiled_modules!=[]:
+                curr = self.compiled_modules.pop(0)
                 result = self.exec_single(args, curr, self.mods, self.hooks)
                 callback(result)
                 if self.mods==0:
@@ -225,10 +223,10 @@ class DagExecutor:
         else:
             async_results = {}
             with Pool(processes=self.threads) as pool:
-                while self.dag_module_objects!=[]:
+                while self.compiled_modules!=[]:
                     
                     # Get first module to execute
-                    curr = self.dag_module_objects[0]
+                    curr = self.compiled_modules[0]
                     refs = self.check_task_refs(curr)
 
                     # If an error occurred, skip all remaining tasks
@@ -241,7 +239,7 @@ class DagExecutor:
                         if len(refs)==0:                
                             res = pool.apply_async(self.exec_single, args=(args,curr,self.mods,self.hooks), callback=callback)
                             async_results[curr.name] = res
-                            self.dag_module_objects.pop(0)
+                            self.compiled_modules.pop(0)
                         
                         # Since DAG is run in order, refs should have been added to pool
                         # before current task. Wait for upstream tasks
@@ -255,7 +253,7 @@ class DagExecutor:
                             else:
                                 res = pool.apply_async(self.exec_single, args=(args,curr,self.mods,self.hooks), callback=callback)
                                 async_results[curr.name] = res
-                                self.dag_module_objects.pop(0)
+                                self.compiled_modules.pop(0)
                 pool.close()
                 pool.join()
 

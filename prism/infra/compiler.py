@@ -11,7 +11,9 @@ Table of Contents
 #############
 
 # Standard library imports
+from multiprocessing import dummy
 import os
+import json
 from dataclasses import dataclass
 import networkx as nx
 from pathlib import Path
@@ -19,48 +21,43 @@ from typing import Any, Dict, List, Tuple
 import yaml
 
 # Prism-specific imports
+import prism.constants
 import prism.exceptions
 import prism.logging
 import prism.parsers.ast_parser as ast_parser
+import prism.infra.module
+from prism.infra.manifest import Manifest, ModuleManifest
 
 
 ######################
 ## Class definition ##
 ######################
 
-class Manifest:
-    """
-    Class used to store metadata on compiled prism project
-    """
 
-    def __init__(self):
-        self.manifest_dict: Dict[str, Any] = {'manifest': {}}
-
-    def add_element(self, elem: str, elem_dict: Dict[str, Any]):
-        self.manifest_dict['manifest'][elem] = elem_dict
-        
-    def yaml_dump(self, path: Path):
-        with open(path / 'manifest.yml', 'w') as f:
-            yaml.safe_dump(self.manifest_dict, f, sort_keys=False)
-        f.close()
-
-
-## Compiled Dag
-@dataclass
 class CompiledDag:
     """
     Compiled DAG
     """
+    def __init__(self,
+        modules_dir: Path,
+        topological_sort: List[Path],
+        user_arg_modules: List[Path],
+        module_manifests: Dict[Path, ModuleManifest]
+    ):
+        self.modules_dir = modules_dir
+        self.topological_sort = topological_sort
+        self.user_arg_modules = user_arg_modules
+        self.module_manifests = module_manifests
 
-    topological_sort: List[Path]
-    user_arg_modules: List[Path]
-    manifest: Manifest
+        # Store full paths in attribute
+        self.topological_sort_full_path = [self.modules_dir / module for module in self.topological_sort]
 
-    def add_full_path(self, module_dir: Path):
-        self.module_dir = module_dir
-        t_new = [self.module_dir / module for module in self.topological_sort]
-        self.topological_sort_full_path = t_new
-        
+        # Create module objects
+        self.compiled_modules = []
+        for relative, full in zip(self.topological_sort, self.topological_sort_full_path):
+            self.compiled_modules.append(prism.infra.module.CompiledModule(relative, full, self.module_manifests[relative]))
+
+
 
 ## Dag Compiler
 class DagCompiler:
@@ -80,8 +77,11 @@ class DagCompiler:
         self.user_arg_modules = user_arg_modules
         os.chdir(project_dir)
 
-        # Manifest
-        self.manifest = Manifest()
+        # Path of modules
+        self.modules_dir = self.project_dir / 'modules'
+
+        # Module manifests
+        self.module_manifests: Dict[Path, ModuleManifest] = {}
 
 
     def parse_mod_refs(self,
@@ -109,6 +109,10 @@ class DagCompiler:
                 mod_refs_dict[m] = None
             else:
                 mod_refs_dict[m] = mod_refs
+            
+            # Keep track of module manifest
+            self.module_manifests[m] = parser.module_manifest
+
         return mod_refs_dict
 
 
@@ -300,37 +304,7 @@ class DagCompiler:
             # Raise error if node not in project
             if elem not in all_modules:
                 raise prism.exceptions.CompileException(message=f'module `{str(elem)}` not found in project')
-
-            # Add module to manifest to indicate successful parsing
-            if isinstance(mod_refs[elem], list):
-                self.manifest.add_element(str(elem), elem_dict={
-                    'status': 'success',
-                    'refs': [str(m) for m in mod_refs[elem]],
-                })
-            elif isinstance(mod_refs[elem], Path):
-                self.manifest.add_element(str(elem), elem_dict={
-                    'status': 'success',
-                    'refs': str(mod_refs[elem]),
-                })
-            else:
-                if mod_refs[elem] is not None:
-                    raise prism.exceptions.CompileException(message=f'failed to create manifest.yml')
-                self.manifest.add_element(str(elem), elem_dict={
-                    'status': 'success',
-                    'refs': [],
-                })
-        
-        # Add DAG manifest
-        self.manifest.add_element('dag', elem_dict={
-            'status': 'success'
-        })
-        topsort_elems_as_str = [str(t) for t in all_topological_sorts_list]
-        
-        # Add top-sort to manifest
-        self.manifest.add_element('top-sort', elem_dict={
-            'value': topsort_elems_as_str
-        })
-        
+       
         return all_topological_sorts_list
 
     
@@ -338,12 +312,15 @@ class DagCompiler:
         """
         Compile the DAG
         """
-        modules_dir = self.project_dir / 'modules'
-        all_topological_sorts_list = self.create_topsort(self.all_modules, self.user_arg_modules, modules_dir)
+        all_topological_sorts_list = self.create_topsort(self.all_modules, self.user_arg_modules, self.modules_dir)
 
         # Dump manifest
-        self.manifest.yaml_dump(self.compiled_dir)
-        return CompiledDag(all_topological_sorts_list, self.user_arg_modules, self.manifest)
+        manifest = Manifest(list(self.module_manifests.values()))
+        manifest.json_dump(self.compiled_dir)
+
+        # Return dag
+        dag = CompiledDag(self.modules_dir, all_topological_sorts_list, self.user_arg_modules, self.module_manifests)
+        return dag
 
 
 # EOF
