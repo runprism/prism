@@ -13,11 +13,13 @@ Table of Contents:
 
 # Standard library imports
 import ast
+from modulefinder import Module
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 # Prism imports
 import prism.exceptions
+from prism.infra.manifest import ModuleManifest
 
 
 ######################
@@ -39,11 +41,19 @@ class AstParser:
     ):
         self.module_relative_path = module_relative_path
         self.parent_path = parent_path
+        
+        # Create a module manifest
+        self.module_manifest = ModuleManifest()
+
+        # Extract module as a string and parse
         self.module_path = Path(self.parent_path / self.module_relative_path)
         with open(self.module_path, 'r') as f:
             self.module_str = f.read()
         f.close()
         self.ast_module = ast.parse(self.module_str)
+
+        # Add module source code to manifest
+        self.module_manifest.add_module(self.module_relative_path, self.module_str)
 
         # Check existence of if-name-main
         bool_if_name_main = self.check_if_name_main(self.ast_module)
@@ -279,8 +289,10 @@ class AstParser:
         for func in all_funcs:
             all_mods+=self.get_prism_mod_calls(func)
         if len(all_mods)==1:
+            self.module_manifest.add_ref(target=self.module_relative_path, source=all_mods[0])
             return all_mods[0]
         else:
+            for mr in all_mods: self.module_manifest.add_ref(target=self.module_relative_path, source=mr) 
             return all_mods
 
 
