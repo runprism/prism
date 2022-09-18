@@ -147,7 +147,7 @@ def target_iterator(*, type, loc, **kwargs):
                 
                 # Iterate through objects and save them out
                 for name, obj in objs.items():
-                    target = type(obj, Path(loc) / name)
+                    target = type(obj, Path(loc) / name, hooks)
                     target.save(**kwargs)
                 
                 return loc
