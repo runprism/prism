@@ -19,8 +19,6 @@ import shutil
 import unittest
 
 # Prism imports
-import prism.cli.base
-from prism.main import main
 import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
@@ -101,7 +99,7 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
         # Check that none of the modules are compiled
         self.assertFalse(Path(wkdir / '.compiled').is_dir())
-        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
+        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
@@ -127,85 +125,8 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
         # Check that none of the modules are compiled
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
+        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         
-        # Set up wkdir for the next test case
-        shutil.rmtree(Path(wkdir / '.compiled'))
-        self._set_up_wkdir()
-    
-
-    def test_simple_project_one_modules_no_deps(self):
-        """
-        `prism compile` using one module with no dependencies
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '004_simple_project'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        if Path(wkdir / '.compiled').is_dir():
-            shutil.rmtree(Path(wkdir / '.compiled'))
-
-        # Execute command
-        args = ['compile', '--modules', 'module03.py']
-        compile_run = self._run_prism(args)
-        compile_run_results = compile_run.get_results()
-        self.assertEqual(' | '.join(simple_project_expected_events), compile_run_results)
-
-        # Check that .compiled directory is formed
-        self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
-
-        # Check elements of manifest
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('module03.py' in list(manifest_elems.keys()))
-        self.assertFalse('module01.py' in list(manifest_elems.keys()))
-        self.assertFalse('module02.py' in list(manifest_elems.keys()))
-        self.assertEqual('success', manifest_elems['module03.py']['status'])
-        self.assertEqual([], manifest_elems['module03.py']['refs'])
-
-        # Set up wkdir for the next test case
-        shutil.rmtree(Path(wkdir / '.compiled'))
-        self._set_up_wkdir()
-    
-
-    def test_simple_project_one_modules_yes_deps(self):
-        """
-        `prism compile` using one module with dependencies
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '004_simple_project'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        if Path(wkdir / '.compiled').is_dir():
-            shutil.rmtree(Path(wkdir / '.compiled'))
-        
-        # Execute command
-        args = ['compile', '--modules', 'module02.py']
-        compile_run = self._run_prism(args)
-        compile_run_results = compile_run.get_results()
-        self.assertEqual(' | '.join(simple_project_expected_events), compile_run_results)
-
-        # Check that .compiled directory is formed and only expected modules are compiled
-        self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
-
-        # Check elements of manifest
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('module01.py' in list(manifest_elems.keys()))
-        self.assertTrue('module02.py' in list(manifest_elems.keys()))
-        self.assertFalse('module03.py' in list(manifest_elems.keys()))
-
-        for module in ['module01.py', 'module02.py']:
-            self.assertEqual('success', manifest_elems[module]['status'])
-        self.assertEqual([], manifest_elems['module01.py']['refs'])
-        self.assertEqual('module01.py', manifest_elems['module02.py']['refs'])
-
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
@@ -231,20 +152,16 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
         # Check that .compiled directory is formed
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
         # Check elements of manifest
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('module01.py' in list(manifest_elems.keys()))
-        self.assertTrue('module02.py' in list(manifest_elems.keys()))
-        self.assertTrue('module03.py' in list(manifest_elems.keys()))
-
-        for module in ['module01.py', 'module02.py', 'module03.py']:
-            self.assertEqual('success', manifest_elems[module]['status'])
-        self.assertEqual([], manifest_elems['module01.py']['refs'])
-        self.assertEqual('module01.py', manifest_elems['module02.py']['refs'])
-        self.assertEqual([], manifest_elems['module03.py']['refs'])
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        module01_refs = self._load_module_refs("module01.py", manifest)
+        module02_refs = self._load_module_refs("module02.py", manifest)
+        module03_refs = self._load_module_refs("module03.py", manifest)
+        self.assertEqual([], module01_refs)
+        self.assertEqual('module01.py', module02_refs)
+        self.assertEqual([], module03_refs)
 
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
@@ -271,18 +188,18 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
         # Check that .compiled directory is formed
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
         # Check elements of manifest
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('extract/module01.py' in list(manifest_elems.keys()))
-        self.assertTrue('extract/module02.py' in list(manifest_elems.keys()))
-        self.assertTrue('load/module03.py' in list(manifest_elems.keys()))
-        self.assertTrue('module04.py' in list(manifest_elems.keys()))
-
-        for module in ['extract/module01.py', 'extract/module02.py', 'load/module03.py', 'module04.py']:
-            self.assertEqual('success', manifest_elems[module]['status'])
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        extract_module01_refs = self._load_module_refs("extract/module01.py", manifest)
+        extract_module02_refs = self._load_module_refs("extract/module02.py", manifest)
+        load_module03_refs = self._load_module_refs("load/module03.py", manifest)
+        module04_refs = self._load_module_refs("module04.py", manifest)
+        self.assertEqual([], extract_module01_refs)
+        self.assertEqual("extract/module01.py", extract_module02_refs)
+        self.assertEqual("extract/module02.py", load_module03_refs)
+        self.assertEqual("load/module03.py", module04_refs)
         
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
@@ -309,7 +226,7 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
         # Check that .compiled directory is not created
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
+        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))

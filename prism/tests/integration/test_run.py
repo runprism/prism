@@ -131,22 +131,19 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
         # Check events
         self.assertEqual(' | '.join(simple_project_all_modules_expected_events), runtask_run_results)
 
-        # Check manifest.yml
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('module01.py' in list(manifest_elems.keys()))
-        self.assertTrue('module02.py' in list(manifest_elems.keys()))
-        self.assertTrue('module03.py' in list(manifest_elems.keys()))
-        for module in ['module01.py', 'module02.py', 'module03.py']:
-            self.assertEqual('success', manifest_elems[module]['status'])
-        self.assertEqual([], manifest_elems['module01.py']['refs'])
-        self.assertEqual('module01.py', manifest_elems['module02.py']['refs'])
-        self.assertEqual([], manifest_elems['module03.py']['refs'])
+        # Check manifest.json
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        module01_refs = self._load_module_refs("module01.py", manifest)
+        module02_refs = self._load_module_refs("module02.py", manifest)
+        module03_refs = self._load_module_refs("module03.py", manifest)
+        self.assertEqual([], module01_refs)
+        self.assertEqual('module01.py', module02_refs)
+        self.assertEqual([], module03_refs)
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
@@ -227,11 +224,16 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Check manifest
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('module01.py' in list(manifest_elems.keys()))
-        self.assertFalse('module02.py' in list(manifest_elems.keys()))
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        module01_refs = self._load_module_refs("module01.py", manifest)
+        module02_refs = self._load_module_refs("module02.py", manifest)
+        module03_refs = self._load_module_refs("module03.py", manifest)
+        module04_refs = self._load_module_refs("module04.py", manifest)
+        self.assertEqual([], module01_refs)
+        self.assertEqual('module01.py', module02_refs)
+        self.assertEqual('module02.py', module03_refs)
+        self.assertEqual('module03.py', module04_refs)
 
 
         # **************** #
@@ -292,16 +294,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         module02_txt = self._file_as_str(Path(wkdir / 'output' / 'module02.txt'))
         self.assertEqual('Hello from module 1!' + '\n' + 'Hello from module 2!', module02_txt)
 
-        # Check manifest
-        self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('module01.py' in list(manifest_elems.keys()))
-        self.assertTrue('module02.py' in list(manifest_elems.keys()))
-        self.assertTrue('module03.py' in list(manifest_elems.keys()))
-        self.assertTrue('module04.py' in list(manifest_elems.keys()))
-
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
 
@@ -331,17 +323,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             """
             # Check that .compiled directory is formed
             self.assertTrue(Path(wkdir / '.compiled').is_dir())
-            self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
-
-            # Check manifest
-            manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-            manifest_elems = manifest['manifest']
-            self.assertTrue('extract/module01.py' in manifest_elems.keys())
-            self.assertTrue('extract/module02.py' in manifest_elems.keys())
-            for module in ['extract/module01.py', 'extract/module02.py']:
-                self.assertEqual('success', manifest_elems[module]['status'])
-            self.assertEqual([], manifest_elems['extract/module01.py']['refs'])
-            self.assertEqual('extract/module01.py', manifest_elems['extract/module02.py']['refs'])
+            self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
             # Check that outputs are created
             self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
@@ -367,6 +349,17 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Check manifest
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        extract_module01_refs = self._load_module_refs("extract/module01.py", manifest)
+        extract_module02_refs = self._load_module_refs("extract/module02.py", manifest)
+        load_module03_refs = self._load_module_refs("load/module03.py", manifest)
+        module04_refs = self._load_module_refs("module04.py", manifest)
+        self.assertEqual([], extract_module01_refs)
+        self.assertEqual("extract/module01.py", extract_module02_refs)
+        self.assertEqual("extract/module02.py", load_module03_refs)
+        self.assertEqual("load/module03.py", module04_refs)
 
         # Check results
         check_modules_1_2_results()
@@ -396,13 +389,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Check results
         check_modules_1_2_results()
 
-        # Check manifest for load/module03
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        self.assertTrue('load/module03.py' in manifest_elems.keys())
-        self.assertEqual('success', manifest_elems['load/module03.py']['status'])
-        self.assertEqual('extract/module02.py', manifest_elems['load/module03.py']['refs'])
-
         # Remove all files in the compiled and output directory
         self._remove_compiled_dir(wkdir)
         self._remove_files_in_output(wkdir)
@@ -428,15 +414,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Check output of modules 1 and 2
         check_modules_1_2_results()
-
-        # Check manifest for load/module03
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.yml'))
-        manifest_elems = manifest['manifest']
-        for module in ['load/module03.py', 'module04.py']:
-            self.assertTrue(module in manifest_elems.keys())
-            self.assertEqual('success', manifest_elems[module]['status'])
-        self.assertEqual('extract/module02.py', manifest_elems['load/module03.py']['refs'])
-        self.assertEqual('load/module03.py', manifest_elems['module04.py']['refs'])
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
@@ -476,7 +453,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
 
         # But, the manifest file will not be
-        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
+        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)

@@ -23,8 +23,8 @@ import unittest
 import shutil
 import yaml
 import pandas as pd
-import time
-import subprocess
+import json
+from typing import Any, Dict, List
 
 # Prism imports
 import prism.cli.base
@@ -79,10 +79,25 @@ class IntegrationTestCase(unittest.TestCase):
         Load manifest
         """
         with open(path, 'r') as f:
-            manifest = yaml.safe_load(f)
+            manifest = json.load(f)
         f.close()
         return manifest
+
     
+    def _load_module_refs(self, module_name: str, manifest: Dict[str, Any]) -> List[str]:
+        """
+        Load refs associated with module
+        """
+        module_refs = []
+        all_refs = manifest["refs"]
+        for ref_obj in all_refs:
+            if ref_obj["target"]==module_name:
+                module_refs.append(ref_obj["source"])
+        if len(module_refs)==1:
+            return module_refs[0]
+        else:
+            return module_refs
+
 
     def _run_prism(self, args: list):
         """
