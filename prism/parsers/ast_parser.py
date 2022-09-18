@@ -283,7 +283,8 @@ class AstParser:
             kws = targ_call.keywords
             for kw in kws:
                 if kw.arg=="loc":
-                    locs.append(ast.unparse(kw.value))
+                    # mypy thinks ast doesn't have an unparse method, but this is fine
+                    locs.append(ast.unparse(kw.value)) # type: ignore
         
         if len(locs)==1:
             return locs[0]
