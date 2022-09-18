@@ -269,6 +269,8 @@ class AstParser:
         decs = run_func.decorator_list
         target_decs = []
         for call in decs:
+            if not isinstance(call, ast.Call):
+                raise prism.exceptions.CompileException(message="invalid target declaration")
             if isinstance(call.func, ast.Attribute):
                 if call.func.attr in ["target", "target_iterator"]:
                     target_decs.append(call)
@@ -277,7 +279,7 @@ class AstParser:
                     target_decs.append(call)
         
         # Iterate through target decorators and pull out the loc keyword
-        locs = []
+        locs: List[str] = []
         for targ_call in target_decs:
             kws = targ_call.keywords
             for kw in kws:
