@@ -25,7 +25,7 @@ import prism.infra.mods
 ## Target decorators ##
 #######################
 
-def target(type, loc, **kwargs):
+def target(*, type, loc, **kwargs):
     """
     Decorator to use if user wishes to save the output of a task to an external location (e.g., a data warehouse, an
     S3 bucket, or a local filepath).
@@ -111,7 +111,7 @@ def target(type, loc, **kwargs):
     return decorator_target
 
 
-def target_iterator(type, loc, **kwargs):
+def target_iterator(*, type, loc, **kwargs):
     """
     Decorator to use if task requires user to iterate through several different objects and save each object
     to an external location
