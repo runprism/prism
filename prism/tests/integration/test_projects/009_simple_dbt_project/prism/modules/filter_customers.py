@@ -29,7 +29,7 @@ class FilterCustomers(PrismTask):
     ## Run    
     @PrismTask.target(type=PrismTarget.PandasCsv, loc=f'{prism_project.OUTPUT}/jaffle_shop_customers.csv', index=False)
     def run(self, mods, hooks):
-        df = psm.dbt_ref('customers')
+        df = hooks.dbt_ref('customers')
         df_new = df.iloc[:10]
         return df_new
 
