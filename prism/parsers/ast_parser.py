@@ -255,6 +255,41 @@ class AstParser:
         return False
     
 
+    def get_targets(self, run_func: ast.FunctionDef) -> Union[str, List[str]]:
+        """
+        Get targets as strings
+
+        args:
+            run_function: run function as an ast FunctionDef object
+        returns:
+            targets as strings (or a list of strings)
+        """
+
+        # Targets will always be decorators
+        decs = run_func.decorator_list
+        target_decs = []
+        for call in decs:
+            if isinstance(call.func, ast.Attribute):
+                if call.func.attr in ["target", "target_iterator"]:
+                    target_decs.append(call)
+            elif isinstance(call.func, ast.Name):
+                if call.func.id in ["target", "target_iterator"]:
+                    target_decs.append(call)
+        
+        # Iterate through target decorators and pull out the loc keyword
+        locs = []
+        for targ_call in target_decs:
+            kws = targ_call.keywords
+            for kw in kws:
+                if kw.arg=="loc":
+                    locs.append(ast.unparse(kw.value))
+        
+        if len(locs)==1:
+            return locs[0]
+        else:
+            return locs
+
+
     def parse(self) -> Union[List[Path], Path]:
         """
         Parse module and return mod references
@@ -282,6 +317,10 @@ class AstParser:
                 f'should only be "self", "{prism_mods_alias}", and "{prism_hooks_alias}"'
             ]
             raise prism.exceptions.ParserException(message='\n'.join(msg_list))
+        
+        # Parse targets
+        target_locs = self.get_targets(run_func)
+        self.module_manifest.add_target(self.module_relative_path, target_locs)
 
         # Iterate through all functions and get prism mod calls
         all_funcs = self.get_all_funcs(prism_task_class_node)

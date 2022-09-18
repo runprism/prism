@@ -14,7 +14,7 @@ Table of Contents
 import json
 import yaml
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 
 ######################
@@ -46,10 +46,10 @@ class ModuleManifest:
         self.manifest_dict["refs"].append(obj)
 
 
-    def add_target(self, module_name: Path, loc: str):
+    def add_target(self, module_name: Path, loc: Union[str, List[str]]):
         obj = {
             "module_name": str(module_name),
-            "target_loc": loc
+            "target_locs": loc
         }
         self.manifest_dict["targets"].append(obj)
 
@@ -87,10 +87,10 @@ class Manifest:
         self.manifest_dict["refs"].append(obj)
 
 
-    def add_target(self, module_name: Path, loc: str):
+    def add_target(self, module_name: Path, loc: Union[str, List[str]]):
         obj = {
             "module_name": str(module_name),
-            "target_loc": loc
+            "target_locs": loc
         }
         self.manifest_dict["targets"].append(obj)
 
