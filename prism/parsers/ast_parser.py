@@ -12,6 +12,7 @@ Table of Contents:
 #############
 
 # Standard library imports
+import re
 import ast
 import astor
 from pathlib import Path
@@ -291,10 +292,11 @@ class AstParser:
                     #  method, but this is fine.
                     if prism.constants.PYTHON_VERSION.major>3 or (prism.constants.PYTHON_VERSION.major==3 and prism.constants.PYTHON_VERSION.minor>=9):
                         locs.append(ast.unparse(kw.value)) # type: ignore
+                        
                     
                     # Otherwise, use the astor library. This is compatible with Python >=3.5
                     else:
-                        locs.append(astor.to_source(kw.value))
+                        locs.append(re.sub('\n$', '', astor.to_source(kw.value)))
         
         if len(locs)==1:
             return locs[0]
