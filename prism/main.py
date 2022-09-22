@@ -12,7 +12,7 @@ Table of Contents
 #############
 
 import argparse
-from prism.cli import connect, init, run, compile, spark_submit
+from prism.cli import connect, init, run, compile, spark_submit, gen_docs
 
 
 #######################
@@ -258,6 +258,47 @@ def build_spark_submit_subparser(sub, common_arguments_parser):
     spark_submit_sub.set_defaults(cls=spark_submit.SparkSubmitTask, which='spark-submit')
 
 
+def build_gendocs_subparser(sub, common_arguments_parser):
+    """
+    Build subparser for gen-docs command line argument.
+
+    args:
+        sub: special-action object (see argparse docs) to add subparsers to
+        common_arguments_parser: parser with common arguments to be included in subparser
+    returns:
+        None
+    """
+    gen_docs_sub = sub.add_parser(
+        'gen-docs',
+        parents=[common_arguments_parser],
+        help = """
+        Generate the DAG UI vizualizer
+        """
+    )
+
+    # Add argument for the port to use
+    gen_docs_sub.add_argument(
+        '--port',
+        type=int,
+        default=8080,
+        help="""
+        Port to use for HTTP request; default is 8080
+        """
+    )
+
+    # Add argument for whether Prism should open a webbrowser with the dos
+    gen_docs_sub.add_argument(
+        '--no-browser',
+        action='store_true',
+        help="""
+        Overwrite default behavior and do not open a tab in the default web browser with the docs UI
+        """
+    )
+
+    # Set default class argument to RunTask()
+    gen_docs_sub.set_defaults(cls=gen_docs.GenerateDocsTask, which='gen_docs')
+
+
 def build_full_arg_parser() -> argparse.ArgumentParser:
     """
     Build full argument parser
@@ -275,6 +316,7 @@ def build_full_arg_parser() -> argparse.ArgumentParser:
     build_compile_subparser(subparser, common_arguments_parser)
     build_connect_subparser(subparser, common_arguments_parser)
     build_spark_submit_subparser(subparser, common_arguments_parser)
+    build_gendocs_subparser(subparser, common_arguments_parser)
 
     # Return base parser
     return base_parser

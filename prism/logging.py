@@ -454,6 +454,22 @@ class PrismExceptionErrorEvent(Event):
         return f'{RED}{msg}{RESET}'
 
 
+@dataclass
+class ServingDocsEvent(Event):
+    address: str
+    port: int
+
+    def message(self):
+        return f'Serving docs at {BOLD}{YELLOW}http://127.0.0.1:{self.port}{RESET}'
+
+
+@dataclass
+class ServingDocsExitInfo(Event):
+
+    def message(self) -> str:
+        return f'Press {BOLD}{YELLOW}Ctrl+C{RESET} to exit{RESET}'
+
+
 def deprecated(deprecated_fn: str, updated_fn: str):
     """
     Decorator used to mark deprecated target function
