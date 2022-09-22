@@ -30,7 +30,7 @@ class Module03(PrismTask):
     ## Run    
     @target(type=PandasCsv, loc=f'{prism_project.OUTPUT}/target_csv_mult_df1.csv', index=False)
     @target(type=PandasCsv, loc=f'{prism_project.OUTPUT}/target_csv_mult_df2.csv', index=False)
-    def run(self, mods, hooks):
+    def run(self, tasks, hooks):
         data1 = {
             'col1': ['col1_value1', 'col1_value2', 'col1_value3'],
             'col2': ['col2_value1', 'col2_value2', 'col2_value3'],

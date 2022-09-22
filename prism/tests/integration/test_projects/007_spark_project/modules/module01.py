@@ -32,12 +32,12 @@ class Module01(PrismTask):
 
     ## Run
     @PrismTask.target(type=PrismTarget.PySparkParquet, loc=os.path.join(prism_project.OUTPUT, 'module01'), mode='overwrite')
-    def run(self, mods, hooks):
+    def run(self, tasks, hooks):
         """
         Execute task.
 
         args:
-            mods: used to reference output of other tasks --> mods.ref('...')
+            tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
                 - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
                 - hooks.sql     --> for executing sql query using an adapter in profile.yml

@@ -30,12 +30,12 @@ import prism.target as PrismTarget     # Not necessary; prism infrastructure aut
 class Module03(PrismTask):
 
     ## Run
-    def run(self, mods, hooks):
+    def run(self, tasks, hooks):
         """
         Execute task.
 
         args:
-            mods: used to reference output of other tasks --> mods.ref('...')
+            tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
                 - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
                 - hooks.sql     --> for executing sql query using an adapter in profile.yml
@@ -43,7 +43,7 @@ class Module03(PrismTask):
         returns:
             task output
         """
-        df = hooks.spark.read.parquet(mods.ref('module02.py'))
+        df = hooks.spark.read.parquet(tasks.ref('module02.py'))
         df_new = df.filter(F.col('col1')>=F.lit('col1_value3'))
         return df_new
 

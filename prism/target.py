@@ -14,7 +14,7 @@ Table of Contents
 # Prism imports
 import prism.exceptions
 import prism.infra.hooks
-import prism.infra.mods
+import prism.infra.task_manager
 
 
 #######################

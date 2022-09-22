@@ -20,7 +20,7 @@ import copy
 import math
 import logging
 import time
-from typing import List, Type, Union
+from typing import List, Union
 from dataclasses import dataclass
 from datetime import datetime
 import traceback
@@ -28,12 +28,11 @@ import types
 from typing import Any, Optional
 import functools
 import warnings
-import linecache
 
 # Prism imports
 import prism.constants
 import prism.exceptions
-from prism.ui import BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE, RESET, BRIGHT_WHITE, BRIGHT_YELLOW, BRIGHT_GREEN, BOLD
+from prism.ui import BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE, RESET, BRIGHT_WHITE, BRIGHT_YELLOW, BRIGHT_GREEN, BOLD, TERMINAL_WIDTH
 
 
 #########################
@@ -121,9 +120,9 @@ def format_console_output(message, index, total, status, execution_time):
     prefix = f"{progress}{message}"
 
     try:
-        width = min(os.get_terminal_size(0)[0], prism.constants.TERMINAL_WIDTH)
+        width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
     except:
-        width = prism.constants.TERMINAL_WIDTH
+        width = TERMINAL_WIDTH
     truncate_width = math.ceil(0.9*(width))
     justified = custom_ljust(prefix, width, ".")
     
@@ -327,9 +326,9 @@ class SeparatorEvent(Event):
 
     def message(self):
         try:
-            width = min(os.get_terminal_size(0)[0], prism.constants.TERMINAL_WIDTH)
+            width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
         except:
-            width = prism.constants.TERMINAL_WIDTH
+            width = TERMINAL_WIDTH
         truncate_width = math.ceil(0.9*(width))
         justified = "---".ljust(width, "-")
         if len(justified) > width:

@@ -18,7 +18,7 @@ from pathlib import Path
 # Prism logging
 import prism.logging
 import prism.infra.hooks
-import prism.infra.mods
+import prism.infra.task_manager
 
 
 ######################
@@ -44,8 +44,8 @@ class PrismTask:
         self.psm = psm
 
     
-    def set_mods(self, mods: prism.infra.mods.PrismMods):
-        self.mods = mods
+    def set_task_manager(self, task_manager: prism.infra.task_manager.PrismTaskManager):
+        self.task_manager = task_manager
 
     
     def set_hooks(self, hooks: prism.infra.hooks.PrismHooks):
@@ -59,7 +59,7 @@ class PrismTask:
             
             # If bool_run, then execute the `run` function and set the `output` attribute to its result
             if self.bool_run:
-                self.output = self.run(self.mods, self.hooks)
+                self.output = self.run(self.task_manager, self.hooks)
                 if self.output is None:
                     raise prism.exceptions.RuntimeException("`run` method must produce a non-null output")
 
@@ -70,7 +70,7 @@ class PrismTask:
         
         # Otherwise, the decorator uses bool_run in its internal computation
         else:
-            self.output = self.run(self.mods, self.hooks)
+            self.output = self.run(self.task_manager, self.hooks)
             if self.output is None:
                 raise prism.exceptions.RuntimeException("`run` method must produce a non-null output")
 
@@ -91,7 +91,7 @@ class PrismTask:
 
         def decorator_target(func):
             
-            def wrapper_target(self, mods: prism.infra.mods.PrismMods, hooks: prism.infra.hooks.PrismHooks):
+            def wrapper_target(self, task_manager: prism.infra.task_manager.PrismTaskManager, hooks: prism.infra.hooks.PrismHooks):
                 
                 # Decorator should only be called on the `run` function
                 if func.__name__!="run":
@@ -99,7 +99,7 @@ class PrismTask:
 
                 # If the task should be run in full, then call the run function
                 if self.bool_run:
-                    obj = func(self, mods, hooks)
+                    obj = func(self, task_manager, hooks)
 
                     # Initialize an instance of the target class and save the object using the target's `save` method
                     target = type(obj, loc, hooks=None)

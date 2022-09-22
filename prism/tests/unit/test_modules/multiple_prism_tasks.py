@@ -2,13 +2,13 @@ from prism.task import PrismTask
 
 class FirstPrismTask(PrismTask):
     
-    def run(self, mods, hooks):
+    def run(self, tasks, hooks):
         return 'hi'
 
 
 class SecondPrismTask(PrismTask):
     
-    def run(self, mods, hooks):
+    def run(self, tasks, hooks):
         return 'hi'
 
 

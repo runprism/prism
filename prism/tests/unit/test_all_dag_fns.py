@@ -21,20 +21,20 @@ from typing import Union
 # Prism imports
 import prism.exceptions
 from prism.infra import compiler
-from prism.tests.unit.test_all_things_dag import MOD_REF_TEST_CASES
-from prism.tests.unit.test_all_things_dag.mod_ref_3nodes import MOD_REF_3NODES_LIST
-from prism.tests.unit.test_all_things_dag.mod_ref_5nodes import MOD_REF_5NODES_LIST
-from prism.tests.unit.test_all_things_dag.mod_ref_15nodes import MOD_REF_15NODES_LIST
-from prism.tests.unit.test_all_things_dag.mod_ref_norefs import MOD_REF_NOREFS_LIST
-from prism.tests.unit.test_all_things_dag.mod_ref_selfref import MOD_REF_SELFREF_LIST
+from prism.tests.unit.test_all_things_dag import TASK_REF_TEST_CASES
+from prism.tests.unit.test_all_things_dag.task_ref_3nodes import TASK_REF_3NODES_LIST
+from prism.tests.unit.test_all_things_dag.task_ref_5nodes import TASK_REF_5NODES_LIST
+from prism.tests.unit.test_all_things_dag.task_ref_15nodes import TASK_REF_15NODES_LIST
+from prism.tests.unit.test_all_things_dag.task_ref_norefs import TASK_REF_NOREFS_LIST
+from prism.tests.unit.test_all_things_dag.task_ref_selfref import TASK_REF_SELFREF_LIST
 from prism.tests.unit.test_all_things_dag.dag_cycle import DAG_CYCLE_LIST
 
 # Make sure that list of modules are actual PosixPath objects
-MOD_REF_3NODES_LIST = [Path(p) for p in MOD_REF_3NODES_LIST]
-MOD_REF_5NODES_LIST = [Path(p) for p in MOD_REF_5NODES_LIST]
-MOD_REF_15NODES_LIST = [Path(p) for p in MOD_REF_15NODES_LIST]
-MOD_REF_NOREFS_LIST = [Path(p) for p in MOD_REF_NOREFS_LIST]
-MOD_REF_SELFREF_LIST = [Path(p) for p in MOD_REF_SELFREF_LIST]
+TASK_REF_3NODES_LIST = [Path(p) for p in TASK_REF_3NODES_LIST]
+TASK_REF_5NODES_LIST = [Path(p) for p in TASK_REF_5NODES_LIST]
+TASK_REF_15NODES_LIST = [Path(p) for p in TASK_REF_15NODES_LIST]
+TASK_REF_NOREFS_LIST = [Path(p) for p in TASK_REF_NOREFS_LIST]
+TASK_REF_SELFREF_LIST = [Path(p) for p in TASK_REF_SELFREF_LIST]
 DAG_CYCLE_LIST = [Path(p) for p in DAG_CYCLE_LIST]
 
 
@@ -43,15 +43,15 @@ DAG_CYCLE_LIST = [Path(p) for p in DAG_CYCLE_LIST]
 #############################################
 
 # Task
-dag_compiler = compiler.DagCompiler(MOD_REF_TEST_CASES, None, None, None)
+dag_compiler = compiler.DagCompiler(TASK_REF_TEST_CASES, None, None, None)
 
 # Constants
-MOD_REF_3NODES_DIR = Path(MOD_REF_TEST_CASES) / 'mod_ref_3nodes'
-MOD_REF_5NODES_DIR = Path(MOD_REF_TEST_CASES) / 'mod_ref_5nodes'
-MOD_REF_15NODES_DIR = Path(MOD_REF_TEST_CASES) / 'mod_ref_15nodes'
-MOD_REF_NOREFS_DIR = Path(MOD_REF_TEST_CASES) / 'mod_ref_norefs'
-MOD_REF_SELFREF_DIR = Path(MOD_REF_TEST_CASES) / 'mod_ref_selfref'
-DAG_CYCLE_DIR = Path(MOD_REF_TEST_CASES) / 'dag_cycle'
+TASK_REF_3NODES_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_3nodes'
+TASK_REF_5NODES_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_5nodes'
+TASK_REF_15NODES_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_15nodes'
+TASK_REF_NOREFS_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_norefs'
+TASK_REF_SELFREF_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_selfref'
+DAG_CYCLE_DIR = Path(TASK_REF_TEST_CASES) / 'dag_cycle'
 
 
 ################################
@@ -60,9 +60,9 @@ DAG_CYCLE_DIR = Path(MOD_REF_TEST_CASES) / 'dag_cycle'
 
 class TestAllDagFunctions(unittest.TestCase):
 
-    def _convert_mod_refs_to_str(self, mod_refs: dict):
-        mod_refs_str = {}
-        for k,v in mod_refs.items():
+    def _convert_task_refs_to_str(self, task_refs: dict):
+        task_refs_str = {}
+        for k,v in task_refs.items():
             new_k = str(k)
             if isinstance(v, Path):
                 new_v = str(v)
@@ -72,8 +72,8 @@ class TestAllDagFunctions(unittest.TestCase):
                 new_v = None
             else:
                 raise Exception
-            mod_refs_str[new_k] = new_v
-        return mod_refs_str
+            task_refs_str[new_k] = new_v
+        return task_refs_str
 
 
     def _convert_nodes_to_str(self, nodes: list):
@@ -94,15 +94,15 @@ class TestAllDagFunctions(unittest.TestCase):
     # Mod ref parsing #
     ###################
 
-    def test_mod_ref_varying_complexity(self):
+    def test_task_ref_varying_complexity(self):
         """
         Parse mod refs with different node counts and dependency complexities. These should not result in an error.
         """
-        mod_ref_3nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_3NODES_LIST, MOD_REF_3NODES_DIR)
-        mod_ref_5nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_5NODES_LIST, MOD_REF_5NODES_DIR)
-        mod_ref_15nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_15NODES_LIST, MOD_REF_15NODES_DIR)
+        task_ref_3nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR)
+        task_ref_5nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR)
+        task_ref_15nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR)
 
-        # Expected mod refs. The order here is based on the order of the `MOD_REF_XNODES_LIST` and the order of {{ mod
+        # Expected mod refs. The order here is based on the order of the `TASK_REF_XNODES_LIST` and the order of {{ mod
         # }} within the modules themselves.
         expected_3nodes_modrefs = {
             Path('module01.py'): None,
@@ -114,7 +114,7 @@ class TestAllDagFunctions(unittest.TestCase):
             Path('moduleA.py'): None,
             Path('moduleB.py'): Path('moduleA.py'),
             Path('moduleC.py'): Path('moduleA.py'),
-            Path('moduleD.py'): [Path('moduleB.py'), Path('moduleA.py'), Path('moduleC.py')],    # We list mods.ref('moduleB.py') before mods.ref('moduleA.py')
+            Path('moduleD.py'): [Path('moduleB.py'), Path('moduleA.py'), Path('moduleC.py')],    # We list tasks.ref('moduleB.py') before tasks.ref('moduleA.py')
             Path('moduleE.py'): [Path('moduleA.py'), Path('moduleC.py'), Path('moduleD.py')]
         }
 
@@ -137,27 +137,27 @@ class TestAllDagFunctions(unittest.TestCase):
         }
         
         # Sort mod ref values to test equality
-        def _sort_values(mod_ref_dict: dict):
-            return {k: sorted(v) if isinstance(v, list) else v for k,v in mod_ref_dict.items()}
+        def _sort_values(task_ref_dict: dict):
+            return {k: sorted(v) if isinstance(v, list) else v for k,v in task_ref_dict.items()}
         
         expected_3nodes_modrefs_sorted = _sort_values(expected_3nodes_modrefs)
         expected_5nodes_modrefs_sorted = _sort_values(expected_5nodes_modrefs)
         expected_15nodes_modrefs_sorted = _sort_values(expected_15nodes_modrefs)
-        mod_ref_3nodes_modrefs_sorted = _sort_values(mod_ref_3nodes_modrefs)
-        mod_ref_5nodes_modrefs_sorted = _sort_values(mod_ref_5nodes_modrefs)
-        mod_ref_15nodes_modrefs_sorted = _sort_values(mod_ref_15nodes_modrefs)
+        task_ref_3nodes_modrefs_sorted = _sort_values(task_ref_3nodes_modrefs)
+        task_ref_5nodes_modrefs_sorted = _sort_values(task_ref_5nodes_modrefs)
+        task_ref_15nodes_modrefs_sorted = _sort_values(task_ref_15nodes_modrefs)
 
         # Asserts
-        self.assertEqual(expected_3nodes_modrefs_sorted, mod_ref_3nodes_modrefs_sorted)
-        self.assertEqual(expected_5nodes_modrefs_sorted, mod_ref_5nodes_modrefs_sorted)
-        self.assertEqual(expected_15nodes_modrefs_sorted, mod_ref_15nodes_modrefs_sorted)
+        self.assertEqual(expected_3nodes_modrefs_sorted, task_ref_3nodes_modrefs_sorted)
+        self.assertEqual(expected_5nodes_modrefs_sorted, task_ref_5nodes_modrefs_sorted)
+        self.assertEqual(expected_15nodes_modrefs_sorted, task_ref_15nodes_modrefs_sorted)
 
     
-    def test_no_mod_refs(self):
+    def test_no_task_refs(self):
         """
         Modules without any mod refs will not throw an error
         """
-        mod_ref_nomod_modrefs = dag_compiler.parse_mod_refs(MOD_REF_NOREFS_LIST, MOD_REF_NOREFS_DIR)
+        task_ref_nomod_modrefs = dag_compiler.parse_task_refs(TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR)
         expected_nomod_modrefs = {
             Path('moduleA.py'): None,
             Path('moduleB.py'): None,
@@ -167,7 +167,7 @@ class TestAllDagFunctions(unittest.TestCase):
         }
 
         # Asserts
-        self.assertEqual(expected_nomod_modrefs, mod_ref_nomod_modrefs)
+        self.assertEqual(expected_nomod_modrefs, task_ref_nomod_modrefs)
 
     
     def test_self_ref(self):
@@ -175,7 +175,7 @@ class TestAllDagFunctions(unittest.TestCase):
         Self-references with mod throw a ParserException
         """
         with self.assertRaises(prism.exceptions.ParserException) as cm:
-            dag_compiler.parse_mod_refs(MOD_REF_SELFREF_LIST, MOD_REF_SELFREF_DIR)
+            dag_compiler.parse_task_refs(TASK_REF_SELFREF_LIST, TASK_REF_SELFREF_DIR)
         expected_msg = "self-references found in `moduleB.py`"
         self.assertEqual(expected_msg, str(cm.exception))
 
@@ -189,19 +189,19 @@ class TestAllDagFunctions(unittest.TestCase):
         Use parsed mod refs (which we know from above should work as expected) to create nodes and edges for 3-, 5-, and
         15-node graphs. These should not throw any errors.
         """
-        mod_ref_3nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_3NODES_LIST, MOD_REF_3NODES_DIR)
-        mod_ref_5nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_5NODES_LIST, MOD_REF_5NODES_DIR)
-        mod_ref_15nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_15NODES_LIST, MOD_REF_15NODES_DIR)
+        task_ref_3nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR)
+        task_ref_5nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR)
+        task_ref_15nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR)
 
         # Create nodes and edges
-        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(mod_ref_3nodes_modrefs)
-        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(mod_ref_5nodes_modrefs)
-        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(mod_ref_15nodes_modrefs)
+        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(task_ref_3nodes_modrefs)
+        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(task_ref_5nodes_modrefs)
+        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(task_ref_15nodes_modrefs)
         
         # Nodes should just be the full list of modules. 
-        self.assertEqual(MOD_REF_3NODES_LIST, nodes_3nodes)
-        self.assertEqual(MOD_REF_5NODES_LIST, nodes_5nodes)
-        self.assertEqual(MOD_REF_15NODES_LIST, nodes_15nodes)
+        self.assertEqual(TASK_REF_3NODES_LIST, nodes_3nodes)
+        self.assertEqual(TASK_REF_5NODES_LIST, nodes_5nodes)
+        self.assertEqual(TASK_REF_15NODES_LIST, nodes_15nodes)
 
         # Expected edges
         expected_edges_3nodes = [
@@ -250,11 +250,11 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         Nodes/edges are created as expected even in situations where scripts have no mod refs
         """
-        mod_ref_nomod_modrefs = dag_compiler.parse_mod_refs(MOD_REF_NOREFS_LIST, MOD_REF_NOREFS_DIR)
-        nodes_nomod, edges_nomod = dag_compiler.create_nodes_edges(mod_ref_nomod_modrefs)
+        task_ref_nomod_modrefs = dag_compiler.parse_task_refs(TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR)
+        nodes_nomod, edges_nomod = dag_compiler.create_nodes_edges(task_ref_nomod_modrefs)
 
         # Node should just be the full list of nodes
-        self.assertEqual(MOD_REF_NOREFS_LIST, nodes_nomod)
+        self.assertEqual(TASK_REF_NOREFS_LIST, nodes_nomod)
 
         # Edge list should be empty
         self.assertEqual([], edges_nomod)
@@ -270,14 +270,14 @@ class TestAllDagFunctions(unittest.TestCase):
         error.
         """
         # Parse mod refs
-        mod_ref_3nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_3NODES_LIST, MOD_REF_3NODES_DIR)
-        mod_ref_5nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_5NODES_LIST, MOD_REF_5NODES_DIR)
-        mod_ref_15nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_15NODES_LIST, MOD_REF_15NODES_DIR)
+        task_ref_3nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR)
+        task_ref_5nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR)
+        task_ref_15nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR)
 
         # Create nodes and edges
-        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(mod_ref_3nodes_modrefs)
-        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(mod_ref_5nodes_modrefs)
-        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(mod_ref_15nodes_modrefs)
+        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(task_ref_3nodes_modrefs)
+        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(task_ref_5nodes_modrefs)
+        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(task_ref_15nodes_modrefs)
 
         # Create DAG
         dag_3nodes = dag_compiler.create_dag(nodes_3nodes, edges_3nodes)
@@ -289,8 +289,8 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         DAG is created as expected even in situations where scripts have no mod refs
         """
-        mod_ref_nomod_modrefs = dag_compiler.parse_mod_refs(MOD_REF_NOREFS_LIST, MOD_REF_NOREFS_DIR)
-        nodes_nomod, edges_nomod = dag_compiler.create_nodes_edges(mod_ref_nomod_modrefs)
+        task_ref_nomod_modrefs = dag_compiler.parse_task_refs(TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR)
+        nodes_nomod, edges_nomod = dag_compiler.create_nodes_edges(task_ref_nomod_modrefs)
         dag = dag_compiler.create_dag(nodes_nomod, edges_nomod)
     
 
@@ -299,7 +299,7 @@ class TestAllDagFunctions(unittest.TestCase):
         Cycle in DAG throws an error
         """
         # Parse mod refs
-        dag_cycle_modrefs = dag_compiler.parse_mod_refs(DAG_CYCLE_LIST, DAG_CYCLE_DIR)
+        dag_cycle_modrefs = dag_compiler.parse_task_refs(DAG_CYCLE_LIST, DAG_CYCLE_DIR)
         expected_dag_cycle_modrefs = {
             Path('moduleA.py'): None,
             Path('moduleB.py'): [Path('moduleA.py'), Path('moduleE.py')],
@@ -345,8 +345,8 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         Get node dependencies from DAGs with 3 nodes.
         """
-        mod_ref_3nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_3NODES_LIST, MOD_REF_3NODES_DIR)
-        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(mod_ref_3nodes_modrefs)
+        task_ref_3nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR)
+        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(task_ref_3nodes_modrefs)
         dag_3nodes = dag_compiler.create_dag(nodes_3nodes, edges_3nodes)
 
         # Node dependencies
@@ -372,8 +372,8 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         Get node dependencies from DAGs with 5 nodes.
         """
-        mod_ref_5nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_5NODES_LIST, MOD_REF_5NODES_DIR)
-        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(mod_ref_5nodes_modrefs)
+        task_ref_5nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR)
+        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(task_ref_5nodes_modrefs)
         dag_5nodes = dag_compiler.create_dag(nodes_5nodes, edges_5nodes)
 
         # Node dependencies
@@ -386,8 +386,8 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         Get node dependencies from DAGs with 15 nodes.
         """
-        mod_ref_15nodes_modrefs = dag_compiler.parse_mod_refs(MOD_REF_15NODES_LIST, MOD_REF_15NODES_DIR)
-        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(mod_ref_15nodes_modrefs)
+        task_ref_15nodes_modrefs = dag_compiler.parse_task_refs(TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR)
+        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(task_ref_15nodes_modrefs)
         dag_15nodes = dag_compiler.create_dag(nodes_15nodes, edges_15nodes)
 
         # Node dependencies
@@ -434,9 +434,9 @@ class TestAllDagFunctions(unittest.TestCase):
         Create topsort for DAGs with different node counts and dependency complexities. These should not result in an
         error.
         """
-        dag_topsort_3nodes = dag_compiler.create_topsort(MOD_REF_3NODES_LIST, MOD_REF_3NODES_LIST, MOD_REF_3NODES_DIR)
-        dag_topsort_5nodes = dag_compiler.create_topsort(MOD_REF_5NODES_LIST, MOD_REF_5NODES_LIST, MOD_REF_5NODES_DIR)
-        dag_topsort_15nodes = dag_compiler.create_topsort(MOD_REF_15NODES_LIST, MOD_REF_15NODES_LIST, MOD_REF_15NODES_DIR)
+        dag_topsort_3nodes = dag_compiler.create_topsort(TASK_REF_3NODES_LIST, TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR)
+        dag_topsort_5nodes = dag_compiler.create_topsort(TASK_REF_5NODES_LIST, TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR)
+        dag_topsort_15nodes = dag_compiler.create_topsort(TASK_REF_15NODES_LIST, TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR)
         
         # For our simple, 3-node DAG, we know what the topsort list should look like. For the others, there are multiple
         # possible orderings. We initially tried to sort the result of the NetworkX `all_topological_sorts` function
@@ -479,10 +479,10 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         DAGs with no dependencies should include all modules (assuming a subset of modules is not explicitly specified).
         """
-        dag_topsort_no_modrefs = dag_compiler.create_topsort(MOD_REF_NOREFS_LIST, MOD_REF_NOREFS_LIST, MOD_REF_NOREFS_DIR)
+        dag_topsort_no_modrefs = dag_compiler.create_topsort(TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR)
 
         # All modules must be in DAG
-        for mod in MOD_REF_NOREFS_LIST:
+        for mod in TASK_REF_NOREFS_LIST:
             self.assertTrue(mod in dag_topsort_no_modrefs)
 
     
@@ -490,13 +490,13 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         DAGs created with only a subset of nodes are created normally / without error
         """
-        dag_topsort_15nodes_7 = dag_compiler.create_topsort(MOD_REF_15NODES_LIST, [Path('module07.py')], MOD_REF_15NODES_DIR)
-        dag_topsort_15nodes_all = dag_compiler.create_topsort(MOD_REF_15NODES_LIST, [Path('module07.py'), Path('module14.py'), Path('module15.py'), Path('module12.py'), Path('module13.py'), Path('module09.py')], MOD_REF_15NODES_DIR)
-        dag_topsort_no_modrefs = dag_compiler.create_topsort(MOD_REF_NOREFS_LIST, [Path('moduleB.py'), Path('moduleC.py')], MOD_REF_NOREFS_DIR)
+        dag_topsort_15nodes_7 = dag_compiler.create_topsort(TASK_REF_15NODES_LIST, [Path('module07.py')], TASK_REF_15NODES_DIR)
+        dag_topsort_15nodes_all = dag_compiler.create_topsort(TASK_REF_15NODES_LIST, [Path('module07.py'), Path('module14.py'), Path('module15.py'), Path('module12.py'), Path('module13.py'), Path('module09.py')], TASK_REF_15NODES_DIR)
+        dag_topsort_no_modrefs = dag_compiler.create_topsort(TASK_REF_NOREFS_LIST, [Path('moduleB.py'), Path('moduleC.py')], TASK_REF_NOREFS_DIR)
 
         # In the DAG with 15 nodes, specify which nodes should be included in the DAG based on the modules for compilation
         actual_topsort_15nodes_7 = [Path('module01.py'), Path('module02.py'), Path('module03.py'), Path('module04.py'), Path('module05.py'), Path('module06.py'), Path('module07.py')]
-        actual_topsort_15nodes_all = MOD_REF_15NODES_LIST
+        actual_topsort_15nodes_all = TASK_REF_15NODES_LIST
         self.assertEqual(set(actual_topsort_15nodes_7), set(dag_topsort_15nodes_7))
         self.assertEqual(set(actual_topsort_15nodes_all), set(dag_topsort_15nodes_all))
 

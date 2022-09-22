@@ -247,9 +247,9 @@ class PrismDAG(
                 self.add_sys_path(self.project_dir, temp_namespace)     # Add project dir to sys.path
                 code_str = [
                     parsed_ast_module.module_str,
-                    f'{task_var_name} = {prism_task_cls_name}(False)',  # Do NOT run the task
-                    f'{task_var_name}.set_hooks(None)',                   # No need for an actual mods/hooks, since we're only accessing the target
-                    f'{task_var_name}.set_mods(None)',                   # No need for an actual mods/hooks, since we're only accessing the target
+                    f'{task_var_name} = {prism_task_cls_name}(False)',    # Do NOT run the task
+                    f'{task_var_name}.set_hooks(None)',                   # No need for an actual task_manager/hooks, since we're only accessing the target
+                    f'{task_var_name}.set_task_manager(None)',            # No need for an actual task_manager/hooks, since we're only accessing the target
                     f'{task_var_name}.exec()'
                 ]
                 exec('\n'.join(code_str), temp_namespace)

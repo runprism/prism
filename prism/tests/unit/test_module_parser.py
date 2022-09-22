@@ -36,11 +36,11 @@ MULTIPLE_PRISM_TASKS = Path('multiple_prism_tasks.py')
 DIFF_IMPORT_STRUCTURE = Path('diff_import_structure.py')
 OTHER_CLASSES = Path('other_classes.py')
 IF_NAME_MAIN = Path('if_name_main.py')
-MODS_REFS = Path('mods_refs.py')
+TASKS_REFS = Path('tasks_refs.py')
 TASK_WITH_TARGET = Path('task_with_target.py')
 BAD_RUN_EXTRA_ARG = Path('bad_run_extra_arg.py')
 BAD_RUN_MISSING_ARG = Path('bad_run_missing_arg.py')
-BAD_RUN_NO_MODS = Path('bad_run_no_mods.py')
+BAD_RUN_NO_TASKS = Path('bad_run_no_tasks.py')
 NO_RUN_FUNC = Path('no_run_func.py')
 
 
@@ -71,7 +71,7 @@ class TestModuleParsing(unittest.TestCase):
 
         self.assertEqual("NormalPrismTask", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
-        self.assertEqual(['self', 'mods', 'hooks'], run_func_args)
+        self.assertEqual(['self', 'tasks', 'hooks'], run_func_args)
 
         # Calling `parse` shouldn't throw an error
         self.assertEqual([], parser.parse())
@@ -118,7 +118,7 @@ class TestModuleParsing(unittest.TestCase):
         
         self.assertEqual(2, num_prism_tasks)
         self.assertEqual("FirstPrismTask", first_prism_task_class_name)
-        self.assertEqual(['self', 'mods', 'hooks'], run_func_args)
+        self.assertEqual(['self', 'tasks', 'hooks'], run_func_args)
 
         # Calling `parse` should throw an error
         with self.assertRaises(prism.exceptions.ParserException) as cm:
@@ -148,7 +148,7 @@ class TestModuleParsing(unittest.TestCase):
 
         self.assertEqual("DiffImportStructure", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
-        self.assertEqual(['self', 'mods', 'hooks'], run_func_args)
+        self.assertEqual(['self', 'tasks', 'hooks'], run_func_args)
 
         # Calling `parse` shouldn't throw an error
         self.assertEqual([], parser.parse())
@@ -174,7 +174,7 @@ class TestModuleParsing(unittest.TestCase):
 
         self.assertEqual("OnlyPrismTask", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
-        self.assertEqual(['self', 'mods', 'hooks'], run_func_args)
+        self.assertEqual(['self', 'tasks', 'hooks'], run_func_args)
 
         # Calling `parse` shouldn't throw an error
         self.assertEqual([], parser.parse())
@@ -200,7 +200,7 @@ class TestModuleParsing(unittest.TestCase):
 
         self.assertEqual("TaskWithTarget", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
-        self.assertEqual(['self', 'mods', 'hooks'], run_func_args)
+        self.assertEqual(['self', 'tasks', 'hooks'], run_func_args)
 
         # Calling `parse` shouldn't throw an error
         self.assertEqual([Path('hello.py'), Path('world.py')], parser.parse())
@@ -211,12 +211,12 @@ class TestModuleParsing(unittest.TestCase):
         self.assertEqual(targets, expected_targets)
     
 
-    def test_mods_refs(self):
+    def test_tasks_refs(self):
         """
         Test behavior of parse when there are mod references
         """
         # Prism task
-        parser = ast_parser.AstParser(MODS_REFS, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(TASKS_REFS, MODULE_TEST_CASES)
         
         # Prism task name
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
@@ -229,18 +229,18 @@ class TestModuleParsing(unittest.TestCase):
         # Number of prism tasks
         num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
 
-        self.assertEqual("ModsRefs", prism_task_name)
+        self.assertEqual("TasksRefs", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
-        self.assertEqual(['self', 'mods', 'hooks'], run_func_args)
+        self.assertEqual(['self', 'tasks', 'hooks'], run_func_args)
 
         # Calling `parse` shouldn't throw an error
-        expected_mods = [
+        expected_tasks = [
             Path('func_0.py'),
             Path('func_1.py'),
             Path('hello.py'),
             Path('world.py')
         ]
-        self.assertEqual(sorted(expected_mods), sorted(parser.parse()))
+        self.assertEqual(sorted(expected_tasks), sorted(parser.parse()))
     
 
     def test_if_name_main(self):
@@ -276,14 +276,14 @@ class TestModuleParsing(unittest.TestCase):
 
         # Extra arg
         run_func_args = _get_args(BAD_RUN_EXTRA_ARG)
-        self.assertEqual(sorted(['self', 'mods', 'hooks', 'other_arg']), sorted(run_func_args))
+        self.assertEqual(sorted(['self', 'tasks', 'hooks', 'other_arg']), sorted(run_func_args))
 
         # Missing arg
         run_func_args = _get_args(BAD_RUN_MISSING_ARG)
-        self.assertEqual(sorted(['self', 'mods']), sorted(run_func_args))
+        self.assertEqual(sorted(['self', 'tasks']), sorted(run_func_args))
 
         # No psm
-        run_func_args = _get_args(BAD_RUN_NO_MODS)
+        run_func_args = _get_args(BAD_RUN_NO_TASKS)
         self.assertEqual(sorted(['self', 'hooks', 'other_arg']), sorted(run_func_args))
 
         # No run function
@@ -292,7 +292,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func = parser.get_run_func(prism_task_class)
         self.assertIsNone(run_func)
 
-        for module in [BAD_RUN_EXTRA_ARG, BAD_RUN_MISSING_ARG, BAD_RUN_NO_MODS, NO_RUN_FUNC]:
+        for module in [BAD_RUN_EXTRA_ARG, BAD_RUN_MISSING_ARG, BAD_RUN_NO_TASKS, NO_RUN_FUNC]:
             with self.assertRaises(prism.exceptions.ParserException) as cm:
                 parser = ast_parser.AstParser(module, MODULE_TEST_CASES)
                 parser.parse()
@@ -301,7 +301,7 @@ class TestModuleParsing(unittest.TestCase):
             else:
                 msg_list = [
                     f'invalid arguments in `run` function in PrismTask in {str(module)}',
-                    f'should only be "self", "mods", and "hooks"'
+                    f'should only be "self", "tasks", and "hooks"'
                 ]
                 expected_msg = '\n'.join(msg_list)
             self.assertEqual(expected_msg, str(cm.exception))

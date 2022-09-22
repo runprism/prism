@@ -32,12 +32,12 @@ class Module03(PrismTask):
         return lines
     
     ## Run
-    def run(self, mods, hooks):
+    def run(self, tasks, hooks):
         """
         Execute task.
 
         args:
-            mods: used to reference output of other tasks --> mods.ref('...')
+            tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
                 - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
                 - hooks.sql     --> for executing sql query using an adapter in profile.yml
@@ -45,8 +45,8 @@ class Module03(PrismTask):
         returns:
             task output
         """
-        module1_times = pd.read_csv(mods.ref('module01.py'))
-        module2_times = pd.read_csv(mods.ref('module02.py'))
+        module1_times = pd.read_csv(tasks.ref('module01.py'))
+        module2_times = pd.read_csv(tasks.ref('module02.py'))
         return 'Hello from module 3!'
 
 

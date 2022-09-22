@@ -18,7 +18,7 @@ from typing import Tuple
 import prism.exceptions
 from prism.task import PrismTask
 import prism.infra.hooks
-import prism.infra.mods
+import prism.infra.task_manager
 
 
 #######################
@@ -33,7 +33,7 @@ def target(*, type, loc, **kwargs):
 
     def decorator_target(func):
 
-        def wrapper_target(self, mods: prism.infra.mods.PrismMods, hooks: prism.infra.hooks.PrismHooks):
+        def wrapper_target(self, task_manager: prism.infra.task_manager.PrismTaskManager, hooks: prism.infra.hooks.PrismHooks):
             
             # This will only ever be called inside a PrismTask
             if not(isinstance, self, PrismTask):
@@ -52,7 +52,7 @@ def target(*, type, loc, **kwargs):
             
                 # Return the next wrapper_target function with the same arguments as this one. If a function has `n`
                 # targets, then this will happen n-1 times until the `run` function is reached.
-                return func(self, mods, hooks)
+                return func(self, task_manager, hooks)
 
             # Now, we've hit the `run` function
             else:
@@ -63,7 +63,7 @@ def target(*, type, loc, **kwargs):
 
                 # If the task should be run in full, then call the run function
                 if self.bool_run:
-                    obj = func(self, mods, hooks)
+                    obj = func(self, task_manager, hooks)
                     self.types.append(type)
                     self.locs.append(loc)
                     try:
@@ -119,7 +119,7 @@ def target_iterator(*, type, loc, **kwargs):
 
     def decorator_target_iterator(func):
 
-        def wrapper(self, mods: prism.infra.mods.PrismMods, hooks: prism.infra.hooks.PrismHooks):
+        def wrapper(self, task_manager: prism.infra.task_manager.PrismTaskManager, hooks: prism.infra.hooks.PrismHooks):
             
             # This will only ever be called inside a PrismTask
             if not(isinstance, self, PrismTask):
@@ -130,7 +130,7 @@ def target_iterator(*, type, loc, **kwargs):
                 raise prism.exceptions.RuntimeException(message="`target iterator` decorator can only be called on `run` function")
 
             if self.bool_run:
-                objs = func(self, mods, hooks)
+                objs = func(self, task_manager, hooks)
                 if not isinstance(objs, dict):
                     msg_list = [
                         f"output of run function should be dict",

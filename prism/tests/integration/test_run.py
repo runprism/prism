@@ -422,13 +422,13 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._set_up_wkdir()
     
 
-    def test_bad_mod_ref(self):
+    def test_bad_task_ref(self):
         """
         `prism run` fails in a project with a bad mod ref
         """
 
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '011_bad_mod_ref'
+        wkdir = Path(TEST_PROJECTS) / '011_bad_task_ref'
         os.chdir(wkdir)
 
         # Remove the .compiled directory, if it exists

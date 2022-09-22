@@ -32,8 +32,8 @@ class Module04(PrismTask):
 
     ## Run
     @PrismTask.target(type=PrismTarget.PySparkParquet, loc=os.path.join(prism_project.OUTPUT, 'module04'), mode='overwrite')
-    def run(self, mods, hooks):
-        df_new = mods.ref('module03.py').filter(F.col('col1')>=F.lit('col1_value4'))
+    def run(self, tasks, hooks):
+        df_new = tasks.ref('module03.py').filter(F.col('col1')>=F.lit('col1_value4'))
         return df_new
 
 

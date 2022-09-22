@@ -28,14 +28,11 @@ VALID_ADAPTERS = [ "snowflake", "pyspark", "dbt", "bigquery", "redshift"]
 VALID_SQL_ADAPTERS = [ "snowflake", "bigquery", "redshift"]
 VALID_CONNECTIONS = VALID_ADAPTERS
 
-# UI
-TERMINAL_WIDTH = 80
-
 # Scope dictionary
 GLOBALS_DICT = {'__name__': '__main__'}
 
-# Internal names for mods and hooks
-INTERNAL_MODS_VARNAME = '__PRISM_MODS__'
+# Internal names for task_manager and hooks
+INTERNAL_TASK_MANAGER_VARNAME = '__PRISM_TASK_MANAGER__'
 INTERNAL_HOOKS_VARNAME = '__PRISM_HOOKS__'
 
 

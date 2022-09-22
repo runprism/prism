@@ -16,7 +16,7 @@ from typing import Any, Dict
 
 # Prism-specific imports
 import prism.exceptions
-from prism.infra.mods import PrismMods
+from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
 from prism.infra.manifest import Manifest, ModuleManifest
 from prism.parsers.ast_parser import AstParser
@@ -86,7 +86,7 @@ class CompiledModule:
 
     def instantiate_module_class(self,
         globals_dict: Dict[Any, Any],
-        mods: PrismMods,
+        task_manager: PrismTaskManager,
         hooks: PrismHooks,
         explicit_run: bool = True
     ):
@@ -95,7 +95,7 @@ class CompiledModule:
 
         args:
             globals_dict: globals dictionary
-            mods: PrismMods object
+            task_manager: PrismTaskManager object
             hooks: PrismHooks object
             explicit run: boolean indicating whether to run the Task. Default is True
         returns:
@@ -114,8 +114,8 @@ class CompiledModule:
         exec(self.module_str, globals_dict)
         exec(f'{task_var_name}={prism_task_class_name}({explicit_run})', globals_dict)
 
-        # Set mods and hooks
-        globals_dict[task_var_name].set_mods(mods)
+        # Set task manager and hooks
+        globals_dict[task_var_name].set_task_manager(task_manager)
         globals_dict[task_var_name].set_hooks(hooks)
         
         # Return name of variable used to store task instantiation
@@ -124,14 +124,14 @@ class CompiledModule:
 
     def exec(self,
         globals_dict: Dict[Any, Any],
-        mods: PrismMods,
+        task_manager: PrismTaskManager,
         hooks: PrismHooks,
         explicit_run: bool = True
-    ) -> PrismMods:
-        task_var_name = self.instantiate_module_class(globals_dict, mods, hooks, explicit_run)
+    ) -> PrismTaskManager:
+        task_var_name = self.instantiate_module_class(globals_dict, task_manager, hooks, explicit_run)
         globals_dict[task_var_name].exec()
-        mods.upstream[self.name] = globals_dict[task_var_name]
-        return mods
+        task_manager.upstream[self.name] = globals_dict[task_var_name]
+        return task_manager
 
 
 # EOF

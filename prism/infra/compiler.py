@@ -84,7 +84,7 @@ class DagCompiler:
         self.module_manifests: Dict[Path, ModuleManifest] = {}
 
 
-    def parse_mod_refs(self,
+    def parse_task_refs(self,
         modules: List[Path],
         parent_path: Path
     ) -> Dict[Path, Any]:
@@ -101,19 +101,19 @@ class DagCompiler:
 
         # This is only ever called on the output of `get_all_modules`, which sorts the modules alphabetically.
         # Therefore, all mod refs will be sorted.
-        mod_refs_dict: Dict[Path, Any] = {}
+        task_refs_dict: Dict[Path, Any] = {}
         for m in modules:
             parser = ast_parser.AstParser(m, parent_path)
-            mod_refs = parser.parse()
-            if mod_refs is None or mod_refs=='' or mod_refs==[]:
-                mod_refs_dict[m] = None
+            task_refs = parser.parse()
+            if task_refs is None or task_refs=='' or task_refs==[]:
+                task_refs_dict[m] = None
             else:
-                mod_refs_dict[m] = mod_refs
+                task_refs_dict[m] = task_refs
             
             # Keep track of module manifest
             self.module_manifests[m] = parser.module_manifest
 
-        return mod_refs_dict
+        return task_refs_dict
 
 
     def add_graph_elem(self,
@@ -275,8 +275,8 @@ class DagCompiler:
         # we have a dag A --> B --> C and wish to to only compile/run script C, then our code will only run script B.
         # This will throw an error, because script B relies on script A, and we will need to instantiate the script A
         # task for the script B task to execute fully.
-        mod_refs = self.parse_mod_refs(all_modules, parent_path)
-        nodes, edges = self.create_nodes_edges(mod_refs)
+        task_refs = self.parse_task_refs(all_modules, parent_path)
+        nodes, edges = self.create_nodes_edges(task_refs)
         dag = self.create_dag(nodes, edges)
 
         # If `user_arg_modules` is equivalent to `all_modules`, then create a topological sorting of the full DAG. 

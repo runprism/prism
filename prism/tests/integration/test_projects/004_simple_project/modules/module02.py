@@ -28,12 +28,12 @@ class Module02(PrismTask):
 
     ## Run
     @PrismTask.target(type=PrismTarget.Txt, loc=os.path.join(prism_project.OUTPUT, 'module02.txt'))
-    def run(self, mods, hooks):
+    def run(self, tasks, hooks):
         """
         Execute task.
 
         args:
-            mods: used to reference output of other tasks --> mods.ref('...')
+            tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
                 - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
                 - hooks.sql     --> for executing sql query using an adapter in profile.yml
@@ -41,7 +41,7 @@ class Module02(PrismTask):
         returns:
             task output
         """
-        with open(mods.ref('module01.py'), 'r') as f:
+        with open(tasks.ref('module01.py'), 'r') as f:
             lines = f.read()
         f.close()
         return lines[-5:]

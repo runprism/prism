@@ -26,12 +26,12 @@ import prism.target as PrismTarget     # Not necessary; prism infrastructure aut
 class Module04(PrismTask):
     
     ## Run
-    def run(self, mods, hooks):
+    def run(self, tasks, hooks):
         """
         Execute task.
 
         args:
-            mods: used to reference output of other tasks --> mods.ref('...')
+            tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
                 - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
                 - hooks.sql     --> for executing sql query using an adapter in profile.yml
@@ -39,7 +39,7 @@ class Module04(PrismTask):
         returns:
             task output
         """
-        return mods.ref('load/module03.py') + '\n' + "Hello from module 4!"
+        return tasks.ref('load/module03.py') + '\n' + "Hello from module 4!"
 
 
 # EOF
