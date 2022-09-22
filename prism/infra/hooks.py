@@ -28,10 +28,7 @@ import prism.logging
 
 class PrismHooks:
     """
-    Prism's hooks, used for a variety of purposes:
-        - Executing SQL code with adapters
-        - Referencing models from dbt projects
-        - Accessing SparkSession
+    PrismHooks class. This class is used to expose adapters defined within a profile to the user.
     """
 
     def __init__(self, project: prism_project.PrismProject):
