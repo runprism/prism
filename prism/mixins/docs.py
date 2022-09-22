@@ -81,8 +81,9 @@ class DocsMixin():
         self.create_docs_dir(project_dir)
         docs_dir = self.get_docs_dir(project_dir)
 
-        # Copy the build directory into the docs folder
-        shutil.copytree(DOCS_INDEX_FILE_DIR, docs_dir / 'build', dirs_exist_ok=True)
+        # Copy the build directory into the docs folder. For some reason, mypy doesn't think that
+        # shutil has a dirs_exist_ok field, but it does.
+        shutil.copytree(DOCS_INDEX_FILE_DIR, docs_dir / 'build', dirs_exist_ok=True) # type: ignore
 
         # Copy the manifest.json into the docs build directory
         manifest_json_path = compiled_dir / 'manifest.json'
