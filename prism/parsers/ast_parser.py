@@ -289,7 +289,7 @@ class AstParser:
                     # Python introduced ast.unparse in version 3.9, which reverses ast.parse and 
                     # converts a node back into string. mypy thinks ast doesn't have an unparse
                     #  method, but this is fine.
-                    if prism.constants.PYTHON_VERSION>3 or (prism.constants.PYTHON_VERSION.major==3 and prism.constants.PYTHON_VERSION.minor>=9):
+                    if prism.constants.PYTHON_VERSION.major>3 or (prism.constants.PYTHON_VERSION.major==3 and prism.constants.PYTHON_VERSION.minor>=9):
                         locs.append(ast.unparse(kw.value)) # type: ignore
                     
                     # Otherwise, use the astor library. This is compatible with Python >=3.5
