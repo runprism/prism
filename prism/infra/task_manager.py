@@ -22,7 +22,7 @@ from typing import Any, Dict
 class PrismTaskManager:
     """
     PrismTaskManager class. This class manages all tasks in the DAG (and their associated outputs).
-    An instance of the task manager is passed to all `run` functions (via the kw `task`), and users
+    An instance of the task manager is passed to all `run` functions (via the kw `tasks`), and users
     can reference the output of other tasks via `tasks.ref('...')`.
     """
 
