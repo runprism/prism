@@ -13,10 +13,12 @@ Table of Contents:
 
 # Standard library imports
 import ast
+import astor
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 # Prism imports
+import prism.constants
 import prism.exceptions
 from prism.infra.manifest import ModuleManifest
 
@@ -283,8 +285,16 @@ class AstParser:
             kws = targ_call.keywords
             for kw in kws:
                 if kw.arg=="loc":
-                    # mypy thinks ast doesn't have an unparse method, but this is fine
-                    locs.append(ast.unparse(kw.value)) # type: ignore
+
+                    # Python introduced ast.unparse in version 3.9, which reverses ast.parse and 
+                    # converts a node back into string. mypy thinks ast doesn't have an unparse
+                    #  method, but this is fine.
+                    if prism.constants.PYTHON_VERSION>3 or (prism.constants.PYTHON_VERSION.major==3 and prism.constants.PYTHON_VERSION.minor>=9):
+                        locs.append(ast.unparse(kw.value)) # type: ignore
+                    
+                    # Otherwise, use the astor library. This is compatible with Python >=3.5
+                    else:
+                        locs.append(astor.to_source(kw.value))
         
         if len(locs)==1:
             return locs[0]

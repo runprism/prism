@@ -7,6 +7,7 @@ Constants used throughout the prism architecture
 #############
 import os
 from pathlib import Path
+import sys
 
 
 ###############
@@ -34,6 +35,9 @@ GLOBALS_DICT = {'__name__': '__main__'}
 # Internal names for task_manager and hooks
 INTERNAL_TASK_MANAGER_VARNAME = '__PRISM_TASK_MANAGER__'
 INTERNAL_HOOKS_VARNAME = '__PRISM_HOOKS__'
+
+# Python version
+PYTHON_VERSION = sys.version_info
 
 
 # EOF
