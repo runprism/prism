@@ -6,19 +6,22 @@ In this script, we...
 ## Imports ##
 #############
 
-import prism_project
-from prism.task import PrismTask
-from prism.target import target, Txt
+# Prism infrastructure imports
+import prism.task
+import prism.target
+import prism.decorators
 
+# Prism project imports
+import prism_project
 
 ######################
 ## Class definition ##
 ######################
 
-class Module01(PrismTask):
+class Module01(prism.task.PrismTask):
 
     ## Run
-    @target(type=Txt, loc=prism_project.OUTPUT / 'hello_world.txt')
+    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'hello_world.txt')
     def run(self, tasks, hooks):
         """
         Execute task.

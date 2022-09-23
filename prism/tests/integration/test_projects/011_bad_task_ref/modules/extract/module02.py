@@ -1,33 +1,24 @@
-"""PRIVILEGED AND CONFIDENTIAL; FOR INTERNAL USE ONLY
-
-In this script, we... 
-
---------------------------------------------------------------------------------
-Table of Contents:
-- Imports
-- Class definition
-    - Run
---------------------------------------------------------------------------------
-"""
-
 #############
 ## Imports ##
 #############
 
-import os
-from .. import prism_project
-from prism.task import PrismTask       # Not necessary; prism infrastructure automatically imported on the back-end
-import prism.target as PrismTarget     # Not necessary; prism infrastructure automatically imported on the back-end
+# Prism infrastructure imports
+import prism.task
+import prism.target
+import prism.decorators
+
+# Prism project imports
+import prism_project
 
 
 ######################
 ## Class definition ##
 ######################
 
-class Module02(PrismTask):
+class Module02(prism.task.PrismTask):
     
     ## Run
-    @PrismTask.target(type=PrismTarget.Txt, loc=os.path.join(prism_project.OUTPUT, 'module02.txt'))
+    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'module02.txt')
     def run(self, tasks, hooks):
         """
         Execute task.

@@ -1,34 +1,21 @@
-"""PRIVILEGED AND CONFIDENTIAL; FOR INTERNAL USE ONLY
-
-In this script, we... 
-
---------------------------------------------------------------------------------
-Table of Contents:
-- Imports
-- Class definition
-    - Section 1 Title
-    - Section 2 Title
-    ...
-    - Run
---------------------------------------------------------------------------------
-"""
-
 #############
 ## Imports ##
 #############
 
-# This section is not strictly necessary, because all prism-related imports are automatically handled on the back-end.
-# Nevertheless, we include them here to facilitate using the prism tasks and targets.
+# Prism infrastructure imports
+import prism.task
+import prism.target
+import prism.decorators
 
-from prism.task import PrismTask
-import prism.target as PrismTarget
+# Prism project imports
+import prism_project
 
 
 ######################
 ## Class definition ##
 ######################
 
-class Module04(PrismTask):
+class Module04(prism.task.PrismTask):
 
     ## Run
     def run(self, tasks, hooks):

@@ -1,38 +1,27 @@
-"""PRIVILEGED AND CONFIDENTIAL; FOR INTERNAL USE ONLY
-
-In this script, we... 
-
---------------------------------------------------------------------------------
-Table of Contents:
-- Imports
-- Class definition
-    - Section 1 Title
-    - Section 2 Title
-    ...
-    - Run
---------------------------------------------------------------------------------
-"""
-
 #############
 ## Imports ##
 #############
 
-import os
-from pyspark.sql.types import StructType, StructField, StringType
+# Prism infrastructure imports
+import prism.task
+import prism.target
+import prism.decorators
+
+# Prism project imports
 import prism_project
-from prism.task import PrismTask
-from prism.target import PySparkParquet
-from prism.decorators import target
+
+# Other imports
+from pyspark.sql.types import StructType, StructField, StringType
 
 
 ######################
 ## Class definition ##
 ######################
 
-class Module01(PrismTask):
+class Module01(prism.task.PrismTask):
 
     ## Run
-    @target(type=PySparkParquet, loc=os.path.join(prism_project.OUTPUT, 'target_parquet'), mode='overwrite')
+    @prism.decorators.target(type=prism.target.PySparkParquet, loc=str(prism_project.OUTPUT / 'target_parquet'), mode='overwrite')
     def run(self, tasks, hooks):
         """
         Execute task.

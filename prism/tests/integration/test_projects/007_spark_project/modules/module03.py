@@ -1,33 +1,24 @@
-"""PRIVILEGED AND CONFIDENTIAL; FOR INTERNAL USE ONLY
-
-In this script, we... 
-
---------------------------------------------------------------------------------
-Table of Contents:
-- Imports
-- Class definition
-    - Section 1 Title
-    - Section 2 Title
-    ...
-    - Run
---------------------------------------------------------------------------------
-"""
-
 #############
 ## Imports ##
 #############
 
-import pyspark.sql.functions as F
+# Prism infrastructure imports
+import prism.task
+import prism.target
+import prism.decorators
+
+# Prism project imports
 import prism_project
-from prism.task import PrismTask       # Not necessary; prism infrastructure automatically imported on the back-end
-import prism.target as PrismTarget     # Not necessary; prism infrastructure automatically imported on the back-end
+
+# Other imports
+import pyspark.sql.functions as F
 
 
 ######################
 ## Class definition ##
 ######################
 
-class Module03(PrismTask):
+class Module03(prism.task.PrismTask):
 
     ## Run
     def run(self, tasks, hooks):

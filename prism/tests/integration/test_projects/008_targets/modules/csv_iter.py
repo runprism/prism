@@ -1,23 +1,16 @@
-"""PRIVILEGED AND CONFIDENTIAL; FOR INTERNAL USE ONLY
-
-In this script, we... 
-
---------------------------------------------------------------------------------
-Table of Contents:
-- Imports
-- Class definition
-    - Run
---------------------------------------------------------------------------------
-"""
-
 #############
 ## Imports ##
 #############
 
+# Prism infrastructure imports
+import prism.task
+import prism.target
+import prism.decorators
+
+# Prism project imports
 import prism_project
-from prism.task import PrismTask
-from prism.target import PandasCsv
-from prism.decorators import target_iterator
+
+# Other imports
 import pandas as pd
 
 
@@ -25,10 +18,10 @@ import pandas as pd
 ## Class definition ##
 ######################
 
-class Module03(PrismTask):
+class CsvIteratorTask(prism.task.PrismTask):
 
     ## Run    
-    @target_iterator(type=PandasCsv, loc=prism_project.OUTPUT, index=False)
+    @prism.decorators.target_iterator(type=prism.target.PandasCsv, loc=prism_project.OUTPUT, index=False)
     def run(self, tasks, hooks):
         data1 = {
             'col1': ['col1_value1', 'col1_value2', 'col1_value3'],

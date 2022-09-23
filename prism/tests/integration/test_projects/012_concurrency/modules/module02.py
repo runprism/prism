@@ -1,34 +1,28 @@
-"""PRIVILEGED AND CONFIDENTIAL; FOR INTERNAL USE ONLY
-
-In this script, we... 
-
---------------------------------------------------------------------------------
-Table of Contents:
-- Imports
-- Class definition
-    - Run
---------------------------------------------------------------------------------
-"""
-
 #############
 ## Imports ##
 #############
-import os
+
+# Prism infrastructure imports
+import prism.task
+import prism.target
+import prism.decorators
+
+# Prism project imports
+import prism_project
+
+# Other imports
 import time
 import pandas as pd
-import prism_project
-from prism.task import PrismTask       # Not necessary; prism infrastructure automatically imported on the back-end
-import prism.target as PrismTarget     # Not necessary; prism infrastructure automatically imported on the back-end
 
 
 ######################
 ## Class definition ##
 ######################
 
-class Module02(PrismTask):
+class Module02(prism.task.PrismTask):
     
     ## Run
-    @PrismTask.target(type=PrismTarget.PandasCsv, loc=os.path.join(prism_project.OUTPUT, 'module02.csv'), index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'module02.csv', index=False)
     def run(self, tasks, hooks):
         """
         Execute task.
