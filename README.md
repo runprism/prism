@@ -58,7 +58,6 @@ In addition, check out some [example projects](https://github.com/runprism/prism
 
 We're always looking to improve our product. Here's what we're working on at the moment:
 
-- **DAG visualizer**: a clean UI for visualizing the data flow within and between tasks
 - **Additional adapters**: MySQL, Postgres, Redis, Slack, and more!
 - **Cloud deployment**: deploying and managing projects on Amazon EMR clusters, Docker containers, Databricks clusters, and more!
 

@@ -15,7 +15,7 @@ import sys
 ###############
 
 # Version number
-VERSION = '0.1.6rc1'
+VERSION = '0.1.6rc2'
 
 # Root directory of project
 ROOT_DIR =  str(Path(os.path.dirname(__file__)).parent)
