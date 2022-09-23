@@ -13,13 +13,13 @@ Table of Contents
 
 # Standard library imports
 import os
-import shutil
 import webbrowser
 from pathlib import Path
 from typing import List
-
+import signal
 from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
+import sys
 
 # Prism-specific imports
 import prism.cli.base
@@ -34,9 +34,6 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
     """
     Class for generating Prism documentation
     """
-
-
-
 
     def run(self):
         # Keep track of events
@@ -95,6 +92,22 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
 
         # ----------------------------------------------------------------------------------------------------------
         
+        # Send clean messages when Ctrl+C is pressed
+        def handler(signum, frame):
+            nonlocal event_list
+            event_list = fire_empty_line_event(self.args, event_list)
+            res = input('Shutdown the Prism docs server (y/n)? ')
+            if res=="y":
+                event_list = fire_empty_line_event(self.args, event_list)
+                event_list = fire_console_event(self.args, prism.logging.TaskSuccessfulEndEvent(), event_list, 0)
+                event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+                sys.exit(0)
+            else:
+                # do nothing
+                pass
+        
+        signal.signal(signal.SIGINT, handler)
+
         # Serve the docs
         os.chdir(build_path)
         port = self.args.port
@@ -115,7 +128,7 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
                 webbrowser.open_new_tab(f"http://127.0.0.1:{port}")
             except webbrowser.Error:
                 pass
-
+        
         try:
             httpd.serve_forever()  # blocks
         finally:
