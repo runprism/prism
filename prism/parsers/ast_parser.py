@@ -12,12 +12,16 @@ Table of Contents:
 #############
 
 # Standard library imports
+import re
 import ast
+import astor
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 # Prism imports
+import prism.constants
 import prism.exceptions
+from prism.infra.manifest import ModuleManifest
 
 
 ######################
@@ -25,7 +29,8 @@ import prism.exceptions
 ######################
 
 # Constant
-prism_function_alias = 'psm'
+prism_task_manager_alias = 'tasks'
+prism_hooks_alias = 'hooks'
 
 class AstParser:
     """
@@ -38,11 +43,19 @@ class AstParser:
     ):
         self.module_relative_path = module_relative_path
         self.parent_path = parent_path
+        
+        # Create a module manifest
+        self.module_manifest = ModuleManifest()
+
+        # Extract module as a string and parse
         self.module_path = Path(self.parent_path / self.module_relative_path)
         with open(self.module_path, 'r') as f:
             self.module_str = f.read()
         f.close()
         self.ast_module = ast.parse(self.module_str)
+
+        # Add module source code to manifest
+        self.module_manifest.add_module(self.module_relative_path, self.module_str)
 
         # Check existence of if-name-main
         bool_if_name_main = self.check_if_name_main(self.ast_module)
@@ -123,7 +136,7 @@ class AstParser:
         return None
     
 
-    def get_all_funcs(slef, prism_task: ast.ClassDef) -> List[ast.FunctionDef]:
+    def get_all_funcs(self, prism_task: ast.ClassDef) -> List[ast.FunctionDef]:
         """
         Get all functions from PrismTask class
 
@@ -169,7 +182,7 @@ class AstParser:
 
     def get_prism_mod_calls(self, func: ast.FunctionDef) -> List[Path]:
         f"""
-        Get calls to `{prism_function_alias}.mod` from `func`
+        Get calls to `tasks.ref` from `func`
         
         args:
             func: run function represented as an ast.FunctionDef object
@@ -190,10 +203,10 @@ class AstParser:
                 continue
             else:
                 try:
-                    if c.func.value.id==prism_function_alias and c.func.attr=='mod': # type: ignore
+                    if c.func.value.id==prism_task_manager_alias and c.func.attr=='ref': # type: ignore
                         args = c.args
                         if len(args)>1:
-                            raise prism.exceptions.ParserException(f'too many arguments in `{prism_function_alias}.mod` call')
+                            raise prism.exceptions.ParserException(f'too many arguments in `tasks.ref()` call')
                         if Path(args[0].s) not in mod_calls: # type: ignore
                             if args[0].s==str(self.module_relative_path): # type: ignore
                                 raise prism.exceptions.ParserException(message=f'self-references found in `{str(self.module_relative_path)}`')
@@ -244,6 +257,53 @@ class AstParser:
         return False
     
 
+    def get_targets(self, run_func: ast.FunctionDef) -> Union[str, List[str]]:
+        """
+        Get targets as strings
+
+        args:
+            run_function: run function as an ast FunctionDef object
+        returns:
+            targets as strings (or a list of strings)
+        """
+
+        # Targets will always be decorators
+        decs = run_func.decorator_list
+        target_decs = []
+        for call in decs:
+            if not isinstance(call, ast.Call):
+                raise prism.exceptions.CompileException(message="invalid target declaration")
+            if isinstance(call.func, ast.Attribute):
+                if call.func.attr in ["target", "target_iterator"]:
+                    target_decs.append(call)
+            elif isinstance(call.func, ast.Name):
+                if call.func.id in ["target", "target_iterator"]:
+                    target_decs.append(call)
+        
+        # Iterate through target decorators and pull out the loc keyword
+        locs: List[str] = []
+        for targ_call in target_decs:
+            kws = targ_call.keywords
+            for kw in kws:
+                if kw.arg=="loc":
+
+                    # Python introduced ast.unparse in version 3.9, which reverses ast.parse and 
+                    # converts a node back into string. mypy thinks ast doesn't have an unparse
+                    #  method, but this is fine.
+                    if prism.constants.PYTHON_VERSION.major>3 or (prism.constants.PYTHON_VERSION.major==3 and prism.constants.PYTHON_VERSION.minor>=9):
+                        locs.append(ast.unparse(kw.value)) # type: ignore
+                        
+                    
+                    # Otherwise, use the astor library. This is compatible with Python >=3.5
+                    else:
+                        locs.append(re.sub('\n$', '', astor.to_source(kw.value)))
+        
+        if len(locs)==1:
+            return locs[0]
+        else:
+            return locs
+
+
     def parse(self) -> Union[List[Path], Path]:
         """
         Parse module and return mod references
@@ -265,22 +325,28 @@ class AstParser:
         if run_func is None:
             raise prism.exceptions.ParserException(message=f"no `run` function in PrismTask in `{str(self.module_relative_path)}`")
         run_args = self.get_func_args(run_func)
-        if sorted(run_args)!=sorted([prism_function_alias, 'self']):
+        if sorted(run_args)!=sorted([prism_task_manager_alias, prism_hooks_alias, 'self']):
             msg_list = [
                 f'invalid arguments in `run` function in PrismTask in {str(self.module_relative_path)}',
-                f'should only be `self` and `{prism_function_alias}`'
+                f'should only be "self", "{prism_task_manager_alias}", and "{prism_hooks_alias}"'
             ]
             raise prism.exceptions.ParserException(message='\n'.join(msg_list))
+        
+        # Parse targets
+        target_locs = self.get_targets(run_func)
+        self.module_manifest.add_target(self.module_relative_path, target_locs)
 
-        # Iterate through all functions and get prism mod calls
+        # Iterate through all functions and get prism task.ref calls
         all_funcs = self.get_all_funcs(prism_task_class_node)
-        all_mods: List[Path] = []
+        all_task_refs: List[Path] = []
         for func in all_funcs:
-            all_mods+=self.get_prism_mod_calls(func)
-        if len(all_mods)==1:
-            return all_mods[0]
+            all_task_refs+=self.get_prism_mod_calls(func)
+        if len(all_task_refs)==1:
+            self.module_manifest.add_ref(target=self.module_relative_path, source=all_task_refs[0])
+            return all_task_refs[0]
         else:
-            return all_mods
+            for mr in all_task_refs: self.module_manifest.add_ref(target=self.module_relative_path, source=mr) 
+            return all_task_refs
 
 
 # EOF

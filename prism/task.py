@@ -12,6 +12,13 @@ Table of Contents
 
 import functools
 import prism.exceptions
+from typing import Tuple
+from pathlib import Path
+
+# Prism logging
+import prism.logging
+import prism.infra.hooks
+import prism.infra.task_manager
 
 
 ######################
@@ -26,10 +33,23 @@ class PrismTask:
         the `output` attribute.
         """
         self.bool_run = bool_run
+
+        # Tyeps, locs, and kwargs for target
+        self.types = []
+        self.locs = []
+        self.kwargs = []
     
     
     def set_psm(self, psm):
         self.psm = psm
+
+    
+    def set_task_manager(self, task_manager: prism.infra.task_manager.PrismTaskManager):
+        self.task_manager = task_manager
+
+    
+    def set_hooks(self, hooks: prism.infra.hooks.PrismHooks):
+        self.hooks = hooks
 
     
     def exec(self):
@@ -39,7 +59,7 @@ class PrismTask:
             
             # If bool_run, then execute the `run` function and set the `output` attribute to its result
             if self.bool_run:
-                self.output = self.run(self.psm)
+                self.output = self.run(self.task_manager, self.hooks)
                 if self.output is None:
                     raise prism.exceptions.RuntimeException("`run` method must produce a non-null output")
 
@@ -50,26 +70,28 @@ class PrismTask:
         
         # Otherwise, the decorator uses bool_run in its internal computation
         else:
-            self.output = self.run(self.psm)
+            self.output = self.run(self.task_manager, self.hooks)
             if self.output is None:
                 raise prism.exceptions.RuntimeException("`run` method must produce a non-null output")
 
 
-    def run(self, psm):
+    def run(self, psm, hooks: prism.infra.hooks.PrismHooks):
         """
         Run the task. The user should override this function definition when creating their own tasks.
         """
         raise prism.exceptions.RuntimeException("`run` method not implemented")
 
 
+    @prism.logging.deprecated('prism.task.PrismTask.target', 'prism.decorators.target')
     def target(type, loc, **kwargs):
         """
-        Decorator to use if user wishes to save the output of a task to an external location (e.g., a data warehouse, an
-        S3 bucket, or a local filepath).
+        Decorator to use if task requires user to iterate through several different objects and save each object
+        to an external location
         """
+
         def decorator_target(func):
             
-            def wrapper_target(self, psm):
+            def wrapper_target(self, task_manager: prism.infra.task_manager.PrismTaskManager, hooks: prism.infra.hooks.PrismHooks):
                 
                 # Decorator should only be called on the `run` function
                 if func.__name__!="run":
@@ -77,10 +99,10 @@ class PrismTask:
 
                 # If the task should be run in full, then call the run function
                 if self.bool_run:
-                    obj = func(self, psm)
+                    obj = func(self, task_manager, hooks)
 
                     # Initialize an instance of the target class and save the object using the target's `save` method
-                    target = type(obj, loc)
+                    target = type(obj, loc, hooks=None)
                     target.save(**kwargs)
 
                     # If a target is set, just assume that the user wants to reference the location of the target
@@ -92,7 +114,7 @@ class PrismTask:
                     return loc
             return wrapper_target
         return decorator_target
-
+        
     
     def get_output(self):
         """

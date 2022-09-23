@@ -4,13 +4,17 @@ Target class definition.
 Table of Contents
 - Imports
 - Class definitions
+- Target decorators
 """
 
 #############
 ## Imports ##
 #############
 
+# Prism imports
 import prism.exceptions
+import prism.infra.hooks
+import prism.infra.task_manager
 
 
 #######################
@@ -19,31 +23,32 @@ import prism.exceptions
 
 class PrismTarget:
 
-	def __init__(self, obj, loc):
-		self.obj = obj
-		self.loc = loc
+    def __init__(self, obj, loc, hooks):
+        self.obj = obj
+        self.loc = loc
+        self.hooks = hooks
 
-	def save(self):
-		raise prism.exceptions.RuntimeException(message="`save` method not implemented")
+    def save(self):
+        raise prism.exceptions.RuntimeException(message="`save` method not implemented")
 
 
 class PySparkParquet(PrismTarget):
 
-	def save(self, **kwargs):
-		self.obj.write.parquet(self.loc, **kwargs)
+    def save(self, **kwargs):
+        self.obj.write.parquet(self.loc, **kwargs)
 
 
 class PandasCsv(PrismTarget):
 
-	def save(self, **kwargs):
-		self.obj.to_csv(self.loc, **kwargs)
+    def save(self, **kwargs):
+        self.obj.to_csv(self.loc, **kwargs)
 
 
 class NumpyTxt(PrismTarget):
-	
-	def save(self, **kwargs):
-		import numpy as np
-		np.savetxt(self.loc, self.obj, **kwargs)
+    
+    def save(self, **kwargs):
+        import numpy as np
+        np.savetxt(self.loc, self.obj, **kwargs)
 
 
 class Txt(PrismTarget):
@@ -52,6 +57,12 @@ class Txt(PrismTarget):
         with open(self.loc, "w") as f:
             f.write(self.obj, **kwargs)
         f.close()
+
+
+class MatplotlibPNG(PrismTarget):
+
+    def save(self, **kwargs):
+        self.obj.savefig(self.loc, **kwargs)
 
 
 # EOF

@@ -91,7 +91,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         self.assertTrue('module03.py' in str(cm.exception))
         
         # Check that manifest is not formed
-        self.assertFalse(Path(P003_PROJECT_WITH_CYCLE / '.compiled' / 'manifest.yml').is_file())
+        self.assertFalse(Path(P003_PROJECT_WITH_CYCLE / '.compiled' / 'manifest.json').is_file())
 
         # Set up directory for next test
         self._set_up_wkdir()
@@ -112,7 +112,16 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         
         # Check that .compiled directory is formed
         self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled').is_dir())
-        self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.yml').is_file())
+        self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.json').is_file())
+        
+        # Check manifest
+        manifest = self._load_manifest(Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.json'))
+        module01_refs = self._load_module_refs("module01.py", manifest)
+        module02_refs = self._load_module_refs("module02.py", manifest)
+        module03_refs = self._load_module_refs("module03.py", manifest)
+        self.assertEqual([], module01_refs)
+        self.assertEqual('module01.py', module02_refs)
+        self.assertEqual([], module03_refs)
 
         # Check topological sort
         topsort = compiled_dag.topological_sort
@@ -178,7 +187,16 @@ class TestAPI(integration_test_class.IntegrationTestCase):
 
         # Confirm creation of manifest
         self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled').is_dir())
-        self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.yml').is_file())
+        self.assertTrue(Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.json').is_file())
+
+        # Check manifest.json
+        manifest = self._load_manifest(Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.json'))
+        module01_refs = self._load_module_refs("module01.py", manifest)
+        module02_refs = self._load_module_refs("module02.py", manifest)
+        module03_refs = self._load_module_refs("module03.py", manifest)
+        self.assertEqual([], module01_refs)
+        self.assertEqual('module01.py', module02_refs)
+        self.assertEqual([], module03_refs)
 
         # Cleanup
         self._remove_compiled_dir(P004_SIMPLE_PROJECT)
@@ -198,7 +216,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
 
         # Confirm creation of manifest
         self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / '.compiled').is_dir())
-        self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / '.compiled' / 'manifest.yml').is_file())
+        self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / '.compiled' / 'manifest.json').is_file())
 
         # Confirm creation of outputs
         self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt').is_file())
@@ -237,7 +255,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         dag9.run()
 
         self.assertTrue(Path(P009_SIMPLE_DBT_PROJECT / '.compiled').is_dir())
-        self.assertTrue(Path(P009_SIMPLE_DBT_PROJECT / '.compiled' / 'manifest.yml').is_file())
+        self.assertTrue(Path(P009_SIMPLE_DBT_PROJECT / '.compiled' / 'manifest.json').is_file())
         
         # Check contents of output
         df = pd.read_csv(P009_SIMPLE_DBT_PROJECT / 'output' / 'jaffle_shop_customers.csv')
@@ -283,7 +301,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         # Get output of a task with a target (without running pipeline)
         module01_output = dag5.get_task_output('module01.py')
         expected_output = str(Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt'))
-        self.assertEqual(module01_output, expected_output)
+        self.assertEqual(str(module01_output), expected_output)
 
         # Get output of a task without a target (after running pipeline)
         dag5.run()

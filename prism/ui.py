@@ -24,4 +24,11 @@ BRIGHT_GREEN = "\u001b[32;1m"
 BOLD = "\u001b[1m"
 
 
+####################
+## Terminal width ##
+####################
+
+TERMINAL_WIDTH = 100
+
+
 # EOF

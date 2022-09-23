@@ -273,8 +273,7 @@ class PrismProject:
     def exec(self,
         globals_dict: Dict[Any, Any]
     ) -> None:
-        # This object is only instantiated within a project directory
-        globals_dict['__file__'] = 'prism_project.py'
+        globals_dict['__file__'] = str(self.project_dir / 'prism_project.py')
         if self.prism_project_py_str_adjusted is not None:
             exec(self.prism_project_py_str_adjusted, globals_dict)
 

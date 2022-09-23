@@ -20,17 +20,19 @@ import copy
 import math
 import logging
 import time
-from typing import List, Type, Union
+from typing import List, Union
 from dataclasses import dataclass
 from datetime import datetime
 import traceback
 import types
 from typing import Any, Optional
+import functools
+import warnings
 
 # Prism imports
 import prism.constants
 import prism.exceptions
-from prism.ui import BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE, RESET, BRIGHT_WHITE, BRIGHT_YELLOW, BRIGHT_GREEN, BOLD
+from prism.ui import BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE, RESET, BRIGHT_WHITE, BRIGHT_YELLOW, BRIGHT_GREEN, BOLD, TERMINAL_WIDTH
 
 
 #########################
@@ -118,9 +120,9 @@ def format_console_output(message, index, total, status, execution_time):
     prefix = f"{progress}{message}"
 
     try:
-        width = min(os.get_terminal_size(0)[0], prism.constants.TERMINAL_WIDTH)
+        width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
     except:
-        width = prism.constants.TERMINAL_WIDTH
+        width = TERMINAL_WIDTH
     truncate_width = math.ceil(0.9*(width))
     justified = custom_ljust(prefix, width, ".")
     
@@ -324,9 +326,9 @@ class SeparatorEvent(Event):
 
     def message(self):
         try:
-            width = min(os.get_terminal_size(0)[0], prism.constants.TERMINAL_WIDTH)
+            width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
         except:
-            width = prism.constants.TERMINAL_WIDTH
+            width = TERMINAL_WIDTH
         truncate_width = math.ceil(0.9*(width))
         justified = "---".ljust(width, "-")
         if len(justified) > width:
@@ -449,6 +451,49 @@ class PrismExceptionErrorEvent(Event):
         detail = self.err.args[0]
         msg = "%s in `%s`: %s" % (error_class, self.name, detail)
         return f'{RED}{msg}{RESET}'
+
+
+@dataclass
+class ServingDocsEvent(Event):
+    address: str
+    port: int
+
+    def message(self):
+        return f'Serving docs at {BOLD}{YELLOW}http://127.0.0.1:{self.port}{RESET}'
+
+
+@dataclass
+class ServingDocsExitInfo(Event):
+
+    def message(self) -> str:
+        return f'Press {BOLD}{YELLOW}Ctrl+C{RESET} to exit{RESET}'
+
+
+def deprecated(deprecated_fn: str, updated_fn: str):
+    """
+    Decorator used to mark deprecated target function
+    """
+    def decorator_deprecated(func):
+        
+        @functools.wraps(func)
+        def new_func(*args, **kwargs):
+
+            # Suppress warning using context manager; capture line no. information
+            with warnings.catch_warnings(record=True) as w:
+                warnings.warn(f"{YELLOW}WARNING: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",
+                        category=DeprecationWarning,
+                        stacklevel=2)
+                
+                # Iterate through warnings
+                for wi in w:
+                    wi = w[0]
+                    lineno = wi.lineno
+                    DEFAULT_LOGGER.warning(f"{YELLOW}WARNING <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
+            return func(*args, **kwargs)
+        
+        return new_func
+    
+    return decorator_deprecated
 
 
 def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] = [], sleep=0.01):

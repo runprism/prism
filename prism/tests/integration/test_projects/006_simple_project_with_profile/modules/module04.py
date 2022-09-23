@@ -1,50 +1,37 @@
-"""PRIVILEGED AND CONFIDENTIAL; FOR INTERNAL USE ONLY
-
-In this script, we... 
-
---------------------------------------------------------------------------------
-Table of Contents:
-- Imports
-- Class definition
-    - Section 1 Title
-    - Section 2 Title
-    ...
-    - Run
---------------------------------------------------------------------------------
-"""
-
 #############
 ## Imports ##
 #############
 
-# This section is not strictly necessary, because all prism-related imports are automatically handled on the back-end.
-# Nevertheless, we include them here to facilitate using the prism tasks and targets.
+# Prism infrastructure imports
+import prism.task
+import prism.target
+import prism.decorators
 
-from prism.task import PrismTask
-import prism.target as PrismTarget
+# Prism project imports
+import prism_project
 
 
 ######################
 ## Class definition ##
 ######################
 
-class Module04(PrismTask):
+class Module04(prism.task.PrismTask):
 
     ## Run
-    def run(self, psm):
+    def run(self, tasks, hooks):
         """
         Execute task.
 
         args:
-            psm: built-in prism fns. These include:
-                - psm.mod     --> for referencing output of other tasks
-                - psm.dbt_ref --> for getting dbt models as a pandas DataFrame
-                - psm.sql     --> for executing sql query using an adapter in profile.yml
-                - psm.spark   --> for accessing SparkSession (if pyspark specified in profile.yml)
+            tasks: used to reference output of other tasks --> tasks.ref('...')
+            hooks: built-in Prism hooks. These include:
+                - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
+                - hooks.sql     --> for executing sql query using an adapter in profile.yml
+                - hooks.spark   --> for accessing SparkSession (if pyspark specified in profile.yml)
         returns:
             task output
         """
-        return psm.mod('module03.py') + "\n" + "Hello from module 4!"
+        return tasks.ref('module03.py') + "\n" + "Hello from module 4!"
 
 
 # EOF

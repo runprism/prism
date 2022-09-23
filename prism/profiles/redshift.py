@@ -14,7 +14,6 @@ Table of Contents
 import pandas as pd
 from typing import Any, Dict, Union
 import psycopg2
-from pyrsistent import optional
 
 # Prism-specific imports
 from .adapter import Adapter

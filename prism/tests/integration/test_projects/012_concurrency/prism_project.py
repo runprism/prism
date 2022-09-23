@@ -16,9 +16,7 @@ Table of Contents
 # Imports #
 ###########
 
-import os
-import sys
-import pandas as pd
+from pathlib import Path
 
 
 ################
@@ -50,9 +48,9 @@ VAR_2 = 200
 VAR_3 = '2015-01-01'
 
 # Paths
-WKDIR = os.path.dirname(__file__)
-DATA = os.path.join(WKDIR, 'data')
-OUTPUT = os.path.join(WKDIR, 'output')
+WKDIR = Path(__file__).parent
+DATA = WKDIR / 'data'
+OUTPUT = WKDIR / 'output'
 
 
 # EOF

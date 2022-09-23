@@ -160,12 +160,11 @@ class PrismDAG(
         # Get compiled DAG
         profiles_path = self.profiles_dir / 'profile.yml'
         compiled_dag = self.compile(modules)
-        compiled_dag.add_full_path(self.modules_dir)
 
         # Create Project, DAGExecutor, and Pipeline objects
         prism_project = self.create_project(self.project_dir, profiles_path, "local", "run")
         threads = prism_project.thread_count
-        dag_executor = prism_executor.DagExecutor(compiled_dag, all_upstream, threads)
+        dag_executor = prism_executor.DagExecutor(self.project_dir, compiled_dag, all_upstream, threads)
         pipeline = self.create_pipeline(prism_project, dag_executor, self.globals_namespace)
 
         # If config dictionary is specified, then update the prism_project globals
@@ -248,8 +247,9 @@ class PrismDAG(
                 self.add_sys_path(self.project_dir, temp_namespace)     # Add project dir to sys.path
                 code_str = [
                     parsed_ast_module.module_str,
-                    f'{task_var_name} = {prism_task_cls_name}(False)',  # Do NOT run the task
-                    f'{task_var_name}.set_psm(None)',                   # No need for an actual psm obj, since we're only accessing the target
+                    f'{task_var_name} = {prism_task_cls_name}(False)',    # Do NOT run the task
+                    f'{task_var_name}.set_hooks(None)',                   # No need for an actual task_manager/hooks, since we're only accessing the target
+                    f'{task_var_name}.set_task_manager(None)',            # No need for an actual task_manager/hooks, since we're only accessing the target
                     f'{task_var_name}.exec()'
                 ]
                 exec('\n'.join(code_str), temp_namespace)

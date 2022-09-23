@@ -40,7 +40,7 @@ TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 ## Test case class definition ##
 ################################
 
-class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase): 
+class TestDbtIntegration(integration_test_class.IntegrationTestCase): 
 
     
     def test_simple_dbt_project(self):
@@ -64,7 +64,7 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         args = ['run']
         run_results = self._run_prism(args)
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.yml').is_file())
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         
         # Check contents of output
         df = pd.read_csv(wkdir / 'output' / 'jaffle_shop_customers.csv')

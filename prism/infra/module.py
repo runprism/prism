@@ -16,8 +16,9 @@ from typing import Any, Dict
 
 # Prism-specific imports
 import prism.exceptions
-from prism.infra.psm import PrismFunctions
-from prism.infra.compiler import Manifest
+from prism.infra.task_manager import PrismTaskManager
+from prism.infra.hooks import PrismHooks
+from prism.infra.manifest import Manifest, ModuleManifest
 from prism.parsers.ast_parser import AstParser
 
 
@@ -47,7 +48,11 @@ class CompiledModule:
     Class for defining and executing a single compiled module
     """
 
-    def __init__(self, module_relative_path: Path, module_full_path: Path, manifest: Manifest):
+    def __init__(self,
+        module_relative_path: Path,
+        module_full_path: Path,
+        module_manifest: ModuleManifest
+    ):
         self.module_relative_path = module_relative_path
         self.module_full_path = module_full_path
         with open(self.module_full_path, 'r') as f:
@@ -61,25 +66,28 @@ class CompiledModule:
         # Module name
         self.name = str(self.module_relative_path)
 
-        # Refs
-        self.manifest = manifest
-        self.refs = self._check_manifest(self.name, self.manifest)
+        # Set manifest
+        self.module_manifest = module_manifest
+        self.refs = self._check_manifest(self.module_manifest)
     
 
-    def _check_manifest(self, module_name: str, manifest: Manifest):
+    def _check_manifest(self, module_manifest: ModuleManifest):
         """
         Check manifest and return list of refs associated with compiled
         module
         """
-        manifest_dict = manifest.manifest_dict
-        if module_name not in list(manifest_dict['manifest'].keys()):
-            raise prism.exceptions.CompileException(message = f'`{module_name}` not in manifest.yml')
-        return manifest_dict['manifest'][module_name]['refs']
+        refs = []
+        manifest_refs = module_manifest.manifest_dict["refs"]
+        for ref_obj in manifest_refs: refs.append(ref_obj["source"])
+        if len(refs)==1:
+            refs = refs[0]
+        return refs
     
 
     def instantiate_module_class(self,
         globals_dict: Dict[Any, Any],
-        psm: PrismFunctions,
+        task_manager: PrismTaskManager,
+        hooks: PrismHooks,
         explicit_run: bool = True
     ):
         """
@@ -87,7 +95,9 @@ class CompiledModule:
 
         args:
             globals_dict: globals dictionary
-            upstream_dict: dictionary with upstream task information
+            task_manager: PrismTaskManager object
+            hooks: PrismHooks object
+            explicit run: boolean indicating whether to run the Task. Default is True
         returns:
             variable used to store task instantiation
         """
@@ -104,8 +114,9 @@ class CompiledModule:
         exec(self.module_str, globals_dict)
         exec(f'{task_var_name}={prism_task_class_name}({explicit_run})', globals_dict)
 
-        # Set PrismFunctions object
-        globals_dict[task_var_name].set_psm(psm)
+        # Set task manager and hooks
+        globals_dict[task_var_name].set_task_manager(task_manager)
+        globals_dict[task_var_name].set_hooks(hooks)
         
         # Return name of variable used to store task instantiation
         return task_var_name
@@ -113,13 +124,14 @@ class CompiledModule:
 
     def exec(self,
         globals_dict: Dict[Any, Any],
-        psm: PrismFunctions,
+        task_manager: PrismTaskManager,
+        hooks: PrismHooks,
         explicit_run: bool = True
-    ) -> PrismFunctions:
-        task_var_name = self.instantiate_module_class(globals_dict, psm, explicit_run)
+    ) -> PrismTaskManager:
+        task_var_name = self.instantiate_module_class(globals_dict, task_manager, hooks, explicit_run)
         globals_dict[task_var_name].exec()
-        psm.upstream[self.name] = globals_dict[task_var_name]
-        return psm
+        task_manager.upstream[self.name] = globals_dict[task_var_name]
+        return task_manager
 
 
 # EOF

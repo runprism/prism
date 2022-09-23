@@ -157,9 +157,6 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         if compiled_dag==0:
             return compiled_event_manager_output
 
-        # Update the paths using the compiled directory
-        modules_dir = project_dir / 'modules'
-        compiled_dag.add_full_path(modules_dir)
         return compiled_event_manager_output
 
 

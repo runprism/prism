@@ -2,7 +2,7 @@ from prism.task import PrismTask
 
 class NoPrismTask():
     
-    def run(self, psm):
+    def run(self, tasks, hooks):
         return 'hi'
 
 

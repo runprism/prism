@@ -332,7 +332,6 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
             'ProjectPyNotFoundEvent',
             'SeparatorEvent'
         ])
-        print(connect_run_results)
         self.assertEqual(expected_results, connect_run_results)
 
         # Set up wkdir for next test case
