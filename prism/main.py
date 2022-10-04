@@ -327,7 +327,6 @@ def main(argv=None, bool_return: bool = False):
 
     # Parse args
     parsed = base_parser.parse_args(argv)
-    print(parsed)
     task = parsed.cls.task_from_args(parsed)
     result = task.run()
 
