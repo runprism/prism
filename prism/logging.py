@@ -469,6 +469,22 @@ class ServingDocsExitInfo(Event):
         return f'Press {BOLD}{YELLOW}Ctrl+C{RESET} to exit{RESET}'
 
 
+@dataclass
+class SysPathConfigWarningEvent(Event):
+    
+    def message(self):
+        return f'{YELLOW}`SYS_PATH_CONF` not found in prism_project.py; adding project directory to sys.path{RESET}'
+
+
+@dataclass
+class ProjectDirNotInSysPath(Event):
+    
+    def message(self):
+        return '\n'.join([
+            f'{YELLOW}project directory not in `SYS_PATH_CONF`{RESET}'
+        ])
+
+
 def deprecated(deprecated_fn: str, updated_fn: str):
     """
     Decorator used to mark deprecated target function

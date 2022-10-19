@@ -12,6 +12,7 @@ Table of Contents
 
 # Standard library imports
 import argparse
+from dataclasses import dataclass
 from typing import Any, Dict
 
 # Prism-specific imports
@@ -29,6 +30,10 @@ from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAM
 ## Class definition ##
 ######################
 
+@dataclass
+class DummyLoggingArgs:
+    quietly: bool = False
+
 
 class PrismPipeline(sys_handler.SysHandlerMixin):
     """
@@ -44,8 +49,39 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         self.dag_executor = executor
         self.pipeline_globals = pipeline_globals
 
+        # ------------------------------------------------------------------------------------------
+        # sys.path configuration
+
+        # Before executing anything, keep track of modules loaded in sys.modules and paths loaded
+        # in sys.paths. This will allow us to add/remove modules programatically without messing
+        # up the base configuration
+        if 'sys' not in self.pipeline_globals.keys():
+            exec('import sys', self.pipeline_globals)
+        self.base_sys_path = self.pipeline_globals['sys'].path
+        self.base_sys_modules = self.pipeline_globals['sys'].modules
+
         # Execute project
         self.project.exec(self.pipeline_globals)
+
+        # Compiled sys.path config
+        try:
+            self.sys_path_config = self.pipeline_globals['SYS_PATH_CONF']
+
+            # If project directory not in sys_path_config, throw a warning
+            if str(self.project.project_dir) not in [str(p) for p in self.sys_path_config]:
+                prism.logging.fire_console_event(DummyLoggingArgs(), prism.logging.ProjectDirNotInSysPath(), [])                
+
+        # Fire a warning, even if the user specified `quietly`
+        except KeyError:
+            prism.logging.fire_console_event(DummyLoggingArgs(), prism.logging.SysPathConfigWarningEvent(), [])
+            self.sys_path_config = [self.project.project_dir]
+        
+        # Configure sys.path. Before adding 
+        self.add_paths_to_sys_path(self.sys_path_config, self.pipeline_globals)
+
+
+        # ------------------------------------------------------------------------------------------
+        # Adapters, task manager, and hooks
 
         # The pipeline is being run using spark-submit, then the adapters must contain a pyspark adapter
         if self.project.which=='spark-submit':
@@ -70,11 +106,11 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
 
         self.pipeline_globals[INTERNAL_TASK_MANAGER_VARNAME] = task_manager_obj
         self.pipeline_globals[INTERNAL_HOOKS_VARNAME] = hooks_obj
-        
-        # Create sys handler
-        self.pipeline_globals = self.add_sys_path(self.project.project_dir, self.pipeline_globals)
 
+
+        # ------------------------------------------------------------------------------------------
         # Set the globals for the executor
+
         self.dag_executor.set_executor_globals(self.pipeline_globals)
 
 
@@ -90,8 +126,9 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
             self.project.adapters_object_dict["bigquery"].engine.close()
         
         # Remove project dir and all associated modules from sys path
-        self.pipeline_globals = self.remove_sys_path(self.project.project_dir, self.pipeline_globals)
-        self.pipeline_globals = self.remove_project_modules(self.project.project_dir, self.pipeline_globals)
+        self.pipeline_globals = self.remove_paths_from_sys_path(self.base_sys_path, self.sys_path_config, self.pipeline_globals)
+        self.pipeline_globals = self.remove_project_modules(self.base_sys_modules, self.sys_path_config, self.pipeline_globals)
+        
         return executor_output
 
 

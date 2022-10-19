@@ -244,7 +244,18 @@ class PrismDAG(
 
                 # Not sure how to instantiate the class from ast.ClassDef, so use exec.
                 temp_namespace = {}
-                self.add_sys_path(self.project_dir, temp_namespace)     # Add project dir to sys.path
+
+                # We need to update sys.path to include all paths in SYS_PATH_CONF, since some
+                # target locations may depend on vars stored in modules imported from directories
+                # contained therein.
+                prism_project = self.create_project(self.project_dir, self.profiles_dir / 'profile.yml', "local", "run")
+                exec(prism_project.prism_project_py_str, temp_namespace)
+                try:
+                    sys_path_config = temp_namespace['SYS_PATH_CONF']
+                except KeyError:
+                    sys_path_config = [self.project_dir]
+
+                self.add_paths_to_sys_path(sys_path_config, temp_namespace)
                 code_str = [
                     parsed_ast_module.module_str,
                     f'{task_var_name} = {prism_task_cls_name}(False)',    # Do NOT run the task
