@@ -135,7 +135,7 @@ class SysHandlerMixin:
             try:
                 if mod_obj.__file__ is None:
                     continue
-                elif Path(mod_obj.__file__).parents in paths and base_sys_modules[mod_name]!=mod_obj:
+                elif any([p in paths for p in Path(mod_obj.__file__).parents]):
                     mods_to_del.append(mod_name)
             except AttributeError:
                 continue

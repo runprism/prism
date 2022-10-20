@@ -25,7 +25,7 @@ from pathlib import Path
 
 # If connecting to a data warehouse (e.g., Snowflake), specify the profile you
 # want to use. Profiles can be created with the prism connect command.
-profile = "default"
+PROFILE = "default"
 
 
 ####################################

@@ -28,8 +28,8 @@ import numpy as np
 
 # If connecting to a data warehouse (e.g., Snowflake), specify the profile you
 # want to use. Profiles can be created with the prism connect command.
-profile = "test1"
-profile = "test2"
+PROFILE = "test1"
+PROFILE = "test2"
 
 
 ####################################

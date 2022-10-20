@@ -31,11 +31,17 @@ import prism.mixins.connect
 import prism.mixins.run
 import prism.mixins.sys_handler
 from prism.parsers import ast_parser
+import prism.logging
 
 
 ######################
 ## Class definition ##
 ######################
+
+@dataclass
+class LoggingArgs:
+    quietly: bool = True
+
 
 @dataclass
 class RunArgs:
@@ -78,6 +84,9 @@ class PrismDAG(
 
         # Define project namespace
         self.globals_namespace = prism.constants.GLOBALS_DICT.copy()
+
+        # Set up default logger
+        prism.logging.set_up_logger(LoggingArgs())
 
     
     def _is_valid_project(self, user_project_dir: Path) -> bool:
@@ -249,7 +258,7 @@ class PrismDAG(
                 # target locations may depend on vars stored in modules imported from directories
                 # contained therein.
                 prism_project = self.create_project(self.project_dir, self.profiles_dir / 'profile.yml', "local", "run")
-                exec(prism_project.prism_project_py_str, temp_namespace)
+                prism_project.exec(temp_namespace)
                 try:
                     sys_path_config = temp_namespace['SYS_PATH_CONF']
                 except KeyError:

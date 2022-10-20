@@ -245,7 +245,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # encounter any errors with this command.
 
         # Execute command
-        args = ['run', '--modules', 'module02.py']
+        args = ['run', '--modules', 'module02.py', '--full-tb']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \

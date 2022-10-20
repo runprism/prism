@@ -103,7 +103,7 @@ def target(*, type, loc, **kwargs):
                     self.locs.append(loc)
                     
                     # If multiple targets, then return all locs
-                    if len(self.locs)>0:
+                    if len(self.locs)>1:
                         return self.locs
                     
                     # For single-target case, return single loc

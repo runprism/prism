@@ -180,15 +180,34 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             args=self.args
         )
         executor_output = exec_event_manager_output.outputs
-        success = executor_output.success
-        error_event = executor_output.error_event
-        executor_events = executor_output.event_list
-        event_list.extend(executor_events)
-        if success==0:
+        
+        # If executor_output is 0, then an error occurred
+        if executor_output==0:
+            
+            # Get the error event and event list
+            error_event = exec_event_manager_output.event_to_fire
+            executor_events = exec_event_manager_output.event_list
+
+            # Fire error event and return
             event_list = fire_empty_line_event(self.args, event_list)
             event_list = fire_console_event(self.args, error_event, event_list)
             event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
             return prism.cli.base.TaskRunReturnResult(event_list)
+
+        # Otherwise, check the status of the executor ouput
+        else:
+            success = executor_output.success
+            error_event = executor_output.error_event
+            executor_events = executor_output.event_list
+            event_list.extend(executor_events)
+
+            # If success = 0, then there was an error in the DagExecutor multiprocessing. This
+            # return structure is confusing; we should eventually fix this.
+            if success==0:
+                event_list = fire_empty_line_event(self.args, event_list)
+                event_list = fire_console_event(self.args, error_event, event_list)
+                event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+                return prism.cli.base.TaskRunReturnResult(event_list)
         
         
         # ----------------------------------------------------------------------------------------------------------

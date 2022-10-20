@@ -14,6 +14,7 @@ Table of Contents
 import argparse
 from dataclasses import dataclass
 from typing import Any, Dict
+import copy
 
 # Prism-specific imports
 from prism.infra import project as prism_project
@@ -31,7 +32,7 @@ from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAM
 ######################
 
 @dataclass
-class DummyLoggingArgs:
+class LoggingArgs:
     quietly: bool = False
 
 
@@ -57,8 +58,8 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         # up the base configuration
         if 'sys' not in self.pipeline_globals.keys():
             exec('import sys', self.pipeline_globals)
-        self.base_sys_path = self.pipeline_globals['sys'].path
-        self.base_sys_modules = self.pipeline_globals['sys'].modules
+        self.base_sys_path = [p for p in self.pipeline_globals['sys'].path]
+        self.base_sys_modules = {k:v for k,v in self.pipeline_globals['sys'].modules.items()}
 
         # Execute project
         self.project.exec(self.pipeline_globals)
@@ -69,11 +70,11 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
 
             # If project directory not in sys_path_config, throw a warning
             if str(self.project.project_dir) not in [str(p) for p in self.sys_path_config]:
-                prism.logging.fire_console_event(DummyLoggingArgs(), prism.logging.ProjectDirNotInSysPath(), [])                
+                prism.logging.fire_console_event(LoggingArgs(), prism.logging.ProjectDirNotInSysPath(), [])                
 
         # Fire a warning, even if the user specified `quietly`
         except KeyError:
-            prism.logging.fire_console_event(DummyLoggingArgs(), prism.logging.SysPathConfigWarningEvent(), [])
+            prism.logging.fire_console_event(LoggingArgs(), prism.logging.SysPathConfigWarningEvent(), [])
             self.sys_path_config = [self.project.project_dir]
         
         # Configure sys.path. Before adding 
