@@ -29,10 +29,6 @@ import prism.logging
 ## Class definition ##
 ######################
 
-@dataclass
-class DummyLoggingArgs:
-    quietly: bool = False
-
 
 class SysHandlerMixin:
     """
