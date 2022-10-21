@@ -72,7 +72,7 @@ class BaseEventManager:
             status="RUN",
             execution_time=None
         )
-        event_list = fire_console_event(self.args, e, event_list)
+        event_list = fire_console_event(e, event_list, log_level='info')
         return event_list
 
 
@@ -91,7 +91,7 @@ class BaseEventManager:
             status="DONE",
             execution_time=execution_time
         )
-        event_list = fire_console_event(self.args, e, event_list)
+        event_list = fire_console_event(e, event_list, log_level='info')
         return event_list
 
 
@@ -110,7 +110,7 @@ class BaseEventManager:
             status="ERROR",
             execution_time=execution_time
         )
-        event_list = fire_console_event(self.args, e, event_list)
+        event_list = fire_console_event(e, event_list, log_level='error')
         return event_list
 
 
@@ -150,7 +150,7 @@ class BaseEventManager:
         except SyntaxError:
             if fire_exec_events:
                 event_list = self.fire_error_exec_event(start_time, event_list)
-            event_list = fire_empty_line_event(self.args, event_list)
+            event_list = fire_empty_line_event(event_list)
             exc_type, exc_value, exc_tb = sys.exc_info()
             full_tb = self.args.full_tb
             if full_tb:
@@ -163,7 +163,7 @@ class BaseEventManager:
         except Exception:
             if fire_exec_events:
                 event_list = self.fire_error_exec_event(start_time, event_list)
-            event_list = fire_empty_line_event(self.args, event_list)
+            event_list = fire_empty_line_event(event_list)
             exc_type, exc_value, exc_tb = sys.exc_info()
             full_tb = self.args.full_tb
             if full_tb:

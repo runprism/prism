@@ -12,6 +12,7 @@ Table of Contents
 #############
 
 # Standard library imports
+from cmath import log
 import os
 import webbrowser
 from pathlib import Path
@@ -45,7 +46,7 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
         event_list, project_dir = self.fire_header_events(event_list)
         if project_dir is None:
             return prism.cli.base.TaskRunReturnResult(event_list)
-        event_list = fire_empty_line_event(self.args, event_list)
+        event_list = fire_empty_line_event(event_list)
         os.chdir(project_dir)
 
         # Compiled dir
@@ -65,9 +66,9 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
         
         # If no modules in DAG, return
         if compiled_dag==0:
-            event_list = fire_empty_line_event(self.args, event_list)
-            event_list = fire_console_event(self.args, compiled_dag_error_event, event_list)
-            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(compiled_dag_error_event, event_list, log_level='error')
+            event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
 
         
@@ -95,12 +96,12 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
         # Send clean messages when Ctrl+C is pressed
         def handler(signum, frame):
             nonlocal event_list
-            event_list = fire_empty_line_event(self.args, event_list)
+            event_list = fire_empty_line_event(event_list)
             res = input('Shutdown the Prism docs server (y/n)? ')
             if res=="y":
-                event_list = fire_empty_line_event(self.args, event_list)
-                event_list = fire_console_event(self.args, prism.logging.TaskSuccessfulEndEvent(), event_list, 0)
-                event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+                event_list = fire_empty_line_event(event_list)
+                event_list = fire_console_event(prism.logging.TaskSuccessfulEndEvent(), event_list, 0, log_level='info')
+                event_list = self.fire_tail_event(event_list)
                 sys.exit(0)
             else:
                 # do nothing
@@ -113,10 +114,10 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
         port = self.args.port
         address = "0.0.0.0"
 
-        event_list = fire_empty_line_event(self.args, event_list)
-        event_list = fire_console_event(self.args, prism.logging.ServingDocsEvent(address=address, port=port))
-        event_list = fire_console_event(self.args, prism.logging.ServingDocsExitInfo())
-        event_list = fire_empty_line_event(self.args, event_list)
+        event_list = fire_empty_line_event(event_list)
+        event_list = fire_console_event(prism.logging.ServingDocsEvent(address=address, port=port), log_level='info')
+        event_list = fire_console_event(prism.logging.ServingDocsExitInfo(), log_level='info')
+        event_list = fire_empty_line_event(event_list)
         
         # mypy doesn't think SimpleHTTPRequestHandler is ok here, but it is
         httpd = TCPServer(  # type: ignore

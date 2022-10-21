@@ -512,24 +512,48 @@ def deprecated(deprecated_fn: str, updated_fn: str):
     return decorator_deprecated
 
 
-def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] = [], sleep=0.01):
-    msg = Event.message()
-    if not args.quietly:
-        DEFAULT_LOGGER.info(msg) # type: ignore
-        time.sleep(sleep)
+def fire_console_event(
+    event: Event,
+    event_list: List[Event]=[], 
+    sleep=0.01, 
+    log_level: str='info'
+):
+    """
+    Fire console event. Note that if --quietly is invoked, then we set the log level to WARN.
+
+    args:
+        event: instance of Event class
+        event_list: list of events
+        sleep: number of seconds to pause after firing the event
+        log_level: one of `info`, `warn`, `error`, or `critical`
+    returns:
+        event_list with `event` appended
+    """
+    if log_level=="info":
+        DEFAULT_LOGGER.info(event.message()) # type: ignore
+    elif log_level=="warn":
+        DEFAULT_LOGGER.warning(f'{RED}[WARNING] {RESET}' + event.message()) # type: ignore
+    elif log_level=="error":
+        DEFAULT_LOGGER.error(f'{RED}[ERROR] {RESET}' + event.message()) # type: ignore
+    elif log_level=="critical":
+        DEFAULT_LOGGER.critical(f'{RED}[CRITICAL] {RESET}' + event.message()) # type: ignore
+    
+    # Sleep
+    time.sleep(sleep)
 
     # Return event list
-    event_list.append(Event)
+    event_list.append(event)
     return event_list
 
 
-def fire_empty_line_event(args: argparse.Namespace, event_list: List[Event] = []):
+def fire_empty_line_event(event_list: List[Event] = []):
+    """
+    Fire empty line event. These events are used to make the console logs look prettier, so they'll
+    always be fired under the `info` level.
+    """
     e = EmptyLineEvent()
     msg = e.message()
-    if not args.quietly:
-        DEFAULT_LOGGER.info(msg) # type: ignore
-
-    # Return event list
+    DEFAULT_LOGGER.info(msg) # type: ignore
     event_list.append(e)
     return event_list
 

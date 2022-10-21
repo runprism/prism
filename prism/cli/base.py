@@ -16,6 +16,7 @@ Table of Contents
 import os
 from pathlib import Path
 from typing import List, Tuple, Union
+import logging
 
 # Prism-specific imports
 import prism.exceptions
@@ -99,6 +100,10 @@ class BaseTask:
         self.args = args
         prism.logging.set_up_logger(self.args)
 
+        # If --quietly is invoked, then set the default log level to warn
+        if self.args.quietly:
+            prism.logging.DEFAULT_LOGGER.setLevel(logging.WARN)
+
 
     @classmethod
     def task_from_args(cls, args):
@@ -109,21 +114,33 @@ class BaseTask:
         event_list: List[prism.logging.Event] = []
     ) -> Tuple[List[prism.logging.Event], Union[Path, None]]:
         """
-        Fire header events that should be displayed at the beginning of all tasks (except the init task)
+        Fire header events that should be displayed at the beginning of all tasks (except the init
+        task)
         """
-        event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 1)
-        event_list = fire_console_event(self.args, prism.logging.TaskRunEvent(version=prism.constants.VERSION), event_list, 0)
+        event_list = fire_console_event(prism.logging.SeparatorEvent(), event_list, 1, 'info')
+        event_list = fire_console_event(prism.logging.TaskRunEvent(version=prism.constants.VERSION), event_list, 0, 'info')
 
         try:
             project_dir = get_project_dir()
-            event_list = fire_console_event(self.args, prism.logging.CurrentProjectDirEvent(project_dir), event_list, 0)
+            event_list = fire_console_event(prism.logging.CurrentProjectDirEvent(project_dir), event_list, 0, 'info')
             return event_list, project_dir
         except prism.exceptions.ProjectPyNotFoundException as err:
-            event_list = fire_empty_line_event(self.args, event_list)
+            event_list = fire_empty_line_event(event_list)
             e = prism.logging.ProjectPyNotFoundEvent(err)
-            event_list = fire_console_event(self.args, e, event_list)
-            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(e, event_list, log_level='error')
             return event_list, None
+
+
+    def fire_tail_event(self,
+        event_list: List[prism.logging.EmptyLineEvent] = []
+    ) -> Tuple[List[prism.logging.Event], Union[Path, None]]:
+        """
+        Fire tail event
+        """
+        # Fire a separator event to indicate the end of a run. Note, this will only fire if --quietly
+        # isn't invoked
+        event_list = prism.logging.fire_console_event(prism.logging.SeparatorEvent(), sleep=0, log_level='info')
+        return event_list
 
 
     def run(self):
