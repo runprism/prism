@@ -510,7 +510,7 @@ def deprecated(deprecated_fn: str, updated_fn: str):
 
             # Suppress warning using context manager; capture line no. information
             with warnings.catch_warnings(record=True) as w:
-                warnings.warn(f"{YELLOW}WARNING: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",
+                warnings.warn(f"{YELLOW}[WARNING]: {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",
                         category=DeprecationWarning,
                         stacklevel=2)
                 
@@ -518,7 +518,7 @@ def deprecated(deprecated_fn: str, updated_fn: str):
                 for wi in w:
                     wi = w[0]
                     lineno = wi.lineno
-                    DEFAULT_LOGGER.warning(f"{YELLOW}WARNING <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
+                    DEFAULT_LOGGER.warning(f"{YELLOW}[WARNING] <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
             return func(*args, **kwargs)
         
         return new_func
@@ -546,11 +546,11 @@ def fire_console_event(
     if log_level=="info":
         DEFAULT_LOGGER.info(event.message()) # type: ignore
     elif log_level=="warn":
-        DEFAULT_LOGGER.warning(f'{YELLOW}[WARNING] {RESET}' + event.message()) # type: ignore
+        DEFAULT_LOGGER.warning(f'{YELLOW}[WARNING]: {RESET}' + event.message()) # type: ignore
     elif log_level=="error":
-        DEFAULT_LOGGER.error(f'{RED}[ERROR] {RESET}' + event.message()) # type: ignore
+        DEFAULT_LOGGER.error(f'{RED}[ERROR]: {RESET}' + event.message()) # type: ignore
     elif log_level=="critical":
-        DEFAULT_LOGGER.critical(f'{RED}[CRITICAL] {RESET}' + event.message()) # type: ignore
+        DEFAULT_LOGGER.critical(f'{RED}[CRITICAL]: {RESET}' + event.message()) # type: ignore
     
     # Sleep
     time.sleep(sleep)
