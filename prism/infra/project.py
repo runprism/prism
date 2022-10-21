@@ -211,7 +211,9 @@ class PrismProject:
                             items = []
                             for attr in elem.value.elts:
                                 if prism.constants.PYTHON_VERSION.major>3 or (prism.constants.PYTHON_VERSION.major==3 and prism.constants.PYTHON_VERSION.minor>=9):
-                                    items.append(ast.unparse(attr))
+                                    # mypy thinks ast doesn't have an unparse method, but this is
+                                    # fine.
+                                    items.append(ast.unparse(attr)) # type: ignore
                                 else:
                                     items.append(re.sub('\n$', '', astor.to_source(attr)))
                             return items
