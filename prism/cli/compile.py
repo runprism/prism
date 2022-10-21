@@ -75,10 +75,10 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
 
         # Manager for compiling DAG
         compiler_manager = base_event_manager.BaseEventManager(
-            args=self.args,
             idx=None,
             total=None,
             name='module DAG',
+            full_tb=self.args.full_tb,
             func=self.compile_dag
         )
         compiled_event_manager_output = compiler_manager.manage_events_during_run(
@@ -137,10 +137,10 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
 
         # Manager for parsing node_dicts
         compiler_manager = base_event_manager.BaseEventManager(
-            args=args,
             idx=None,
             total=None,
             name='module DAG',
+            full_tb=args.full_tb,
             func=self.compile_dag
         )
         

@@ -12,11 +12,10 @@ Table of Contents
 #############
 
 # Standard library imports
-import os
 import yaml
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 # Prism-specific imports
 import prism.cli.base
@@ -24,8 +23,6 @@ import prism.cli.compile
 import prism.exceptions
 import prism.constants
 import prism.logging
-from prism.event_managers.base import BaseEventManager
-from prism.logging import Event, fire_console_event, fire_empty_line_event
 from prism.templates.profile import PROFILES_TEMPLATE_DIR as profiles_template_dir
 
 

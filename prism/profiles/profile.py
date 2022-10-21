@@ -164,26 +164,30 @@ class Profile:
         flag_missing_named_profile = named_profile=={}
 
         if flag_missing_profile_yml:
+            if flag_missing_named_profile:
+                if fire_warnings:
+                    e2 = prism.logging.ProfileNameExistsYamlDoesNotExist()
+                    prism.logging.fire_console_event(e2, [], 0, log_level='warn')
             return False
 
         # Handle cases where the profile.yml is non-empty
         else:
             
-            # If missing profile name, then the named profile will, by definition, be {}. Throw a warning and return 
-            # False
+            # If missing profile name, then the named profile will, by definition, be {}. Throw a
+            # warning and return False
             if flag_missing_profile_name:
                 if fire_warnings:
                     e1 = prism.logging.ProfileNameDoesNotExistYamlExists()
-                    prism.logging.fire_console_event(DummyArg(), e1, [], 0)
+                    prism.logging.fire_console_event(e1, [], 0, log_level='warn')
                 return False
             
-            # If the profile name is not missing, check if the named profile is empty. If it is, then raise a warning
-            # and return False.
+            # If the profile name is not missing, check if the named profile is empty. If it is,
+            # then raise a warning and return False.
             else:
                 if flag_missing_named_profile:
                     if fire_warnings:
                         e2 = prism.logging.ProfileNameExistsYamlDoesNotExist()
-                        prism.logging.fire_console_event(DummyArg(), e2, [], 0)
+                        prism.logging.fire_console_event(e2, [], 0, log_level='warn')
                     return False
         
         # Nothing has been returned, return True

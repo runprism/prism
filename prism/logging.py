@@ -149,11 +149,24 @@ def set_up_logger(args: argparse.Namespace):
         global DEFAULT_LOGGER
 
         DEFAULT_LOGGER = logging.getLogger('PRISM_LOGGER')
-        DEFAULT_LOGGER.setLevel(logging.INFO)
+
+        def _set_level(obj, level: str):
+            if level=='info':
+                obj.setLevel(logging.INFO)
+            elif level=='warn':
+                obj.setLevel(logging.WARN)
+            elif level=='error':
+                obj.setLevel(logging.ERROR)
+            elif level=='critical':
+                obj.setLevel(logging.CRITICAL)
+            return obj
+
+        # Set the appropriate log level
+        DEFAULT_LOGGER = _set_level(DEFAULT_LOGGER, args.log_level)
 
         # Stream handler
         handler = logging.StreamHandler()
-        handler.setLevel(logging.INFO)
+        handler = _set_level(handler, args.log_level)
         console_formatter = logging.Formatter(fmt="%(message)s")
         handler.setFormatter(console_formatter)
 
@@ -161,14 +174,15 @@ def set_up_logger(args: argparse.Namespace):
         class FileHandlerFormatter(logging.Formatter):
             def format(self,record):
                 return escape_ansi(record.msg)
-
-        if not args.quietly:
-            file_handler = logging.FileHandler('logs.log')
-            file_handler.setLevel(logging.INFO)
-            file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
-            file_handler.setFormatter(file_handler_formatter)
-            DEFAULT_LOGGER.addHandler(file_handler)
-
+        
+        file_handler = logging.FileHandler('logs.log')
+        file_handler = _set_level(file_handler, args.log_level)
+        file_handler.setLevel(logging.INFO)
+        file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
+        file_handler.setFormatter(file_handler_formatter)
+        
+        # Add handlers
+        DEFAULT_LOGGER.addHandler(file_handler)
         DEFAULT_LOGGER.addHandler(handler)
 
 
@@ -255,14 +269,14 @@ class ProfileAlreadyExists(Event):
 class ProfileNameExistsYamlDoesNotExist(Event):
 
     def message(self):
-        return f'{YELLOW}WARNING: profile name found in prism_project.py but profile.yml not found{RESET}'
+        return f'{YELLOW}profile name found in prism_project.py but profile.yml not found{RESET}'
 
 
 @dataclass
 class ProfileNameDoesNotExistYamlExists(Event):
 
     def message(self):
-        return f'{YELLOW}WARNING: profile.yml found but profile name not found prism_project.py{RESET}'
+        return f'{YELLOW}profile.yml found but profile name not found prism_project.py{RESET}'
 
 
 @dataclass
@@ -532,7 +546,7 @@ def fire_console_event(
     if log_level=="info":
         DEFAULT_LOGGER.info(event.message()) # type: ignore
     elif log_level=="warn":
-        DEFAULT_LOGGER.warning(f'{RED}[WARNING] {RESET}' + event.message()) # type: ignore
+        DEFAULT_LOGGER.warning(f'{YELLOW}[WARNING] {RESET}' + event.message()) # type: ignore
     elif log_level=="error":
         DEFAULT_LOGGER.error(f'{RED}[ERROR] {RESET}' + event.message()) # type: ignore
     elif log_level=="critical":

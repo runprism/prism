@@ -65,7 +65,7 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
         event_list = result.event_list
         
         # If no modules in DAG, return
-        if compiled_dag==0:
+        if compiled_dag==0 and compiled_dag_error_event is not None:
             event_list = fire_empty_line_event(event_list)
             event_list = fire_console_event(compiled_dag_error_event, event_list, log_level='error')
             event_list = self.fire_tail_event(event_list)
@@ -76,10 +76,10 @@ class GenerateDocsTask(prism.cli.compile.CompileTask, prism.mixins.docs.DocsMixi
         # Create / populate the docs folder
 
         populate_docs_build_manager = base_event_manager.BaseEventManager(
-            args=self.args,
             idx=None,
             total=None,
             name='populate docs build',
+            full_tb=self.args.full_tb,
             func=self.populate_docs_build
         )
         compiled_event_manager_output = populate_docs_build_manager.manage_events_during_run(

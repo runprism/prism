@@ -49,12 +49,12 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
     )
 
     common_arguments_parser.add_argument(
-        '-q',
-        '--quietly',
+        '--log-level',
         required=False,
-        action='store_true',
+        type=str,
+        default='info',
         help="""
-        Suppress logging
+        Set the log level; must be one of `info`, `warn`, `error`, or `critical`
         """
     )
     return common_arguments_parser

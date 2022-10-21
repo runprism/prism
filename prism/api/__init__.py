@@ -40,20 +40,7 @@ import prism.logging
 
 @dataclass
 class LoggingArgs:
-    quietly: bool = True
-
-
-@dataclass
-class RunArgs:
-    """
-    The compile/connect CLI task only call EventManagers (which require an `args` param) within their class. However,
-    the run task uses non-CLI classes that also EventManagers, such as the DAGExecutor. We need to supply an `args`
-    param to the API run call, and we use this class to do so.
-    """
-    module_paths: List[Path]
-    all_upstream: bool
-    full_tb: bool
-    quietly: bool
+    log_level: str = 'warn'
 
         
 class PrismDAG(
@@ -68,7 +55,7 @@ class PrismDAG(
 
     def __init__(self,
         project_dir: Path,
-        profiles_dir: Optional[Path] = None
+        profiles_dir: Optional[Path] = None,
     ):
         self.project_dir = project_dir
         self.profiles_dir = project_dir if profiles_dir is None else profiles_dir
@@ -160,7 +147,6 @@ class PrismDAG(
         modules: Optional[List[str]] = None,
         all_upstream: bool = True,
         full_tb: bool = True,
-        quietly: bool = True,
         config_dict: Optional[Dict[str, Any]] = None
     ):
         """
@@ -181,8 +167,7 @@ class PrismDAG(
             prism_project.adjust_prism_py_with_config(config_dict)
 
         # Create args and exec
-        args = RunArgs(self.user_arg_modules, all_upstream, full_tb, quietly)
-        output = pipeline.exec(args)
+        output = pipeline.exec(full_tb)
         if output.error_event is not None:
             event = output.error_event
             try:

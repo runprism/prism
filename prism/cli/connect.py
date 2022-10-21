@@ -80,10 +80,10 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
 
         # Create a event manager for the connection setup
         profile_connection_event_manager = BaseEventManager(
-            args=self.args,
             idx=None,
             total=None,
             name='connection setup',
+            full_tb=self.args.full_tb,
             func=self.create_connection
         )
         event_manager_results = profile_connection_event_manager.manage_events_during_run(

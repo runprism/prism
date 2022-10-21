@@ -102,7 +102,7 @@ class DagExecutor:
 
 
     def exec_single(self,
-        args: argparse.Namespace,
+        full_tb: bool,
         module: prism_module.CompiledModule, 
         task_manager: Union[int, PrismTaskManager],
         hooks: PrismHooks
@@ -145,10 +145,10 @@ class DagExecutor:
         # only be called within the project directory. Therefore, __files__ should be modules/{name of script}
         self.executor_globals['__file__'] = str(self.project_dir / f'modules/{str(relative_path)}')
         script_manager = base_event_manager.BaseEventManager(
-            args=args,
             idx=idx,
             total=total,
             name=name,
+            full_tb=full_tb,
             func=module.exec
         )
         script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(
@@ -172,7 +172,7 @@ class DagExecutor:
         pool.join()
     
 
-    def exec(self, args):
+    def exec(self, full_tb: bool):
         """
         Execute DAG. Our general approach is as follows:
             1. Create a queue of the tasks (i.e., the modules) that need to be executed.
@@ -211,7 +211,7 @@ class DagExecutor:
         if self.threads==1:
             while self.compiled_modules!=[]:
                 curr = self.compiled_modules.pop(0)
-                result = self.exec_single(args, curr, self.task_manager, self.hooks)
+                result = self.exec_single(full_tb, curr, self.task_manager, self.hooks)
                 callback(result)
                 if self.task_manager==0:
                     return ExecutorOutput(0, self.error_event, self.event_list)
@@ -237,7 +237,7 @@ class DagExecutor:
 
                         # If no refs, then add module to pool
                         if len(refs)==0:                
-                            res = pool.apply_async(self.exec_single, args=(args,curr,self.task_manager,self.hooks), callback=callback)
+                            res = pool.apply_async(self.exec_single, args=(full_tb,curr,self.task_manager,self.hooks), callback=callback)
                             async_results[curr.name] = res
                             self.compiled_modules.pop(0)
                         
@@ -251,7 +251,7 @@ class DagExecutor:
                             if self._wait_and_return:
                                 break # type: ignore
                             else:
-                                res = pool.apply_async(self.exec_single, args=(args,curr,self.task_manager,self.hooks), callback=callback)
+                                res = pool.apply_async(self.exec_single, args=(full_tb,curr,self.task_manager,self.hooks), callback=callback)
                                 async_results[curr.name] = res
                                 self.compiled_modules.pop(0)
                 pool.close()

@@ -31,10 +31,6 @@ from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAM
 ## Class definition ##
 ######################
 
-@dataclass
-class LoggingArgs:
-    quietly: bool = False
-
 
 class PrismPipeline(sys_handler.SysHandlerMixin):
     """
@@ -70,11 +66,11 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
 
             # If project directory not in sys_path_config, throw a warning
             if str(self.project.project_dir) not in [str(p) for p in self.sys_path_config]:
-                prism.logging.fire_console_event(LoggingArgs(), prism.logging.ProjectDirNotInSysPath(), [])                
+                prism.logging.fire_console_event(prism.logging.ProjectDirNotInSysPath(), [], log_level='warn')
 
         # Fire a warning, even if the user specified `quietly`
         except KeyError:
-            prism.logging.fire_console_event(LoggingArgs(), prism.logging.SysPathConfigWarningEvent(), [])
+            prism.logging.fire_console_event(prism.logging.SysPathConfigWarningEvent(), [], log_level='warn')
             self.sys_path_config = [self.project.project_dir]
         
         # Configure sys.path. Before adding 
@@ -115,8 +111,8 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         self.dag_executor.set_executor_globals(self.pipeline_globals)
 
 
-    def exec(self, args: argparse.Namespace):
-        executor_output = self.dag_executor.exec(args)
+    def exec(self, full_tb: bool):
+        executor_output = self.dag_executor.exec(full_tb)
         
         # Close SQL adapter connections
         if "snowflake" in list(self.project.adapters_object_dict.keys()):

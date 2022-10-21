@@ -93,7 +93,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         event_list = result.event_list
         
         # If no modules in DAG, return
-        if compiled_dag==0:
+        if compiled_dag==0 and compiled_dag_error_event is not None:
             event_list = fire_empty_line_event(event_list)
             event_list = fire_console_event(compiled_dag_error_event, event_list, log_level='error')
             event_list = self.fire_tail_event(event_list)
@@ -104,10 +104,10 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # Create prism project
 
         project_event_manager = base_event_manager.BaseEventManager(
-            args=self.args,
             idx=None,
             total=None,
             name='parsing config files',
+            full_tb=self.args.full_tb,
             func=self.create_project
         )
         project_event_manager_output = project_event_manager.manage_events_during_run(
@@ -139,10 +139,10 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         
         # Manager for creating pipeline
         pipeline_manager = base_event_manager.BaseEventManager(
-            args=self.args,
             idx=None,
             total=None,
             name='creating pipeline, DAG executor',
+            full_tb=self.args.full_tb,
             func=self.create_pipeline
         )
         pipeline_event_manager_output = pipeline_manager.manage_events_during_run(
@@ -166,18 +166,22 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
         event_list = fire_empty_line_event(event_list)
 
-        # Manager for executing pipeline
+        # Manager for executing pipeline.
         pipeline_exec_manager = base_event_manager.BaseEventManager(
-            args=self.args,
             idx=None,
             total=None,
             name='executing pipeline',
+            full_tb=self.args.full_tb,
             func=pipeline.exec
         )
+
+        # We don't fire the actual exec events for this manager, since executor class fired
+        # individual exec events for each module. This manager is simply for capturing any
+        # non-module related errors in the logger.
         exec_event_manager_output = pipeline_exec_manager.manage_events_during_run(
             fire_exec_events=False,
             event_list=event_list,
-            args=self.args
+            full_tb=self.args.full_tb
         )
         executor_output = exec_event_manager_output.outputs
         

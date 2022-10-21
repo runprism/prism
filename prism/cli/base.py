@@ -100,10 +100,6 @@ class BaseTask:
         self.args = args
         prism.logging.set_up_logger(self.args)
 
-        # If --quietly is invoked, then set the default log level to warn
-        if self.args.quietly:
-            prism.logging.DEFAULT_LOGGER.setLevel(logging.WARN)
-
 
     @classmethod
     def task_from_args(cls, args):
@@ -128,18 +124,19 @@ class BaseTask:
             event_list = fire_empty_line_event(event_list)
             e = prism.logging.ProjectPyNotFoundEvent(err)
             event_list = fire_console_event(e, event_list, log_level='error')
+            event_list = self.fire_tail_event(event_list)
             return event_list, None
 
 
     def fire_tail_event(self,
-        event_list: List[prism.logging.EmptyLineEvent] = []
-    ) -> Tuple[List[prism.logging.Event], Union[Path, None]]:
+        event_list: List[prism.logging.Event] = []
+    ) -> List[prism.logging.Event]:
         """
         Fire tail event
         """
         # Fire a separator event to indicate the end of a run. Note, this will only fire if --quietly
         # isn't invoked
-        event_list = prism.logging.fire_console_event(prism.logging.SeparatorEvent(), sleep=0, log_level='info')
+        event_list = prism.logging.fire_console_event(prism.logging.SeparatorEvent(), event_list, sleep=0, log_level='info')
         return event_list
 
 

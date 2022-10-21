@@ -239,7 +239,7 @@ class PrismProject:
     
     def get_sys_path_config(self,
         prism_project_py: str
-    ) -> str:
+    ) -> List[str]:
         """
         Get sys.path configuration from prism_project.py file
 

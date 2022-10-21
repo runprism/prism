@@ -43,20 +43,17 @@ class BaseEventManager:
     """
 
     def __init__(self,
-        args: argparse.Namespace,
         idx: Union[None, int],
         total: Union[None, int],
         name: str,
+        full_tb: bool,
         func: Callable[..., Any]
     ):
-        self.args = args
         self.idx = idx
         self.total = total
         self.name = name
+        self.full_tb = full_tb
         self.func = func
-
-        # Set up logger
-        prism.logging.set_up_logger(self.args)
 
 
     def fire_running_exec_event(self,
@@ -110,7 +107,9 @@ class BaseEventManager:
             status="ERROR",
             execution_time=execution_time
         )
-        event_list = fire_console_event(e, event_list, log_level='error')
+
+        # Set the log-level to `info`. We'll fire the actual error using log-level `error`.
+        event_list = fire_console_event(e, event_list, log_level='info')
         return event_list
 
 
@@ -152,8 +151,7 @@ class BaseEventManager:
                 event_list = self.fire_error_exec_event(start_time, event_list)
             event_list = fire_empty_line_event(event_list)
             exc_type, exc_value, exc_tb = sys.exc_info()
-            full_tb = self.args.full_tb
-            if full_tb:
+            if self.full_tb:
                 syntax_error_event = prism.logging.ExecutionSyntaxErrorEvent(self.name, exc_type, exc_value, exc_tb, True)
             else:
                 syntax_error_event = prism.logging.ExecutionSyntaxErrorEvent(self.name, exc_type, exc_value, exc_tb, False)
@@ -165,8 +163,7 @@ class BaseEventManager:
                 event_list = self.fire_error_exec_event(start_time, event_list)
             event_list = fire_empty_line_event(event_list)
             exc_type, exc_value, exc_tb = sys.exc_info()
-            full_tb = self.args.full_tb
-            if full_tb:
+            if self.full_tb:
                 exception_event = prism.logging.ExecutionErrorEvent(self.name, exc_type, exc_value, exc_tb, True)
             else:
                 exception_event = prism.logging.ExecutionErrorEvent(self.name, exc_type, exc_value, exc_tb, False)

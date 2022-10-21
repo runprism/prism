@@ -14,6 +14,7 @@ Table of Contents:
 
 # Standard library imports
 import argparse
+from dataclasses import dataclass
 import jinja2
 import os
 from pathlib import Path
@@ -93,10 +94,11 @@ def _load_named_profile_adapters(
 profile_yml_tests = _load_profile_yml(PROFILE_YML_TEST_CASES)
 profile_yml_empty = _load_profile_yml(PROFILE_YML_EMPTY)
 
-# Logger isn't used for tests, but is needed for certain functions to run
-dummy_args = argparse.Namespace()
-dummy_args.quietly = True
-prism.logging.set_up_logger(dummy_args)
+# We need to set up the default logger so that some warnings will fire
+@dataclass
+class LoggingArgs:
+    log_level: str = 'info'
+prism.logging.set_up_logger(LoggingArgs())
 
 
 ######################
