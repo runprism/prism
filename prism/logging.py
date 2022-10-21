@@ -269,14 +269,14 @@ class ProfileAlreadyExists(Event):
 class ProfileNameExistsYamlDoesNotExist(Event):
 
     def message(self):
-        return f'{YELLOW}profile name found in prism_project.py but profile.yml not found{RESET}'
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but profile.yml not found{RESET}'
 
 
 @dataclass
 class ProfileNameDoesNotExistYamlExists(Event):
 
     def message(self):
-        return f'{YELLOW}profile.yml found but profile name not found prism_project.py{RESET}'
+        return f'{YELLOW}profile.yml found but `PROFILE` var not found in prism_project.py{RESET}'
 
 
 @dataclass
