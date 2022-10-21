@@ -45,6 +45,8 @@ from dbt.contracts.connection import AdapterResponse
 from .adapter import Adapter
 import prism.exceptions
 
+from prism.profiles import adapter
+
 
 ############################
 ## Utils / helper classes ##
@@ -82,10 +84,11 @@ class Dbt(Adapter):
     Class for connecting prism project to dbt project
     """
 
-    def __init__(self, type, adapter_dict):
-        self.type = type
+    def __init__(self, name: str, adapter_dict: Dict[str, Any], profile_name: str):
+        self.name = name
+        self.profile_name = profile_name
         self.adapter_dict = adapter_dict
-        dbt_project_dir, dbt_profiles_dir, dbt_profiles_target = self.parse_adapter_dict(self.adapter_dict, 'dbt')
+        dbt_project_dir, dbt_profiles_dir, dbt_profiles_target = self.parse_adapter_dict(self.adapter_dict, self.name, self.profile_name)
 
         # Get project directory, profiles directory, and profiles target
         self.dbt_project_dir = dbt_project_dir
@@ -113,7 +116,8 @@ class Dbt(Adapter):
 
     def parse_adapter_dict(self,
         adapter_dict: Dict[str, Optional[str]],
-        adapter_type: str,
+        adapter_name: str,
+        profile_name: str,
         return_type: str = "list"
     ) -> Tuple[str, str, Optional[str]]:
         """
@@ -121,7 +125,8 @@ class Dbt(Adapter):
 
         args:
             adapter_dict: Snowflake adapter represented as a dictionary
-            adapter_type: type of adapter (will always be dbt)
+            adapter_name: name of adapter
+            profile_name: name of profile containing adapter
             return_type: output type; one of either "str" or "list"
         returns:
             dbt_project_directory, dbt_profiles_directory, dbt_profiles_target
@@ -130,16 +135,16 @@ class Dbt(Adapter):
             raise prism.exceptions.RuntimeException(message=f'invalid `{return_type}` in `{self.__class__.__name__}.parse_adapter_dict`, must be either "str" or "list"')
 
         # Get dbt_project_directory, dbt_profiles_directory, dbt_profiles_target
-        dbt_project_dir = self.get_adapter_var(adapter_dict, "project_dir", adapter_type)
+        dbt_project_dir = self.get_adapter_var(adapter_dict, "project_dir", adapter_name, profile_name)
 
         # If the dbt_profiles_dir is not populated, assume the default
         try:
-            dbt_profiles_dir = self.get_adapter_var(adapter_dict, "profiles_dir", adapter_type)
+            dbt_profiles_dir = self.get_adapter_var(adapter_dict, "profiles_dir", adapter_name, profile_name)
         except prism.exceptions.InvalidProfileException:
             dbt_profiles_dir = os.path.expanduser('~/.dbt/')
 
         try:
-            dbt_profiles_target = self.get_adapter_var(adapter_dict, "profiles_target", adapter_type)
+            dbt_profiles_target = self.get_adapter_var(adapter_dict, "profiles_target", adapter_name, profile_name)
         except prism.exceptions.InvalidProfileException:
             dbt_profiles_target = None
         
@@ -428,7 +433,7 @@ class Dbt(Adapter):
 
         execute_str = [
             "from prism.profiles.dbt import Dbt",
-            "DbtProject = Dbt(type='dbt', adapter_dict={})".format(str(self.adapter_dict))
+            "DbtProject = Dbt(name='{name}', adapter_dict={adapter_dict}})".format(name=self.name, adapter_dict=str(self.adapter_dict))
         ]
         if return_type=="list":
             return execute_str
@@ -438,7 +443,8 @@ class Dbt(Adapter):
 
     def create_engine(self,
         adapter_dict: Dict[str, Any],
-        adapter_type: str
+        adapter_name: str,
+        profile_name: str
     ):
         # Unlike SQL adapters, the class itself is all that is required to handle DBT refs. Do nothing.
         return

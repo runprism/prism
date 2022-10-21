@@ -6,6 +6,7 @@ jinja:
 default:
   adapters:
     dbt:
+      type: dbt
       project_dir: '{{ DBT_DIR }}'
       profiles_dir: '{{ DBT_DIR }}'
       profiles_target: 

@@ -21,6 +21,7 @@ import prism.exceptions
 
 # From https://docs.aws.amazon.com/redshift/latest/mgmt/python-configuration-options.html
 REDSHIFT_PSYCOPG_CONFIG_OPTIONS = {
+    'type': str,
     'database': str,
     'host': str,
     'password': str,
@@ -39,19 +40,24 @@ ADDITIONAL_CONFIGS = {
 class Redshift(Adapter):
 
     def is_valid_config(self,
-        config_dict: Dict[str, str]
+        config_dict: Dict[str, str],
+        adapter_name: str,
+        profile_name: str,
     ) -> bool:
         """
         Check that config dictionary is profile.yml is valid
 
         args:
             config_dict: config dictionary under Redshift adapter in profile.yml
+            adapter_name: name assigned to adapter
+            profile_name: profile name containing adapter
         returns:
             boolean indicating whether config dictionary in profile.yml is valid
         """
 
         # Required config vars
         required_config_vars = [
+            'type',
             'user',
             'password',
             'port',
@@ -70,15 +76,15 @@ class Redshift(Adapter):
         actual_config_vars = []
         for k,v in config_dict.items():
             if k not in required_config_vars and k not in optional_config_vars:
-                raise prism.exceptions.InvalidProfileException(message=f'invalid var `{k}` under redshift config in profile.yml')
+                raise prism.exceptions.InvalidProfileException(message=f'invalid var `{k}` - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
             if k in required_config_vars:
                 actual_config_vars.append(k)
             if v is None:
-                raise prism.exceptions.InvalidProfileException(message=f'var `{k}` under redshift config cannot be None in profile.yml')
+                raise prism.exceptions.InvalidProfileException(message=f'var `{k}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
         vars_not_defined = list(set(required_config_vars) - set(actual_config_vars))
         if len(vars_not_defined)>0:
             v = vars_not_defined.pop()
-            raise prism.exceptions.InvalidProfileException(message=f'need to define `{v}` under redshift config in profile.yml')
+            raise prism.exceptions.InvalidProfileException(message=f'var `{v}` must be defined - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
 
         # If no exception has been raised, return True
         return True
@@ -86,19 +92,22 @@ class Redshift(Adapter):
 
     def create_engine(self,
         adapter_dict: Dict[str, Any],
-        adapter_type: str
+        adapter_name: str,
+        profile_name: str
     ):
         """
         Parse Redshift adapter, represented as a dict and return the Redshift connector object
 
         args:
             adapter_dict: Redshift adapter represented as a dictionary
+            adapter_name: name assigned to adapter
+            profile_name: profile name containing adapter
         returns:
             Redshift connector object
         """
         
         # Get configuration and check if config is valid
-        self.is_valid_config(adapter_dict)
+        self.is_valid_config(adapter_dict, adapter_name, profile_name)
 
         # Create psycopg2 connection
         conn = psycopg2.connect(

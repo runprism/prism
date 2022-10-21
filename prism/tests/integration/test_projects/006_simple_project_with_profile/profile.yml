@@ -1,6 +1,7 @@
 profile_name:
   adapters:
     snowflake:
+      type: snowflake
       user:
       password:
       account:

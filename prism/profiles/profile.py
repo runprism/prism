@@ -81,14 +81,14 @@ class Profile:
         if len(profile_keys)>2:
             msg_list = [
                 f"invalid keys in profile.yml",
-                "should only be `adapters` and `clusters`"
+                "should only be `adapters`"
             ]
             raise prism.exceptions.InvalidProfileException(message='\n'.join(msg_list))
         invalid_keys = list(set(profile_keys)-set(prism.constants.VALID_PROFILE_KEYS))
         if len(invalid_keys)>0:
             msg_list = [
                 f"invalid keys in profile.yml `{invalid_keys}`",
-                "should only be `adapters` and `clusters`"
+                "should only be `adapters`"
             ]
             raise prism.exceptions.InvalidProfileException(message='\n'.join(msg_list))
         
@@ -202,7 +202,13 @@ class Profile:
             return []
         else:
             try:
-                return list(self.named_profile['adapters'].keys())
+                adapters = self.named_profile['adapters']
+                types = []
+                for name, adapter_conf in adapters.items():
+                    if 'type' not in adapter_conf.keys():
+                        raise prism.exceptions.InvalidProfileException(message=f'profile `{name}` does not have `type` specification')
+                    types.append(adapter_conf['type'])
+                return types
             
             # The profile.yml does not contain an adapters top-level key
             except KeyError:
@@ -216,22 +222,31 @@ class Profile:
         if not self.bool_all_profiles_exist:
             return {}
         else:
-            # Iterate through adapters and check that they are supported
+            # First, check profile types and confirm that they are supported
             try:
-                adapters_dict = self.named_profile['adapters']
-            except KeyError:
-                adapters_dict = {}
-                
-            for conn in list(adapters_dict.keys()):
+                adapters = self.named_profile['adapters']
+                types = []
+                for name, adapter_conf in adapters.items():
+                    
+                    # If the adapter does not have a `type`, throw an error
+                    if 'type' not in adapter_conf.keys():
+                        raise prism.exceptions.InvalidProfileException(message=f'profile `{name}` does not have `type` specification')
+                    adapter_type = adapter_conf['type']
+                    
+                    # If the adapter is not supported, throw an error
+                    if adapter_type not in prism.constants.VALID_ADAPTERS:
+                        raise prism.exceptions.InvalidProfileException(message=f"invalid adapter `{adapter_type}` in profile.yml")
 
-                # Check that adapters only include supported connections
-                if conn not in prism.constants.VALID_ADAPTERS:
-                    raise prism.exceptions.InvalidProfileException(message=f"invalid adapter `{conn}` in profile.yml")
-                
-                adapter_import = importlib.import_module(f'prism.profiles.{conn}')
-                globals()[conn] = adapter_import
-                adapter = MetaAdapter.get_adapter(conn)(conn, adapters_dict[conn])
-                self.adapters_obj_dict[conn] = adapter
+                    # Import
+                    adapter_import = importlib.import_module(f'prism.profiles.{adapter_type}')
+                    globals()[adapter_type] = adapter_import
+                    adapter = MetaAdapter.get_adapter(adapter_type)(name, adapter_conf, self.profile_name)
+                    self.adapters_obj_dict[name] = adapter
+
+            # The profile.yml does not contain an adapters top-level key. This is checked upon
+            # profile instantiation, so this should never happen.
+            except KeyError:
+                pass
     
 
     def get_adapters_obj_dict(self):

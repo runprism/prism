@@ -113,18 +113,19 @@ class TestAdapter(unittest.TestCase):
         Snowflake adapter class (and functions) behave as expected for normal snowflake profile
         """
         profile_name = 'profile_snowflake_normal'
+        adapter_name = 'snowflake'
         adapter_dict = _load_named_profile_adapters(profile_yml_tests, profile_name)['snowflake']
-        snowflake_adapter = prism_snowflake.Snowflake('snowflake', adapter_dict, False)
+        snowflake_adapter = prism_snowflake.Snowflake(adapter_name, adapter_dict, profile_name, False)
 
         # Get config dictionary and config variables
-        self.assertTrue(snowflake_adapter.is_valid_config(adapter_dict))
+        self.assertTrue(snowflake_adapter.is_valid_config(adapter_dict, adapter_name, profile_name))
         for var in ['SNOWFLAKE_USER','SNOWFLAKE_PASSWORD','SNOWFLAKE_ACCOUNT','SNOWFLAKE_ROLE','SNOWFLAKE_WAREHOUSE','SNOWFLAKE_DATABASE','SNOWFLAKE_SCHEMA']:
             self.assertEqual(os.getenv(var), adapter_dict[var.split('_')[1].lower()])
         
         # get_adapter_var throws an error for missing variable
         with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
-            snowflake_adapter.get_adapter_var(adapter_dict, 'this_does_not_exist', 'snowflake')
-        self.assertEqual("`this_does_not_exist` not found in `snowflake` profile in profile.yml", str(cm.exception))
+            snowflake_adapter.get_adapter_var(adapter_dict, 'this_does_not_exist', adapter_name, profile_name)
+        self.assertEqual(f"`this_does_not_exist` not found - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml", str(cm.exception))
     
 
     def test_error_snowflake_adapter(self):
@@ -139,18 +140,19 @@ class TestAdapter(unittest.TestCase):
         ]
 
         # Adapter class can be still be instantiated
+        adapter_name= 'snowflake'
         for p in profiles:
             adapter_dict = _load_named_profile_adapters(profile_yml_tests, p)['snowflake']
-            snowflake_adapter = prism_snowflake.Snowflake('snowflake', adapter_dict, False)
+            snowflake_adapter = prism_snowflake.Snowflake(adapter_name, adapter_dict, p, False)
         
             # Config dictionaries are invalid
             with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
-                snowflake_adapter.is_valid_config(adapter_dict)
+                snowflake_adapter.is_valid_config(adapter_dict, adapter_name, p)
             msgs[p] = str(cm.exception)
         
-        self.assertEqual(msgs['profile_snowflake_none_config'], 'var `schema` under snowflake config cannot be None in profile.yml')
-        self.assertEqual(msgs['profile_snowflake_missing_config'], 'need to define `database` under snowflake config in profile.yml')
-        self.assertEqual(msgs['profile_snowflake_extra_config'], 'invalid var `extra_config` under snowflake config in profile.yml')
+        self.assertEqual(msgs['profile_snowflake_none_config'], f'`schema` cannot be None - see `{adapter_name}` adapter in `profile_snowflake_none_config` profile in profile.yml')
+        self.assertEqual(msgs['profile_snowflake_missing_config'], f'`database` must be defined - see `{adapter_name}` adapter in `profile_snowflake_missing_config` profile in profile.yml')
+        self.assertEqual(msgs['profile_snowflake_extra_config'], f'invalid var `extra_config` - see `{adapter_name}` adapter in `profile_snowflake_extra_config` profile in profile.yml')
 
     
     def test_normal_pyspark_adapter(self):
@@ -158,12 +160,13 @@ class TestAdapter(unittest.TestCase):
         PySpark adapter class (and functions) behave as expected for normal pyspark profile
         """
         profile_name = 'profile_pyspark_normal'
+        adapter_name = 'pyspark'
         adapter_dict = _load_named_profile_adapters(profile_yml_tests, profile_name)['pyspark']
-        pyspark_adapter = prism_pyspark.Pyspark('pyspark', adapter_dict, False)
+        pyspark_adapter = prism_pyspark.Pyspark(adapter_name, adapter_dict, profile_name, False)
 
         # Get config dictionary and config variables
         pyspark_alias = pyspark_adapter.get_alias()
-        pyspark_config = pyspark_adapter.get_adapter_var(adapter_dict, 'config', 'pyspark')
+        pyspark_config = pyspark_adapter.get_adapter_var(adapter_dict, 'config', adapter_name, profile_name)
         self.assertEqual('spark', pyspark_alias)
         self.assertEqual(4, pyspark_config['spark.driver.cores'])
         self.assertEqual('10g', pyspark_config['spark.driver.memory'])
@@ -181,18 +184,19 @@ class TestAdapter(unittest.TestCase):
         ]
 
         # Adapter class can be still be instantiated
+        adapter_name = 'pyspark'
         for p in profiles:
             adapter_dict = _load_named_profile_adapters(profile_yml_tests, p)['pyspark']
-            pyspark_adapter = prism_pyspark.Pyspark('pyspark', adapter_dict, False)
-            config = pyspark_adapter.get_adapter_var(adapter_dict, 'config', 'pyspark')
+            pyspark_adapter = prism_pyspark.Pyspark(adapter_name, adapter_dict, p, False)
+            config = pyspark_adapter.get_adapter_var(adapter_dict, 'config', adapter_name, p)
         
             # Config dictionaries are invalid
             with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
                 pyspark_adapter.get_alias()
             msgs[p] = str(cm.exception)
         
-        self.assertEqual(msgs['profile_pyspark_none_alias'], '`alias` cannot be None in `pyspark` profile in profile.yml')
-        self.assertEqual(msgs['profile_pyspark_missing_alias'], '`alias` not found in `pyspark` profile in profile.yml')
+        self.assertEqual(msgs['profile_pyspark_none_alias'], f'`alias` cannot be None - see `{adapter_name}` adapter in `profile_pyspark_none_alias` profile in profile.yml')
+        self.assertEqual(msgs['profile_pyspark_missing_alias'], f'`alias` not found - see `{adapter_name}` adapter in `profile_pyspark_missing_alias` profile in profile.yml')
 
 
 class TestProfile(unittest.TestCase):
@@ -212,7 +216,7 @@ class TestProfile(unittest.TestCase):
                 pr.Profile(profile_yml_tests, k, env="local")
             msg_list = [
                 'invalid keys in profile.yml' + v,
-                'should only be `adapters` and `clusters`',
+                'should only be `adapters`',
             ]
             self.assertEqual('\n'.join(msg_list), str(cm.exception))
 
@@ -230,6 +234,25 @@ class TestProfile(unittest.TestCase):
         snowflake_adapter = profile.adapters_obj_dict['snowflake']
         self.assertTrue(isinstance(snowflake_adapter, prism_snowflake.Snowflake))
         self.assertTrue(isinstance(snowflake_adapter.engine, snowflake.connector.SnowflakeConnection))
+    
+
+    def test_multiple_snowflake_adapters(self):
+        """
+        Profile creates multiple Snowflake engines as expected 
+        """
+        profile_name = "profile_multiple_snowflakes"
+        profile = pr.Profile(profile_yml_tests, profile_name, env="local")
+        self.assertEqual(profile.adapters_obj_dict, {})
+        profile.generate_adapters()
+        expected_keys = ['snowflake1', 'snowflake2']
+        self.assertEqual(expected_keys, list(profile.adapters_obj_dict.keys()))
+        for key in ['snowflake1', 'snowflake2']:
+            snowflake_adapter = profile.adapters_obj_dict[key]            
+            self.assertTrue(isinstance(snowflake_adapter, prism_snowflake.Snowflake))
+            self.assertTrue(isinstance(snowflake_adapter.engine, snowflake.connector.SnowflakeConnection))
+
+        # Confirm that the two adapters are distinct
+        self.assertNotEqual(profile.adapters_obj_dict['snowflake1'], profile.adapters_obj_dict['snowflake2'])
 
 
     def test_normal_pyspark_adapter(self):
