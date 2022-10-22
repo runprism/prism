@@ -97,12 +97,12 @@ def build_init_subparser(sub):
     )
 
     init_sub.add_argument(
-        '-q',
-        '--quietly',
+        '--log-level',
         required=False,
-        action='store_true',
+        type=str,
+        default='info',
         help="""
-        Suppress logging
+        Set the log level; must be one of `info`, `warn`, `error`, or `critical`
         """
     )
 

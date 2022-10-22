@@ -25,6 +25,16 @@ import logging
 from pathlib import Path
 
 
+###################
+# sys.path config #
+###################
+
+SYS_PATH_CONF = [
+    Path(__file__).parent,
+    # Add more paths here!
+]
+
+
 ################
 # Thread count #
 ################
