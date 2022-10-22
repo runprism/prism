@@ -96,21 +96,23 @@ class ConnectMixin():
         invalid_keys = list(set(profile_keys)-set(prism.constants.VALID_PROFILE_KEYS))
         if len(invalid_keys)>0:
             msg_list = [
-                f"invalid keys in profile.yml `{invalid_keys}`",
-                "should only be `adapters` and `clusters`"
+                f"invalid keys in profile.yml `{invalid_keys}`, should only be `adapters`"
             ]
             raise prism.exceptions.InvalidProfileException(message='\n'.join(msg_list))
         
         # Profile type must be a valid adapter or cluster
-        profile_type = list(new_profile.keys())[0]
+        profile_name = new_profile_keys[0]
+        if 'type' not in new_profile_values_dict.keys():
+            raise prism.exceptions.InvalidProfileException(message=f'profile `{profile_name} does not have `type`')
+        profile_type = new_profile_values_dict['type']
         if profile_type not in prism.constants.VALID_ADAPTERS:
             raise prism.exceptions.InvalidProfileException(message=f"invalid type `{profile_type}`")
         
         # Check if profile already exists in adapters or clusters
         if profile_type in prism.constants.VALID_ADAPTERS:
             try:
-                for adapter_type, adapter_body in profile_body['adapters'].items():
-                    if profile_type==adapter_type:
+                for adapter_name, adapter_body in profile_body['adapters'].items():
+                    if profile_type==adapter_body['type']:
                         raise prism.exceptions.InvalidProfileException(message=f"profile of type `{profile_type}` already found in profile.yml")
             
             # THe 'adapters' section isn't defined as of yet
@@ -119,9 +121,8 @@ class ConnectMixin():
 
         # If new_profile is an adapter, add the profile to the `adapters` section of `profile.yml`. Otherwise, add it to
         # the `clusters` section.
-        new_profile = list(new_profile.values())[0]
         if profile_type in prism.constants.VALID_ADAPTERS:
-            profile_body['adapters'][profile_type] = new_profile
+            profile_body['adapters'][profile_name] = new_profile_values_dict
 
         # Return the revised base_yml
         return base_yml

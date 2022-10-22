@@ -1,6 +1,6 @@
 profile_name:
   adapters:
-    snowflake:
+    snowflake_adapter_name_here: # change this!
       type: snowflake
       user:
       password:
