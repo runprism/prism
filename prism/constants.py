@@ -15,7 +15,7 @@ import sys
 ###############
 
 # Version number
-VERSION = '0.1.6rc2'
+VERSION = '0.1.6rc3'
 
 # Root directory of project
 ROOT_DIR =  str(Path(os.path.dirname(__file__)).parent)
@@ -26,8 +26,6 @@ IGNORE_FILES = ["__pycache__", '*checkpoint.ipynb', '.ipynb_checkpoints']
 # Profile/adapter constants
 VALID_PROFILE_KEYS = ["adapters"]
 VALID_ADAPTERS = [ "snowflake", "pyspark", "dbt", "bigquery", "redshift"]
-VALID_SQL_ADAPTERS = [ "snowflake", "bigquery", "redshift"]
-VALID_CONNECTIONS = VALID_ADAPTERS
 
 # Scope dictionary
 GLOBALS_DICT = {'__name__': '__main__'}
