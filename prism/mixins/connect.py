@@ -95,10 +95,8 @@ class ConnectMixin():
         profile_keys = list(profile_body.keys())
         invalid_keys = list(set(profile_keys)-set(prism.constants.VALID_PROFILE_KEYS))
         if len(invalid_keys)>0:
-            msg_list = [
-                f"invalid keys in profile.yml `{invalid_keys}`, should only be `adapters`"
-            ]
-            raise prism.exceptions.InvalidProfileException(message='\n'.join(msg_list))
+            valid_keys_str = ','.join([f'`{k}`' for k in prism.constants.VALID_PROFILE_KEYS])
+            raise prism.exceptions.InvalidProfileException(message=f"invalid keys `{invalid_keys}` in profile.yml; supported keys are [{valid_keys_str}]")
         
         # Profile type must be a valid adapter or cluster
         profile_name = new_profile_keys[0]
@@ -119,8 +117,7 @@ class ConnectMixin():
             except KeyError:
                 profile_body['adapters'] = {}
 
-        # If new_profile is an adapter, add the profile to the `adapters` section of `profile.yml`. Otherwise, add it to
-        # the `clusters` section.
+        # If new_profile is an adapter, add the profile to the `adapters` section of `profile.yml`
         if profile_type in prism.constants.VALID_ADAPTERS:
             profile_body['adapters'][profile_name] = new_profile_values_dict
 
@@ -183,7 +180,7 @@ class ConnectMixin():
         else:
             msg_list = [
                 f"new profile_type is invalid",
-                f"must be one of `{prism.constants.VALID_CONNECTIONS}`"
+                f"must be one of `{prism.constants.VALID_ADAPTERS}`"
             ]
             raise prism.exceptions.InvalidProfileException(message='\n'.join(msg_list))
 

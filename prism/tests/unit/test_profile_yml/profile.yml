@@ -156,9 +156,5 @@ profile_too_many_toplevel_keys:
   clusters:
   this_does_not_belong:
 
-profile_invalid_toplevel_key:
-  adapters:
-  this_does_not_belong:
-
   
 # EOF

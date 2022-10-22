@@ -206,19 +206,10 @@ class TestProfile(unittest.TestCase):
         """
         profile instantiation throws an error if top-level keys are misspecified or bad
         """
-        # If profile doesn't exist, then the profile instantiation should throw an error
-        error_top_level_keys_profiles = {
-            "profile_too_many_toplevel_keys": '',
-            "profile_invalid_toplevel_key": " `['this_does_not_belong']`"
-        }
-        for k,v in error_top_level_keys_profiles.items():
-            with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
-                pr.Profile(profile_yml_tests, k, env="local")
-            msg_list = [
-                'invalid keys in profile.yml' + v,
-                'should only be `adapters`',
-            ]
-            self.assertEqual('\n'.join(msg_list), str(cm.exception))
+        with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
+            pr.Profile(profile_yml_tests, "profile_too_many_toplevel_keys", env="local")
+        msg = "invalid keys `['clusters', 'this_does_not_belong']` in profile.yml; supported keys are [`adapters`]"
+        self.assertEqual(msg, str(cm.exception))
 
 
     def test_normal_snowflake_adapter(self):

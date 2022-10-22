@@ -71,26 +71,21 @@ class Profile:
         profile: Dict[str, Optional[Dict[str, Any]]],
     ) -> bool:
         """
-        Check that `profile.yml` has at most two top-level keys, and that those top-level keys are either `adapter` or
-        `clusters`
+        Check that `profile.yml` has at most two top-level keys, and that those top-level keys are
+        valid
 
         args:
             profile: profile.yml represented as a dict
         """
+        valid_keys_str = ','.join([f'`{k}`' for k in prism.constants.VALID_PROFILE_KEYS])
         profile_keys = list(profile.keys())
-        if len(profile_keys)>2:
-            msg_list = [
-                f"invalid keys in profile.yml",
-                "should only be `adapters`"
-            ]
-            raise prism.exceptions.InvalidProfileException(message='\n'.join(msg_list))
-        invalid_keys = list(set(profile_keys)-set(prism.constants.VALID_PROFILE_KEYS))
-        if len(invalid_keys)>0:
-            msg_list = [
-                f"invalid keys in profile.yml `{invalid_keys}`",
-                "should only be `adapters`"
-            ]
-            raise prism.exceptions.InvalidProfileException(message='\n'.join(msg_list))
+        invalid_profile_keys = []
+        for k in profile_keys:
+            if k not in prism.constants.VALID_PROFILE_KEYS:
+                invalid_profile_keys.append(k)
+        
+        if len(invalid_profile_keys)>0:
+            raise prism.exceptions.InvalidProfileException(message=f"invalid keys `{invalid_profile_keys}` in profile.yml; supported keys are [{valid_keys_str}]")
         
         # If no exception has been raised, return true
         return True

@@ -130,7 +130,7 @@ def build_connect_subparser(sub, common_arguments_parser):
     )
     
     # Add argument for connection type
-    valid_connections_str = ','.join([f'`{k}`' for k in prism.constants.VALID_CONNECTIONS])
+    valid_connections_str = ','.join([f'`{k}`' for k in prism.constants.VALID_ADAPTERS])
     connect_sub.add_argument(
         '--type',
         type=str,
