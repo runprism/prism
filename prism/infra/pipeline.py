@@ -80,13 +80,19 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         # ------------------------------------------------------------------------------------------
         # Adapters, task manager, and hooks
 
+        adapter_types = []
+        adapter_objs = []
+        for _, adapter in self.project.adapters_object_dict.items():
+            adapter_types.append(adapter.adapter_dict['type'])
+            adapter_objs.append(adapter)
+
         # The pipeline is being run using spark-submit, then the adapters must contain a pyspark adapter
         if self.project.which=='spark-submit':
-            if 'pyspark' not in list(self.project.adapters_object_dict.keys()):
+            if 'pyspark' not in adapter_types:
                 raise prism.exceptions.RuntimeException(message='`spark-submit` command requires a `pyspark` adapter')
             
         # If the profile.yml contains a pyspark adapter, then the user should use the spark-submit command
-        if 'pyspark' in list(self.project.adapters_object_dict.keys()):
+        if 'pyspark' in adapter_types:
             if self.project.which=='run':
                 raise prism.exceptions.RuntimeException(message='`pyspark` adapter found in profile.yml, use `spark-submit` command')
 
@@ -95,11 +101,12 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         hooks_obj = hooks.PrismHooks(self.project)
         
         # If PySpark adapter is specified in the profile, then explicitly add SparkSession to psm object
-        if 'pyspark' in list(self.project.adapters_object_dict.keys()):
-            pyspark_adapter = self.project.adapters_object_dict['pyspark']
-            pyspark_alias = pyspark_adapter.get_alias()
-            pyspark_spark_session = pyspark_adapter.engine
-            setattr(hooks_obj, pyspark_alias, pyspark_spark_session)
+        if 'pyspark' in adapter_types:
+            for atype, aobj in zip(adapter_types, adapter_objs):
+                if atype=="pyspark":
+                    pyspark_alias = aobj.get_alias()
+                    pyspark_spark_session = aobj.engine
+                    setattr(hooks_obj, pyspark_alias, pyspark_spark_session)
 
         self.pipeline_globals[INTERNAL_TASK_MANAGER_VARNAME] = task_manager_obj
         self.pipeline_globals[INTERNAL_HOOKS_VARNAME] = hooks_obj
