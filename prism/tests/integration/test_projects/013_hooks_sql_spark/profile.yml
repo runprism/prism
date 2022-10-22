@@ -1,0 +1,35 @@
+profile_name:
+  adapters:
+    snowflake_profile_1:
+      type: snowflake
+      user: "{{ env('SNOWFLAKE_USER') }}"
+      password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+      account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+      role: "{{ env('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ env('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env('SNOWFLAKE_SCHEMA') }}"
+    snowflake_profile_2:
+      type: snowflake
+      user: "{{ env('SNOWFLAKE_USER') }}"
+      password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+      account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+      role: "{{ env('SNOWFLAKE_ROLE') }}"
+      warehouse: "{{ env('SNOWFLAKE_WAREHOUSE') }}"
+      database: "{{ env('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env('SNOWFLAKE_SCHEMA') }}"
+    pyspark_profile_1:
+      type: pyspark
+      alias: spark1
+      config:
+        spark.driver.cores: 4
+        spark.executor.cores: 4
+    pyspark_profile_2:
+      type: pyspark
+      alias: spark2
+      config:
+        spark.driver.cores: 4
+        spark.executor.cores: 4
+
+
+# EOF
