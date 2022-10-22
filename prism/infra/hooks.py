@@ -36,7 +36,7 @@ class PrismHooks:
 
 
     def sql(self,
-        adapter: str,
+        adapter_name: str,
         query: str,
         return_type: str = "pandas"
     ) -> Any:
@@ -49,14 +49,12 @@ class PrismHooks:
         returns:
             DataFrame containing results of SQL query
         """
-        if adapter not in prism.constants.VALID_SQL_ADAPTERS:
-            raise prism.exceptions.RuntimeException(message=f'invalid SQL adapter `{adapter}`')
         try:
-            adapter_obj = self.project.adapters_object_dict[adapter]
+            adapter_obj = self.project.adapters_object_dict[adapter_name]
         except KeyError:
-            raise prism.exceptions.RuntimeException(message=f'adapter `{adapter}` not defined')
+            raise prism.exceptions.RuntimeException(message=f'adapter `{adapter_name}` not defined')
         if not hasattr(adapter_obj, "execute_sql"):
-            raise prism.exceptions.RuntimeException(message=f'class for adapter `{adapter}` does not have `execute_sql` method')
+            raise prism.exceptions.RuntimeException(message=f'class for adapter `{adapter_name}` does not have `execute_sql` method')
         df = adapter_obj.execute_sql(query, return_type)
         if return_type=="pandas":
             return df
