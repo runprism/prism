@@ -282,7 +282,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = _get_args(BAD_RUN_MISSING_ARG)
         self.assertEqual(sorted(['self', 'tasks']), sorted(run_func_args))
 
-        # No psm
+        # No tasks
         run_func_args = _get_args(BAD_RUN_NO_TASKS)
         self.assertEqual(sorted(['self', 'hooks', 'other_arg']), sorted(run_func_args))
 

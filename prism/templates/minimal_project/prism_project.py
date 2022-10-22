@@ -31,7 +31,7 @@ from pathlib import Path
 
 # Number of workers to use to execute tasks concurrently. If set to 1,
 # then 1 task is run at a time.
-threads = 1
+THREADS = 1
 
 
 ################
@@ -40,7 +40,7 @@ threads = 1
 
 # If connecting to a data warehouse (e.g., Snowflake), specify the profile you
 # want to use. Profiles can be created with the prism connect command.
-profile = None
+PROFILE = None
 
 
 ##########

@@ -1,6 +1,7 @@
 profile_name:
   adapters:
-    bigquery:
+    bigquery_adapter_name_here: # change this!
+      type: bigquery
       creds: "{{ env('GOOGLE_APPLICATION_CREDENTIALS') }}"
 
 

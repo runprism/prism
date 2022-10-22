@@ -12,6 +12,7 @@ Table of Contents
 #############
 
 import argparse
+import prism.constants
 from prism.cli import connect, init, run, compile, spark_submit, gen_docs
 
 
@@ -48,12 +49,12 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
     )
 
     common_arguments_parser.add_argument(
-        '-q',
-        '--quietly',
+        '--log-level',
         required=False,
-        action='store_true',
+        type=str,
+        default='info',
         help="""
-        Suppress logging
+        Set the log level; must be one of `info`, `warn`, `error`, or `critical`
         """
     )
     return common_arguments_parser
@@ -127,14 +128,15 @@ def build_connect_subparser(sub, common_arguments_parser):
         At this time, prism supports connecting to Snowflake, PySpark, and Dbt.
         """
     )
-
+    
     # Add argument for connection type
+    valid_connections_str = ','.join([f'`{k}`' for k in prism.constants.VALID_ADAPTERS])
     connect_sub.add_argument(
         '--type',
         type=str,
         required=True,
-        help="""
-        Connection type. One of "snowflake", "pyspark", or "dbt""
+        help=f"""
+        Connection type. One of {valid_connections_str}
         """
     )
 
@@ -160,18 +162,8 @@ def build_compile_subparser(sub, common_arguments_parser):
         """
     )
 
-    # Add argument for which script(s) to compile
-    compile_sub.add_argument(
-        '--modules',
-        type=str,
-        nargs='+',
-        help="""
-        Path to script(s) that you want to compile; if not specified, all modules in pipeline are compiled
-        """
-    )
-
     # Set default class argument to RunTask()
-    compile_sub.set_defaults(cls=compile.CompileTask, which='compile')
+    compile_sub.set_defaults(cls=compile.CompileTask, modules=None, which='compile')
 
 
 def build_run_subparser(sub, common_arguments_parser):

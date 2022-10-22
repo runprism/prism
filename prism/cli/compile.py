@@ -48,7 +48,6 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         returns:
             None
         """
-
         # Keep track of events
         event_list: List[Event] = []
 
@@ -66,20 +65,20 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             modules_dir = self.get_modules_dir(project_dir)
         except prism.exceptions.CompileException as err:
             e = prism.logging.PrismExceptionErrorEvent(err, 'accessing modules directory')
-            event_list = fire_console_event(self.args, e, event_list, 0)
-            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(e, event_list, 0, 'error')
+            event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
         user_arg_modules = self.user_arg_modules(self.args, modules_dir)
         all_modules = self.get_modules(modules_dir)
-        event_list = fire_console_event(self.args, prism.logging.CompileStartEvent(len(all_modules), 'compile'), event_list)
-        event_list = fire_empty_line_event(self.args, event_list)
+        event_list = fire_console_event(prism.logging.CompileStartEvent(len(all_modules), 'compile'), event_list, log_level='info')
+        event_list = fire_empty_line_event(event_list)
 
         # Manager for compiling DAG
         compiler_manager = base_event_manager.BaseEventManager(
-            args=self.args,
             idx=None,
             total=None,
             name='module DAG',
+            full_tb=self.args.full_tb,
             func=self.compile_dag
         )
         compiled_event_manager_output = compiler_manager.manage_events_during_run(
@@ -93,15 +92,15 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         event_to_fire = compiled_event_manager_output.event_to_fire
         event_list = compiled_event_manager_output.event_list
         if compiled_dag==0:
-            event_list = fire_empty_line_event(self.args, event_list)
-            event_list = fire_console_event(self.args, event_to_fire, event_list)
-            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(event_to_fire, event_list, log_level='error')
+            event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         # Print output message if successfully executed
-        event_list = fire_empty_line_event(self.args, event_list)
-        event_list = fire_console_event(self.args, prism.logging.TaskSuccessfulEndEvent(), event_list, 0)
-        event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+        event_list = fire_empty_line_event(event_list)
+        event_list = fire_console_event(prism.logging.TaskSuccessfulEndEvent(), event_list, 0, log_level='info')
+        event_list = self.fire_tail_event(event_list)
 
         # Return
         return prism.cli.base.TaskRunReturnResult(event_list)
@@ -130,18 +129,18 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             modules_dir = self.get_modules_dir(project_dir)
         except prism.exceptions.CompileException as err:
             e = prism.logging.PrismExceptionErrorEvent(err, 'accessing modules directory')
-            event_list = fire_console_event(self.args, e, event_list, 0)
-            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(e, event_list, 0, log_level='error')
+            event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
         user_arg_modules = self.user_arg_modules(self.args, modules_dir)
         all_modules = self.get_modules(modules_dir)
 
         # Manager for parsing node_dicts
         compiler_manager = base_event_manager.BaseEventManager(
-            args=args,
             idx=None,
             total=None,
             name='module DAG',
+            full_tb=args.full_tb,
             func=self.compile_dag
         )
         

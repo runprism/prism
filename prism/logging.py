@@ -149,11 +149,24 @@ def set_up_logger(args: argparse.Namespace):
         global DEFAULT_LOGGER
 
         DEFAULT_LOGGER = logging.getLogger('PRISM_LOGGER')
-        DEFAULT_LOGGER.setLevel(logging.INFO)
+
+        def _set_level(obj, level: str):
+            if level=='info':
+                obj.setLevel(logging.INFO)
+            elif level=='warn':
+                obj.setLevel(logging.WARN)
+            elif level=='error':
+                obj.setLevel(logging.ERROR)
+            elif level=='critical':
+                obj.setLevel(logging.CRITICAL)
+            return obj
+
+        # Set the appropriate log level
+        DEFAULT_LOGGER = _set_level(DEFAULT_LOGGER, args.log_level)
 
         # Stream handler
         handler = logging.StreamHandler()
-        handler.setLevel(logging.INFO)
+        handler = _set_level(handler, args.log_level)
         console_formatter = logging.Formatter(fmt="%(message)s")
         handler.setFormatter(console_formatter)
 
@@ -161,14 +174,15 @@ def set_up_logger(args: argparse.Namespace):
         class FileHandlerFormatter(logging.Formatter):
             def format(self,record):
                 return escape_ansi(record.msg)
-
-        if not args.quietly:
-            file_handler = logging.FileHandler('logs.log')
-            file_handler.setLevel(logging.INFO)
-            file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
-            file_handler.setFormatter(file_handler_formatter)
-            DEFAULT_LOGGER.addHandler(file_handler)
-
+        
+        file_handler = logging.FileHandler('logs.log')
+        file_handler = _set_level(file_handler, args.log_level)
+        file_handler.setLevel(logging.INFO)
+        file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
+        file_handler.setFormatter(file_handler_formatter)
+        
+        # Add handlers
+        DEFAULT_LOGGER.addHandler(file_handler)
         DEFAULT_LOGGER.addHandler(handler)
 
 
@@ -255,14 +269,14 @@ class ProfileAlreadyExists(Event):
 class ProfileNameExistsYamlDoesNotExist(Event):
 
     def message(self):
-        return f'{YELLOW}WARNING: profile name found in prism_project.py but profile.yml not found{RESET}'
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but profile.yml not found{RESET}'
 
 
 @dataclass
 class ProfileNameDoesNotExistYamlExists(Event):
 
     def message(self):
-        return f'{YELLOW}WARNING: profile.yml found but profile name not found prism_project.py{RESET}'
+        return f'{YELLOW}profile.yml found but `PROFILE` var not found in prism_project.py{RESET}'
 
 
 @dataclass
@@ -469,6 +483,22 @@ class ServingDocsExitInfo(Event):
         return f'Press {BOLD}{YELLOW}Ctrl+C{RESET} to exit{RESET}'
 
 
+@dataclass
+class SysPathConfigWarningEvent(Event):
+    
+    def message(self):
+        return f'{YELLOW}`SYS_PATH_CONF` not found in prism_project.py; adding project directory to sys.path{RESET}'
+
+
+@dataclass
+class ProjectDirNotInSysPath(Event):
+    
+    def message(self):
+        return '\n'.join([
+            f'{YELLOW}project directory not in `SYS_PATH_CONF`{RESET}'
+        ])
+
+
 def deprecated(deprecated_fn: str, updated_fn: str):
     """
     Decorator used to mark deprecated target function
@@ -480,7 +510,7 @@ def deprecated(deprecated_fn: str, updated_fn: str):
 
             # Suppress warning using context manager; capture line no. information
             with warnings.catch_warnings(record=True) as w:
-                warnings.warn(f"{YELLOW}WARNING: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",
+                warnings.warn(f"{YELLOW}[WARNING]: {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",
                         category=DeprecationWarning,
                         stacklevel=2)
                 
@@ -488,7 +518,7 @@ def deprecated(deprecated_fn: str, updated_fn: str):
                 for wi in w:
                     wi = w[0]
                     lineno = wi.lineno
-                    DEFAULT_LOGGER.warning(f"{YELLOW}WARNING <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
+                    DEFAULT_LOGGER.warning(f"{YELLOW}[WARNING] <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
             return func(*args, **kwargs)
         
         return new_func
@@ -496,24 +526,48 @@ def deprecated(deprecated_fn: str, updated_fn: str):
     return decorator_deprecated
 
 
-def fire_console_event(args: argparse.Namespace, Event, event_list: List[Event] = [], sleep=0.01):
-    msg = Event.message()
-    if not args.quietly:
-        DEFAULT_LOGGER.info(msg) # type: ignore
-        time.sleep(sleep)
+def fire_console_event(
+    event: Event,
+    event_list: List[Event]=[], 
+    sleep=0.01, 
+    log_level: str='info'
+):
+    """
+    Fire console event. Note that if --quietly is invoked, then we set the log level to WARN.
+
+    args:
+        event: instance of Event class
+        event_list: list of events
+        sleep: number of seconds to pause after firing the event
+        log_level: one of `info`, `warn`, `error`, or `critical`
+    returns:
+        event_list with `event` appended
+    """
+    if log_level=="info":
+        DEFAULT_LOGGER.info(event.message()) # type: ignore
+    elif log_level=="warn":
+        DEFAULT_LOGGER.warning(f'{YELLOW}[WARNING]: {RESET}' + event.message()) # type: ignore
+    elif log_level=="error":
+        DEFAULT_LOGGER.error(f'{RED}[ERROR]: {RESET}' + event.message()) # type: ignore
+    elif log_level=="critical":
+        DEFAULT_LOGGER.critical(f'{RED}[CRITICAL]: {RESET}' + event.message()) # type: ignore
+    
+    # Sleep
+    time.sleep(sleep)
 
     # Return event list
-    event_list.append(Event)
+    event_list.append(event)
     return event_list
 
 
-def fire_empty_line_event(args: argparse.Namespace, event_list: List[Event] = []):
+def fire_empty_line_event(event_list: List[Event] = []):
+    """
+    Fire empty line event. These events are used to make the console logs look prettier, so they'll
+    always be fired under the `info` level.
+    """
     e = EmptyLineEvent()
     msg = e.message()
-    if not args.quietly:
-        DEFAULT_LOGGER.info(msg) # type: ignore
-
-    # Return event list
+    DEFAULT_LOGGER.info(msg) # type: ignore
     event_list.append(e)
     return event_list
 

@@ -252,7 +252,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         self._remove_compiled_dir(P009_SIMPLE_DBT_PROJECT)
         self._remove_files_in_output(P009_SIMPLE_DBT_PROJECT)
 
-        dag9.run()
+        dag9.run(modules=['filter_customers.py'])
 
         self.assertTrue(Path(P009_SIMPLE_DBT_PROJECT / '.compiled').is_dir())
         self.assertTrue(Path(P009_SIMPLE_DBT_PROJECT / '.compiled' / 'manifest.json').is_file())

@@ -67,7 +67,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=NON_NULL_PROFILE)
         prism_project_py_str = prism_project.prism_project_py_str
-        profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'profile')
+        profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
         expected_profile = 'this_is_a_test!!!'
         self.assertEqual(expected_profile, profile)
 
@@ -82,7 +82,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=NULL_PROFILE)
         prism_project_py_str = prism_project.prism_project_py_str
-        profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'profile')
+        profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
         self.assertTrue(profile is None)
     
 
@@ -93,7 +93,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=NO_PROFILE)
         prism_project_py_str = prism_project.prism_project_py_str
-        profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'profile')
+        profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
         self.assertTrue(profile is None)
     
 
@@ -105,8 +105,8 @@ class TestPrismProject(unittest.TestCase):
         prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=MULTIPLE_PROFILES)
         prism_project_py_str = prism_project.prism_project_py_str
         with self.assertRaises(prism.exceptions.InvalidProjectPyException) as cm:
-            profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'profile')
-        expected_msg = 'multiple assignments for `profile` in `prism_project.py`'
+            profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
+        expected_msg = 'multiple assignments for `PROFILE` in `prism_project.py`'
         self.assertEqual(expected_msg, str(cm.exception))
 
 

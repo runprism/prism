@@ -12,10 +12,12 @@ Table of Contents
 
 # Standard library imports
 import ast
+import astor
 import jinja2
 import os
+import re
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 # Prism-specific imports
 import prism.exceptions
@@ -198,7 +200,22 @@ class PrismProject:
             if isinstance(elem, ast.Assign):
                 if len(elem.targets) == 1:
                     if getattr(elem.targets[0], "id", "") == var:
-                        return ast.literal_eval(elem.value)
+
+                        # If the element is a list, then iterate through the elements and
+                        # return the string value. We'll execute it later.
+                        if isinstance(elem.value, ast.List):
+                            items = []
+                            for attr in elem.value.elts:
+                                if prism.constants.PYTHON_VERSION.major>3 or (prism.constants.PYTHON_VERSION.major==3 and prism.constants.PYTHON_VERSION.minor>=9):
+                                    # mypy thinks ast doesn't have an unparse method, but this is
+                                    # fine.
+                                    items.append(ast.unparse(attr)) # type: ignore
+                                else:
+                                    items.append(re.sub('\n$', '', astor.to_source(attr)))
+                            return items
+                        
+                        else:
+                            return ast.literal_eval(elem.value)
         return None
 
 
@@ -213,12 +230,31 @@ class PrismProject:
         returns:
             profile_name
         """
-        profile_name = self.safe_eval_var_from_file(prism_project_py, 'profile')
+        profile_name = self.safe_eval_var_from_file(prism_project_py, 'PROFILE')
         if profile_name is None:
             return ""
         if not isinstance(profile_name, str):
             return ""
         return profile_name
+
+    
+    def get_sys_path_config(self,
+        prism_project_py: str
+    ) -> List[str]:
+        """
+        Get sys.path configuration from prism_project.py file
+
+        args:
+            prism_project_py: prism_project.py file represented as string
+        returns:
+            sys_path configuration; this should be a list
+        """
+        sys_path_config = self.safe_eval_var_from_file(prism_project_py, 'SYS_PATH_CONF')
+        if sys_path_config is None:
+            return []
+        if not isinstance(sys_path_config, list):
+            return []
+        return sys_path_config
 
     
     def get_thread_count(self,
@@ -233,12 +269,12 @@ class PrismProject:
         returns:
             profile_name  
         """
-        thread_count = self.safe_eval_var_from_file(prism_project_py, 'threads')
+        thread_count = self.safe_eval_var_from_file(prism_project_py, 'THREADS')
         if thread_count is None or thread_count<1:
             return 1
         if not isinstance(thread_count, int):
             msg_list = [
-                f'invalid value `threads = {thread_count}`',
+                f'invalid value `THREADS = {thread_count}`',
                 'must be an integer'
             ]
             raise prism.exceptions.InvalidProjectPyException(message='\n'.join(msg_list))
@@ -276,11 +312,6 @@ class PrismProject:
         globals_dict['__file__'] = str(self.project_dir / 'prism_project.py')
         if self.prism_project_py_str_adjusted is not None:
             exec(self.prism_project_py_str_adjusted, globals_dict)
-
-            # Revert prism_project.py back
-            # with open(Path(self.project_dir / self.filename), 'w') as f:
-            #     f.write(self.prism_project_py_str)
-            # f.close()
         else:
             exec(self.prism_project_py_str, globals_dict)
 

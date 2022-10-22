@@ -38,10 +38,6 @@ class PrismTask:
         self.types = []
         self.locs = []
         self.kwargs = []
-    
-    
-    def set_psm(self, psm):
-        self.psm = psm
 
     
     def set_task_manager(self, task_manager: prism.infra.task_manager.PrismTaskManager):
@@ -75,7 +71,7 @@ class PrismTask:
                 raise prism.exceptions.RuntimeException("`run` method must produce a non-null output")
 
 
-    def run(self, psm, hooks: prism.infra.hooks.PrismHooks):
+    def run(self, tasks: prism.infra.task_manager.PrismTaskManager, hooks: prism.infra.hooks.PrismHooks):
         """
         Run the task. The user should override this function definition when creating their own tasks.
         """

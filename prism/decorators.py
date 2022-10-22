@@ -99,8 +99,11 @@ def target(*, type, loc, **kwargs):
 
                 # If the task should not be run in full, then just return the location of the target
                 else:
+                    # We still need to append the last location to self.locs
+                    self.locs.append(loc)
+                    
                     # If multiple targets, then return all locs
-                    if len(self.locs)>0:
+                    if len(self.locs)>1:
                         return self.locs
                     
                     # For single-target case, return single loc

@@ -56,23 +56,23 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # Change working directory to project directory
         os.chdir(project_dir)
 
-        event_list = fire_empty_line_event(self.args, event_list)
+        event_list = fire_empty_line_event(event_list)
         
         # Define profile type
         adapter_type = self.args.type
         if adapter_type is None:
             e = prism.logging.InvalidAdapterType(prism.constants.VALID_ADAPTERS)
-            event_list = fire_console_event(self.args, e, event_list, 0)
-            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(e, event_list, 0, log_level='error')
+            event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
         elif adapter_type not in prism.constants.VALID_ADAPTERS:
             e = prism.logging.InvalidAdapterType(prism.constants.VALID_ADAPTERS, adapter_type)
-            event_list = fire_console_event(self.args, e, event_list, 0)
-            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_console_event(e, event_list, 0, log_level='error')
+            event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         # Fire events
-        event_list = fire_console_event(self.args, prism.logging.SettingUpProfileEvent(), event_list)
+        event_list = fire_console_event(prism.logging.SettingUpProfileEvent(), event_list, log_level='info')
 
         # Create the profiles directory and profiles.yml file
         profiles_dir = project_dir if self.args.profiles_dir is None else self.args.profiles_dir
@@ -80,10 +80,10 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
 
         # Create a event manager for the connection setup
         profile_connection_event_manager = BaseEventManager(
-            args=self.args,
             idx=None,
             total=None,
             name='connection setup',
+            full_tb=self.args.full_tb,
             func=self.create_connection
         )
         event_manager_results = profile_connection_event_manager.manage_events_during_run(
@@ -96,16 +96,15 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         event_to_fire = event_manager_results.event_to_fire
         event_list = event_manager_results.event_list
         if success==0:
-            event_list = fire_empty_line_event(self.args, event_list)
-            event_list = fire_console_event(self.args, event_to_fire, event_list)
-            event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(event_to_fire, event_list, log_level='error')
+            event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
         
         # Fire footer events
-        event_list = fire_empty_line_event(self.args, event_list)
-        event_list = fire_console_event(self.args, prism.logging.TaskSuccessfulEndEvent(), event_list, 0)
-        event_list = fire_console_event(self.args, prism.logging.SeparatorEvent(), event_list, 0)
-
+        event_list = fire_empty_line_event(event_list)
+        event_list = fire_console_event(prism.logging.TaskSuccessfulEndEvent(), event_list, 0, log_level='info')
+        event_list = self.fire_tail_event(event_list)
         return prism.cli.base.TaskRunReturnResult(event_list)
 
 

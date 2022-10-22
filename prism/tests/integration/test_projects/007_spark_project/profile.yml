@@ -1,6 +1,7 @@
 default:
   adapters:
     pyspark:
+      type: pyspark
       alias: spark
       config:
         spark.driver.cores: 4

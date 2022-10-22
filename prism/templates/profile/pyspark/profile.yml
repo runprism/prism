@@ -1,6 +1,7 @@
 profile_name:
   adapters:
-    pyspark:
+    pyspark_adapter_name_here: # change this!
+      type: pyspark
       alias: spark
       loglevel: WARN
       config:

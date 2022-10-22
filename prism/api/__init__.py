@@ -31,6 +31,7 @@ import prism.mixins.connect
 import prism.mixins.run
 import prism.mixins.sys_handler
 from prism.parsers import ast_parser
+import prism.logging
 
 
 ######################
@@ -38,16 +39,8 @@ from prism.parsers import ast_parser
 ######################
 
 @dataclass
-class RunArgs:
-    """
-    The compile/connect CLI task only call EventManagers (which require an `args` param) within their class. However,
-    the run task uses non-CLI classes that also EventManagers, such as the DAGExecutor. We need to supply an `args`
-    param to the API run call, and we use this class to do so.
-    """
-    module_paths: List[Path]
-    all_upstream: bool
-    full_tb: bool
-    quietly: bool
+class LoggingArgs:
+    log_level: str
 
         
 class PrismDAG(
@@ -62,10 +55,12 @@ class PrismDAG(
 
     def __init__(self,
         project_dir: Path,
-        profiles_dir: Optional[Path] = None
+        profiles_dir: Optional[Path] = None,
+        log_level: str = 'warn'
     ):
         self.project_dir = project_dir
         self.profiles_dir = project_dir if profiles_dir is None else profiles_dir
+        self.log_level = log_level
 
         # Check if project is valid
         self._is_valid_project(self.project_dir)
@@ -78,6 +73,9 @@ class PrismDAG(
 
         # Define project namespace
         self.globals_namespace = prism.constants.GLOBALS_DICT.copy()
+
+        # Set up default logger
+        prism.logging.set_up_logger(LoggingArgs(self.log_level))
 
     
     def _is_valid_project(self, user_project_dir: Path) -> bool:
@@ -151,7 +149,6 @@ class PrismDAG(
         modules: Optional[List[str]] = None,
         all_upstream: bool = True,
         full_tb: bool = True,
-        quietly: bool = True,
         config_dict: Optional[Dict[str, Any]] = None
     ):
         """
@@ -172,8 +169,7 @@ class PrismDAG(
             prism_project.adjust_prism_py_with_config(config_dict)
 
         # Create args and exec
-        args = RunArgs(self.user_arg_modules, all_upstream, full_tb, quietly)
-        output = pipeline.exec(args)
+        output = pipeline.exec(full_tb)
         if output.error_event is not None:
             event = output.error_event
             try:
@@ -244,7 +240,18 @@ class PrismDAG(
 
                 # Not sure how to instantiate the class from ast.ClassDef, so use exec.
                 temp_namespace = {}
-                self.add_sys_path(self.project_dir, temp_namespace)     # Add project dir to sys.path
+
+                # We need to update sys.path to include all paths in SYS_PATH_CONF, since some
+                # target locations may depend on vars stored in modules imported from directories
+                # contained therein.
+                prism_project = self.create_project(self.project_dir, self.profiles_dir / 'profile.yml', "local", "run")
+                prism_project.exec(temp_namespace)
+                try:
+                    sys_path_config = temp_namespace['SYS_PATH_CONF']
+                except KeyError:
+                    sys_path_config = [self.project_dir]
+
+                self.add_paths_to_sys_path(sys_path_config, temp_namespace)
                 code_str = [
                     parsed_ast_module.module_str,
                     f'{task_var_name} = {prism_task_cls_name}(False)',    # Do NOT run the task

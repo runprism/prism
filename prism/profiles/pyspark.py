@@ -28,7 +28,7 @@ class Pyspark(Adapter):
     """
 
     def get_alias(self):
-        return self.get_adapter_var(self.adapter_dict, "alias", self.type)
+        return self.get_adapter_var(self.adapter_dict, "alias", self.name, self.profile_name)
 
 	
     def base_config_template(self):
@@ -42,7 +42,8 @@ class Pyspark(Adapter):
 
     def parse_adapter_dict(self,
         adapter_dict: Dict[str, Any],
-        adapter_type: str,
+        adapter_name: str,
+        profile_name: str,
         return_type: str = "list"
     ) -> Union[str, List[str]]:
         """
@@ -61,8 +62,8 @@ class Pyspark(Adapter):
         base = self.base_config_template()
 
         # Get alias and config dictionary
-        alias = self.get_adapter_var(adapter_dict, "alias", adapter_type)
-        config = self.get_adapter_var(adapter_dict, "config", adapter_type)
+        alias = self.get_adapter_var(adapter_dict, "alias", adapter_name, profile_name)
+        config = self.get_adapter_var(adapter_dict, "config", adapter_name, profile_name)
 
         # Iterate through config and create SparkContext builder
         config_idx = base.index("{config_vars}")
@@ -82,9 +83,9 @@ class Pyspark(Adapter):
             return '\n'.join(profile_exec_list)
 
 
-    def create_engine(self, adapter_dict: Dict[str, Any], type: str):
+    def create_engine(self, adapter_dict: Dict[str, Any], adapter_name: str, profile_name: str):
         from pyspark.sql import SparkSession
-        execution_code = self.parse_adapter_dict(adapter_dict, type, "str")
+        execution_code = self.parse_adapter_dict(adapter_dict, adapter_name, profile_name, "str")
         
         # For type hinting
         if isinstance(execution_code, list):
@@ -92,7 +93,7 @@ class Pyspark(Adapter):
         exec(execution_code, locals())
         
         try:
-            log_level = self.get_adapter_var(adapter_dict, "loglevel", type)
+            log_level = self.get_adapter_var(adapter_dict, "loglevel", adapter_name, profile_name)
         except prism.exceptions.InvalidProfileException:
             log_level = "WARN"
         
@@ -100,7 +101,7 @@ class Pyspark(Adapter):
                 raise prism.exceptions.InvalidProfileException(message=f'invalid log level `{log_level}`')
 
         # For type hinting
-        alias = self.get_adapter_var(adapter_dict, "alias", type)
+        alias = self.get_adapter_var(adapter_dict, "alias", adapter_name, profile_name)
         if not isinstance(alias, str):
             raise prism.exceptions.InvalidProfileException(message=f'invalid `alias` type')
         locals()[alias].sparkContext.setLogLevel(log_level)
