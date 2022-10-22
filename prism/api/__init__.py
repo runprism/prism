@@ -40,7 +40,7 @@ import prism.logging
 
 @dataclass
 class LoggingArgs:
-    log_level: str = 'warn'
+    log_level: str
 
         
 class PrismDAG(
@@ -56,9 +56,11 @@ class PrismDAG(
     def __init__(self,
         project_dir: Path,
         profiles_dir: Optional[Path] = None,
+        log_level: str = 'warn'
     ):
         self.project_dir = project_dir
         self.profiles_dir = project_dir if profiles_dir is None else profiles_dir
+        self.log_level = log_level
 
         # Check if project is valid
         self._is_valid_project(self.project_dir)
@@ -73,7 +75,7 @@ class PrismDAG(
         self.globals_namespace = prism.constants.GLOBALS_DICT.copy()
 
         # Set up default logger
-        prism.logging.set_up_logger(LoggingArgs())
+        prism.logging.set_up_logger(LoggingArgs(self.log_level))
 
     
     def _is_valid_project(self, user_project_dir: Path) -> bool:
