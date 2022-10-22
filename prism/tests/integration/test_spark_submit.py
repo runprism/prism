@@ -242,7 +242,11 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         if Path(wkdir / '.compiled').is_dir():
             shutil.rmtree(Path(wkdir / '.compiled'))
         self.maxDiff = None
-        args = ['spark-submit']
+        
+        # ------------------------------------------------------------------------------------------
+        # Run snowflake.py and spark.py
+
+        args = ['spark-submit', '--modules', 'snowflake.py', 'spark.py']
         self._run_prism(args)
         
         # Get module 1 and 2 outputs
@@ -274,6 +278,17 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         sample_data_2_min_acctbal = min(sample_data_2_filtered['C_ACCTBAL'])
         self.assertFalse(sample_data_2_min_acctbal > 3000)
         self.assertTrue(sample_data_2_min_acctbal > 2000)
+
+
+        # ------------------------------------------------------------------------------------------
+        # Run bad_adapter.py
+
+        args = ['spark-submit', '--modules', 'bad_adapter.py']
+        run_results = self._run_prism(args)
+
+        # We can't check the error events directly; for now, let's just check that the output wasn't
+        # created.
+        self.assertFalse(Path(wkdir / 'output' / 'bad_adapter.csv').is_file())
         
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)

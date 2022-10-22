@@ -38,7 +38,7 @@ class Module02(prism.task.PrismTask):
         returns:
             task output
         """
-        dfs = tasks.ref('module01.py')
+        dfs = tasks.ref('snowflake.py')
         df_1_path = str(dfs[0])
         df_2_path = str(dfs[1])
 
