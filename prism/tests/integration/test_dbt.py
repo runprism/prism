@@ -22,7 +22,6 @@ import shutil
 
 # Prism imports
 import prism.cli.base
-from prism.main import main
 import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
@@ -61,7 +60,7 @@ class TestDbtIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Execute command.
-        args = ['run']
+        args = ['run', '--modules', 'filter_customers.py']
         run_results = self._run_prism(args)
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
@@ -80,6 +79,47 @@ class TestDbtIntegration(integration_test_class.IntegrationTestCase):
         self.assertEqual(expected_columns, list(df.columns))
         id_1_first_name = df.loc[df['CUSTOMER_ID']==1, 'FIRST_NAME'][0]
         self.assertEqual('Michael', id_1_first_name)
+
+        # Remove the 'target' -- it contains dbt artifacts
+        if Path(wkdir / 'target').is_dir():
+            shutil.rmtree(Path(wkdir / 'target'))
+
+        # Remove compiled folder
+        self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for next test case
+        self._set_up_wkdir()
+
+    
+    def test_dbt_project_bad_adapter(self):
+        """
+        `prism run` with a bad dbt adapter name throws an error
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '009_simple_dbt_project' / 'prism'
+        os.chdir(wkdir)
+
+        # Remove all compiled modules
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all folders / files in the output directory
+        self._remove_dirs_in_output(wkdir)
+        self._remove_files_in_output(wkdir)
+        self.assertFalse(Path(wkdir / 'output' / 'bad_adapter.csv').is_file())
+
+        # Execute command.
+        args = ['run', '--modules', 'bad_adapter.py']
+        run_results = self._run_prism(args)
+
+        # Nothing should be produced
+        self.assertFalse(Path(wkdir / 'output' / 'bad_adapter.csv').is_file())
+
+        # Last event in run_results (before separator event) should be an error event
+        error_event = run_results.event_list[-2]
+        self.assertTrue(isinstance(error_event, prism.logging.PrismExceptionErrorEvent))
+        self.assertEqual('adapter `dbt_prsdfofile` not defined', error_event.err.message)
 
         # Remove the 'target' -- it contains dbt artifacts
         if Path(wkdir / 'target').is_dir():

@@ -18,9 +18,9 @@ import prism_project
 class FilterCustomers(prism.task.PrismTask):
 
     ## Run    
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'jaffle_shop_customers.csv', index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'bad_adapter.csv', index=False)
     def run(self, tasks, hooks):
-        df = hooks.dbt_ref('dbt_profile', 'customers')
+        df = hooks.dbt_ref('dbt_prsdfofile', 'customers')
         df_new = df.iloc[:10]
         return df_new
 

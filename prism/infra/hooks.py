@@ -60,14 +60,15 @@ class PrismHooks:
             return df
 
     
-    def dbt_ref(self, 
+    def dbt_ref(self,
+        adapter_name: str,
         target_1: str,
         target_2: Optional[str] = None
     ) -> pd.DataFrame:
         try:
-            dbt_project = self.project.adapters_object_dict['dbt']
+            dbt_project = self.project.adapters_object_dict[adapter_name]
         except KeyError:
-            raise prism.exceptions.RuntimeException(message=f'adapter `dbt` not defined')
+            raise prism.exceptions.RuntimeException(message=f'adapter `{adapter_name}` not defined')
         
         df = dbt_project.handle_ref(target_1, target_2)
         return df
