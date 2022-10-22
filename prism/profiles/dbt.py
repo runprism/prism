@@ -433,7 +433,7 @@ class Dbt(Adapter):
 
         execute_str = [
             "from prism.profiles.dbt import Dbt",
-            "DbtProject = Dbt(name='{name}', adapter_dict={adapter_dict}})".format(name=self.name, adapter_dict=str(self.adapter_dict))
+            "DbtProject = Dbt(name='{name}', adapter_dict={adapter_dict})".format(name=self.name, adapter_dict=str(self.adapter_dict))
         ]
         if return_type=="list":
             return execute_str
