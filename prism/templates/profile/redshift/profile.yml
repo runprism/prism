@@ -1,6 +1,6 @@
 profile_name:
   adapters:
-    adapter_name_here: # change this!
+    redshift_adapter_name_here: # change this!
       type: redshift
       autocommit: True
       host:

@@ -1,6 +1,6 @@
 profile_name:
   adapters:
-    adapter_name_here: # change this!
+    dbt_adapter_name_here: # change this!
       type: dbt
       project_dir:
       profiles_dir:
