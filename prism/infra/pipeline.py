@@ -100,7 +100,7 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         task_manager_obj = task_manager.PrismTaskManager(upstream={})
         hooks_obj = hooks.PrismHooks(self.project)
         
-        # If PySpark adapter is specified in the profile, then explicitly add SparkSession to psm object
+        # If PySpark adapter is specified in the profile, then explicitly add SparkSession to hooks
         if 'pyspark' in adapter_types:
             for atype, aobj in zip(adapter_types, adapter_objs):
                 if atype=="pyspark":
