@@ -201,13 +201,9 @@ class PrismProject:
                 if len(elem.targets) == 1:
                     if getattr(elem.targets[0], "id", "") == var:
 
-                        # If the element is a constant, just return the value
-                        if isinstance(elem.value, ast.Constant):
-                            return ast.literal_eval(elem.value)
-
-                        # Otherwise, if the element is a list, then iterate through the elements and
+                        # If the element is a list, then iterate through the elements and
                         # return the string value. We'll execute it later.
-                        elif isinstance(elem.value, ast.List):
+                        if isinstance(elem.value, ast.List):
                             items = []
                             for attr in elem.value.elts:
                                 if prism.constants.PYTHON_VERSION.major>3 or (prism.constants.PYTHON_VERSION.major==3 and prism.constants.PYTHON_VERSION.minor>=9):
@@ -217,6 +213,9 @@ class PrismProject:
                                 else:
                                     items.append(re.sub('\n$', '', astor.to_source(attr)))
                             return items
+                        
+                        else:
+                            return ast.literal_eval(elem.value)
         return None
 
 
