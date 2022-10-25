@@ -34,7 +34,14 @@ from prism.templates.minimal_project import MINIMAL_PROJECT_TEMPLATE_DIR
 ## Constants ##
 ###############
 
-TASK_COMPLETE_MSG = """Welcome to Prism, the easiest way to create clean, modular data pipelines
+TASK_COMPLETE_MSG = """
+      ______        
+   ____  __ \_____(_)________ _______
+ _____  /_/ / ___/ / ___/ __ `__ \ ____
+____ / ____/ /  / (__  ) / / / / / _____
+ ___/_/   /_/  /_/____/_/ /_/ /_/  ___
+
+Welcome to Prism, the easiest way to create clean, modular data pipelines
 using Python!
 
 To get started, navigate to your newly created project "{project_name}" and try
