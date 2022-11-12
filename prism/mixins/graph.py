@@ -13,13 +13,10 @@ Table of Contents
 
 # Standard library imports
 import os
-import argparse
-from typing import Any, Dict
 from pathlib import Path
 import shutil
 
 # Prism-specific imports
-import prism.exceptions
 import prism.constants
 import prism.logging
 from prism.docs import DOCS_INDEX_FILE_DIR
@@ -29,7 +26,7 @@ from prism.docs import DOCS_INDEX_FILE_DIR
 ## Class definition ##
 ######################
 
-class DocsMixin():
+class GraphMixin():
     """
     Mixin for gen_docs task
     """
