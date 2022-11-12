@@ -6,20 +6,19 @@ Table of Contents
 - Class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import json
-import yaml
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class ModuleManifest:
     """
@@ -28,7 +27,6 @@ class ModuleManifest:
 
     def __init__(self):
         self.manifest_dict: Dict[str, Any] = {"targets": [], "modules": [], "refs": []}
-    
 
     def add_module(self, module_name: Path, module_data: str):
         obj = {
@@ -37,7 +35,6 @@ class ModuleManifest:
         }
         self.manifest_dict["modules"].append(obj)
 
-
     def add_ref(self, target: Path, source: Path):
         obj = {
             "target": str(target),
@@ -45,14 +42,12 @@ class ModuleManifest:
         }
         self.manifest_dict["refs"].append(obj)
 
-
     def add_target(self, module_name: Path, loc: Union[str, List[str]]):
         obj = {
             "module_name": str(module_name),
             "target_locs": loc
         }
         self.manifest_dict["targets"].append(obj)
-
 
 
 class Manifest:
@@ -70,14 +65,12 @@ class Manifest:
             self.manifest_dict["modules"].extend(mm.manifest_dict["modules"])
             self.manifest_dict["refs"].extend(mm.manifest_dict["refs"])
 
-
     def add_module(self, module_name: Path, module_data: str):
         obj = {
             "module_name": str(module_name),
             "module_data": module_data
         }
         self.manifest_dict["modules"].append(obj)
-
 
     def add_ref(self, target: Path, source: Path):
         obj = {
@@ -86,7 +79,6 @@ class Manifest:
         }
         self.manifest_dict["refs"].append(obj)
 
-
     def add_target(self, module_name: Path, loc: Union[str, List[str]]):
         obj = {
             "module_name": str(module_name),
@@ -94,11 +86,7 @@ class Manifest:
         }
         self.manifest_dict["targets"].append(obj)
 
-
     def json_dump(self, path: Path):
         with open(path / 'manifest.json', 'w') as f:
             json.dump(self.manifest_dict, f, sort_keys=False)
         f.close()
-
-
-# EOF
