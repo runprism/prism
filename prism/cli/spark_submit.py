@@ -7,9 +7,9 @@ Table of Contents
 """
 
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import os
@@ -24,7 +24,6 @@ class SparkSubmitTask(prism.cli.run.RunTask):
     """
     Class for submitting a PySpark-based project as a job
     """
-       
 
     def run(self):
         self.args.cls = None
@@ -37,6 +36,3 @@ class SparkSubmitTask(prism.cli.run.RunTask):
 
         # Remove the file
         os.unlink(pyfile)
-
-
-# EOF
