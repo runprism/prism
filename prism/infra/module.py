@@ -6,9 +6,9 @@ Table of Contents
 - Class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 from pathlib import Path
@@ -18,13 +18,13 @@ from typing import Any, Dict
 import prism.exceptions
 from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
-from prism.infra.manifest import Manifest, ModuleManifest
+from prism.infra.manifest import ModuleManifest
 from prism.parsers.ast_parser import AstParser
 
 
-#######################
-## Functions / utils ##
-#######################
+#####################
+# Functions / utils #
+#####################
 
 def get_task_var_name(module_path: Path) -> str:
     """
@@ -39,9 +39,9 @@ def get_task_var_name(module_path: Path) -> str:
     return task_var_name
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class CompiledModule:
     """
@@ -69,7 +69,6 @@ class CompiledModule:
         # Set manifest
         self.module_manifest = module_manifest
         self.refs = self._check_manifest(self.module_manifest)
-    
 
     def _check_manifest(self, module_manifest: ModuleManifest):
         """
@@ -78,11 +77,11 @@ class CompiledModule:
         """
         refs = []
         manifest_refs = module_manifest.manifest_dict["refs"]
-        for ref_obj in manifest_refs: refs.append(ref_obj["source"])
-        if len(refs)==1:
+        for ref_obj in manifest_refs:
+            refs.append(ref_obj["source"])
+        if len(refs) == 1:
             refs = refs[0]
         return refs
-    
 
     def instantiate_module_class(self,
         globals_dict: Dict[Any, Any],
@@ -102,12 +101,17 @@ class CompiledModule:
             variable used to store task instantiation
         """
         # Get prism class from module
-        prism_task_class = self.ast_module.get_prism_task_node(self.ast_module.classes, self.ast_module.bases)
+        prism_task_class = self.ast_module.get_prism_task_node(
+            self.ast_module.classes, self.ast_module.bases
+        )
         if prism_task_class is None:
-            raise prism.exceptions.ParserException(message=f"no PrismTask in `{str(self.module_relative_path)}`")
+            raise prism.exceptions.ParserException(
+                message=f"no PrismTask in `{str(self.module_relative_path)}`"
+            )
         prism_task_class_name = prism_task_class.name
 
-        # Variable name should just be the name of the module itself. A project shouldn't contain duplicate modules.
+        # Variable name should just be the name of the module itself. A project
+        # shouldn't contain duplicate modules.
         task_var_name = get_task_var_name(self.module_relative_path)
 
         # Execute class definition and create task
@@ -117,10 +121,9 @@ class CompiledModule:
         # Set task manager and hooks
         globals_dict[task_var_name].set_task_manager(task_manager)
         globals_dict[task_var_name].set_hooks(hooks)
-        
+
         # Return name of variable used to store task instantiation
         return task_var_name
-
 
     def exec(self,
         globals_dict: Dict[Any, Any],
@@ -128,10 +131,12 @@ class CompiledModule:
         hooks: PrismHooks,
         explicit_run: bool = True
     ) -> PrismTaskManager:
-        task_var_name = self.instantiate_module_class(globals_dict, task_manager, hooks, explicit_run)
+        """
+        Execute module
+        """
+        task_var_name = self.instantiate_module_class(
+            globals_dict, task_manager, hooks, explicit_run
+        )
         globals_dict[task_var_name].exec()
         task_manager.upstream[self.name] = globals_dict[task_var_name]
         return task_manager
-
-
-# EOF
