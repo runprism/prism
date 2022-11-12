@@ -7,27 +7,18 @@ Table of Contents
 """
 
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
-from dataclasses import dataclass
-import os
-import argparse
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 from pathlib import Path
 
-# Prism-specific imports
-import prism.cli.compile
-import prism.exceptions
-import prism.constants
-import prism.logging
 
-
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 
 class SysHandlerMixin:
@@ -50,20 +41,20 @@ class SysHandlerMixin:
         """
         if 'sys' not in globals_dict.keys():
             exec('import sys', globals_dict)
-        
-        # Add the paths before the standard sys.path locations, in case there are any overwrites
+
+        # Add the paths before the standard sys.path locations, in case there are any
+        # overwrites
         globals_dict['sys'].path = [str(p) for p in paths] + globals_dict['sys'].path
         return globals_dict
-    
 
-    def remove_paths_from_sys_path(self, 
+    def remove_paths_from_sys_path(self,
         base_sys_path: List[str],
         paths: List[Path],
         globals_dict: Dict[Any, Any]
     ):
         """
         Remove paths in `paths` to sys.path if they were not already in `base_sys_path`
-        
+
         args:
             base_sys_path: base sys.path
             paths: paths to remove
@@ -73,7 +64,7 @@ class SysHandlerMixin:
         """
         if 'sys' not in globals_dict.keys():
             exec('import sys', globals_dict)
-        
+
         for p in paths:
             try:
                 if str(p) not in base_sys_path:
@@ -82,7 +73,6 @@ class SysHandlerMixin:
                 continue
         return globals_dict
 
-
     def add_sys_path(self, project_dir: Path, globals_dict: Dict[Any, Any]):
         """
         Add project directory to sys.path
@@ -90,8 +80,7 @@ class SysHandlerMixin:
         exec('import sys', globals_dict)
         globals_dict['sys'].path.insert(0, str(project_dir))
         return globals_dict
-    
-    
+
     def remove_sys_path(self, project_dir: Path, globals_dict: Dict[Any, Any]):
         """
         Remove project directory from sys.path
@@ -99,24 +88,23 @@ class SysHandlerMixin:
         globals_dict['sys'].path.remove(str(project_dir))
         return globals_dict
 
-    
-    def remove_project_modules(self, 
+    def remove_project_modules(self,
         base_sys_modules: Dict[str, Any],
         paths: List[Path],
         globals_dict: Dict[Any, Any]
     ):
         """
-        Remove paths and dependent modules in `paths` from the sys.paths and sys.modules. Make
-        sure to only remove them if they were not part of the base configuration. This usually 
-        isn't necessary, because prism projects run in their own Python session. However, there 
-        may be cases where the user runs multiple prism projects during the same session 
-        (e.g., during integration tests).
+        Remove paths and dependent modules in `paths` from the sys.paths and
+        sys.modules. Make sure to only remove them if they were not part of the base
+        configuration. This usually isn't necessary, because prism projects run in their
+        own Python session. However, there may be cases where the user runs multiple
+        prism projects during the same session (e.g., during integration tests).
 
         This is definitely not best practice; need to find a better way of doing this.
 
         args:
             base_sys_modules: base sys.modules
-            paths: custom paths (usually specified via SYS_PATH_CONF in prism_project.py)
+            paths: custom paths (`SYS_PATH_CONF` in prism_project.py)
             globals_dict: globals dictionary
         returns:
             None
@@ -124,8 +112,8 @@ class SysHandlerMixin:
         if 'sys' not in globals_dict.keys():
             return globals_dict
 
-        # Iterate through all modules. Only delete modules that (1) originate from a path in 
-        # `paths`, and (2) did not exist in the `base_sys_modules``
+        # Iterate through all modules. Only delete modules that (1) originate from a
+        # path in `paths`, and (2) did not exist in the `base_sys_modules``
         mods_to_del = []
         for mod_name, mod_obj in globals_dict['sys'].modules.items():
             try:
@@ -135,11 +123,8 @@ class SysHandlerMixin:
                     mods_to_del.append(mod_name)
             except AttributeError:
                 continue
-        
+
         # Delete modules
         for mod in mods_to_del:
             del globals_dict['sys'].modules[mod]
         return globals_dict
-
-
-# EOF
