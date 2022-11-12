@@ -527,7 +527,7 @@ def deprecated(deprecated_fn: str, updated_fn: str):
 
 
 def fire_console_event(
-    event: Event,
+    event: Optional[Event],
     event_list: List[Event]=[], 
     sleep=0.01, 
     log_level: str='info'
@@ -556,7 +556,8 @@ def fire_console_event(
     time.sleep(sleep)
 
     # Return event list
-    event_list.append(event)
+    if event is not None:
+        event_list.append(event)
     return event_list
 
 

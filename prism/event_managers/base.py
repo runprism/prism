@@ -120,7 +120,7 @@ class BaseEventManager:
         return self.func(**kwargs)
 
 
-    def manage_events_during_run(self, event_list: List[prism.logging.Event], fire_exec_events=True, **kwargs):
+    def manage_events_during_run(self, event_list: List[prism.logging.Event], fire_exec_events=True, **kwargs) -> EventManagerOutput:
         """
         Fire relevant event managers
         """
