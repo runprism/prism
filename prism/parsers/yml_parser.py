@@ -7,9 +7,9 @@ Table of Contents:
 """
 
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import os
@@ -22,32 +22,31 @@ import prism.exceptions
 from prism.parsers.base import BaseParser
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class YamlParser(BaseParser):
     """
     Class for parsing Jinja in YAML files
     """
 
-
     def wkdir(self):
         """
-        Return the directory of the YAML file calling this function. Can be called in YAML file via {{ wkdir() }}
+        Return the directory of the YAML file calling this function. Can be called in
+        YAML file via {{ wkdir() }}
         """
         return str(self.path.parent)
-
 
     def parent_dir(self,
         input_path: str
     ) -> str:
         """
-        Return the parent directory {input_path}. Can be called in YAML file via {{ parent_dir(...) }}
+        Return the parent directory {input_path}. Can be called in YAML file via {{
+        parent_dir(...) }}
         """
         path = Path(input_path)
         return str(path.parent)
-
 
     def concat(self,
         str1: str,
@@ -56,8 +55,7 @@ class YamlParser(BaseParser):
         """
         Concatenate {str1} and {str2}. Can be called in YAML file via {{ concat(...) }}
         """
-        return str1+str2
-
+        return str1 + str2
 
     def env(self,
         var: str
@@ -71,7 +69,6 @@ class YamlParser(BaseParser):
         else:
             return env_var
 
-    
     def create_yml_dict(self,
         rendered_str: str
     ) -> Dict[Any, Any]:
@@ -87,10 +84,11 @@ class YamlParser(BaseParser):
         if temp_dict is None:
             return {}
         if not isinstance(temp_dict, dict):
-            raise prism.exceptions.ParserException(message=f'error in YAML loading; invalid type `{str(type(temp_dict))}`')
+            raise prism.exceptions.ParserException(
+                message=f'error in YAML loading; invalid type `{str(type(temp_dict))}`'
+            )
         return temp_dict
 
-    
     def parse(self) -> Dict[Any, Any]:
         """
         Parse YAML file with Jinja syntax
@@ -114,6 +112,3 @@ class YamlParser(BaseParser):
         # Return YAML dict
         yml_dict = self.create_yml_dict(rendered_string)
         return yml_dict
-
-
-# EOF
