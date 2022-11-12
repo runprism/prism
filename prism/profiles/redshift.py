@@ -1,5 +1,5 @@
 """
-Snowflake adapter class definition
+Redshift adapter class definition
 
 Table of Contents
 - Imports
