@@ -8,9 +8,9 @@ Table of Contents
 - Event classes
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # General package imports
 import argparse
@@ -32,12 +32,21 @@ import warnings
 # Prism imports
 import prism.constants
 import prism.exceptions
-from prism.ui import BLACK, RED, GREEN, YELLOW, BLUE, PURPLE, CYAN, WHITE, RESET, BRIGHT_WHITE, BRIGHT_YELLOW, BRIGHT_GREEN, BOLD, TERMINAL_WIDTH
+from prism.ui import (
+    RED,
+    GREEN,
+    YELLOW,
+    PURPLE,
+    RESET,
+    BRIGHT_GREEN,
+    BOLD,
+    TERMINAL_WIDTH
+)
 
 
-#########################
-## Functions and utils ##
-#########################
+#######################
+# Functions and utils #
+#######################
 
 def colorize_status(status):
     """
@@ -48,12 +57,13 @@ def colorize_status(status):
     returns
         colorized_status: status with color
     """
-    assert status in ["RUN", "DONE", "ERROR"], print(f"{status} is invalid; must be either RUN, DONE, or ERROR")
-    if status=="RUN":
+    if status not in ["RUN", "DONE", "ERROR"]:
+        raise ValueError(f"{status} is invalid; must be either RUN, DONE, or ERROR")
+    if status == "RUN":
         return f"{YELLOW}RUN{RESET}"
-    elif status=="DONE":
+    elif status == "DONE":
         return f"{GREEN}DONE{RESET}"
-    elif status=="ERROR":
+    elif status == "ERROR":
         return f"{RED}ERROR{RESET}"
 
 
@@ -72,8 +82,8 @@ def escape_ansi(string: str) -> str:
 
 def custom_ljust(string: str, width: int, char: str) -> str:
     """
-    Python's native `ljust` does not account for ANSI escape codes; create a custom ljust function for the console
-    output.
+    Python's native `ljust` does not account for ANSI escape codes; create a custom
+    ljust function for the console output.
 
     args:
         string: string to ljust
@@ -84,7 +94,7 @@ def custom_ljust(string: str, width: int, char: str) -> str:
     """
     # Regex pattern for ANSI codes
     ansi_regex = re.compile('\x1b[^m]*m')
-    
+
     # ANSI matches
     matches = [(m.start(), m.end()) for m in re.finditer(ansi_regex, string)]
 
@@ -99,7 +109,9 @@ def custom_ljust(string: str, width: int, char: str) -> str:
     for match in matches:
         start = match[0]
         end = match[1]
-        string_ljust_with_ansi = string_ljust_with_ansi[:start] + string[start:end] + string_ljust_with_ansi[start:]
+        string_ljust_with_ansi = string_ljust_with_ansi[:start] + \
+            string[start:end] + \
+            string_ljust_with_ansi[start:]
     return string_ljust_with_ansi
 
 
@@ -121,11 +133,11 @@ def format_console_output(message, index, total, status, execution_time):
 
     try:
         width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
-    except:
+    except Exception:
         width = TERMINAL_WIDTH
-    truncate_width = math.ceil(0.9*(width))
+    truncate_width = math.ceil(0.9 * (width))
     justified = custom_ljust(prefix, width, ".")
-    
+
     if len(escape_ansi(justified)) > width:
         justified = justified[:truncate_width]
 
@@ -138,11 +150,12 @@ def format_console_output(message, index, total, status, execution_time):
     return output
 
 
-###################
-## Create logger ##
-###################
+#################
+# Create logger #
+#################
 
 DEFAULT_LOGGER: logging.Logger
+
 
 def set_up_logger(args: argparse.Namespace):
     if globals().get('DEFAULT_LOGGER', None) is None:
@@ -151,13 +164,13 @@ def set_up_logger(args: argparse.Namespace):
         DEFAULT_LOGGER = logging.getLogger('PRISM_LOGGER')
 
         def _set_level(obj, level: str):
-            if level=='info':
+            if level == 'info':
                 obj.setLevel(logging.INFO)
-            elif level=='warn':
+            elif level == 'warn':
                 obj.setLevel(logging.WARN)
-            elif level=='error':
+            elif level == 'error':
                 obj.setLevel(logging.ERROR)
-            elif level=='critical':
+            elif level == 'critical':
                 obj.setLevel(logging.CRITICAL)
             return obj
 
@@ -172,23 +185,23 @@ def set_up_logger(args: argparse.Namespace):
 
         # File handler -- remove ANSI codes
         class FileHandlerFormatter(logging.Formatter):
-            def format(self,record):
+            def format(self, record):
                 return escape_ansi(record.msg)
-        
+
         file_handler = logging.FileHandler('logs.log')
         file_handler = _set_level(file_handler, args.log_level)
         file_handler.setLevel(logging.INFO)
         file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
         file_handler.setFormatter(file_handler_formatter)
-        
+
         # Add handlers
         DEFAULT_LOGGER.addHandler(file_handler)
         DEFAULT_LOGGER.addHandler(handler)
 
 
-###################
-## Event classes ##
-###################
+#################
+# Event classes #
+#################
 
 class Event:
     """
@@ -201,31 +214,32 @@ class Event:
         """
         return self.__class__.__name__
 
-
     def message(self):
-        raise prism.exceptions.ConsoleEventException(message='"message" function not implemented')
+        raise prism.exceptions.ConsoleEventException(
+            message='"message" function not implemented'
+        )
 
 
 @dataclass
 class CreatingProjectDirEvent(Event):
 
-	def message(self):
-	    return f'Creating project directory...'
+    def message(self):
+        return 'Creating project directory...'
 
 
 @dataclass
 class CurrentProjectDirEvent(Event):
     path: str
-	
+
     def message(self):
-	    return f'{BOLD}Found project directory at {YELLOW}{self.path}{RESET}'
+        return f'{BOLD}Found project directory at {YELLOW}{self.path}{RESET}'
 
 
 @dataclass
 class SettingUpProfileEvent(Event):
 
-	def message(self):
-	    return f'Setting up profile...'
+    def message(self):
+        return 'Setting up profile...'
 
 
 @dataclass
@@ -254,7 +268,7 @@ class InvalidAdapterType(Event):
             return f'{RED}Specify profile type with --type arg{RESET}'
         else:
             valid_adapters_str = ','.join(f'`{a}`' for a in self.valid_adapters)
-            return f'{RED}Invalid adapter type; must be one of {valid_adapters_str}{RESET}'
+            return f'{RED}Invalid adapter type; must be one of {valid_adapters_str}{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -263,28 +277,28 @@ class ProfileAlreadyExists(Event):
 
     def message(self):
         return f'{RED}{self.path} already exists{RESET}'
-    
+
 
 @dataclass
 class ProfileNameExistsYamlDoesNotExist(Event):
 
     def message(self):
-        return f'{YELLOW}`PROFILE` var found in prism_project.py but profile.yml not found{RESET}'
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but profile.yml not found{RESET}'  # noqa: E501
 
 
 @dataclass
 class ProfileNameDoesNotExistYamlExists(Event):
 
     def message(self):
-        return f'{YELLOW}profile.yml found but `PROFILE` var not found in prism_project.py{RESET}'
+        return f'{YELLOW}profile.yml found but `PROFILE` var not found in prism_project.py{RESET}'  # noqa: E501
 
 
 @dataclass
 class InitSuccessfulEvent(Event):
-	msg: str
+    msg: str
 
-	def message(self):
-	    return self.msg
+    def message(self):
+        return self.msg
 
 
 @dataclass
@@ -296,23 +310,23 @@ class DependencyErrorEvent(Event):
 
 @dataclass
 class TaskRunEvent(Event):
-	version: str
+    version: str
 
-	def message(self):
-		return f'{BOLD}Running with prism {YELLOW}v{self.version}...{RESET}'
+    def message(self):
+        return f'{BOLD}Running with prism {YELLOW}v{self.version}...{RESET}'
 
 
 @dataclass
 class TaskSuccessfulEndEvent(Event):
-	
-	def message(self):
-	    return f'{BRIGHT_GREEN}Done!{RESET}'
+
+    def message(self):
+        return f'{BRIGHT_GREEN}Done!{RESET}'
 
 
 @dataclass
 class ProjectPyNotFoundEvent(Event):
     err: prism.exceptions.ProjectPyNotFoundException
-    
+
     def message(self):
         error_class = self.err.__class__.__name__
         detail = self.err.args[0]
@@ -322,15 +336,15 @@ class ProjectPyNotFoundEvent(Event):
 
 @dataclass
 class EmptyLineEvent(Event):
-	
-	def message(self):
-	    return ' '
+
+    def message(self):
+        return ' '
 
 
 @dataclass
 class ModulesFolderNotFoundEvent(Event):
     path: str
-	
+
     def message(self):
         return f'{RED}`modules` subfolder not found in {self.path}{RESET}'
 
@@ -341,9 +355,9 @@ class SeparatorEvent(Event):
     def message(self):
         try:
             width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
-        except:
+        except Exception:
             width = TERMINAL_WIDTH
-        truncate_width = math.ceil(0.9*(width))
+        truncate_width = math.ceil(0.9 * (width))
         justified = "---".ljust(width, "-")
         if len(justified) > width:
             justified = justified[:truncate_width]
@@ -384,16 +398,16 @@ class ExecutionEvent(Event):
     total: Optional[int]
     status: str
     execution_time: Optional[float]
-    
-    
+
     def __str__(self):
         """
         ExecutionEvent messages are either:
             RUNNING {event.name}
             FINISHED {event.name}
-            ERROR {event.name}   
-           
-        Add name of event (after removing event status and ANSI codes) to string representation of event.
+            ERROR {event.name}
+
+        Add name of event (after removing event status and ANSI codes) to string
+        representation of event.
         """
         # Remove all ANSI codes
         msg_no_ansi = escape_ansi(self.msg)
@@ -405,7 +419,6 @@ class ExecutionEvent(Event):
         # Remove all trailing / leading spaces
         event_name_str = msg_no_ansi_status.strip()
         return super().__str__() + " - " + event_name_str + " - " + self.status
-
 
     def message(self):
         return format_console_output(
@@ -427,19 +440,22 @@ class ExecutionErrorEvent(Event):
 
     def prepare_initial_tb(self) -> List[str]:
         if self.full_tb:
-            tb_stack = traceback.format_exception(self.type, self.value, self.tb, limit=None)
+            tb_stack = traceback.format_exception(
+                self.type, self.value, self.tb, limit=None
+            )
             return tb_stack
         else:
-            tb_stack = traceback.format_exception(self.type, self.value, self.tb, limit=-1)
+            tb_stack = traceback.format_exception(
+                self.type, self.value, self.tb, limit=-1
+            )
             idx = tb_stack.index('Traceback (most recent call last):\n')
-            tb_stack.insert(idx+1, '...\n...\n')
+            tb_stack.insert(idx + 1, '...\n...\n')
             return tb_stack
-        
 
     def message(self):
         tb_stack = self.prepare_initial_tb()
         msg = f"{RED}{''.join(tb_stack)}{RESET}"
-        msg = re.sub('"<[a-z\s\/]+>"', self.name, msg)
+        msg = re.sub(r'"<[a-z\s\/]+>"', self.name, msg)
         return msg
 
 
@@ -448,10 +464,12 @@ class ExecutionSyntaxErrorEvent(ExecutionErrorEvent):
 
     def message(self):
         tb_stack = self.prepare_initial_tb()
-        exec_regex = "exec\(.*\)"
-        tb_stack = [statement for statement in tb_stack if len(re.findall(exec_regex, statement))==0]
+        exec_regex = r"exec\(.*\)"
+        tb_stack = [
+            statement for statement in tb_stack if len(re.findall(exec_regex, statement)) == 0  # noqa: E501
+        ]
         msg = f"{RED}{''.join(tb_stack)}{RESET}"
-        msg = re.sub('"<[a-z\s\/]+>"', self.name, msg)
+        msg = re.sub(r'"<[a-z\s\/]+>"', self.name, msg)
         return msg
 
 
@@ -459,7 +477,7 @@ class ExecutionSyntaxErrorEvent(ExecutionErrorEvent):
 class PrismExceptionErrorEvent(Event):
     err: prism.exceptions.PrismException
     name: str
-    
+
     def message(self):
         error_class = self.err.__class__.__name__
         detail = self.err.args[0]
@@ -485,14 +503,14 @@ class ServingDocsExitInfo(Event):
 
 @dataclass
 class SysPathConfigWarningEvent(Event):
-    
+
     def message(self):
-        return f'{YELLOW}`SYS_PATH_CONF` not found in prism_project.py; adding project directory to sys.path{RESET}'
+        return f'{YELLOW}`SYS_PATH_CONF` not found in prism_project.py; adding project directory to sys.path{RESET}'  # noqa: E501
 
 
 @dataclass
 class ProjectDirNotInSysPath(Event):
-    
+
     def message(self):
         return '\n'.join([
             f'{YELLOW}project directory not in `SYS_PATH_CONF`{RESET}'
@@ -504,36 +522,37 @@ def deprecated(deprecated_fn: str, updated_fn: str):
     Decorator used to mark deprecated target function
     """
     def decorator_deprecated(func):
-        
+
         @functools.wraps(func)
         def new_func(*args, **kwargs):
 
             # Suppress warning using context manager; capture line no. information
             with warnings.catch_warnings(record=True) as w:
-                warnings.warn(f"{YELLOW}[WARNING]: {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",
+                warnings.warn(f"{YELLOW}[WARNING]: {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",  # noqa: E501
                         category=DeprecationWarning,
                         stacklevel=2)
-                
+
                 # Iterate through warnings
                 for wi in w:
                     wi = w[0]
                     lineno = wi.lineno
-                    DEFAULT_LOGGER.warning(f"{YELLOW}[WARNING] <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")
+                    DEFAULT_LOGGER.warning(f"{YELLOW}[WARNING] <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")  # noqa: E501
             return func(*args, **kwargs)
-        
+
         return new_func
-    
+
     return decorator_deprecated
 
 
 def fire_console_event(
     event: Optional[Event],
-    event_list: List[Event]=[], 
-    sleep=0.01, 
-    log_level: str='info'
+    event_list: List[Event] = [],
+    sleep=0.01,
+    log_level: str = 'info'
 ):
     """
-    Fire console event. Note that if --quietly is invoked, then we set the log level to WARN.
+    Fire console event. Note that if --quietly is invoked, then we set the log level
+    to WARN.
 
     args:
         event: instance of Event class
@@ -543,15 +562,15 @@ def fire_console_event(
     returns:
         event_list with `event` appended
     """
-    if log_level=="info":
-        DEFAULT_LOGGER.info(event.message()) # type: ignore
-    elif log_level=="warn":
-        DEFAULT_LOGGER.warning(f'{YELLOW}[WARNING]: {RESET}' + event.message()) # type: ignore
-    elif log_level=="error":
-        DEFAULT_LOGGER.error(f'{RED}[ERROR]: {RESET}' + event.message()) # type: ignore
-    elif log_level=="critical":
-        DEFAULT_LOGGER.critical(f'{RED}[CRITICAL]: {RESET}' + event.message()) # type: ignore
-    
+    if log_level == "info":
+        DEFAULT_LOGGER.info(event.message())  # type: ignore
+    elif log_level == "warn":
+        DEFAULT_LOGGER.warning(f'{YELLOW}[WARNING]: {RESET}' + event.message())  # type: ignore # noqa: E501
+    elif log_level == "error":
+        DEFAULT_LOGGER.error(f'{RED}[ERROR]: {RESET}' + event.message())  # type: ignore # noqa: E501
+    elif log_level == "critical":
+        DEFAULT_LOGGER.critical(f'{RED}[CRITICAL]: {RESET}' + event.message())  # type: ignore # noqa: E501
+
     # Sleep
     time.sleep(sleep)
 
@@ -563,14 +582,11 @@ def fire_console_event(
 
 def fire_empty_line_event(event_list: List[Event] = []):
     """
-    Fire empty line event. These events are used to make the console logs look prettier, so they'll
-    always be fired under the `info` level.
+    Fire empty line event. These events are used to make the console logs look prettier,
+    so they'll always be fired under the `info` level.
     """
     e = EmptyLineEvent()
     msg = e.message()
-    DEFAULT_LOGGER.info(msg) # type: ignore
+    DEFAULT_LOGGER.info(msg)  # type: ignore
     event_list.append(e)
     return event_list
-
-
-# EOF
