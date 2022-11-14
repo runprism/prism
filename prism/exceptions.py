@@ -3,6 +3,7 @@
 Prism Exceptions
 """
 
+
 class PrismException(Exception):
     """
     Parent class for all prismexceptions
@@ -175,6 +176,3 @@ class ParserException(PrismException):
 
     def __str__(self):
         return self.message
-
-
-# EOF
