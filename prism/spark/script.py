@@ -6,9 +6,9 @@ Table of Contents:
 - Main
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import argparse
@@ -18,17 +18,14 @@ from argparse import Namespace
 import prism.cli.run
 
 
-##########
-## Main ##
-##########
+########
+# Main #
+########
 
 def main(args: argparse.Namespace):
     task = prism.cli.run.RunTask(args)
     task.run()
 
 
-if __name__=="__main__":
-    main({{ args }}) # type: ignore
-
-
-# EOF
+if __name__ == "__main__":
+    main({{ args }})  # type: ignore
