@@ -261,7 +261,7 @@ def build_graph_subparser(sub, common_arguments_parser):
         None
     """
     graph_sub = sub.add_parser(
-        'gen-docs',
+        'graph',
         parents=[common_arguments_parser],
         help = """
         Generate the DAG UI vizualizer
