@@ -96,7 +96,7 @@ class PrismProject(project_mixins.PrismProjectMixin):
             if isinstance(v, str):
                 self.prism_project_py_str_adjusted += f"{k} = '{v}'"
             else:
-                self.prism_project_py_str_adjusted += f"{k} = '{v}'"
+                self.prism_project_py_str_adjusted += f"{k} = {v}"
 
         # Re-write the prism_project.py file -- we undo this later
         with open(Path(self.project_dir / 'prism_project.py'), 'w') as f:
