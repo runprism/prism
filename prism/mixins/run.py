@@ -31,56 +31,10 @@ class RunMixin():
     Mixin for connect task
     """
 
-    def parse_functions(self):
-        return None
-
-    def get_profile_path(self,
-        args: argparse.Namespace,
-        project_dir: Path
-    ) -> Path:
-        """
-        Get profile.yml path from args
-
-        args:
-            args: user arguments
-            project_dir: project directory
-        returns:
-            profiles_path: path to profile.yml
-        """
-        if args.profiles_dir is not None:
-            profile_dir = Path(args.profiles_dir)
-        else:
-            profile_dir = project_dir
-        profiles_path = profile_dir / 'profile.yml'
-        return profiles_path
-
-    def create_project(self,
-        project_dir: Path,
-        context: Dict[str, Any],
-        which: str,
-        filename: str ='prism_project.py',
-        flag_compiled: bool = True
-    ) -> prism_project.PrismProject:
-        """
-        Wrapper for creation of PrismPipeline object. Needed in order to be compatible
-        with event manager.
-
-        args:
-            code: str or code object to run
-            globals_dict: globals dictionary
-        returns:
-            PrismPipeline object
-        """
-        project = prism_project.PrismProject(
-            project_dir, context, which, filename, flag_compiled
-        )
-        project.setup()
-        return project
-
     def create_pipeline(self,
         project: prism_project.PrismProject,
         dag_executor: prism_executor.DagExecutor,
-        pipeline_globals: Dict[Any, Any]
+        run_context: Dict[Any, Any]
     ) -> prism_pipeline.PrismPipeline:
         """
         Wrapper for creation of PrismPipeline object. Needed in order to be compatible
@@ -93,6 +47,6 @@ class RunMixin():
             PrismPipeline object
         """
         pipeline = prism_pipeline.PrismPipeline(
-            project, dag_executor, pipeline_globals
+            project, dag_executor, run_context
         )
         return pipeline

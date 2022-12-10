@@ -20,7 +20,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import prism.constants
 import prism.exceptions
 import prism.logging
-from prism.mixins import project as project_mixins
 import prism.parsers.ast_parser as ast_parser
 import prism.infra.module
 from prism.infra.manifest import Manifest, ModuleManifest
@@ -61,7 +60,7 @@ class CompiledDag:
             )
 
 
-class DagCompiler(project_mixins.PrismProjectMixin):
+class DagCompiler:
     """
     Class for parsing mod refs, building DAG
     """

@@ -53,43 +53,20 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         event_list: List[Event] = []
 
         # ------------------------------------------------------------------------------
-        # Fire header events
-
-        event_list, project_dir = self.fire_header_events(event_list)
-        if project_dir is None:
-            return prism.cli.base.TaskRunReturnResult(event_list)
-        os.chdir(project_dir)
-
-        # Compiled dir
-        compiled_dir = self.create_compiled_dir(project_dir)
+        # Fire header events, get prism project
+        
+        task_return_result = super(prism.cli.compile.CompileTask, self).run()
+        if task_return_result.has_error:
+            return
+        event_list = task_return_result.event_list
 
         # ------------------------------------------------------------------------------
-        # Get location of config files, and get modules to compile
+        # Compile DAG
 
-        try:
-            modules_dir = self.get_modules_dir(project_dir)
-        except prism.exceptions.CompileException as err:
-            e = prism.logging.PrismExceptionErrorEvent(
-                err,
-                'accessing modules directory'
-            )
-            event_list = fire_console_event(e, event_list, 0, log_level='error')
-            event_list = self.fire_tail_event(event_list)
-            return prism.cli.base.TaskRunReturnResult(event_list)
-        user_arg_modules = self.user_arg_modules(self.args, modules_dir)
-        event_list = fire_console_event(
-            prism.logging.CompileStartEvent(len(user_arg_modules), 'execute'),
-            event_list,
-            log_level='info'
-        )
-        event_list = fire_empty_line_event(event_list)
-
-        # ------------------------------------------------------------------------------
-        # Create compiled DAG
-
+        compiled_dir = self.project_dir / '.compiled'
         result = super().run_for_subclass(
             self.args,
-            project_dir,
+            self.project_dir,
             compiled_dir,
             event_list,
             True
@@ -110,59 +87,22 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 log_level='error'
             )
             event_list = self.fire_tail_event(event_list)
-            return prism.cli.base.TaskRunReturnResult(event_list)
-
-        # ------------------------------------------------------------------------------
-        # Create prism project
-
-        # Get user-specified variables. These will override any variables in
-        # `prism_project.py`.
-        context = self.args.vars
-        if context is None:
-            context = {}
-
-        project_event_manager = base_event_manager.BaseEventManager(
-            idx=None,
-            total=None,
-            name='parsing config files',
-            full_tb=self.args.full_tb,
-            func=self.create_project
-        )
-        project_event_manager_output = project_event_manager.manage_events_during_run(
-            event_list=event_list,
-            project_dir=project_dir,
-            context=context,
-            which=self.args.which,
-            filename="prism_project.py",
-            flag_compiled=True
-        )
-        prism_project = project_event_manager_output.outputs
-        prism_project_event_to_fire = project_event_manager_output.event_to_fire
-        event_list = project_event_manager_output.event_list
-        if prism_project == 0:
-            event_list = fire_empty_line_event(event_list)
-            event_list = fire_console_event(
-                prism_project_event_to_fire,
-                event_list,
-                log_level='error'
-            )
-            event_list = self.fire_tail_event(event_list)
-            return prism.cli.base.TaskRunReturnResult(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
         # Create pipeline
 
         # First, create DAG executor
-        threads = prism_project.thread_count
+        threads = self.prism_project.thread_count
         dag_executor = prism_executor.DagExecutor(
-            project_dir,
+            self.project_dir,
             compiled_dag,
             self.args.all_upstream,
             threads
         )
 
         # Create pipeline
-        self.globals_namespace = prism.constants.CONTEXT.copy()
+        self.run_context = self.prism_project.run_context
 
         # Manager for creating pipeline
         pipeline_manager = base_event_manager.BaseEventManager(
@@ -174,9 +114,9 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         )
         pipeline_event_manager_output = pipeline_manager.manage_events_during_run(
             event_list=event_list,
-            project=prism_project,
+            project=self.prism_project,
             dag_executor=dag_executor,
-            pipeline_globals=self.globals_namespace
+            run_context=self.run_context
         )
         pipeline = pipeline_event_manager_output.outputs
         pipeline_event_to_fire = pipeline_event_manager_output.event_to_fire
@@ -189,7 +129,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 log_level='error'
             )
             event_list = self.fire_tail_event(event_list)
-            return prism.cli.base.TaskRunReturnResult(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
         # Execute pipeline
@@ -226,7 +166,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             event_list = fire_empty_line_event(event_list)
             event_list = fire_console_event(error_event, event_list, log_level='error')
             event_list = self.fire_tail_event(event_list)
-            return prism.cli.base.TaskRunReturnResult(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # Otherwise, check the status of the executor ouput
         else:
@@ -246,7 +186,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                     log_level='error'
                 )
                 event_list = self.fire_tail_event(event_list)
-                return prism.cli.base.TaskRunReturnResult(event_list)
+                return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
         # Fire footer events

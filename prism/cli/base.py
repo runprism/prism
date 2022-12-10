@@ -199,8 +199,7 @@ class BaseTask(base_mixins.BaseMixin):
             project_dir=self.project_dir,
             context=user_context,
             which=self.args.which,
-            filename="prism_project.py",
-            flag_compiled=True
+            filename="prism_project.py"
         )
         self.prism_project = project_event_manager_output.outputs
         prism_project_event_to_fire = project_event_manager_output.event_to_fire

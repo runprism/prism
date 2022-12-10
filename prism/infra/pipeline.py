@@ -36,47 +36,27 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
     def __init__(self,
         project: prism_project.PrismProject,
         executor: prism_executor.DagExecutor,
-        pipeline_globals: Dict[Any, Any]
+        run_context: Dict[Any, Any]
     ):
         self.project = project
         self.dag_executor = executor
-        self.pipeline_globals = pipeline_globals
+        self.run_context = run_context
 
         # ------------------------------------------------------------------------------
         # sys.path configuration
 
-        # Before executing anything, keep track of modules loaded in sys.modules and
-        # paths loaded in sys.paths. This will allow us to add/remove modules
-        # programatically without messing up the base configuration
-        if 'sys' not in self.pipeline_globals.keys():
-            exec('import sys', self.pipeline_globals)
-        self.base_sys_path = [p for p in self.pipeline_globals['sys'].path]
+        # Identify default modules loaded in sys.modules and paths loaded in sys.paths.
+        # This will allow us to add/remove modules programatically without messing up
+        # the base configuration.
+        temp_context = {}
+        exec('import sys', temp_context)
+        self.base_sys_path = [p for p in temp_context['sys'].path]
         self.base_sys_modules = {
-            k: v for k, v in self.pipeline_globals['sys'].modules.items()
+            k: v for k, v in temp_context['sys'].modules.items()
         }
 
-        # Execute project
-        self.project.exec(self.pipeline_globals)
-
-        # Compiled sys.path config
-        try:
-            self.sys_path_config = self.pipeline_globals['SYS_PATH_CONF']
-
-            # If project directory not in sys_path_config, throw a warning
-            if str(self.project.project_dir) not in [str(p) for p in self.sys_path_config]:  # noqa: E501
-                prism.logging.fire_console_event(
-                    prism.logging.ProjectDirNotInSysPath(), [], log_level='warn'
-                )
-
-        # Fire a warning, even if the user specified `quietly`
-        except KeyError:
-            prism.logging.fire_console_event(
-                prism.logging.SysPathConfigWarningEvent(), [], log_level='warn'
-            )
-            self.sys_path_config = [self.project.project_dir]
-
         # Configure sys.path
-        self.add_paths_to_sys_path(self.sys_path_config, self.pipeline_globals)
+        self.add_paths_to_sys_path(self.project.sys_path_config, self.run_context)
 
         # ------------------------------------------------------------------------------
         # Adapters, task manager, and hooks
@@ -116,13 +96,13 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
                     pyspark_spark_session = aobj.engine
                     setattr(hooks_obj, pyspark_alias, pyspark_spark_session)
 
-        self.pipeline_globals[INTERNAL_TASK_MANAGER_VARNAME] = task_manager_obj
-        self.pipeline_globals[INTERNAL_HOOKS_VARNAME] = hooks_obj
+        self.run_context[INTERNAL_TASK_MANAGER_VARNAME] = task_manager_obj
+        self.run_context[INTERNAL_HOOKS_VARNAME] = hooks_obj
 
         # ------------------------------------------------------------------------------
         # Set the globals for the executor
 
-        self.dag_executor.set_executor_globals(self.pipeline_globals)
+        self.dag_executor.set_executor_globals(self.run_context)
 
     def exec(self, full_tb: bool):
         """
@@ -139,10 +119,10 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
             self.project.adapters_object_dict["bigquery"].engine.close()
 
         # Remove project dir and all associated modules from sys path
-        self.pipeline_globals = self.remove_paths_from_sys_path(
-            self.base_sys_path, self.sys_path_config, self.pipeline_globals
+        self.run_context = self.remove_paths_from_sys_path(
+            self.base_sys_path, self.project.sys_path_config, self.run_context
         )
-        self.pipeline_globals = self.remove_project_modules(
-            self.base_sys_modules, self.sys_path_config, self.pipeline_globals
+        self.run_context = self.remove_project_modules(
+            self.base_sys_modules, self.project.sys_path_config, self.run_context
         )
         return executor_output

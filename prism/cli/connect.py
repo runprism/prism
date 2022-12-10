@@ -41,30 +41,28 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         """
         Execute connect task
         """
-        # Keep track of events
-        event_list: List[Event] = []
-
         # ------------------------------------------------------------------------------
-        # Fire header events
-
-        event_list, project_dir = self.fire_header_events(event_list)
-        if project_dir is None:
-            return prism.cli.base.TaskRunReturnResult(event_list)
-
-        # Change working directory to project directory
-        os.chdir(project_dir)
-
+        # Fire header events, get prism project
+        
+        task_return_result = super().run()
+        if task_return_result.has_error:
+            return
+        event_list = task_return_result.event_list
         event_list = fire_empty_line_event(event_list)
 
         # ------------------------------------------------------------------------------
         # Define profile type
 
         adapter_type = self.args.type
+
+        # If adapter type is None, throw an error
         if adapter_type is None:
             e = prism.logging.InvalidAdapterType(prism.constants.VALID_ADAPTERS)
             event_list = fire_console_event(e, event_list, 0, log_level='error')
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
+
+        # If adapter type isn't valid, then throw an error
         elif adapter_type not in prism.constants.VALID_ADAPTERS:
             e = prism.logging.InvalidAdapterType(
                 prism.constants.VALID_ADAPTERS,
@@ -84,20 +82,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # ------------------------------------------------------------------------------
         # Get profiles dir
 
-        # Get user-specified variables. These will override any variables in
-        # `prism_project.py`.
-        context = self.args.vars
-        if context is None:
-            context = {}
-        prism_project = project.PrismProject(
-            project_dir,
-            context,
-            which="connect",
-            filename="prism_project.py",
-            flag_compiled=False
-        )
-        profiles_dir = prism_project.get_profiles_dir(prism_project.prism_project_py_str)
-        profiles_filepath = Path(profiles_dir) / 'profile.yml'
+        profiles_filepath = self.prism_project.profiles_dir / 'profile.yml'
 
         # ------------------------------------------------------------------------------
         # Create connection
