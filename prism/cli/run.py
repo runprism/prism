@@ -158,7 +158,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         )
 
         # Create pipeline
-        self.globals_namespace = prism.constants.GLOBALS_DICT.copy()
+        self.globals_namespace = prism.constants.CONTEXT.copy()
 
         # Manager for creating pipeline
         pipeline_manager = base_event_manager.BaseEventManager(

@@ -72,7 +72,7 @@ class PrismDAG(
         self.all_modules = self.get_modules(self.modules_dir)
 
         # Define project namespace
-        self.globals_namespace = prism.constants.GLOBALS_DICT.copy()
+        self.globals_namespace = prism.constants.CONTEXT.copy()
 
         # Set up default logger
         prism.logging.set_up_logger(LoggingArgs(self.log_level))
