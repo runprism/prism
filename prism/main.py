@@ -71,6 +71,17 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
         Set the log level; must be one of `info`, `warn`, `error`, or `critical`
         """
     )
+
+    # Key-value variables
+    common_arguments_parser.add_argument(
+        '--vars',
+        required=False,
+        action=KeyValue,
+        help="""
+        Prism variables as key-value pairs `key=value`. These overwrite any variable
+        definitions in `prism_project.py`. All values are read as strings.
+        """
+    )
     return common_arguments_parser
 
 
@@ -216,17 +227,6 @@ def build_run_subparser(sub, common_arguments_parser):
         action='store_true',
         help="""
         Run all modules upstream of explicit run set
-        """
-    )
-
-    # Key-value variables
-    run_sub.add_argument(
-        '--vars',
-        required=False,
-        action=KeyValue,
-        help="""
-        Prism variables as key-value pairs `key=value`. These overwrite any variable
-        definitions in `prism_project.py`. All values are read as strings.
         """
     )
 

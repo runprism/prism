@@ -66,9 +66,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # ------------------------------------------------------------------------------
         # Get location of config files, and get modules to compile
 
-        profiles_path = self.get_profile_path(self.args, project_dir)
-
-        # Get modules to compile
         try:
             modules_dir = self.get_modules_dir(project_dir)
         except prism.exceptions.CompileException as err:
@@ -118,6 +115,12 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # ------------------------------------------------------------------------------
         # Create prism project
 
+        # Get user-specified variables. These will override any variables in
+        # `prism_project.py`.
+        context = self.args.vars
+        if context is None:
+            context = {}
+
         project_event_manager = base_event_manager.BaseEventManager(
             idx=None,
             total=None,
@@ -128,8 +131,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         project_event_manager_output = project_event_manager.manage_events_during_run(
             event_list=event_list,
             project_dir=project_dir,
-            profiles_path=profiles_path,
-            env="local",
+            context=context,
             which=self.args.which,
             filename="prism_project.py",
             flag_compiled=True
