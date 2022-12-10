@@ -56,7 +56,7 @@ class AstParser:
         self.ast_module = ast.parse(self.module_str)
 
         # Add module source code to manifest
-        self.module_manifest.add_module(self.module_relative_path, self.module_str)
+        self.module_manifest.add_module(self.module_relative_path)
 
         # Check existence of if-name-main
         bool_if_name_main = self.check_if_name_main(self.ast_module)
