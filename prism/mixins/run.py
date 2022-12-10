@@ -56,8 +56,7 @@ class RunMixin():
 
     def create_project(self,
         project_dir: Path,
-        profiles_path: Path,
-        env: str,
+        context: Dict[str, Any],
         which: str,
         filename: str ='prism_project.py',
         flag_compiled: bool = True
@@ -73,7 +72,7 @@ class RunMixin():
             PrismPipeline object
         """
         project = prism_project.PrismProject(
-            project_dir, profiles_path, env, which, filename, flag_compiled
+            project_dir, context, which, filename, flag_compiled
         )
         project.setup()
         return project
