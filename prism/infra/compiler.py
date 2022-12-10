@@ -14,7 +14,7 @@ Table of Contents
 import os
 import networkx as nx
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Prism-specific imports
 import prism.constants
@@ -24,6 +24,7 @@ from prism.mixins import project as project_mixins
 import prism.parsers.ast_parser as ast_parser
 import prism.infra.module
 from prism.infra.manifest import Manifest, ModuleManifest
+from prism.infra.project import PrismProject
 
 
 ####################
@@ -69,12 +70,14 @@ class DagCompiler(project_mixins.PrismProjectMixin):
         project_dir: Path,
         compiled_dir: Path,
         all_modules: List[Path],
-        user_arg_modules: List[Path]
+        user_arg_modules: List[Path],
+        project: Optional[PrismProject] = None
     ):
         self.project_dir = project_dir
         self.compiled_dir = compiled_dir
         self.all_modules = all_modules
         self.user_arg_modules = user_arg_modules
+        self.project = project
         os.chdir(project_dir)
 
         # Path of modules
@@ -319,8 +322,14 @@ class DagCompiler(project_mixins.PrismProjectMixin):
         manifest = Manifest(list(self.module_manifests.values()))
 
         # Add the prism project to the Manifest
-        prism_project_py = self.load_prism_project_py(self.project_dir, "prism_project.py")
-        manifest.add_prism_project(prism_project_py)
+        if self.project is not None:
+            prism_project_py_str = self.project.prism_project_py_str
+        else:
+            prism_project = PrismProject(
+                self.project_dir, {}, "compile", "prism_project.py"
+            )
+            prism_project_py_str = prism_project.prism_project_py_str
+        manifest.add_prism_project(prism_project_py_str)
         manifest.json_dump(self.compiled_dir)
 
         # Return dag

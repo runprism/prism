@@ -15,13 +15,14 @@ Table of Contents
 import re
 import argparse
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 # Prism-specific imports
 import prism.cli.base
 import prism.exceptions
 import prism.constants
 from prism.infra import compiler
+from prism.infra.project import PrismProject
 
 
 ####################
@@ -216,7 +217,8 @@ class CompileMixin():
         project_dir: Path,
         compiled_dir: Path,
         all_modules: List[Path],
-        user_arg_modules: List[Path]
+        user_arg_modules: List[Path],
+        project: Optional[PrismProject] = None
     ) -> compiler.CompiledDag:
         """
         Wrapper for the `compile` method in the DagCompiler class
@@ -230,7 +232,7 @@ class CompileMixin():
             CompiledDag object
         """
         dag_compiler = compiler.DagCompiler(
-            project_dir, compiled_dir, all_modules, user_arg_modules
+            project_dir, compiled_dir, all_modules, user_arg_modules, project
         )
         compiled_dag = dag_compiler.compile()
 
