@@ -263,7 +263,6 @@ class PrismDAG(
                 prism_project = self.create_project(
                     project_dir=self.project_dir,
                     profiles_path=self.profiles_dir / 'profile.yml',
-                    env="local",
                     which="run",
                     filename="prism_project.py",
                     flag_compiled=False

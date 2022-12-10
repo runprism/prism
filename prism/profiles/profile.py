@@ -37,11 +37,9 @@ class Profile:
     def __init__(self,
         profile_yml: Dict[str, Any],
         profile_name: str,
-        env: str
     ):
         self.profile_yml = profile_yml
         self.profile_name = profile_name
-        self.env = env
         self.adapters_obj_dict: Dict[str, Adapter] = {}
 
         # Get named profile
@@ -51,7 +49,7 @@ class Profile:
 
         # Check if all profiles exist
         self.bool_all_profiles_exist = self.all_profiles_exist(
-            self.profile_name, self.profile_yml, self.named_profile, self.env, True
+            self.profile_name, self.profile_yml, self.named_profile, True
         )
 
         # Check top-level keys -- should only be 'adapters' and 'clusters'
@@ -137,7 +135,6 @@ class Profile:
         profile_name: str,
         profile_yml: Dict[str, Optional[Dict[str, Any]]],
         named_profile: Dict[str, Any],
-        env: str,
         fire_warnings=True
     ) -> bool:
         """

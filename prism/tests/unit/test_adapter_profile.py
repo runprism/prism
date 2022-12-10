@@ -207,7 +207,7 @@ class TestProfile(unittest.TestCase):
         profile instantiation throws an error if top-level keys are misspecified or bad
         """
         with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
-            pr.Profile(profile_yml_tests, "profile_too_many_toplevel_keys", env="local")
+            pr.Profile(profile_yml_tests, "profile_too_many_toplevel_keys")
         msg = "invalid keys `['clusters', 'this_does_not_belong']` in profile.yml; supported keys are [`adapters`]"
         self.assertEqual(msg, str(cm.exception))
 
@@ -217,7 +217,7 @@ class TestProfile(unittest.TestCase):
         Profile creates Snowflake engine as expected 
         """
         profile_name = "profile_snowflake_normal"
-        profile = pr.Profile(profile_yml_tests, profile_name, env="local")
+        profile = pr.Profile(profile_yml_tests, profile_name)
         self.assertEqual(profile.adapters_obj_dict, {})
         profile.generate_adapters()
         expected_keys = ['snowflake']
@@ -232,7 +232,7 @@ class TestProfile(unittest.TestCase):
         Profile creates multiple Snowflake engines as expected 
         """
         profile_name = "profile_multiple_snowflakes"
-        profile = pr.Profile(profile_yml_tests, profile_name, env="local")
+        profile = pr.Profile(profile_yml_tests, profile_name)
         self.assertEqual(profile.adapters_obj_dict, {})
         profile.generate_adapters()
         expected_keys = ['snowflake1', 'snowflake2']
@@ -251,7 +251,7 @@ class TestProfile(unittest.TestCase):
         Profile creates PySpark engine as expected
         """
         profile_name = "profile_pyspark_normal"
-        profile = pr.Profile(profile_yml_tests, profile_name, env="local")
+        profile = pr.Profile(profile_yml_tests, profile_name)
         self.assertEqual(profile.adapters_obj_dict, {})
         profile.generate_adapters()
         expected_keys = ['pyspark']
@@ -266,7 +266,7 @@ class TestProfile(unittest.TestCase):
         Profile correctly multiple engines when multiple adapters are specified
         """
         profile_name = "profile_snowflake_pyspark_normal"
-        profile = pr.Profile(profile_yml_tests, profile_name, env="local")
+        profile = pr.Profile(profile_yml_tests, profile_name)
         self.assertEqual(profile.adapters_obj_dict, {})
         profile.generate_adapters()
         expected_keys = ['snowflake', 'pyspark']
@@ -284,7 +284,7 @@ class TestProfile(unittest.TestCase):
         Profile throws an error if asked to create unsupported adapter
         """
         profile_name = "profile_extra_invalid_connection"
-        profile = pr.Profile(profile_yml_tests, profile_name, env="local")
+        profile = pr.Profile(profile_yml_tests, profile_name)
         self.assertEqual(profile.adapters_obj_dict, {})
         with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
             profile.generate_adapters()
@@ -315,7 +315,7 @@ class TestProfile(unittest.TestCase):
         """
         An empty named profile doesn't throw an error, but does cause Profile.bool_all_profiles_exist to be False
         """
-        profile = pr.Profile(profile_yml_tests, "profile_empty", env="local")
+        profile = pr.Profile(profile_yml_tests, "profile_empty")
         self.assertFalse(profile.bool_all_profiles_exist)
 
     
