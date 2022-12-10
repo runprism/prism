@@ -18,7 +18,7 @@ import shutil
 import pandas as pd
 
 # Prism imports
-import prism.api
+import prism.client
 import prism.tests.integration.test_connect as test_connect
 import prism.tests.integration.integration_test_class as integration_test_class
 import prism.exceptions
@@ -63,20 +63,20 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         """
         # Invalid project
         with self.assertRaises(prism.exceptions.ProjectPyNotFoundException) as cm:
-            prism.api.PrismDAG(P002_NO_PROJECT_PY)
+            prism.client.PrismDAG(P002_NO_PROJECT_PY)
         expected_msg = 'prism_project.py file not found in current directory or any of its parents'
         self.assertEqual(expected_msg, str(cm.exception))
         
         # Valid projects
         for proj in [P004_SIMPLE_PROJECT, P005_SIMPLE_PROJECT_NO_NULL, P006_SIMPLE_PROJECT_WITH_PROFILE, P007_SPARK_PROJECT]:
-            prism.api.PrismDAG(proj)
+            prism.client.PrismDAG(proj)
 
     
     def test_prism_dag_compile_cycle(self):
         """
         PrismDAG compile function in a project with a cycle
         """
-        dag = prism.api.PrismDAG(P003_PROJECT_WITH_CYCLE)
+        dag = prism.client.PrismDAG(P003_PROJECT_WITH_CYCLE)
 
         # Remove .compiled dir in project, if it exists
         if Path(P003_PROJECT_WITH_CYCLE / '.compiled').is_dir():
@@ -101,7 +101,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         """
         PrismDAG compile function
         """
-        dag = prism.api.PrismDAG(P004_SIMPLE_PROJECT)
+        dag = prism.client.PrismDAG(P004_SIMPLE_PROJECT)
 
         # Remove .compiled dir in project, if it exists
         if Path(P004_SIMPLE_PROJECT / '.compiled').is_dir():
@@ -139,7 +139,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         """
         PrismDAG connect function
         """
-        dag = prism.api.PrismDAG(P006_SIMPLE_PROJECT_WITH_PROFILE)
+        dag = prism.client.PrismDAG(P006_SIMPLE_PROJECT_WITH_PROFILE)
 
         # Remove profile.yml
         self._remove_profile_yml(P006_SIMPLE_PROJECT_WITH_PROFILE)
@@ -172,9 +172,9 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         """
         PrismDAG run function
         """
-        dag4 = prism.api.PrismDAG(P004_SIMPLE_PROJECT)
-        dag5 = prism.api.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
-        dag9 = prism.api.PrismDAG(P009_SIMPLE_DBT_PROJECT)
+        dag4 = prism.client.PrismDAG(P004_SIMPLE_PROJECT)
+        dag5 = prism.client.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
+        dag9 = prism.client.PrismDAG(P009_SIMPLE_DBT_PROJECT)
 
         # --------------------------------------------------------------------------------------------------------------
         # Try running P004_SIMPLE_PROJECT. It should produce an error because it has a Null output.
@@ -289,7 +289,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         """
 
         # Use P005_SIMPLE_PROJECT_NO_NULL for testing
-        dag5 = prism.api.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
+        dag5 = prism.client.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
 
         # Get output of a task without a target (without running pipeline). This should result in an error.
         with self.assertRaises(prism.exceptions.RuntimeException) as cm:
@@ -322,7 +322,7 @@ class TestAPI(integration_test_class.IntegrationTestCase):
         """
 
         # Use P005_SIMPLE_PROJECT_NO_NULL for testing
-        dag5 = prism.api.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
+        dag5 = prism.client.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
 
         # Get output of a pipeline without running the pipeline. Since the last task does not have a target, this should
         # result in an error.
