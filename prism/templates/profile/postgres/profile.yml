@@ -1,0 +1,13 @@
+profile_name:
+  adapters:
+    postgres_adapter_name_here: # change this!
+      type: postgres
+      autocommit: True
+      host:
+      port:
+      database:
+      user:
+      password:
+
+
+# EOF

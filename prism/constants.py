@@ -25,7 +25,7 @@ IGNORE_FILES = ["__pycache__", '*checkpoint.ipynb', '.ipynb_checkpoints']
 
 # Profile/adapter constants
 VALID_PROFILE_KEYS = ["adapters"]
-VALID_ADAPTERS = [ "snowflake", "pyspark", "dbt", "bigquery", "redshift"]
+VALID_ADAPTERS = [ "snowflake", "pyspark", "dbt", "bigquery", "redshift", "postgres"]
 
 # Scope dictionary
 GLOBALS_DICT = {'__name__': '__main__'}
