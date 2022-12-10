@@ -130,7 +130,9 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             project_dir=project_dir,
             profiles_path=profiles_path,
             env="local",
-            which=self.args.which
+            which=self.args.which,
+            filename="prism_project.py",
+            flag_compiled=True
         )
         prism_project = project_event_manager_output.outputs
         prism_project_event_to_fire = project_event_manager_output.event_to_fire

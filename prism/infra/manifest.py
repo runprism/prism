@@ -89,3 +89,9 @@ class Manifest:
         with open(path / 'manifest.json', 'w') as f:
             json.dump(self.manifest_dict, f, sort_keys=False)
         f.close()
+
+    def json_load(self, path: Path):
+        with open(path / 'manifest.json', 'r') as f:
+            manifest = json.loads(f.read())
+        f.close()
+        return manifest

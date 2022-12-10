@@ -58,7 +58,9 @@ class RunMixin():
         project_dir: Path,
         profiles_path: Path,
         env: str,
-        which: str
+        which: str,
+        filename: str ='prism_project.py',
+        flag_compiled: bool = True
     ) -> prism_project.PrismProject:
         """
         Wrapper for creation of PrismPipeline object. Needed in order to be compatible
@@ -70,7 +72,9 @@ class RunMixin():
         returns:
             PrismPipeline object
         """
-        project = prism_project.PrismProject(project_dir, profiles_path, env, which)
+        project = prism_project.PrismProject(
+            project_dir, profiles_path, env, which, filename, flag_compiled
+        )
         project.setup()
         return project
 

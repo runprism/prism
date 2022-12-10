@@ -14,7 +14,7 @@ Table of Contents
 import ast
 import astor
 import jinja2
-import os
+import json
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -41,7 +41,8 @@ class PrismProject(project_mixins.PrismProjectMixin):
         profiles_path: Path,
         env: str,
         which: str,
-        filename='prism_project.py'
+        filename: str ='prism_project.py',
+        flag_compiled: bool = True
     ):
 
         # Set project directory and load prism_project.py
@@ -50,18 +51,31 @@ class PrismProject(project_mixins.PrismProjectMixin):
         self.env = env
         self.which = which
         self.filename = filename
-        self.prism_project_py_str = self.load_prism_project_py(
-            self.project_dir, self.filename
-        )
+        self.flag_compiled = flag_compiled
 
         # Keep track of any adjustments made via configurations
         self.prism_project_py_str_adjusted: Optional[str] = None
+
+        # If we haven't compiled the project yet (which happens during testing), then
+        # grab the load the prism_project.py file.
+        if not flag_compiled:
+            self.prism_project_py_str = self.load_prism_project_py(
+                self.project_dir, self.filename
+            )
 
     def setup(self):
         """
         Set up prism project. This should always be directly after object instantiation
         (except for in testing).
         """
+        # If the project has been compiled, then grab the prism project string from the
+        # manifest.
+        if self.flag_compiled:
+            manifest_path = self.project_dir / '.compiled' / 'manifest.json'
+            with open(manifest_path, 'r') as f:
+                self.manifest = json.loads(f.read())
+            f.close()
+            self.prism_project_py_str = self.manifest["prism_project"]
 
         # Get profile name
         self.profile_name = self.get_profile_name(self.prism_project_py_str)

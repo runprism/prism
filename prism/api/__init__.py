@@ -261,7 +261,12 @@ class PrismDAG(
                 # since some target locations may depend on vars stored in modules
                 # imported from directories contained therein.
                 prism_project = self.create_project(
-                    self.project_dir, self.profiles_dir / 'profile.yml', "local", "run"
+                    project_dir=self.project_dir,
+                    profiles_path=self.profiles_dir / 'profile.yml',
+                    env="local",
+                    which="run",
+                    filename="prism_project.py",
+                    flag_compiled=False
                 )
                 prism_project.exec(temp_namespace)
                 try:
