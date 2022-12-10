@@ -6,13 +6,13 @@ Table of Contents
 - Class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import pandas as pd
-from typing import Any, Dict, Union
+from typing import Any, Dict
 import psycopg2
 
 # Prism-specific imports
@@ -20,9 +20,9 @@ from .adapter import Adapter
 import prism.exceptions
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Postgres(Adapter):
 
@@ -58,24 +58,30 @@ class Postgres(Adapter):
         ]
 
         # Raise an error if:
-        #   1. Config doesn't contain any of the required vars or contains additional config vars
+        #   1. Config doesn't contain any of the required vars or contains additional
+        #      config vars
         #   2. Any of the config values are None
         actual_config_vars = []
-        for k,v in config_dict.items():
+        for k, v in config_dict.items():
             if k not in required_config_vars and k not in optional_config_vars:
-                raise prism.exceptions.InvalidProfileException(message=f'invalid var `{k}` - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
+                raise prism.exceptions.InvalidProfileException(
+                    message=f'invalid var `{k}` - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+                )
             if k in required_config_vars:
                 actual_config_vars.append(k)
             if v is None:
-                raise prism.exceptions.InvalidProfileException(message=f'var `{k}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
+                raise prism.exceptions.InvalidProfileException(
+                    message=f'var `{k}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+                )
         vars_not_defined = list(set(required_config_vars) - set(actual_config_vars))
-        if len(vars_not_defined)>0:
+        if len(vars_not_defined) > 0:
             v = vars_not_defined.pop()
-            raise prism.exceptions.InvalidProfileException(message=f'var `{v}` must be defined - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
+            raise prism.exceptions.InvalidProfileException(
+                message=f'var `{v}` must be defined - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+            )
 
         # If no exception has been raised, return True
         return True
-
 
     def create_engine(self,
         adapter_dict: Dict[str, Any],
@@ -83,7 +89,8 @@ class Postgres(Adapter):
         profile_name: str
     ):
         """
-        Parse PostgresQL adapter, represented as a dict and return the PostgresQL connector object
+        Parse PostgresQL adapter, represented as a dict and return the PostgresQL
+        connector object
 
         args:
             adapter_dict: PostgresQL adapter represented as a dictionary
@@ -92,7 +99,7 @@ class Postgres(Adapter):
         returns:
             PostgresQL connector object
         """
-        
+
         # Get configuration and check if config is valid
         self.is_valid_config(adapter_dict, adapter_name, profile_name)
 
@@ -104,7 +111,7 @@ class Postgres(Adapter):
             user=adapter_dict['user'],
             password=adapter_dict['password']
         )
-        
+
         # Autocommit. If no autocommit is specified, then set to True
         try:
             autocommit_config = bool(adapter_dict['autocommit'])
@@ -112,7 +119,6 @@ class Postgres(Adapter):
         except KeyError:
             conn.set_session(autocommit=True)
         return conn
-        
 
     def execute_sql(self, query: str, return_type: str) -> pd.DataFrame:
         """
@@ -121,7 +127,7 @@ class Postgres(Adapter):
         # Create cursor for every SQL query -- this ensures thread safety
         cursor = self.engine.cursor()
         cursor.execute(query)
-        if return_type=="pandas":
+        if return_type == "pandas":
             data = cursor.fetchall()
             cols = []
             for elts in cursor.description:
@@ -130,7 +136,4 @@ class Postgres(Adapter):
             cursor.close()
             return df
         else:
-            cursor.close
-        
-
-# EOF
+            cursor.close()
