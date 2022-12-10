@@ -56,14 +56,16 @@ class Manifest:
     """
 
     def __init__(self, module_manifests: List[ModuleManifest] = []):
-        self.manifest_dict: Dict[str, Any] = {"targets": [], "modules": [], "refs": []}
+        self.manifest_dict: Dict[str, Any] = {"targets": [], "prism_project": "", "refs": []}
         self.module_manifests = module_manifests
 
         # Iterate through module manifests and add to manifest
         for mm in self.module_manifests:
             self.manifest_dict["targets"].extend(mm.manifest_dict["targets"])
-            self.manifest_dict["modules"].extend(mm.manifest_dict["modules"])
             self.manifest_dict["refs"].extend(mm.manifest_dict["refs"])
+
+    def add_prism_project(self, prism_project_data: str):
+        self.manifest_dict["prism_project"] = prism_project_data
 
     def add_module(self, module_name: Path, module_data: str):
         obj = {

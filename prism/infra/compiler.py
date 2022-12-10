@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Tuple
 import prism.constants
 import prism.exceptions
 import prism.logging
+from prism.mixins import project as project_mixins
 import prism.parsers.ast_parser as ast_parser
 import prism.infra.module
 from prism.infra.manifest import Manifest, ModuleManifest
@@ -59,7 +60,7 @@ class CompiledDag:
             )
 
 
-class DagCompiler:
+class DagCompiler(project_mixins.PrismProjectMixin):
     """
     Class for parsing mod refs, building DAG
     """
@@ -316,6 +317,10 @@ class DagCompiler:
 
         # Dump manifest
         manifest = Manifest(list(self.module_manifests.values()))
+
+        # Add the prism project to the Manifest
+        prism_project_py = self.load_prism_project_py(self.project_dir, "prism_project.py")
+        manifest.add_prism_project(prism_project_py)
         manifest.json_dump(self.compiled_dir)
 
         # Return dag

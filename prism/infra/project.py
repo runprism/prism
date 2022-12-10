@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 # Prism-specific imports
 import prism.exceptions
 import prism.logging
+from prism.mixins import project as project_mixins
 from prism.parsers import yml_parser
 from prism.profiles import profile
 
@@ -30,7 +31,7 @@ from prism.profiles import profile
 # Class definition #
 ####################
 
-class PrismProject:
+class PrismProject(project_mixins.PrismProjectMixin):
     """
     Class to represent configuration files (prism_project.py and profile.yml)
     """
@@ -77,29 +78,6 @@ class PrismProject:
         # Get adapters dict from profile
         self.profile.generate_adapters()
         self.adapters_object_dict = self.profile.get_adapters_obj_dict()
-
-    def load_prism_project_py(self,
-        project_dir: Path,
-        filename: str
-    ) -> str:
-        """
-        Load the prism_project.py file as a string
-
-        args:
-            project_dir: project directory
-            filename: name of prism_project.py file; default is "prism_project.py"
-            type: output type of python file; one of either "str" or "list"
-        returns:
-            prism_project_py: string representation of prism_project.py
-        """
-        os.chdir(project_dir)
-        prism_project_py_path = project_dir / filename
-
-        # Return file as string
-        with open(prism_project_py_path, 'r') as f:
-            prism_project_py = f.read()
-        f.close()
-        return prism_project_py
 
     def adjust_prism_py_with_config(self,
         config_dict: Dict[str, Any]
