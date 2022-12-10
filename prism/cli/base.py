@@ -18,9 +18,11 @@ from pathlib import Path
 from typing import List, Tuple, Union
 
 # Prism-specific imports
+from prism.event_managers import base as base_event_manager
 import prism.exceptions
 import prism.logging
 from prism.logging import fire_console_event, fire_empty_line_event
+from prism.mixins import base as base_mixins
 
 
 #####################
@@ -91,14 +93,18 @@ class TaskRunReturnResult:
     Return result for tasks
     """
 
-    def __init__(self, event_list: List[prism.logging.Event]):
+    def __init__(self,
+        event_list: List[prism.logging.Event],
+        has_error: bool = False
+    ):
         self.event_list = event_list
+        self.has_error = has_error
 
     def get_results(self):
         return ' | '.join([x.__str__() for x in self.event_list])
 
 
-class BaseTask:
+class BaseTask(base_mixins.BaseMixin):
     """
     Interface for defining common behavior of tasks
     """
@@ -162,6 +168,54 @@ class BaseTask:
 
     def run(self):
         """
-        Execute the task
+        Create the PrismProject object.
         """
-        print('Hello world!')
+        # ------------------------------------------------------------------------------
+        # Fire header events
+        event_list, self.project_dir = self.fire_header_events()
+        if self.project_dir is None:
+            return prism.cli.base.TaskRunReturnResult(event_list)
+        os.chdir(self.project_dir)
+        event_list = fire_empty_line_event(event_list)
+
+        # ------------------------------------------------------------------------------
+        # Define PrismProject
+
+        # Get user-specified variables. These will override any variables in
+        # `prism_project.py`.
+        user_context = self.args.vars
+        if user_context is None:
+            user_context = {}
+
+        project_event_manager = base_event_manager.BaseEventManager(
+            idx=None,
+            total=None,
+            name='parsing prism_project.py',
+            full_tb=self.args.full_tb,
+            func=self.create_project
+        )
+        project_event_manager_output = project_event_manager.manage_events_during_run(
+            event_list=event_list,
+            project_dir=self.project_dir,
+            context=user_context,
+            which=self.args.which,
+            filename="prism_project.py",
+            flag_compiled=True
+        )
+        self.prism_project = project_event_manager_output.outputs
+        prism_project_event_to_fire = project_event_manager_output.event_to_fire
+        event_list = project_event_manager_output.event_list
+        
+        # Log an error if one occurs
+        if self.prism_project == 0:
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(
+                prism_project_event_to_fire,
+                event_list,
+                log_level='error'
+            )
+            event_list = self.fire_tail_event(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
+
+        # Return
+        return prism.cli.base.TaskRunReturnResult(event_list, False)
