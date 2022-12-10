@@ -80,7 +80,7 @@ class PrismProject:
 
     def load_prism_project_py(self,
         project_dir: Path,
-        filename
+        filename: str
     ) -> str:
         """
         Load the prism_project.py file as a string
