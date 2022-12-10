@@ -310,7 +310,15 @@ class PrismProject(project_mixins.PrismProjectMixin):
             raise prism.exceptions.InvalidProjectPyException(
                 message='\n'.join(msg_list)
             )
-        if thread_count is None or thread_count < 1:
+        if thread_count is None:
+            fire_console_event(
+                prism.logging.ThreadsWarningEvent(),
+                [],
+                0.01,
+                'warn'
+            )
+            return 1
+        if thread_count < 1:
             return 1
         return thread_count
 

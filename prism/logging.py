@@ -524,6 +524,13 @@ class ProfileDirWarningEvent(Event):
         return f'{YELLOW}`PROFILES_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
 
 
+@dataclass
+class ThreadsWarningEvent(Event):
+
+    def message(self):
+        return f'{YELLOW}`THREADS` not found in prism_project.py; defaulting to 1{RESET}'  # noqa: E501
+
+
 def deprecated(deprecated_fn: str, updated_fn: str):
     """
     Decorator used to mark deprecated target function
