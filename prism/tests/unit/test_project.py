@@ -59,8 +59,7 @@ class TestPrismProject(unittest.TestCase):
         for filename in ALL_TEST_CASE_FILES:
             prism_project = project.PrismProject(
                 project_dir=PRISM_PROJECT_PY_TEST_CASES,
-                profiles_path=None,
-                env="local",
+                context={},
                 which="run",
                 filename=filename,
                 flag_compiled=False
@@ -74,8 +73,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
-            profiles_path=None,
-            env="local",
+            context={},
             which="run",
             filename=NON_NULL_PROFILE,
             flag_compiled=False
@@ -96,8 +94,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
-            profiles_path=None,
-            env="local",
+            context={},
             which="run",
             filename=NULL_PROFILE,
             flag_compiled=False
@@ -114,8 +111,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
-            profiles_path=None,
-            env="local",
+            context={},
             which="run",
             filename=NO_PROFILE,
             flag_compiled=False
@@ -132,8 +128,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
-            profiles_path=None,
-            env="local",
+            context={},
             which="run",
             filename=MULTIPLE_PROFILES,
             flag_compiled=False

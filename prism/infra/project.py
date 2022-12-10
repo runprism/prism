@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional
 
 # Prism-specific imports
 import prism.exceptions
+from prism.logging import fire_console_event
 import prism.logging
 from prism.mixins import project as project_mixins
 from prism.parsers import yml_parser
@@ -38,8 +39,7 @@ class PrismProject(project_mixins.PrismProjectMixin):
 
     def __init__(self,
         project_dir: Path,
-        profiles_path: Path,
-        env: str,
+        context: Dict[str, Any],
         which: str,
         filename: str ='prism_project.py',
         flag_compiled: bool = True
@@ -47,8 +47,9 @@ class PrismProject(project_mixins.PrismProjectMixin):
 
         # Set project directory and load prism_project.py
         self.project_dir = project_dir
-        self.profiles_path = profiles_path
-        self.env = env
+        self.context = context
+
+        # Other attributes
         self.which = which
         self.filename = filename
         self.flag_compiled = flag_compiled
@@ -77,17 +78,28 @@ class PrismProject(project_mixins.PrismProjectMixin):
             f.close()
             self.prism_project_py_str = self.manifest["prism_project"]
 
-        # Get profile name
-        self.profile_name = self.get_profile_name(self.prism_project_py_str)
+        # Get profile name and profile path
+        self.profile_name = self.context.get(
+            'PROFILE',
+            self.get_profile_name(self.prism_project_py_str)
+        )
+        self.profiles_dir = self.context.get(
+            'PROFILES_DIR',
+            self.get_profiles_dir(self.prism_project_py_str)
+        )
+        self.profiles_path = self.profiles_dir / 'profile.yml'
 
         # Set profiles path, load profile.yml, get named profile
         self.profile_yml = self.load_profile_yml(self.profiles_path)
 
         # Create Profile object
-        self.profile = profile.Profile(self.profile_yml, self.profile_name, self.env)
+        self.profile = profile.Profile(self.profile_yml, self.profile_name)
 
         # Thread count
-        self.thread_count = self.get_thread_count(self.prism_project_py_str)
+        self.thread_count = int(self.context.get(
+            'THREADS',
+            self.get_thread_count(self.prism_project_py_str)
+        ))
 
         # Get adapters dict from profile
         self.profile.generate_adapters()
@@ -232,6 +244,30 @@ class PrismProject(project_mixins.PrismProjectMixin):
         if not isinstance(profile_name, str):
             return ""
         return profile_name
+    
+    def get_profiles_dir(self,
+        prism_project_py: str
+    ) -> Path:
+        """
+        Get profile path from prism_project.py file
+
+        args:
+            prism_project_py: prism_project.py file represented as string
+        returns:
+            profile path
+        """
+        profiles_dir = self.safe_eval_var_from_file(prism_project_py, 'PROFILES_DIR')
+        if profiles_dir is None:
+            fire_console_event(
+                prism.logging.ProfileDirWarningEvent(),
+                [],
+                0.01,
+                'warn'
+            )
+            return self.project_dir
+        if not isinstance(profiles_dir, str):
+            return self.project_dir
+        return Path(profiles_dir)
 
     def get_sys_path_config(self,
         prism_project_py: str
@@ -309,7 +345,8 @@ class PrismProject(project_mixins.PrismProjectMixin):
         Execute project
         """
         globals_dict['__file__'] = str(self.project_dir / 'prism_project.py')
-        if self.prism_project_py_str_adjusted is not None:
-            exec(self.prism_project_py_str_adjusted, globals_dict)
-        else:
-            exec(self.prism_project_py_str, globals_dict)
+        exec(self.prism_project_py_str, globals_dict)
+
+        # Override `prism_project.py` with context vars
+        for k, v in self.context.items():
+            globals_dict[k] = v
