@@ -33,8 +33,7 @@ from prism.templates.minimal_project import MINIMAL_PROJECT_TEMPLATE_DIR
 # Constants #
 #############
 
-TASK_COMPLETE_MSG = """
-      ______
+TASK_COMPLETE_MSG = """      ______
    ____  __ \_____(_)________ _______
  _____  /_/ / ___/ / ___/ __ `__ \ ____
 ____ / ____/ /  / (__  ) / / / / / _____

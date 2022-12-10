@@ -1,5 +1,5 @@
 """
-@name: 001_init
+@name: 006_simple_project_with_profile
 @author: ...
 @version: ...
 @description: ...
@@ -16,9 +16,26 @@ Table of Contents
 # Imports #
 ###########
 
-import os
-import sys
-import pandas as pd
+from pathlib import Path
+
+
+###################
+# sys.path config #
+###################
+
+SYS_PATH_CONF = [
+    Path(__file__).parent,
+    # Add more paths here!
+]
+
+
+################
+# Thread count #
+################
+
+# Number of workers to use to execute tasks concurrently. If set to 1,
+# then 1 task is run at a time.
+THREADS = 1
 
 
 ################
@@ -44,6 +61,3 @@ VAR_3 = '2015-01-01'
 WKDIR = Path(__file__).parent
 DATA = WKDIR / 'data'
 OUTPUT = WKDIR / 'output'
-
-
-# EOF

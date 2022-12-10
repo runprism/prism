@@ -1,5 +1,5 @@
 """
-@name: 001_init
+@name: 013_hooks_sql_spark
 @author: ...
 @version: ...
 @description: ...
@@ -17,6 +17,16 @@ Table of Contents
 ###########
 
 from pathlib import Path
+
+
+###################
+# sys.path config #
+###################
+
+SYS_PATH_CONF = [
+    Path(__file__).parent,
+    # Add more paths here!
+]
 
 
 ################
@@ -51,6 +61,3 @@ VAR_3 = '2015-01-01'
 WKDIR = Path(__file__).parent
 DATA = WKDIR / 'data'
 OUTPUT = WKDIR / 'output'
-
-
-# EOF

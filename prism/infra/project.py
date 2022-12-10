@@ -252,8 +252,6 @@ class PrismProject(project_mixins.PrismProjectMixin):
             profile_name
         """
         thread_count = self.safe_eval_var_from_file(prism_project_py, 'THREADS')
-        if thread_count is None or thread_count < 1:
-            return 1
         if not isinstance(thread_count, int):
             msg_list = [
                 f'invalid value `THREADS = {thread_count}`',
@@ -262,6 +260,8 @@ class PrismProject(project_mixins.PrismProjectMixin):
             raise prism.exceptions.InvalidProjectPyException(
                 message='\n'.join(msg_list)
             )
+        if thread_count is None or thread_count < 1:
+            return 1
         return thread_count
 
     def load_profile_yml(self,
