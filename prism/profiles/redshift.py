@@ -136,4 +136,4 @@ class Redshift(Adapter):
             cursor.close()
             return df
         else:
-            cursor.close
+            cursor.close()
