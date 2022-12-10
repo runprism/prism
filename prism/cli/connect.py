@@ -24,6 +24,7 @@ import prism.constants
 import prism.logging
 from prism.event_managers.base import BaseEventManager
 from prism.logging import Event, fire_console_event, fire_empty_line_event
+from prism.infra import project
 
 
 ####################
@@ -43,7 +44,9 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # Keep track of events
         event_list: List[Event] = []
 
+        # ------------------------------------------------------------------------------
         # Fire header events
+
         event_list, project_dir = self.fire_header_events(event_list)
         if project_dir is None:
             return prism.cli.base.TaskRunReturnResult(event_list)
@@ -53,7 +56,9 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
 
         event_list = fire_empty_line_event(event_list)
 
+        # ------------------------------------------------------------------------------
         # Define profile type
+
         adapter_type = self.args.type
         if adapter_type is None:
             e = prism.logging.InvalidAdapterType(prism.constants.VALID_ADAPTERS)
@@ -76,12 +81,26 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
             log_level='info'
         )
 
-        # Create the profiles directory and profiles.yml file
-        if self.args.profiles_dir is None:
-            profiles_dir = project_dir
-        else:
-            profiles_dir = self.args.profiles_dir
+        # ------------------------------------------------------------------------------
+        # Get profiles dir
+
+        # Get user-specified variables. These will override any variables in
+        # `prism_project.py`.
+        context = self.args.vars
+        if context is None:
+            context = {}
+        prism_project = project.PrismProject(
+            project_dir,
+            context,
+            which="connect",
+            filename="prism_project.py",
+            flag_compiled=False
+        )
+        profiles_dir = prism_project.get_profiles_dir(prism_project.prism_project_py_str)
         profiles_filepath = Path(profiles_dir) / 'profile.yml'
+
+        # ------------------------------------------------------------------------------
+        # Create connection
 
         # Create a event manager for the connection setup
         connection_event_manager = BaseEventManager(
