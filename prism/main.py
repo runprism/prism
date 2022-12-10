@@ -7,18 +7,39 @@ Table of Contents
 - Main
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 import argparse
 import prism.constants
 from prism.cli import connect, init, run, compile, spark_submit, graph
 
 
-#######################
-## Functions / utils ##
-#######################
+##############
+# Arg parser #
+##############
+
+# Key-value class
+class KeyValue(argparse.Action):
+    """
+    Allow users to specify key-value pairs in their arguments. These will overwrite any
+    variables in `prism_project.py`
+    """
+
+    def __call__(self,
+        parser,
+        namespace,
+        values,
+        option_string = None
+    ):
+        setattr(namespace, self.dest, dict())
+        
+        # Iterate through values, split each into k and value and assign to dictionary.
+        for value in values:
+            key, value = value.split('=')
+            getattr(namespace, self.dest)[key] = value
+
 
 def build_common_arguments_parser() -> argparse.ArgumentParser:
     """
@@ -27,17 +48,10 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
     args:
         None
     returns:
-        common_arguments_parser: instantiated ArgumentParser class with arguments for base subparser
+        common_arguments_parser: instantiated ArgumentParser class with arguments for
+        base subparser
     """
     common_arguments_parser = argparse.ArgumentParser(add_help=False)
-    common_arguments_parser.add_argument(
-        '--profiles-dir',
-        required=False,
-        type=str,
-        help="""
-        Path to the profiles directory to use for the project. Default is working project directory.
-        """
-    )
 
     common_arguments_parser.add_argument(
         '--full-tb',
@@ -190,7 +204,8 @@ def build_run_subparser(sub, common_arguments_parser):
         type=str,
         nargs='+',
         help="""
-        Path to script(s) that you want to run; if not specified, all modules in pipeline are run
+        Path to script(s) that you want to run; if not specified, all modules in
+        pipeline are run
         """
     )
 
@@ -201,6 +216,17 @@ def build_run_subparser(sub, common_arguments_parser):
         action='store_true',
         help="""
         Run all modules upstream of explicit run set
+        """
+    )
+
+    # Key-value variables
+    run_sub.add_argument(
+        '--vars',
+        required=False,
+        action=KeyValue,
+        help="""
+        Prism variables as key-value pairs `key=value`. These overwrite any variable
+        definitions in `prism_project.py`. All values are read as strings.
         """
     )
 
