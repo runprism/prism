@@ -61,8 +61,7 @@ class TestPrismProject(unittest.TestCase):
                 project_dir=PRISM_PROJECT_PY_TEST_CASES,
                 context={},
                 which="run",
-                filename=filename,
-                flag_compiled=False
+                filename=filename
             )
         
 
@@ -75,8 +74,7 @@ class TestPrismProject(unittest.TestCase):
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
             context={},
             which="run",
-            filename=NON_NULL_PROFILE,
-            flag_compiled=False
+            filename=NON_NULL_PROFILE
         )
         prism_project_py_str = prism_project.prism_project_py_str
         profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
@@ -96,8 +94,7 @@ class TestPrismProject(unittest.TestCase):
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
             context={},
             which="run",
-            filename=NULL_PROFILE,
-            flag_compiled=False
+            filename=NULL_PROFILE
         )
         prism_project_py_str = prism_project.prism_project_py_str
         profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
@@ -113,8 +110,7 @@ class TestPrismProject(unittest.TestCase):
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
             context={},
             which="run",
-            filename=NO_PROFILE,
-            flag_compiled=False
+            filename=NO_PROFILE
         )
         prism_project_py_str = prism_project.prism_project_py_str
         profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
@@ -130,8 +126,7 @@ class TestPrismProject(unittest.TestCase):
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
             context={},
             which="run",
-            filename=MULTIPLE_PROFILES,
-            flag_compiled=False
+            filename=MULTIPLE_PROFILES
         )
         prism_project_py_str = prism_project.prism_project_py_str
         with self.assertRaises(prism.exceptions.InvalidProjectPyException) as cm:
