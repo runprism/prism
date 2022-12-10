@@ -135,7 +135,7 @@ def target_iterator(*, type, loc, **kwargs):
 
         def wrapper(self,
             task_manager: prism.infra.task_manager.PrismTaskManager,
-            hooks: prism.infra.hooks.PrismHook
+            hooks: prism.infra.hooks.PrismHooks
         ):
 
             # This will only ever be called inside a PrismTask
