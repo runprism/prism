@@ -32,7 +32,8 @@ VALID_ADAPTERS = [
     "dbt",
     "bigquery",
     "redshift",
-    "postgres"
+    "postgres",
+    "trino",
 ]
 
 # Context
