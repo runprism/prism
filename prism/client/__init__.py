@@ -151,20 +151,21 @@ class PrismDAG(
         modules: Optional[List[str]] = None,
         all_upstream: bool = True,
         full_tb: bool = True,
-        config_dict: Optional[Dict[str, Any]] = None
+        context: Optional[Dict[str, Any]] = None
     ):
         """
         Run the Prism project
         """
 
         # Get compiled DAG
-        profiles_path = self.profiles_dir / 'profile.yml'
         compiled_dag = self.compile(modules)
 
         # Create Project, DAGExecutor, and Pipeline objects
+        if context is None:
+            context = {}
         prism_project = self.create_project(
             self.project_dir,
-            profiles_path,
+            context,
             "local",
             "run"
         )
@@ -175,10 +176,6 @@ class PrismDAG(
         pipeline = self.create_pipeline(
             prism_project, dag_executor, self.globals_namespace
         )
-
-        # If config dictionary is specified, then update the prism_project globals
-        if config_dict is not None:
-            prism_project.adjust_prism_py_with_config(config_dict)
 
         # Create args and exec
         output = pipeline.exec(full_tb)
@@ -260,9 +257,10 @@ class PrismDAG(
                 # We need to update sys.path to include all paths in SYS_PATH_CONF,
                 # since some target locations may depend on vars stored in modules
                 # imported from directories contained therein.
+                context = kwargs.get("context", {})
                 prism_project = self.create_project(
                     project_dir=self.project_dir,
-                    profiles_path=self.profiles_dir / 'profile.yml',
+                    context=context,
                     which="run",
                     filename="prism_project.py",
                     flag_compiled=False
