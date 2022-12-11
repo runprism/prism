@@ -1,4 +1,4 @@
-name: mypy
+name: mypy and flake8
 
 on:
   - push
