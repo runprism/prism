@@ -10,20 +10,15 @@ import prism.decorators
 # Prism project imports
 import prism_project
 
-# Other imports
-import time
-import pandas as pd
-import pyspark.sql.functions as F
 
+####################
+# Class definition #
+####################
 
-######################
-## Class definition ##
-######################
-
-class BadAdapterTask(prism.task.PrismTask):
+class PostgresTask(prism.task.PrismTask):
     
     ## Run
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'bad_adapter.csv', index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'sample_postgres_data.csv', index=False)
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -37,21 +32,6 @@ class BadAdapterTask(prism.task.PrismTask):
         returns:
             task output
         """
-        
-        sql = f"""
-        SELECT 
-            * 
-        FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER" 
-        WHERE 
-            C_MKTSEGMENT = 'MACHINERY' 
-        LIMIT 50
-        """
-        df = hooks.sql(adapter_name="snowflake_profile_abcde", query=sql)
+        sql = "SELECT 1 AS test_col"
+        df = hooks.sql(adapter_name="postgres_base", query=sql)
         return df
-
-
-
-
-
-
-# EOF
