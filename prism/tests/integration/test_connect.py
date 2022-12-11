@@ -44,13 +44,16 @@ TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 header_events = [
     'SeparatorEvent',
     'TaskRunEvent',
-    'CurrentProjectDirEvent'
+    'CurrentProjectDirEvent',
+    'EmptyLineEvent',
+    'ExecutionEvent - parsing prism_project.py - RUN',
+    'ExecutionEvent - parsing prism_project.py - DONE',
+    'EmptyLineEvent'
 ]
 
 # The events associated with the `connect` task not depend on the value of `--type`. All successful runs should result
 # in the same events being fired.
 connect_task_successful_expected_events = header_events + [
-    'EmptyLineEvent',
     'SettingUpProfileEvent',
     'EmptyLineEvent',
     'TaskSuccessfulEndEvent',
@@ -59,7 +62,6 @@ connect_task_successful_expected_events = header_events + [
 
 # Events associated with invalid profile type
 connect_task_invalid_expected_events = header_events + [
-    'EmptyLineEvent',
     'InvalidAdapterType',
     'SeparatorEvent'
 ]
@@ -248,6 +250,7 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         """
         `prism connect` using Snowflake + PySpark profile
         """
+        self.maxDiff = None
 
         # Set working directory
         wkdir = Path(TEST_PROJECTS) / '006_simple_project_with_profile'
@@ -256,8 +259,7 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         # Remove the .compiled directory, if it exists
         self._remove_profile_yml(wkdir)
 
-        # Execute command for Snowflake
-        # -----------------------------
+        # Add Snowflake profile
         args = ['connect', '--type', 'snowflake']
         connect_run = self._run_prism(args)
         self._test_profile_successfully_created(wkdir, connect_run)
@@ -267,13 +269,11 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         self.assertEqual(expected_snowflake_dict, yml_dict)
 
 
-        # Add EMF profile
-        # ---------------
+        # Add Snowflake profile again
         args = ['connect', '--type', 'snowflake']
         connect_run = self._run_prism(args)
         connect_run_results = connect_run.get_results()
         expected_results = ' | '.join(header_events + [
-            'EmptyLineEvent',
             'SettingUpProfileEvent',
             'EmptyLineEvent',
             'PrismExceptionErrorEvent',
@@ -289,6 +289,7 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         """
         `prism connect` using an invalid profile type
         """
+        self.maxDiff = None
 
         # Set working directory
         wkdir = Path(TEST_PROJECTS) / '006_simple_project_with_profile'

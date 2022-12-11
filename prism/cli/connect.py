@@ -11,11 +11,6 @@ Table of Contents
 # Imports #
 ###########
 
-# Standard library imports
-import os
-from pathlib import Path
-from typing import List
-
 # Prism-specific imports
 import prism.cli.base
 import prism.mixins.connect
@@ -23,8 +18,7 @@ import prism.exceptions
 import prism.constants
 import prism.logging
 from prism.event_managers.base import BaseEventManager
-from prism.logging import Event, fire_console_event, fire_empty_line_event
-from prism.infra import project
+from prism.logging import fire_console_event, fire_empty_line_event
 
 
 ####################
@@ -46,7 +40,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         
         task_return_result = super().run()
         if task_return_result.has_error:
-            return
+            return task_return_result
         event_list = task_return_result.event_list
         event_list = fire_empty_line_event(event_list)
 

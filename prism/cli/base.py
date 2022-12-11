@@ -176,9 +176,10 @@ class BaseTask(base_mixins.BaseMixin):
         """
         # ------------------------------------------------------------------------------
         # Fire header events
+
         event_list, self.project_dir = self.fire_header_events()
         if self.project_dir is None:
-            return prism.cli.base.TaskRunReturnResult(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
         os.chdir(self.project_dir)
         event_list = fire_empty_line_event(event_list)
 

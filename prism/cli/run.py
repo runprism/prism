@@ -55,7 +55,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         
         task_return_result = super(prism.cli.compile.CompileTask, self).run()
         if task_return_result.has_error:
-            return
+            return task_return_result
         event_list = task_return_result.event_list
 
         # ------------------------------------------------------------------------------
