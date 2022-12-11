@@ -31,10 +31,10 @@ class KeyValue(argparse.Action):
         parser,
         namespace,
         values,
-        option_string = None
+        option_string=None
     ):
         setattr(namespace, self.dest, dict())
-        
+
         # Iterate through values, split each into k and value and assign to dictionary.
         for value in values:
             key, value = value.split('=')
@@ -91,13 +91,13 @@ def build_init_subparser(sub):
 
     args:
         sub: special-action object (see argparse docs) to add subparsers to
-        common_arguments_parser: parser with common arguments to be included in subparser
+        common_arguments_parser: parser with common arguments
     returns:
         None
     """
     init_sub = sub.add_parser(
         'init',
-        help = """
+        help="""
         Initialize a pipeline
         """
     )
@@ -141,19 +141,19 @@ def build_connect_subparser(sub, common_arguments_parser):
 
     args:
         sub: special-action object (see argparse docs) to add subparsers to
-        common_arguments_parser: parser with common arguments to be included in subparser
+        common_arguments_parser: parser with common arguments
     returns:
         None
     """
     connect_sub = sub.add_parser(
         'connect',
         parents=[common_arguments_parser],
-        help = """
+        help="""
         Create a connection to a data warehouse or data processing system.
         At this time, prism supports connecting to Snowflake, PySpark, and Dbt.
         """
     )
-    
+
     # Add argument for connection type
     valid_connections_str = ','.join([f'`{k}`' for k in prism.constants.VALID_ADAPTERS])
     connect_sub.add_argument(
@@ -175,14 +175,14 @@ def build_compile_subparser(sub, common_arguments_parser):
 
     args:
         sub: special-action object (see argparse docs) to add subparsers to
-        common_arguments_parser: parser with common arguments to be included in subparser
+        common_arguments_parser: parser with common arguments
     returns:
         None
     """
     compile_sub = sub.add_parser(
         'compile',
         parents=[common_arguments_parser],
-        help = """
+        help="""
         Parse pipeline inputs and outputs and create a DAG
         """
     )
@@ -197,14 +197,14 @@ def build_run_subparser(sub, common_arguments_parser):
 
     args:
         sub: special-action object (see argparse docs) to add subparsers to
-        common_arguments_parser: parser with common arguments to be included in subparser
+        common_arguments_parser: parser with common arguments
     returns:
         None
     """
     run_sub = sub.add_parser(
         'run',
         parents=[common_arguments_parser],
-        help = """
+        help="""
         Run a pipeline
         """
     )
@@ -240,14 +240,14 @@ def build_spark_submit_subparser(sub, common_arguments_parser):
 
     args:
         sub: special-action object (see argparse docs) to add subparsers to
-        common_arguments_parser: parser with common arguments to be included in subparser
+        common_arguments_parser: parser with common arguments
     returns:
         None
     """
     spark_submit_sub = sub.add_parser(
         'spark-submit',
         parents=[common_arguments_parser],
-        help = """
+        help="""
         Run a pipeline as a PySpark job
         """
     )
@@ -258,7 +258,8 @@ def build_spark_submit_subparser(sub, common_arguments_parser):
         type=str,
         nargs='+',
         help="""
-        Path to script(s) that you want to run; if not specified, all modules in pipeline are run
+        Path to script(s) that you want to run; if not specified, all modules in
+        pipeline are run
         """
     )
 
@@ -273,7 +274,9 @@ def build_spark_submit_subparser(sub, common_arguments_parser):
     )
 
     # Set default class argument to RunTask()
-    spark_submit_sub.set_defaults(cls=spark_submit.SparkSubmitTask, which='spark-submit')
+    spark_submit_sub.set_defaults(
+        cls=spark_submit.SparkSubmitTask, which='spark-submit'
+    )
 
 
 def build_graph_subparser(sub, common_arguments_parser):
@@ -282,14 +285,14 @@ def build_graph_subparser(sub, common_arguments_parser):
 
     args:
         sub: special-action object (see argparse docs) to add subparsers to
-        common_arguments_parser: parser with common arguments to be included in subparser
+        common_arguments_parser: parser with common arguments
     returns:
         None
     """
     graph_sub = sub.add_parser(
         'graph',
         parents=[common_arguments_parser],
-        help = """
+        help="""
         Generate the DAG UI vizualizer
         """
     )
@@ -309,7 +312,8 @@ def build_graph_subparser(sub, common_arguments_parser):
         '--no-browser',
         action='store_true',
         help="""
-        Overwrite default behavior and do not open a tab in the default web browser with the docs UI
+        Overwrite default behavior and do not open a tab in the default web browser with
+        the docs UI
         """
     )
 
@@ -340,9 +344,9 @@ def build_full_arg_parser() -> argparse.ArgumentParser:
     return base_parser
 
 
-##########
-## Main ##
-##########
+########
+# Main #
+########
 
 def main(argv=None, bool_return: bool = False):
     """
@@ -359,6 +363,3 @@ def main(argv=None, bool_return: bool = False):
     # Return result
     if bool_return:
         return result
-
-
-# EOF
