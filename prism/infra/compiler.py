@@ -325,7 +325,10 @@ class DagCompiler:
             prism_project_py_str = self.project.prism_project_py_str
         else:
             prism_project = PrismProject(
-                self.project_dir, {}, "compile", "prism_project.py"
+                project_dir=self.project_dir,
+                user_context={},
+                which="compile",
+                filename="prism_project.py"
             )
             prism_project_py_str = prism_project.prism_project_py_str
         manifest.add_prism_project(prism_project_py_str)

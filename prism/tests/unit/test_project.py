@@ -59,7 +59,7 @@ class TestPrismProject(unittest.TestCase):
         for filename in ALL_TEST_CASE_FILES:
             prism_project = project.PrismProject(
                 project_dir=PRISM_PROJECT_PY_TEST_CASES,
-                context={},
+                user_context={},
                 which="run",
                 filename=filename
             )
@@ -72,7 +72,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
-            context={},
+            user_context={},
             which="run",
             filename=NON_NULL_PROFILE
         )
@@ -92,7 +92,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
-            context={},
+            user_context={},
             which="run",
             filename=NULL_PROFILE
         )
@@ -108,7 +108,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
-            context={},
+            user_context={},
             which="run",
             filename=NO_PROFILE
         )
@@ -124,7 +124,7 @@ class TestPrismProject(unittest.TestCase):
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
-            context={},
+            user_context={},
             which="run",
             filename=MULTIPLE_PROFILES
         )

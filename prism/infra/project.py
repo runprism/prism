@@ -38,12 +38,12 @@ class PrismProject:
 
     def __init__(self,
         project_dir: Path,
-        context: Dict[str, Any],
+        user_context: Dict[str, Any],
         which: str,
         filename: str ='prism_project.py'
     ):
         self.project_dir = project_dir
-        self.context = context
+        self.user_context = user_context
         self.which = which
         self.filename = filename
 
@@ -87,7 +87,7 @@ class PrismProject:
         exec(self.prism_project_py_str, run_context)
 
         # Override `prism_project.py` with context vars
-        for k, v in self.context.items():
+        for k, v in self.user_context.items():
             run_context[k] = v
 
     def setup(self):

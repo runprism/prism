@@ -31,7 +31,7 @@ class BaseMixin:
 
     def create_project(self,
         project_dir: Path,
-        context: Dict[str, Any],
+        user_context: Dict[str, Any],
         which: str,
         filename: str ='prism_project.py'
     ) -> prism_project.PrismProject:
@@ -46,7 +46,10 @@ class BaseMixin:
             PrismPipeline object
         """
         project = prism_project.PrismProject(
-            project_dir, context, which, filename
+            project_dir=project_dir,
+            user_context=user_context,
+            which=which,
+            filename=filename
         )
         project.setup()
         return project

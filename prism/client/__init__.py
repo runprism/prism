@@ -26,6 +26,8 @@ import prism.exceptions
 from prism.infra import executor as prism_executor
 from prism.infra import module as prism_module
 from prism.infra import compiler as prism_compiler
+from prism.infra.project import PrismProject
+import prism.mixins.base
 import prism.mixins.compile
 import prism.mixins.connect
 import prism.mixins.run
@@ -44,6 +46,7 @@ class LoggingArgs:
 
 
 class PrismDAG(
+    prism.mixins.base.BaseMixin,
     prism.mixins.compile.CompileMixin,
     prism.mixins.connect.ConnectMixin,
     prism.mixins.run.RunMixin,
@@ -55,12 +58,12 @@ class PrismDAG(
 
     def __init__(self,
         project_dir: Path,
-        profiles_dir: Optional[Path] = None,
         log_level: str = 'warn'
     ):
         self.project_dir = project_dir
-        self.profiles_dir = project_dir if profiles_dir is None else profiles_dir
         self.log_level = log_level
+
+        # Set the project to None.
 
         # Check if project is valid
         self._is_valid_project(self.project_dir)
@@ -71,8 +74,8 @@ class PrismDAG(
         # All modules in project
         self.all_modules = self.get_modules(self.modules_dir)
 
-        # Define project namespace
-        self.globals_namespace = prism.constants.CONTEXT.copy()
+        # Define run context
+        self.run_context = prism.constants.CONTEXT.copy()
 
         # Set up default logger
         prism.logging.set_up_logger(LoggingArgs(self.log_level))
@@ -113,9 +116,13 @@ class PrismDAG(
         Connect task to an adapter
         """
         # Parse arguments
-        if connection_type is None or not isinstance(connection_type, str):
+        if connection_type is None:
             raise prism.exceptions.RuntimeException(
                 message='connection type cannot be None'
+            )
+        if not isinstance(connection_type, str):
+            raise prism.exceptions.RuntimeException(
+                message='connection type must be a string'
             )
         if connection_type not in prism.constants.VALID_ADAPTERS:
             msg_list = [
@@ -124,8 +131,15 @@ class PrismDAG(
             ]
             raise prism.exceptions.RuntimeException(message='\n'.join(msg_list))
 
-        # Define profiles filepath and run
-        profiles_filepath = self.profiles_dir / 'profile.yml'
+        # Get profiles filepath
+        prism_project = PrismProject(
+            project_dir=self.project_dir,
+            user_context={},
+            which="connect",
+            filename="prism_project.py"
+        )
+        profiles_dir = prism_project.project_dir
+        profiles_filepath = profiles_dir / 'profile.yml'
         self.create_connection(connection_type, profiles_filepath)
 
     def compile(self,
@@ -151,30 +165,32 @@ class PrismDAG(
         modules: Optional[List[str]] = None,
         all_upstream: bool = True,
         full_tb: bool = True,
-        context: Optional[Dict[str, Any]] = None
+        user_context: Optional[Dict[str, Any]] = None
     ):
         """
         Run the Prism project
         """
 
-        # Get compiled DAG
-        compiled_dag = self.compile(modules)
-
-        # Create Project, DAGExecutor, and Pipeline objects
-        if context is None:
-            context = {}
+        # Create PrismProject
+        if user_context is None:
+            user_context = {}
         prism_project = self.create_project(
-            self.project_dir,
-            context,
-            "local",
-            "run"
+            project_dir=self.project_dir,
+            user_context=user_context,
+            which="run",
+            filename="prism_project.py",
         )
+
+        # Compile the DAG
+        compiled_dag = self.compile(modules)
+        
+        # Create DAG executor and Pipeline objects
         threads = prism_project.thread_count
         dag_executor = prism_executor.DagExecutor(
             self.project_dir, compiled_dag, all_upstream, threads
         )
         pipeline = self.create_pipeline(
-            prism_project, dag_executor, self.globals_namespace
+            prism_project, dag_executor, self.run_context
         )
 
         # Create args and exec
@@ -201,7 +217,7 @@ class PrismDAG(
 
         # Name of variable containing the PrismTask for `module_path`
         task_var_name = prism_module.get_task_var_name(module_path)
-        task_cls = self.globals_namespace.get(task_var_name)
+        task_cls = self.run_context.get(task_var_name)
 
         # If class is None, then raise an error. Otherwise, return the class
         if task_cls is None:
@@ -251,36 +267,31 @@ class PrismDAG(
                 prism_task_cls_name = prism_task_cls.name
                 task_var_name = prism_module.get_task_var_name(module_path)
 
-                # Not sure how to instantiate the class from ast.ClassDef, so use exec.
-                temp_namespace = {}
-
                 # We need to update sys.path to include all paths in SYS_PATH_CONF,
                 # since some target locations may depend on vars stored in modules
                 # imported from directories contained therein.
-                context = kwargs.get("context", {})
+                user_context = kwargs.get("user_context", {})
                 prism_project = self.create_project(
                     project_dir=self.project_dir,
-                    context=context,
+                    user_context=user_context,
                     which="run",
-                    filename="prism_project.py",
-                    flag_compiled=False
+                    filename="prism_project.py"
                 )
-                prism_project.exec(temp_namespace)
-                try:
-                    sys_path_config = temp_namespace['SYS_PATH_CONF']
-                except KeyError:
-                    sys_path_config = [self.project_dir]
+                self.add_paths_to_sys_path(
+                    prism_project.sys_path_config,
+                    prism_project.run_context
+                )
 
-                self.add_paths_to_sys_path(sys_path_config, temp_namespace)
-                code_str = [
-                    parsed_ast_module.module_str,
-                    f'{task_var_name} = {prism_task_cls_name}(False)',    # noqa: E501 do NOT run the task
-                    f'{task_var_name}.set_hooks(None)',                   # noqa: E501 no need for an actual task_manager/hooks, since we're only accessing the target
-                    f'{task_var_name}.set_task_manager(None)',            # noqa: E501 no need for an actual task_manager/hooks, since we're only accessing the target
-                    f'{task_var_name}.exec()'
-                ]
-                exec('\n'.join(code_str), temp_namespace)
-                output = temp_namespace[task_var_name].get_output()     # noqa: E501; this should return an error if no target is specified
+                # Execute the class definition code
+                exec(parsed_ast_module.module_str, prism_project.run_context)
+                task = prism_project.run_context[prism_task_cls_name](False)  # noqa: E501 do NOT run the task
+                
+                # No need for an actual task_manager/hooks, since we're only accessing
+                # the target
+                task.set_hooks(None)
+                task.set_task_manager(None)
+                task.exec()
+                output = task.get_output()
                 return output
 
     def get_pipeline_output(self, bool_run: bool = False) -> Any:

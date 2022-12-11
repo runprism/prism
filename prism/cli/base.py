@@ -202,7 +202,7 @@ class BaseTask(base_mixins.BaseMixin):
         project_event_manager_output = project_event_manager.manage_events_during_run(
             event_list=event_list,
             project_dir=self.project_dir,
-            context=user_context,
+            user_context=user_context,
             which=self.args.which,
             filename="prism_project.py"
         )
