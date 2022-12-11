@@ -38,7 +38,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # ------------------------------------------------------------------------------
         # Fire header events, get prism project
         
-        task_return_result = super().run()
+        task_return_result: prism.cli.base.TaskRunReturnResult = super().run()
         if task_return_result.has_error:
             return task_return_result
         event_list = task_return_result.event_list

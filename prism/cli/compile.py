@@ -15,7 +15,7 @@ Table of Contents
 import os
 import argparse
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 
 # Prism-specific imports
 import prism.cli.base
@@ -120,7 +120,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         args: argparse.Namespace,
         project_dir: Path,
         event_list: List[prism.logging.Event],
-        project: PrismProject,
+        project: Optional[PrismProject] = None,
         fire_exec_events: bool = True
     ) -> Union[prism.cli.base.TaskRunReturnResult, EventManagerOutput]:
         """

@@ -53,8 +53,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # ------------------------------------------------------------------------------
         # Fire header events, get prism project
         
-        task_return_result = super(prism.cli.compile.CompileTask, self).run()
-        if task_return_result.has_error:
+        task_return_result: prism.cli.base.TaskRunReturnResult = super(prism.cli.compile.CompileTask, self).run()  # noqa: E501
+        if task_return_result.has_error or self.project_dir is None:
             return task_return_result
         event_list = task_return_result.event_list
 

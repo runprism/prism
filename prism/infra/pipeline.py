@@ -48,7 +48,7 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         # Identify default modules loaded in sys.modules and paths loaded in sys.paths.
         # This will allow us to add/remove modules programatically without messing up
         # the base configuration.
-        temp_context = {}
+        temp_context: Dict[Any, Any] = {}
         exec('import sys', temp_context)
         self.base_sys_path = [p for p in temp_context['sys'].path]
         self.base_sys_modules = {

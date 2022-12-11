@@ -101,22 +101,9 @@ class PrismProject:
 
         # ------------------------------------------------------------------------------
         # Compiled sys.path config
-        try:
-            self.sys_path_config = self.run_context['SYS_PATH_CONF']
-
-            # If project directory not in sys_path_config, throw a warning
-            if str(self.project_dir) not in [str(p) for p in self.sys_path_config]:  # noqa: E501
-                prism.logging.fire_console_event(
-                    prism.logging.ProjectDirNotInSysPath(), [], log_level='warn'
-                )
-
-        # Fire a warning, even if the user specified `quietly`
-        except KeyError:
-            prism.logging.fire_console_event(
-                prism.logging.SysPathConfigWarningEvent(), [], log_level='warn'
-            )
-            self.sys_path_config = [self.project_dir]
-
+        
+        self.sys_path_config = self.get_sys_path_config(self.run_context)
+        
         # ------------------------------------------------------------------------------
         # Thread count
 
@@ -292,7 +279,7 @@ class PrismProject:
         Get profile name from the run context
 
         args:
-            run context
+            run_context: dictionary with run context variables
         returns:
             profile_name
         """
@@ -310,7 +297,7 @@ class PrismProject:
         Get profile path from current run context
 
         args:
-            prism_project_py: prism_project.py file represented as string
+            run_context: dictionary with run context variables
         returns:
             profile path
         """
@@ -322,19 +309,17 @@ class PrismProject:
         return Path(profiles_dir)
 
     def get_sys_path_config(self,
-        prism_project_py: str
-    ) -> List[str]:
+        run_context: Dict[Any, Any]
+    ) -> List[Path]:
         """
-        Get sys.path configuration from prism_project.py file
+        Get sys.path configuration from the run context
 
         args:
-            prism_project_py: prism_project.py file represented as string
+            run_context: dictionary with run context variables
         returns:
             sys_path configuration; this should be a list
         """
-        sys_path_config = self.safe_eval_var_from_file(
-            prism_project_py, 'SYS_PATH_CONF'
-        )
+        sys_path_config = run_context.get('SYS_PATH_CONF', None)
         if sys_path_config is None:
             fire_console_event(
                 prism.logging.SysPathConfigWarningEvent(),
@@ -342,9 +327,20 @@ class PrismProject:
                 0.01,
                 'warn'
             )
+            return [self.project_dir]
         if not isinstance(sys_path_config, list):
-            return []
-        return sys_path_config
+            raise prism.exceptions.RuntimeException(
+                    message='`SYS_PATH_CONF` must be a list'
+                )
+        
+        # If the project directory is not in the sys.path config, throw a warning and
+        # add it.
+        if str(self.project_dir) not in [str(s) for s in sys_path_config]:
+            prism.logging.fire_console_event(
+                prism.logging.ProjectDirNotInSysPath(), [], log_level='warn'
+            )
+            sys_path_config.insert(0, self.project_dir)
+        return [Path(s) for s in sys_path_config]
 
     def get_thread_count(self,
         run_context: Dict[Any, Any]
@@ -354,7 +350,7 @@ class PrismProject:
         specified, then default to 1.
 
         args:
-            prism_project_py: prism_project.py file represented as string
+            run_context: dictionary with run context variables
         returns:
             profile_name
         """

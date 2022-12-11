@@ -36,12 +36,10 @@ class GraphTask(prism.cli.compile.CompileTask, prism.mixins.graph.GraphMixin):
 
     def run(self):
 
-        # Keep track of events
-        event_list: List[Event] = []
-
         # ------------------------------------------------------------------------------
         # Fire header events
 
+        event_list: List[Event] = []
         event_list, project_dir = self.fire_header_events(event_list)
         if project_dir is None:
             return prism.cli.base.TaskRunReturnResult(event_list)
@@ -55,11 +53,11 @@ class GraphTask(prism.cli.compile.CompileTask, prism.mixins.graph.GraphMixin):
         # Create compiled DAG
 
         result = super().run_for_subclass(
-            self.args,
-            project_dir,
-            compiled_dir,
-            event_list,
-            True
+            args=self.args,
+            project_dir=project_dir,
+            event_list=event_list,
+            project=None,
+            fire_exec_events=True
         )
         if isinstance(result, prism.cli.base.TaskRunReturnResult):
             return result

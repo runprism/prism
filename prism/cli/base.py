@@ -124,9 +124,12 @@ class BaseTask(base_mixins.BaseMixin):
         Fire header events that should be displayed at the beginning of all tasks
         (except the init task)
         """
-        event_list: List[Event] = []
+        # Empty list for events
+        base_event_list: List[Event] = []
+
+        # Fire header events
         event_list = fire_console_event(
-            prism.logging.SeparatorEvent(), event_list, 1, 'info'
+            prism.logging.SeparatorEvent(), base_event_list, 1, 'info'
         )
         event_list = fire_console_event(
             prism.logging.TaskRunEvent(version=prism.constants.VERSION),
