@@ -183,7 +183,7 @@ class PrismDAG(
 
         # Compile the DAG
         compiled_dag = self.compile(modules)
-        
+
         # Create DAG executor and Pipeline objects
         threads = prism_project.thread_count
         dag_executor = prism_executor.DagExecutor(
@@ -265,7 +265,6 @@ class PrismDAG(
                     parsed_ast_module.classes, parsed_ast_module.bases
                 )
                 prism_task_cls_name = prism_task_cls.name
-                task_var_name = prism_module.get_task_var_name(module_path)
 
                 # We need to update sys.path to include all paths in SYS_PATH_CONF,
                 # since some target locations may depend on vars stored in modules
@@ -285,7 +284,7 @@ class PrismDAG(
                 # Execute the class definition code
                 exec(parsed_ast_module.module_str, prism_project.run_context)
                 task = prism_project.run_context[prism_task_cls_name](False)  # noqa: E501 do NOT run the task
-                
+
                 # No need for an actual task_manager/hooks, since we're only accessing
                 # the target
                 task.set_hooks(None)
