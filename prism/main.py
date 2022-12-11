@@ -77,6 +77,7 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
         '--vars',
         required=False,
         action=KeyValue,
+        nargs='*',
         help="""
         Prism variables as key-value pairs `key=value`. These overwrite any variable
         definitions in `prism_project.py`. All values are read as strings.
