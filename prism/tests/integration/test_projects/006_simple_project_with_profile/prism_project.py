@@ -1,21 +1,12 @@
 """
-@name: 006_simple_project_with_profile
-@author: ...
-@version: ...
-@description: ...
-
---------------------------------------------------------------------------------
-Table of Contents
-- Imports
-- Profile
-- Variables / parameters
-- Paths
+Prism integration test project
 """
 
 ###########
 # Imports #
 ###########
 
+import logging
 from pathlib import Path
 
 
@@ -44,15 +35,25 @@ THREADS = 1
 
 # If connecting to a data warehouse (e.g., Snowflake), specify the profile you
 # want to use. Profiles can be created with the prism connect command.
+PROFILES_DIR = Path(__file__).parent
 PROFILE = None
 
 
-####################################
-# Variables, parameters, and paths #
-####################################
+##########
+# Logger #
+##########
 
-# Specify global variables, parameters and paths to be used in the analysis. 
-# Capitalize all names.
+# The logger used to record events is called PRISM_LOGGER. Use this logger
+# for your project
+PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
+
+
+############################
+# Global variables / paths #
+############################
+
+# Specify global variables, parameters and paths to be used in the analysis. Capitalize
+# all names.
 VAR_1 = {'a': 'b'}
 VAR_2 = 200
 VAR_3 = '2015-01-01'
