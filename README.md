@@ -42,8 +42,10 @@ Prism also supports several adapters, including Snowflake, Google BigQuery, Reds
 pip install "prism-ds[snowflake]"
 pip install "prism-ds[bigquery]"
 pip install "prism-ds[redshift]"
+pip install "prism-ds[postgres]"
 pip install "prism-ds[pyspark]"
 pip install "prism-ds[dbt]"
+pip install "prism-ds[trino]"
 ```
 
 To get started with Prism projects, check out our [documentation](https://docs.runprism.com). Some sections of interest include:
@@ -60,7 +62,8 @@ In addition, check out some [example projects](https://github.com/runprism/prism
 
 We're always looking to improve our product. Here's what we're working on at the moment:
 
-- **Additional adapters**: MySQL, Postgres, Redis, Slack, and more!
-- **Cloud deployment**: deploying and managing projects on Amazon EMR clusters, Docker containers, Databricks clusters, and more!
+- **Triggers**: trigger function calls on the success and/or failure of your project
+- **Additional adapters**: Celery, Dask, Docker, and more!
+- **Cloud deployment**: managed orchestration platform to deploy Prism projects in the cloud
 
 Let us know if you'd like to see another feature!
