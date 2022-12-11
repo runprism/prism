@@ -1,6 +1,6 @@
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Prism infrastructure imports
 import prism.task

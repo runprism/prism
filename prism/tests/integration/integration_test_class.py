@@ -8,9 +8,9 @@ Table of Contents:
 - Test case class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import io
@@ -35,9 +35,9 @@ from prism.constants import ROOT_DIR
 # Ignore ResourceWarnings introduced by boto3
 import warnings
 
-###################################
-## Test case directory and paths ##
-###################################
+#################################
+# Test case directory and paths #
+#################################
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)

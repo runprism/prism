@@ -8,9 +8,9 @@ Table of Contents:
 - Test case class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import argparse
@@ -34,9 +34,9 @@ import prism.profiles.profile as pr
 import prism.logging
 
 
-###################################
-## Test case directory and paths ##
-###################################
+#################################
+# Test case directory and paths #
+#################################
 
 # Directory containing test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)

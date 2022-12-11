@@ -8,9 +8,9 @@ Table of Contents:
 """
 
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import re
