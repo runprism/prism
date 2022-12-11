@@ -12,9 +12,7 @@ Table of Contents
 ###########
 
 # Standard library imports
-import argparse
 from typing import Any, Dict
-from pathlib import Path
 
 # Prism-specific imports
 from prism.infra import project as prism_project

@@ -12,7 +12,6 @@ Table of Contents
 ###########
 
 # Standard library imports
-import argparse
 from typing import Any, Dict
 from pathlib import Path
 
@@ -33,7 +32,7 @@ class BaseMixin:
         project_dir: Path,
         user_context: Dict[str, Any],
         which: str,
-        filename: str ='prism_project.py'
+        filename: str = 'prism_project.py'
     ) -> prism_project.PrismProject:
         """
         Wrapper for creation of PrismPipeline object. Needed in order to be compatible
