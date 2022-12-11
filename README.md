@@ -37,14 +37,16 @@ pip install --upgrade pip
 pip install prism-ds
 ```
 
-Prism also supports several adapters, including:
-- **Snowflake**: ```pip install "prism-ds[snowflake]"```
-- **Google BigQuery**: ```pip install "prism-ds[bigquery]"```
-- **Redshift**: ```pip install "prism-ds[redshift]"```
-- **Postgres**: ```pip install "prism-ds[postgres]"```
-- **PySpark**: ```pip install "prism-ds[pyspark]"```
-- **dbt**: ```pip install "prism-ds[dbt]"```
-- **Trino**: ```pip install "prism-ds[trino]"```
+Prism also supports several adapters! They can be installed with the following commands:
+| Adapter      | Command |
+| ------------ | ----------- |
+| **dbt** | ```pip install "prism-ds[dbt]"``` |
+| **Google BigQuery** | ```pip install "prism-ds[bigquery]"``` |
+| **Postgres** | ```pip install "prism-ds[postgres]"``` |
+| **PySpark** | ```pip install "prism-ds[pyspark]"``` |
+| **Redshift** | ```pip install "prism-ds[redshift]"``` |
+| **Snowflake** | ```pip install "prism-ds[snowflake]"``` |
+| **Trino** | ```pip install "prism-ds[trino]"``` |
 
 To get started with Prism projects, check out our [documentation](https://docs.runprism.com). Some sections of interest include:
 
