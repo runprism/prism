@@ -12,7 +12,6 @@ Table of Contents
 
 # Standard library imports
 from pathlib import Path
-from typing import Tuple
 
 # Prism imports
 import prism.exceptions
@@ -81,7 +80,7 @@ def target(*, type, loc, **kwargs):
                         self.kwargs.append({})
 
                     # If multiple things returned, we expected multiple targets
-                    if isinstance(obj, Tuple):
+                    if isinstance(obj, tuple):
                         objects_to_save = zip(obj, self.types, self.locs, self.kwargs)
                         for zipped in objects_to_save:
                             temp_o = zipped[0]

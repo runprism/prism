@@ -107,7 +107,7 @@ class PrismTask:
 
                     # Initialize an instance of the target class and save the object
                     # using the target's `save` method
-                    target = type(obj, loc, hooks=None)
+                    target = type(obj, loc, hooks=None)  # type: ignore
                     target.save(**kwargs)
 
                     # If a target is set, just assume that the user wants to reference

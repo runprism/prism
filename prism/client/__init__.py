@@ -14,7 +14,7 @@ Table of Contents
 ###########
 
 # Standard library imports
-from dataclasses import dataclass
+import argparse
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -39,11 +39,6 @@ import prism.logging
 ####################
 # Class definition #
 ####################
-
-@dataclass
-class LoggingArgs:
-    log_level: str
-
 
 class PrismDAG(
     prism.mixins.base.BaseMixin,
@@ -78,7 +73,9 @@ class PrismDAG(
         self.run_context = prism.constants.CONTEXT.copy()
 
         # Set up default logger
-        prism.logging.set_up_logger(LoggingArgs(self.log_level))
+        args = argparse.Namespace()
+        args.log_level = self.log_level
+        prism.logging.set_up_logger(args)
 
     def _is_valid_project(self, user_project_dir: Path) -> bool:
         """
@@ -152,13 +149,16 @@ class PrismDAG(
             module_paths = self.all_modules
         else:
             module_paths = [Path(p) for p in modules]
-        self.user_arg_modules = module_paths
+        self.user_arg_modules_list = module_paths
 
         # Create compiled directory and compile the DAG
         compiled_dir = self.create_compiled_dir(self.project_dir)
         self.compiled_dir = compiled_dir
         return self.compile_dag(
-            self.project_dir, self.compiled_dir, self.all_modules, self.user_arg_modules
+            self.project_dir,
+            self.compiled_dir,
+            self.all_modules,
+            self.user_arg_modules_list
         )
 
     def run(self,
@@ -264,6 +264,8 @@ class PrismDAG(
                 prism_task_cls = parsed_ast_module.get_prism_task_node(
                     parsed_ast_module.classes, parsed_ast_module.bases
                 )
+                if prism_task_cls is None:
+                    return None
                 prism_task_cls_name = prism_task_cls.name
 
                 # We need to update sys.path to include all paths in SYS_PATH_CONF,
@@ -283,7 +285,7 @@ class PrismDAG(
 
                 # Execute the class definition code
                 exec(parsed_ast_module.module_str, prism_project.run_context)
-                task = prism_project.run_context[prism_task_cls_name](False)  # noqa: E501 do NOT run the task
+                task = prism_project.run_context[prism_task_cls_name](False)  # type: ignore # noqa: E501
 
                 # No need for an actual task_manager/hooks, since we're only accessing
                 # the target
