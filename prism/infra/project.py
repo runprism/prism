@@ -40,7 +40,7 @@ class PrismProject:
         project_dir: Path,
         user_context: Dict[str, Any],
         which: str,
-        filename: str ='prism_project.py'
+        filename: str = 'prism_project.py'
     ):
         self.project_dir = project_dir
         self.user_context = user_context
@@ -53,7 +53,7 @@ class PrismProject:
         )
         # Keep track of any adjustments made via configurations
         self.prism_project_py_str_adjusted: Optional[str] = None
-    
+
     def load_prism_project_py(self,
         project_dir: Path,
         filename: str = "prism_project.py"
@@ -94,21 +94,21 @@ class PrismProject:
         """
         Set up prism project. This should always be directly after object instantiation
         (except for in testing).
-        """       
+        """
         # Execute
         self.run_context = prism.constants.CONTEXT.copy()
         self.exec(self.run_context)
 
         # ------------------------------------------------------------------------------
         # Compiled sys.path config
-        
+
         self.sys_path_config = self.get_sys_path_config(self.run_context)
-        
+
         # ------------------------------------------------------------------------------
         # Thread count
 
         self.thread_count = self.get_thread_count(self.run_context)
-        
+
         # ------------------------------------------------------------------------------
         # Profile name, profiles dir, and profiles path
 
@@ -126,7 +126,7 @@ class PrismProject:
                 'warn'
             )
             self.profiles_dir = self.project_dir
-        
+
         # As of now, the only other tasks that sets up the project is the `run` and
         # `spark-submit` tasks. For these, we do need to generate the adapters.
         else:
@@ -214,6 +214,24 @@ class PrismProject:
                         num_assignments += 1
         return num_assignments
 
+    def ast_unparse(self, elt: Any):
+        """
+        Some versions of Python do not support the `ast.unparse` method. This function
+        checks the Python version and determines the appropriate function to call.
+
+        args:
+            elt: AST element
+        returns:
+            unparsed element
+        """
+        python_greater_than_39 = prism.constants.PYTHON_VERSION.major == 3 and prism.constants.PYTHON_VERSION.minor >= 9  # noqa: E501
+        if prism.constants.PYTHON_VERSION.major > 3 or python_greater_than_39:  # noqa: E501
+            # mypy thinks ast doesn't have an unparse method,
+            # but this is fine.
+            return ast.unparse(elt)  # type: ignore
+        else:
+            return re.sub('\n$', '', astor.to_source(elt))
+
     def safe_eval_var_from_file(self,
         python_file: str,
         var: str,
@@ -254,20 +272,11 @@ class PrismProject:
                         if isinstance(elem.value, ast.List):
                             items = []
                             for attr in elem.value.elts:
-                                python_greater_than_39 = prism.constants.PYTHON_VERSION.major == 3 and prism.constants.PYTHON_VERSION.minor >= 9  # noqa: E501
-                                if prism.constants.PYTHON_VERSION.major > 3 or python_greater_than_39:  # noqa: E501
-
-                                    # mypy thinks ast doesn't have an unparse method,
-                                    # but this is fine.
-                                    items.append(ast.unparse(attr))  # type: ignore
-                                else:
-                                    items.append(
-                                        re.sub('\n$', '', astor.to_source(attr))
-                                    )
+                                items.append(self.ast_unparse(attr))
                             return items
 
                         elif isinstance(elem.value, ast.Attribute):
-                            return ast.unparse(elem.value)
+                            return self.ast_unparse(elem.value)
                         else:
                             return ast.literal_eval(elem.value)
         return None
@@ -289,7 +298,7 @@ class PrismProject:
         if not isinstance(profile_name, str):
             return ""
         return profile_name
-    
+
     def get_profiles_dir(self,
         run_context: Dict[Any, Any]
     ) -> Optional[Path]:
@@ -330,9 +339,9 @@ class PrismProject:
             return [self.project_dir]
         if not isinstance(sys_path_config, list):
             raise prism.exceptions.RuntimeException(
-                    message='`SYS_PATH_CONF` must be a list'
-                )
-        
+                message='`SYS_PATH_CONF` must be a list'
+            )
+
         # If the project directory is not in the sys.path config, throw a warning and
         # add it.
         if str(self.project_dir) not in [str(s) for s in sys_path_config]:

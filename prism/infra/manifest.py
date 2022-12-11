@@ -52,7 +52,9 @@ class Manifest:
     """
 
     def __init__(self, module_manifests: List[ModuleManifest] = []):
-        self.manifest_dict: Dict[str, Any] = {"targets": [], "prism_project": "", "modules": [], "refs": []}
+        self.manifest_dict: Dict[str, Any] = {
+            "targets": [], "prism_project": "", "modules": [], "refs": []
+        }
         self.module_manifests = module_manifests
 
         # Iterate through module manifests and add to manifest

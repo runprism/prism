@@ -11,10 +11,6 @@ Table of Contents
 # Imports #
 ###########
 
-# Standard library imports
-import os
-from typing import List
-
 # Prism-specific imports
 import prism.cli.base
 import prism.cli.compile
@@ -22,7 +18,7 @@ import prism.mixins.run
 import prism.exceptions
 import prism.constants
 import prism.logging
-from prism.logging import Event, fire_console_event, fire_empty_line_event
+from prism.logging import fire_console_event, fire_empty_line_event
 from prism.event_managers import base as base_event_manager
 from prism.infra import executor as prism_executor
 
@@ -49,10 +45,9 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         - Fire footer events
         """
 
-
         # ------------------------------------------------------------------------------
         # Fire header events, get prism project
-        
+
         task_return_result: prism.cli.base.TaskRunReturnResult = super(prism.cli.compile.CompileTask, self).run()  # noqa: E501
         if task_return_result.has_error or self.project_dir is None:
             return task_return_result

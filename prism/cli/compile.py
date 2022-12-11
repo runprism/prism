@@ -53,7 +53,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
 
         # ------------------------------------------------------------------------------
         # Define directories and get modules to compile
-        
+
         compiled_dir = self.create_compiled_dir(project_dir)
 
         # Modules directory

@@ -148,7 +148,7 @@ class BaseTask(base_mixins.BaseMixin):
                 'info'
             )
             return event_list, project_dir
-        
+
         # If project directory not found, fire an event
         except prism.exceptions.ProjectPyNotFoundException as err:
             event_list = fire_empty_line_event(event_list)
@@ -212,7 +212,7 @@ class BaseTask(base_mixins.BaseMixin):
         self.prism_project = project_event_manager_output.outputs
         prism_project_event_to_fire = project_event_manager_output.event_to_fire
         event_list = project_event_manager_output.event_list
-        
+
         # Log an error if one occurs
         if self.prism_project == 0:
             event_list = fire_empty_line_event(event_list)
