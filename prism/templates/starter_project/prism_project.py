@@ -46,6 +46,7 @@ THREADS = 1
 
 # If connecting to a data warehouse (e.g., Snowflake), specify the profile you
 # want to use. Profiles can be created with the prism connect command.
+PROFILES_DIR = Path(__file__).parent
 PROFILE = None
 
 
