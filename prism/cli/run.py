@@ -49,8 +49,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         - Fire footer events
         """
 
-        # Keep track of events
-        event_list: List[Event] = []
 
         # ------------------------------------------------------------------------------
         # Fire header events, get prism project
@@ -63,12 +61,11 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # ------------------------------------------------------------------------------
         # Compile DAG
 
-        compiled_dir = self.project_dir / '.compiled'
         result = super().run_for_subclass(
             self.args,
             self.project_dir,
-            compiled_dir,
             event_list,
+            self.prism_project,
             True
         )
         if isinstance(result, prism.cli.base.TaskRunReturnResult):

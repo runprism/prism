@@ -25,9 +25,6 @@ from prism.main import main
 import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
-# Ignore ResourceWarnings produced by boto3 during unittests
-import warnings
-
 
 ###################################
 ## Test case directory and paths ##
@@ -81,12 +78,11 @@ run_success_starting_events = [
     'SeparatorEvent',
     'TaskRunEvent',
     'CurrentProjectDirEvent',
-    'CompileStartEvent',
     'EmptyLineEvent',
+    'ExecutionEvent - parsing prism_project.py - RUN',
+    'ExecutionEvent - parsing prism_project.py - DONE',
     'ExecutionEvent - module DAG - RUN',
     'ExecutionEvent - module DAG - DONE',
-    'ExecutionEvent - parsing config files - RUN',
-    'ExecutionEvent - parsing config files - DONE',
     'ExecutionEvent - creating pipeline, DAG executor - RUN',
     'ExecutionEvent - creating pipeline, DAG executor - DONE',
     'EmptyLineEvent'
@@ -426,7 +422,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         """
         `prism run` fails in a project with a bad mod ref
         """
-
+        self.maxDiff = None
         # Set working directory
         wkdir = Path(TEST_PROJECTS) / '011_bad_task_ref'
         os.chdir(wkdir)
@@ -442,8 +438,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             'SeparatorEvent',
             'TaskRunEvent',
             'CurrentProjectDirEvent',
-            'CompileStartEvent',
             'EmptyLineEvent',
+            'ExecutionEvent - parsing prism_project.py - RUN',
+            'ExecutionEvent - parsing prism_project.py - DONE',
             'ExecutionEvent - module DAG - RUN',
             'ExecutionEvent - module DAG - ERROR',
         ] + _run_task_end_events('PrismExceptionErrorEvent')

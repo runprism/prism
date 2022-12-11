@@ -119,7 +119,6 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
     def run_for_subclass(self,
         args: argparse.Namespace,
         project_dir: Path,
-        compiled_dir: Path,
         event_list: List[prism.logging.Event],
         project: PrismProject,
         fire_exec_events: bool = True
@@ -153,6 +152,9 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         # Modules to compile
         user_arg_modules = self.user_arg_modules(self.args, modules_dir)
         all_modules = self.get_modules(modules_dir)
+
+        # Create compiled directory
+        compiled_dir = self.create_compiled_dir(project_dir)
 
         # Parse module references
         compiler_manager = BaseEventManager(

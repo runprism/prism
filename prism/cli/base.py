@@ -21,7 +21,7 @@ from typing import List, Tuple, Union
 from prism.event_managers import base as base_event_manager
 import prism.exceptions
 import prism.logging
-from prism.logging import fire_console_event, fire_empty_line_event
+from prism.logging import fire_console_event, fire_empty_line_event, Event
 from prism.mixins import base as base_mixins
 
 
@@ -124,6 +124,7 @@ class BaseTask(base_mixins.BaseMixin):
         Fire header events that should be displayed at the beginning of all tasks
         (except the init task)
         """
+        event_list: List[Event] = []
         event_list = fire_console_event(
             prism.logging.SeparatorEvent(), event_list, 1, 'info'
         )
@@ -134,6 +135,7 @@ class BaseTask(base_mixins.BaseMixin):
             'info'
         )
 
+        # Get project directory
         try:
             project_dir = get_project_dir()
             event_list = fire_console_event(
@@ -143,6 +145,8 @@ class BaseTask(base_mixins.BaseMixin):
                 'info'
             )
             return event_list, project_dir
+        
+        # If project directory not found, fire an event
         except prism.exceptions.ProjectPyNotFoundException as err:
             event_list = fire_empty_line_event(event_list)
             e = prism.logging.ProjectPyNotFoundEvent(err)
