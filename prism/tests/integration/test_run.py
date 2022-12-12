@@ -500,4 +500,39 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._set_up_wkdir()
 
 
+    def test_user_context_cli(self):
+        """
+        Test that CLI user context works as expected
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        if Path(wkdir / '.compiled').is_dir():
+            shutil.rmtree(Path(wkdir / '.compiled'))
+        self.maxDiff = None
+
+        # New output path
+        output_path = str(wkdir.parent)
+        self.assertFalse((Path(output_path) / 'module01.txt').is_file())
+        args = ['run', '--modules', 'module01.py', '--vars', f'OUTPUT={output_path}']
+        self._run_prism(args)
+        
+        # Get output
+        self.assertTrue((Path(output_path) / 'module01.txt').is_file())
+        module01_txt = self._file_as_str(Path(output_path) / 'module01.txt')
+        self.assertEqual('Hello from module 1!', module01_txt)
+        os.unlink(Path(output_path) / 'module01.txt')
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove stuff in output to avoid recommitting to github
+        self._remove_files_in_output(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
 # EOF

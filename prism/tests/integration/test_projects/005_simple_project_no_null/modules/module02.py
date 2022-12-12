@@ -10,6 +10,9 @@ import prism.decorators
 # Prism project imports
 import prism_project
 
+# Other imports
+from pathlib import Path
+
 
 ######################
 ## Class definition ##
@@ -18,7 +21,7 @@ import prism_project
 class Module02(prism.task.PrismTask):
     
     ## Run
-    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'module02.txt')
+    @prism.decorators.target(type=prism.target.Txt, loc=Path(prism_project.OUTPUT) / 'module02.txt')
     def run(self, tasks, hooks):
         """
         Execute task.

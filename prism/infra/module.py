@@ -88,7 +88,8 @@ class CompiledModule:
         run_context: Dict[Any, Any],
         task_manager: PrismTaskManager,
         hooks: PrismHooks,
-        explicit_run: bool = True
+        explicit_run: bool = True,
+        user_context: Dict[Any, Any] = {}
     ):
         """
         Instantiate PrismTask child from module
@@ -115,6 +116,30 @@ class CompiledModule:
         # shouldn't contain duplicate modules.
         task_var_name = get_task_var_name(self.module_relative_path)
 
+        # If a user context is specified, we need to make sure that the prism_project
+        # variables are overridden by whatever the user provides. We need to ensure that
+        # these variables are changed GLOBALLY, i.e., in all functions that utilize
+        # prism_project variables and all files that import the prism_project. The
+        # easiest way to do this is to to import the prism_project.py file before
+        # executing the module string and make the necessary adjustments.
+        if user_context != {}:
+
+            # By importing the prism_project, we take advantage of Python's import
+            # caching. That is, if we execute a module that imports prism_project,
+            # Python will see that prism_project has already been imported and will not
+            # re-import it and overwrite the user context.
+            exec("import prism_project", run_context)
+            
+            # Get Prism project and update internal vars
+            prism_project_alias = ""
+            for k, v in run_context.items():
+                if isinstance(v, ModuleType):
+                    if v.__name__ == "prism_project":
+                        prism_project_alias = k
+            if prism_project_alias != "":
+                for user_k, user_v in user_context.items():
+                    setattr(run_context[prism_project_alias], user_k, user_v)
+
         # Execute class definition and create task
         exec(self.module_str, run_context)
         run_context[task_var_name] = run_context[prism_task_class_name](explicit_run)
@@ -137,18 +162,8 @@ class CompiledModule:
         Execute module
         """
         task_var_name = self.instantiate_module_class(
-            run_context, task_manager, hooks, explicit_run
+            run_context, task_manager, hooks, explicit_run, user_context
         )
-
-        # Get Prism project and update internal vars
-        prism_project_alias = ""
-        for k, v in run_context.items():
-            if isinstance(v, ModuleType):
-                if v.__name__ == "prism_project":
-                    prism_project_alias = k
-        if prism_project_alias != "":
-            for user_k, user_v in user_context.items():
-                setattr(run_context[prism_project_alias], user_k, user_v)
 
         # Execute the task
         run_context[task_var_name].exec()
