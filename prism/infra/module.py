@@ -129,7 +129,7 @@ class CompiledModule:
             # Python will see that prism_project has already been imported and will not
             # re-import it and overwrite the user context.
             exec("import prism_project", run_context)
-            
+
             # Get Prism project and update internal vars
             prism_project_alias = ""
             for k, v in run_context.items():
