@@ -52,7 +52,8 @@ class DagExecutor:
         project_dir: Path,
         compiled_dag: prism_compiler.CompiledDag,
         user_arg_all_upstream: bool,
-        threads: int
+        threads: int,
+        user_context: Dict[Any, Any] = {}
     ):
         self.project_dir = project_dir
         self.compiled_dag = compiled_dag
@@ -63,6 +64,7 @@ class DagExecutor:
         self.topological_sort_full_path = self.compiled_dag.topological_sort_full_path
         self.user_arg_modules = self.compiled_dag.user_arg_modules
         self.user_arg_all_upstream = user_arg_all_upstream
+        self.user_context = user_context
 
         # Identify nodes not explicitly run and update (only if --all-upstream is False)
         if not self.user_arg_all_upstream:
@@ -75,14 +77,14 @@ class DagExecutor:
         # Number of processes used to run concurrent tasks
         self.threads = threads
 
-    def set_executor_globals(self, executor_globals: Dict[Any, Any]):
+    def set_run_context(self, run_context: Dict[Any, Any]):
         """
         Set executor globals; needs to be called before `exec`
 
         args:
-            executor_globals: globals for DAG execution
+            run_context: globals for DAG execution
         """
-        self.executor_globals = executor_globals
+        self.run_context = run_context
 
     def check_task_refs(self, module: prism_module.CompiledModule) -> List[str]:
         """
@@ -106,7 +108,8 @@ class DagExecutor:
         full_tb: bool,
         module: prism_module.CompiledModule,
         task_manager: Union[int, PrismTaskManager],
-        hooks: PrismHooks
+        hooks: PrismHooks,
+        user_context: Dict[Any, Any] = {}
     ) -> base_event_manager.EventManagerOutput:
         """
         Callback used to get results of module execution in Pool
@@ -150,7 +153,7 @@ class DagExecutor:
         # Event manager. We want '__file__' to be the path to the un-compiled module.
         # Instances of DagExecutor will only be called within the project directory.
         # Therefore, __files__ should be modules/{name of script}
-        self.executor_globals['__file__'] = str(
+        self.run_context['__file__'] = str(
             self.project_dir / f'modules/{str(relative_path)}'
         )
         script_manager = base_event_manager.BaseEventManager(
@@ -163,10 +166,11 @@ class DagExecutor:
         script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(  # noqa: E501
             event_list,
             fire_exec_events,
-            globals_dict=self.executor_globals,
+            run_context=self.run_context,
             task_manager=task_manager,
             hooks=hooks,
-            explicit_run=relative_path not in self.nodes_not_explicitly_run
+            explicit_run=relative_path not in self.nodes_not_explicitly_run,
+            user_context=user_context
         )
         return script_event_manager_result
 
@@ -210,8 +214,8 @@ class DagExecutor:
             return
 
         # Execute all statements, stopping at first error
-        self.task_manager = self.executor_globals[INTERNAL_TASK_MANAGER_VARNAME]
-        self.hooks = self.executor_globals[INTERNAL_HOOKS_VARNAME]
+        self.task_manager = self.run_context[INTERNAL_TASK_MANAGER_VARNAME]
+        self.hooks = self.run_context[INTERNAL_HOOKS_VARNAME]
         self._wait_and_return = False
         self.error_event = None
 
@@ -219,7 +223,13 @@ class DagExecutor:
         if self.threads == 1:
             while self.compiled_modules != []:
                 curr = self.compiled_modules.pop(0)
-                result = self.exec_single(full_tb, curr, self.task_manager, self.hooks)
+                result = self.exec_single(
+                    full_tb,
+                    curr,
+                    self.task_manager,
+                    self.hooks,
+                    self.user_context
+                )
                 callback(result)
                 if self.task_manager == 0:
                     return ExecutorOutput(0, self.error_event, self.event_list)
@@ -249,7 +259,7 @@ class DagExecutor:
                         if len(refs) == 0:
                             res = pool.apply_async(
                                 self.exec_single,
-                                args=(full_tb, curr, self.task_manager, self.hooks),
+                                args=(full_tb, curr, self.task_manager, self.hooks, self.user_context),  # noqa: E501
                                 callback=callback
                             )
                             async_results[curr.name] = res
@@ -267,7 +277,7 @@ class DagExecutor:
                             else:
                                 res = pool.apply_async(
                                     self.exec_single,
-                                    args=(full_tb, curr, self.task_manager, self.hooks),
+                                    args=(full_tb, curr, self.task_manager, self.hooks, self.user_context),  # noqa: E501
                                     callback=callback
                                 )
                                 async_results[curr.name] = res

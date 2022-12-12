@@ -13,6 +13,7 @@ Table of Contents
 # Standard library imports
 from pathlib import Path
 from typing import Any, Dict
+from types import ModuleType
 
 # Prism-specific imports
 import prism.exceptions
@@ -84,7 +85,7 @@ class CompiledModule:
         return refs
 
     def instantiate_module_class(self,
-        globals_dict: Dict[Any, Any],
+        run_context: Dict[Any, Any],
         task_manager: PrismTaskManager,
         hooks: PrismHooks,
         explicit_run: bool = True
@@ -93,7 +94,7 @@ class CompiledModule:
         Instantiate PrismTask child from module
 
         args:
-            globals_dict: globals dictionary
+            run_context: globals dictionary
             task_manager: PrismTaskManager object
             hooks: PrismHooks object
             explicit run: boolean indicating whether to run the Task. Default is True
@@ -115,28 +116,41 @@ class CompiledModule:
         task_var_name = get_task_var_name(self.module_relative_path)
 
         # Execute class definition and create task
-        exec(self.module_str, globals_dict)
-        exec(f'{task_var_name}={prism_task_class_name}({explicit_run})', globals_dict)
+        exec(self.module_str, run_context)
+        run_context[task_var_name] = run_context[prism_task_class_name](explicit_run)
 
         # Set task manager and hooks
-        globals_dict[task_var_name].set_task_manager(task_manager)
-        globals_dict[task_var_name].set_hooks(hooks)
+        run_context[task_var_name].set_task_manager(task_manager)
+        run_context[task_var_name].set_hooks(hooks)
 
         # Return name of variable used to store task instantiation
         return task_var_name
 
     def exec(self,
-        globals_dict: Dict[Any, Any],
+        run_context: Dict[Any, Any],
         task_manager: PrismTaskManager,
         hooks: PrismHooks,
-        explicit_run: bool = True
+        explicit_run: bool = True,
+        user_context: Dict[Any, Any] = {}
     ) -> PrismTaskManager:
         """
         Execute module
         """
         task_var_name = self.instantiate_module_class(
-            globals_dict, task_manager, hooks, explicit_run
+            run_context, task_manager, hooks, explicit_run
         )
-        globals_dict[task_var_name].exec()
-        task_manager.upstream[self.name] = globals_dict[task_var_name]
+
+        # Get Prism project and update internal vars
+        prism_project_alias = ""
+        for k, v in run_context.items():
+            if isinstance(v, ModuleType):
+                if v.__name__ == "prism_project":
+                    prism_project_alias = k
+        if prism_project_alias != "":
+            for user_k, user_v in user_context.items():
+                setattr(run_context[prism_project_alias], user_k, user_v)
+
+        # Execute the task
+        run_context[task_var_name].exec()
+        task_manager.upstream[self.name] = run_context[task_var_name]
         return task_manager

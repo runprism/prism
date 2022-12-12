@@ -102,7 +102,7 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         # ------------------------------------------------------------------------------
         # Set the globals for the executor
 
-        self.dag_executor.set_executor_globals(self.run_context)
+        self.dag_executor.set_run_context(self.run_context)
 
     def exec(self, full_tb: bool):
         """

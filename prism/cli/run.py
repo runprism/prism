@@ -84,13 +84,20 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # ------------------------------------------------------------------------------
         # Create pipeline
 
+        # Get user-specified variables. These will override any variables in
+        # `prism_project.py`.
+        user_context = self.args.vars
+        if user_context is None:
+            user_context = {}
+
         # First, create DAG executor
         threads = self.prism_project.thread_count
         dag_executor = prism_executor.DagExecutor(
             self.project_dir,
             compiled_dag,
             self.args.all_upstream,
-            threads
+            threads,
+            user_context
         )
 
         # Create pipeline
