@@ -1,0 +1,14 @@
+profile_name:
+  adapters:
+    trino_adapter_name_here: # change this!
+      type: trino
+      host:
+      http_scheme: https
+      port:
+      user:
+      password:
+      catalog:
+      schema:
+
+
+# EOF

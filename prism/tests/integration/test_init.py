@@ -8,9 +8,9 @@ Table of Contents:
 - Test case class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import os
@@ -25,9 +25,9 @@ import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
-###################################
-## Test case directory and paths ##
-###################################
+#################################
+# Test case directory and paths #
+#################################
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)

@@ -1,22 +1,23 @@
 """
-@name: 001_init
-@author: ...
-@version: ...
-@description: ...
-
---------------------------------------------------------------------------------
-Table of Contents
-- Imports
-- Profile
-- Variables / parameters
-- Paths
+Prism integration test project
 """
 
 ###########
 # Imports #
 ###########
 
+import logging
 from pathlib import Path
+
+
+###################
+# sys.path config #
+###################
+
+SYS_PATH_CONF = [
+    Path(__file__).parent,
+    # Add more paths here!
+]
 
 
 ################
@@ -34,15 +35,25 @@ THREADS = 2
 
 # If connecting to a data warehouse (e.g., Snowflake), specify the profile you
 # want to use. Profiles can be created with the prism connect command.
+PROFILES_DIR = Path(__file__).parent
 PROFILE = "profile_name"
 
 
-####################################
-# Variables, parameters, and paths #
-####################################
+##########
+# Logger #
+##########
 
-# Specify global variables, parameters and paths to be used in the analysis. 
-# Capitalize all names.
+# The logger used to record events is called PRISM_LOGGER. Use this logger
+# for your project
+PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
+
+
+############################
+# Global variables / paths #
+############################
+
+# Specify global variables, parameters and paths to be used in the analysis. Capitalize
+# all names.
 VAR_1 = {'a': 'b'}
 VAR_2 = 200
 VAR_3 = '2015-01-01'
@@ -51,6 +62,3 @@ VAR_3 = '2015-01-01'
 WKDIR = Path(__file__).parent
 DATA = WKDIR / 'data'
 OUTPUT = WKDIR / 'output'
-
-
-# EOF

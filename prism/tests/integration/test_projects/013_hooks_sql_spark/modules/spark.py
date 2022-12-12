@@ -1,6 +1,6 @@
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Prism infrastructure imports
 import prism.task
@@ -20,11 +20,11 @@ import pyspark.sql.functions as F
 ## Class definition ##
 ######################
 
-class Module02(prism.task.PrismTask):
+class PysparkTask(prism.task.PrismTask):
     
     ## Run
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'sample_data_1_filtered.csv', index=False)
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'sample_data_2_filtered.csv', index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'machinery_sample_filtered.csv', index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'household_sample_filtered.csv', index=False)
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -39,21 +39,21 @@ class Module02(prism.task.PrismTask):
             task output
         """
         dfs = tasks.ref('snowflake.py')
-        df_1_path = str(dfs[0])
-        df_2_path = str(dfs[1])
+        machinery_df_path = str(dfs[0])
+        household_df_path = str(dfs[1])
 
-        # Use spark to do some light processing
-        df_1 = hooks.spark1.read.option("header", "true").csv(df_1_path)
-        df_1_filtered = df_1.sort(F.col('C_ACCTBAL').asc()).filter(F.col('C_ACCTBAL')>1000)
-        df_1_filtered_pd = df_1_filtered.toPandas()
+        # Use spark to do some light processing for machinery df
+        machinery_df = hooks.spark.read.option("header", "true").csv(machinery_df_path)
+        machinery_df_filtered = machinery_df.sort(F.col('C_ACCTBAL').asc()).filter(F.col('C_ACCTBAL')>1000)
+        machinery_df_filtered_pd = machinery_df_filtered.toPandas()
 
-        # Use spark to do some light processing
-        df_2 = hooks.spark2.read.option("header", "true").csv(df_2_path)
-        df_2_filtered = df_2.sort(F.col('C_ACCTBAL').asc()).filter(F.col('C_ACCTBAL')>2000)
-        df_2_filtered_pd = df_2_filtered.toPandas()
+        # Use spark to do some light processing for household df
+        household_df = hooks.spark.read.option("header", "true").csv(household_df_path)
+        household_df_filtered = household_df.sort(F.col('C_ACCTBAL').asc()).filter(F.col('C_ACCTBAL')>2000)
+        household_df_filtered_pd = household_df_filtered.toPandas()
 
         # Return
-        return df_1_filtered_pd, df_2_filtered_pd
+        return machinery_df_filtered_pd, household_df_filtered_pd
 
 
 

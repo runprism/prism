@@ -1,6 +1,6 @@
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Prism infrastructure imports
 import prism.task
@@ -20,7 +20,7 @@ import pyspark.sql.functions as F
 ## Class definition ##
 ######################
 
-class Module02(prism.task.PrismTask):
+class BadAdapterTask(prism.task.PrismTask):
     
     ## Run
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'bad_adapter.csv', index=False)

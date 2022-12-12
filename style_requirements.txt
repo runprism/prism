@@ -2,3 +2,4 @@ mypy
 tomli
 typed-ast
 types-PyYAML
+flake8

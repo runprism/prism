@@ -8,9 +8,9 @@ Table of Contents:
 - Test case class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import os
@@ -23,9 +23,9 @@ import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
-###################################
-## Test case directory and paths ##
-###################################
+#################################
+# Test case directory and paths #
+#################################
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
@@ -50,7 +50,6 @@ project_with_error_expected_events = [
     'SeparatorEvent',
     'TaskRunEvent',
     'CurrentProjectDirEvent',
-    'CompileStartEvent',
     'EmptyLineEvent',
     'ExecutionEvent - module DAG - RUN',
     'ExecutionEvent - module DAG - ERROR',
@@ -65,7 +64,6 @@ simple_project_expected_events = [
     'SeparatorEvent',
     'TaskRunEvent',
     'CurrentProjectDirEvent',
-    'CompileStartEvent',
     'EmptyLineEvent',
     'ExecutionEvent - module DAG - RUN',
     'ExecutionEvent - module DAG - DONE',

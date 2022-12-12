@@ -1,6 +1,6 @@
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Prism infrastructure imports
 import prism.task
@@ -19,11 +19,11 @@ import pandas as pd
 ## Class definition ##
 ######################
 
-class Module01(prism.task.PrismTask):
+class SnowflakeTask(prism.task.PrismTask):
 
     ## Run
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'sample_data_1.csv', index=False)
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'sample_data_2.csv', index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'machinery_sample.csv', index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'household_sample.csv', index=False)
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -37,7 +37,7 @@ class Module01(prism.task.PrismTask):
         returns:
             task output
         """
-        snowflake_query_1 = f"""
+        machinery_sql = f"""
         SELECT 
             * 
         FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER" 
@@ -45,9 +45,9 @@ class Module01(prism.task.PrismTask):
             C_MKTSEGMENT = 'MACHINERY' 
         LIMIT 50
         """
-        snowflake_1_df = hooks.sql(adapter_name="snowflake_profile_1", query=snowflake_query_1)
+        machinery_df = hooks.sql(adapter_name="snowflake_base", query=machinery_sql)
 
-        snowflake_query_2 = f"""
+        household_sql = f"""
         SELECT 
             * 
         FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER" 
@@ -55,9 +55,9 @@ class Module01(prism.task.PrismTask):
             C_MKTSEGMENT = 'HOUSEHOLD' 
         LIMIT 50
         """
-        snowflake_2_df = hooks.sql(adapter_name="snowflake_profile_2", query=snowflake_query_2)
+        household_df = hooks.sql(adapter_name="snowflake_base", query=household_sql)
 
-        return snowflake_1_df, snowflake_2_df
+        return machinery_df, household_df
 
 
 # EOF

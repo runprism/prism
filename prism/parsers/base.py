@@ -7,9 +7,9 @@ Table of Contents:
 """
 
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 from pathlib import Path
@@ -20,9 +20,9 @@ from typing import Any, Dict
 import prism.exceptions
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class BaseParser:
     """
@@ -33,7 +33,6 @@ class BaseParser:
         path: Path
     ):
         self.path = path
-
 
     def render(self,
         parent_path: Path,
@@ -53,19 +52,17 @@ class BaseParser:
         # Load environment and template
         env = Environment(loader=FileSystemLoader(str(parent_path)))
         jinja_template = env.get_template(filename)
-        
+
         # Update template globals with inputted function dictinoary
         jinja_template.globals.update(func_dict)
 
         # Render string
         rendered_string = jinja_template.render()
         if not isinstance(rendered_string, str):
-            raise prism.exceptions.ParserException(message=f'invalid return type `{str(type(rendered_string))}`') 
+            raise prism.exceptions.ParserException(
+                message=f'invalid return type `{str(type(rendered_string))}`'
+            )
         return rendered_string
-    
 
     def parse(self):
         raise prism.exceptions.ParserException(message='`parse` not implemented')
-
-
-# EOF

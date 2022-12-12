@@ -21,10 +21,12 @@
 Data projects often require multiple steps that need to be executed in sequence (think extract-transform-load, data wrangling, etc.). With Prism, users can break down their project into modular tasks, manage dependencies, and execute complex computations in sequence.
 
 Here are some of Prism's main features:
-- **Modules as tasks**: Unlike other orchestration platforms, Prism allows tasks to live within their own modules. This not only helps with readability and QC, but also enables users to build powerful, complex pipelines that scale alongside their project.
 - **Real-time dependency declaration**: With Prism, analysts can declare dependencies using a simple function call. No need to explicitly keep track of the pipeline order — at runtime, Prism automatically parses the function calls and builds the dependency graph.
-- **Flexible CLI**: Analysts can instantiate, compile, and run projects using a simple command-line interface.
+- **Intuitive logging**: Prism automatically logs events for parsing the configuration files, compiling the tasks and creating the DAG, and executing the tasks. No configuration is required.
+- **Flexible CLI**: Users can instantiate, compile, and run projects using a simple, but powerful command-line interface.
+- **“Batteries included”**: Prism comes with all the essentials needed to get up and running quickly. Users can create and run their first DAG in less than 2 minutes. 
 - **Integrations**: Prism integrates with several tools that are popular in the data community, including Snowflake, Google BigQuery, Redshift, PySpark, and dbt. We're adding more integrations every day, so let us know what you'd like to see!
+
 
 ## Getting Started
 
@@ -35,14 +37,16 @@ pip install --upgrade pip
 pip install prism-ds
 ```
 
-Prism also supports several adapters, including Snowflake, Google BigQuery, Redshift, PySpark, and dbt. These adapters can be installed via:
-```
-pip install "prism-ds[snowflake]"
-pip install "prism-ds[bigquery]"
-pip install "prism-ds[redshift]"
-pip install "prism-ds[pyspark]"
-pip install "prism-ds[dbt]"
-```
+Prism also supports several adapters! They can be installed with the following commands:
+| Adapter      | Command |
+| ------------ | ----------- |
+| **dbt** | ```pip install "prism-ds[dbt]"``` |
+| **Google BigQuery** | ```pip install "prism-ds[bigquery]"``` |
+| **Postgres** | ```pip install "prism-ds[postgres]"``` |
+| **PySpark** | ```pip install "prism-ds[pyspark]"``` |
+| **Redshift** | ```pip install "prism-ds[redshift]"``` |
+| **Snowflake** | ```pip install "prism-ds[snowflake]"``` |
+| **Trino** | ```pip install "prism-ds[trino]"``` |
 
 To get started with Prism projects, check out our [documentation](https://docs.runprism.com). Some sections of interest include:
 
@@ -58,7 +62,8 @@ In addition, check out some [example projects](https://github.com/runprism/prism
 
 We're always looking to improve our product. Here's what we're working on at the moment:
 
-- **Additional adapters**: MySQL, Postgres, Redis, Slack, and more!
-- **Cloud deployment**: deploying and managing projects on Amazon EMR clusters, Docker containers, Databricks clusters, and more!
+- **Triggers**: trigger function calls on the success and/or failure of your project
+- **Additional adapters**: Celery, Dask, Docker, and more!
+- **Cloud deployment**: managed orchestration platform to deploy Prism projects in the cloud
 
 Let us know if you'd like to see another feature!

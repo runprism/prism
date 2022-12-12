@@ -6,32 +6,28 @@ Table of Contents
 - Class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 from typing import Any, Dict
 
 
-######################
-## Class definition ##
-######################
-
+####################
+# Class definition #
+####################
 
 class PrismTaskManager:
     """
-    PrismTaskManager class. This class manages all tasks in the DAG (and their associated outputs).
-    An instance of the task manager is passed to all `run` functions (via the kw `tasks`), and users
-    can reference the output of other tasks via `tasks.ref('...')`.
+    PrismTaskManager class. This class manages all tasks in the DAG (and their
+    associated outputs). An instance of the task manager is passed to all `run`
+    functions (via the kw `tasks`), and users can reference the output of other tasks
+    via `tasks.ref('...')`.
     """
 
     def __init__(self, upstream: Dict[str, Any]):
         self.upstream = upstream
 
-    
     def ref(self, module: str):
         return self.upstream[module].get_output()
-
-
-# EOF

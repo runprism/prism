@@ -8,9 +8,9 @@ Table of Contents:
 - Test case class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import pandas as pd
@@ -25,13 +25,10 @@ from prism.main import main
 import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
-# Ignore ResourceWarnings produced by boto3 during unittests
-import warnings
 
-
-###################################
-## Test case directory and paths ##
-###################################
+#################################
+# Test case directory and paths #
+#################################
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
@@ -81,12 +78,11 @@ run_success_starting_events = [
     'SeparatorEvent',
     'TaskRunEvent',
     'CurrentProjectDirEvent',
-    'CompileStartEvent',
     'EmptyLineEvent',
+    'ExecutionEvent - parsing prism_project.py - RUN',
+    'ExecutionEvent - parsing prism_project.py - DONE',
     'ExecutionEvent - module DAG - RUN',
     'ExecutionEvent - module DAG - DONE',
-    'ExecutionEvent - parsing config files - RUN',
-    'ExecutionEvent - parsing config files - DONE',
     'ExecutionEvent - creating pipeline, DAG executor - RUN',
     'ExecutionEvent - creating pipeline, DAG executor - DONE',
     'EmptyLineEvent'
@@ -426,7 +422,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         """
         `prism run` fails in a project with a bad mod ref
         """
-
+        self.maxDiff = None
         # Set working directory
         wkdir = Path(TEST_PROJECTS) / '011_bad_task_ref'
         os.chdir(wkdir)
@@ -442,8 +438,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             'SeparatorEvent',
             'TaskRunEvent',
             'CurrentProjectDirEvent',
-            'CompileStartEvent',
             'EmptyLineEvent',
+            'ExecutionEvent - parsing prism_project.py - RUN',
+            'ExecutionEvent - parsing prism_project.py - DONE',
             'ExecutionEvent - module DAG - RUN',
             'ExecutionEvent - module DAG - ERROR',
         ] + _run_task_end_events('PrismExceptionErrorEvent')
@@ -502,5 +499,40 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
+
+    def test_user_context_cli(self):
+        """
+        Test that CLI user context works as expected
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        if Path(wkdir / '.compiled').is_dir():
+            shutil.rmtree(Path(wkdir / '.compiled'))
+        self.maxDiff = None
+
+        # New output path
+        output_path = str(wkdir.parent)
+        self.assertFalse((Path(output_path) / 'module01.txt').is_file())
+        args = ['run', '--modules', 'module01.py', '--vars', f'OUTPUT={output_path}']
+        self._run_prism(args)
+        
+        # Get output
+        self.assertTrue((Path(output_path) / 'module01.txt').is_file())
+        module01_txt = self._file_as_str(Path(output_path) / 'module01.txt')
+        self.assertEqual('Hello from module 1!', module01_txt)
+        os.unlink(Path(output_path) / 'module01.txt')
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove stuff in output to avoid recommitting to github
+        self._remove_files_in_output(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
 
 # EOF

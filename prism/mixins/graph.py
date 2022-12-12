@@ -7,31 +7,26 @@ Table of Contents
 """
 
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import os
-import argparse
-from typing import Any, Dict
 from pathlib import Path
 import shutil
 
 # Prism-specific imports
-import prism.exceptions
-import prism.constants
-import prism.logging
 from prism.docs import DOCS_INDEX_FILE_DIR
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
-class DocsMixin():
+class GraphMixin():
     """
-    Mixin for gen_docs task
+    Mixin for graph task
     """
 
     def get_docs_dir(self,
@@ -46,7 +41,6 @@ class DocsMixin():
             documentation directory
         """
         return project_dir / 'docs'
-
 
     def create_docs_dir(self,
         project_dir: Path
@@ -63,10 +57,9 @@ class DocsMixin():
         if not docs_dir.is_dir():
             docs_dir.mkdir(parents=True, exist_ok=True)
         return docs_dir
-    
 
-    def populate_docs_build(self, 
-        project_dir: Path, 
+    def populate_docs_build(self,
+        project_dir: Path,
         compiled_dir: Path
     ) -> Path:
         """
@@ -81,9 +74,11 @@ class DocsMixin():
         self.create_docs_dir(project_dir)
         docs_dir = self.get_docs_dir(project_dir)
 
-        # Copy the build directory into the docs folder. For some reason, mypy doesn't think that
-        # shutil has a dirs_exist_ok field, but it does.
-        shutil.copytree(DOCS_INDEX_FILE_DIR, docs_dir / 'build', dirs_exist_ok=True) # type: ignore
+        # Copy the build directory into the docs folder. For some reason, mypy doesn't
+        # think that shutil has a dirs_exist_ok field, but it does.
+        shutil.copytree(                                                 # type: ignore
+            DOCS_INDEX_FILE_DIR, docs_dir / 'build', dirs_exist_ok=True  # type: ignore
+        )                                                                # type: ignore
 
         # Copy the manifest.json into the docs build directory
         manifest_json_path = compiled_dir / 'manifest.json'
@@ -94,6 +89,3 @@ class DocsMixin():
         # Return build path
         build_path = docs_dir / 'build'
         return build_path
-
-
-# EOF

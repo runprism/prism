@@ -6,25 +6,24 @@ Table of Contents
 - Class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import pandas as pd
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 # Prism-specific imports
 from .adapter import Adapter
 import prism.exceptions
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Snowflake(Adapter):
-
 
     def is_valid_config(self,
         config_dict: Dict[str, str],
@@ -55,23 +54,29 @@ class Snowflake(Adapter):
         ]
 
         # Raise an error if:
-        #   1. Config doesn't contain any of the required vars or contains additional config vars
+        #   1. Config doesn't contain any of the required vars or contains additional
+        #      config vars
         #   2. Any of the config values are None
         actual_config_vars = []
-        for k,v in config_dict.items():
+        for k, v in config_dict.items():
             if k not in required_config_vars:
-                raise prism.exceptions.InvalidProfileException(message=f'invalid var `{k}` - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
+                raise prism.exceptions.InvalidProfileException(
+                    message=f'invalid var `{k}` - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+                )
             actual_config_vars.append(k)
             if v is None:
-                raise prism.exceptions.InvalidProfileException(message=f'`{k}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
+                raise prism.exceptions.InvalidProfileException(
+                    message=f'`{k}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+                )
         vars_not_defined = list(set(required_config_vars) - set(actual_config_vars))
-        if len(vars_not_defined)>0:
+        if len(vars_not_defined) > 0:
             v = vars_not_defined.pop()
-            raise prism.exceptions.InvalidProfileException(message=f'`{v}` must be defined - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml')
+            raise prism.exceptions.InvalidProfileException(
+                message=f'`{v}` must be defined - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+            )
 
         # If no exception has been raised, return True
         return True
-
 
     def create_engine(self,
         adapter_dict: Dict[str, Any],
@@ -79,7 +84,8 @@ class Snowflake(Adapter):
         profile_name: str
     ):
         """
-        Parse Snowflake adapter, represented as a dict and return the Snowflake connector object
+        Parse Snowflake adapter, represented as a dict and return the Snowflake
+        connector object
 
         args:
             adapter_dict: Snowflake adapter represented as a dictionary
@@ -106,7 +112,6 @@ class Snowflake(Adapter):
         )
         return ctx
 
-
     def execute_sql(self, query: str, return_type: str) -> pd.DataFrame:
         """
         Execute the SQL query
@@ -114,12 +119,9 @@ class Snowflake(Adapter):
         # Create cursor for every SQL query -- this ensures thread safety
         cursor = self.engine.cursor()
         cursor.execute(query)
-        if return_type=="pandas":
+        if return_type == "pandas":
             df: pd.DataFrame = cursor.fetch_pandas_all()
             cursor.close()
             return df
         else:
             cursor.close()
-
-
-# EOF

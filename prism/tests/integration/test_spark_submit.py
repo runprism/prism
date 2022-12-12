@@ -7,9 +7,9 @@ Table of Contents:
 - Test case class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import io
@@ -30,9 +30,9 @@ import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
-###################################
-## Test case directory and paths ##
-###################################
+#################################
+# Test case directory and paths #
+#################################
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
@@ -227,77 +227,3 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # Set up wkdir for next tst
         self._set_up_wkdir()
-
-
-    def test_hooks_sql_spark(self):
-        """
-        Test hooks.sql() and hooks.spark
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '013_hooks_sql_spark'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        if Path(wkdir / '.compiled').is_dir():
-            shutil.rmtree(Path(wkdir / '.compiled'))
-        self.maxDiff = None
-        
-        # ------------------------------------------------------------------------------------------
-        # Run snowflake.py and spark.py
-
-        args = ['spark-submit', '--modules', 'snowflake.py', 'spark.py']
-        self._run_prism(args)
-        
-        # Get module 1 and 2 outputs
-        sample_data_1 = pd.read_csv(wkdir / 'output' / 'sample_data_1.csv')
-        sample_data_2 = pd.read_csv(wkdir / 'output' / 'sample_data_2.csv')
-        sample_data_1_filtered = pd.read_csv(wkdir / 'output' / 'sample_data_1_filtered.csv')
-        sample_data_2_filtered = pd.read_csv(wkdir / 'output' / 'sample_data_2_filtered.csv')
-
-        # Sample data 1 and 2 should have 50 rows
-        for df in [sample_data_1, sample_data_2]:
-            self.assertEqual(df.shape[0], 50)
-        
-        # Sample data 1 should only have C_MKTSEGMENT = MACHINERY
-        sample_data_1_mktsegment = list(sample_data_1['C_MKTSEGMENT'].unique())
-        self.assertEqual(len(sample_data_1_mktsegment), 1)
-        self.assertEqual(sample_data_1_mktsegment[0], 'MACHINERY')
-
-        # Sample data 1 should only have C_MKTSEGMENT = HOUSEHOLD
-        sample_data_2_mktsegment = list(sample_data_2['C_MKTSEGMENT'].unique())
-        self.assertEqual(len(sample_data_2_mktsegment), 1)
-        self.assertEqual(sample_data_2_mktsegment[0], 'HOUSEHOLD')
-
-        # Filtered sample data 1 should only have C_ACCTBAL > 1000
-        sample_data_1_min_acctbal = min(sample_data_1_filtered['C_ACCTBAL'])
-        self.assertFalse(sample_data_1_min_acctbal > 2000)
-        self.assertTrue(sample_data_1_min_acctbal > 1000)
-
-        # Filtered sample data 2 should only have C_ACCTBAL > 2000
-        sample_data_2_min_acctbal = min(sample_data_2_filtered['C_ACCTBAL'])
-        self.assertFalse(sample_data_2_min_acctbal > 3000)
-        self.assertTrue(sample_data_2_min_acctbal > 2000)
-
-
-        # ------------------------------------------------------------------------------------------
-        # Run bad_adapter.py
-
-        args = ['spark-submit', '--modules', 'bad_adapter.py']
-        run_results = self._run_prism(args)
-
-        # We can't check the error events directly; for now, let's just check that the output wasn't
-        # created.
-        self.assertFalse(Path(wkdir / 'output' / 'bad_adapter.csv').is_file())
-        
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove stuff in output to avoid recommitting to github
-        self._remove_files_in_output(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-
-# EOF

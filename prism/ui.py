@@ -5,9 +5,9 @@ Table of Contents
 - ANSI color codes
 """
 
-######################
-## ANSI color codes ##
-######################
+####################
+# ANSI color codes #
+####################
 
 BLACK = "\u001b[30m"
 RED = "\u001b[31m"
@@ -24,11 +24,8 @@ BRIGHT_GREEN = "\u001b[32;1m"
 BOLD = "\u001b[1m"
 
 
-####################
-## Terminal width ##
-####################
+##################
+# Terminal width #
+##################
 
 TERMINAL_WIDTH = 100
-
-
-# EOF

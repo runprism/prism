@@ -10,9 +10,9 @@ Table of Contents:
 """
 
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import argparse
@@ -28,9 +28,9 @@ from prism.cli import run
 from prism.parsers import yml_parser
 
 
-###################################
-## Test case directory and paths ##
-###################################
+#################################
+# Test case directory and paths #
+#################################
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)

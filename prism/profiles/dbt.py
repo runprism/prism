@@ -1,6 +1,6 @@
 """
 DBT adapter class definition. This definition uses source code from:
-    
+
     https://github.com/fal-ai/fal
 
 Modifications are made to ensure compatibility with the rest of prism's architecture
@@ -11,9 +11,9 @@ Table of Contents
 - Class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 from dataclasses import dataclass
@@ -35,7 +35,7 @@ import dbt.tracking
 from dbt.task.compile import CompileTask
 from dbt.parser.manifest import ManifestLoader
 from dbt.contracts.graph.manifest import Manifest, MaybeNonSource, Disabled
-from dbt.contracts.graph.compiled import ManifestNode, CompileResultNode
+from dbt.contracts.graph.compiled import CompileResultNode
 from dbt.adapters.sql import SQLAdapter
 import dbt.adapters.factory as adapters_factory
 from dbt.contracts.sql import ResultTable, RemoteRunResult
@@ -45,12 +45,10 @@ from dbt.contracts.connection import AdapterResponse
 from .adapter import Adapter
 import prism.exceptions
 
-from prism.profiles import adapter
 
-
-############################
-## Utils / helper classes ##
-############################
+##########################
+# Utils / helper classes #
+##########################
 
 @dataclass
 class DbtRuntimeConfigArgs:
@@ -60,10 +58,12 @@ class DbtRuntimeConfigArgs:
     single_threaded: bool
     target: Optional[str]
 
+
 @dataclass
 class InitializeFlagsArgs:
     profiles_dir: str
     use_colors: Optional[bool]
+
 
 @dataclass
 class InitializeDbtCompileTaskArgs:
@@ -75,9 +75,9 @@ class InitializeDbtCompileTaskArgs:
     single_threaded: Optional[bool]
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Dbt(Adapter):
     """
@@ -88,7 +88,9 @@ class Dbt(Adapter):
         self.name = name
         self.profile_name = profile_name
         self.adapter_dict = adapter_dict
-        dbt_project_dir, dbt_profiles_dir, dbt_profiles_target = self.parse_adapter_dict(self.adapter_dict, self.name, self.profile_name)
+        dbt_project_dir, dbt_profiles_dir, dbt_profiles_target = self.parse_adapter_dict(  # noqa: E501
+            self.adapter_dict, self.name, self.profile_name
+        )
 
         # Get project directory, profiles directory, and profiles target
         self.dbt_project_dir = dbt_project_dir
@@ -99,10 +101,10 @@ class Dbt(Adapter):
         self.initialize_dbt_flags(self.dbt_profiles_dir)
         config = self.get_dbt_runtime_config(
             self.dbt_project_dir,
-            self.dbt_profiles_dir, 
+            self.dbt_profiles_dir,
             profile_target=self.dbt_profiles_target
         )
-        
+
         # Initialize flags and compile task
         self.compile_task = self.initialize_compile_task(self.dbt_profiles_dir, config)
         dbt.tracking.initialize_tracking(self.dbt_profiles_dir)
@@ -112,7 +114,6 @@ class Dbt(Adapter):
 
         # Get adapter
         self.adapter = self.get_dbt_adapter(config)
-
 
     def parse_adapter_dict(self,
         adapter_dict: Dict[str, Optional[str]],
@@ -132,31 +133,44 @@ class Dbt(Adapter):
             dbt_project_directory, dbt_profiles_directory, dbt_profiles_target
         """
         if return_type not in ["str", "list"]:
-            raise prism.exceptions.RuntimeException(message=f'invalid `{return_type}` in `{self.__class__.__name__}.parse_adapter_dict`, must be either "str" or "list"')
+            raise prism.exceptions.RuntimeException(
+                message=f'invalid `{return_type}` in `{self.__class__.__name__}.parse_adapter_dict`, must be either "str" or "list"'  # noqa: E501
+            )
 
         # Get dbt_project_directory, dbt_profiles_directory, dbt_profiles_target
-        dbt_project_dir = self.get_adapter_var(adapter_dict, "project_dir", adapter_name, profile_name)
+        dbt_project_dir = self.get_adapter_var(
+            adapter_dict, "project_dir", adapter_name, profile_name
+        )
 
         # If the dbt_profiles_dir is not populated, assume the default
         try:
-            dbt_profiles_dir = self.get_adapter_var(adapter_dict, "profiles_dir", adapter_name, profile_name)
+            dbt_profiles_dir = self.get_adapter_var(
+                adapter_dict, "profiles_dir", adapter_name, profile_name
+            )
         except prism.exceptions.InvalidProfileException:
             dbt_profiles_dir = os.path.expanduser('~/.dbt/')
 
         try:
-            dbt_profiles_target = self.get_adapter_var(adapter_dict, "profiles_target", adapter_name, profile_name)
+            dbt_profiles_target = self.get_adapter_var(
+                adapter_dict, "profiles_target", adapter_name, profile_name
+            )
         except prism.exceptions.InvalidProfileException:
             dbt_profiles_target = None
-        
+
         # For type hinting
         if not isinstance(dbt_project_dir, str):
-            raise prism.exceptions.InvalidProfileException(message=f'invalid `dbt_project_dir` type `{str(type(dbt_project_dir))}`')
+            raise prism.exceptions.InvalidProfileException(
+                message=f'invalid `dbt_project_dir` type `{str(type(dbt_project_dir))}`'
+            )
         if not isinstance(dbt_profiles_dir, str):
-            raise prism.exceptions.InvalidProfileException(message=f'invalid `dbt_profiles_dir` type `{str(type(dbt_project_dir))}`')
+            raise prism.exceptions.InvalidProfileException(
+                message=f'invalid `dbt_profiles_dir` type `{str(type(dbt_project_dir))}`'  # noqa: E501
+            )
         if not (isinstance(dbt_profiles_target, str) or dbt_profiles_target is None):
-            raise prism.exceptions.InvalidProfileException(message=f'invalid `dbt_profiles_target` type `{str(type(dbt_project_dir))}`')
+            raise prism.exceptions.InvalidProfileException(
+                message=f'invalid `dbt_profiles_target` type `{str(type(dbt_project_dir))}`'  # noqa: E501
+            )
         return dbt_project_dir, dbt_profiles_dir, dbt_profiles_target
-    
 
     def get_dbt_runtime_config(self,
         project_dir: str,
@@ -166,7 +180,7 @@ class Dbt(Adapter):
     ) -> RuntimeConfig:
         """
         Get dbt RuntimeConfig object
-        
+
         args:
             project_dir: dbt project directory
             profiles_dir: dbt profiles dir
@@ -185,16 +199,16 @@ class Dbt(Adapter):
         )
         return RuntimeConfig.from_args(args)
 
-
     def initialize_dbt_flags(self,
         profiles_dir: str
     ):
         """
-        Initializes the flags module from dbt. This module ensures that the dbt compile task does not throw an error.
+        Initializes the flags module from dbt. This module ensures that the dbt compile
+        task does not throw an error.
 
         args:
             profiles_dir: dbt profiles directory
-        """        
+        """
         args = InitializeFlagsArgs(profiles_dir, None)
         user_config = read_user_config(profiles_dir)
         try:
@@ -205,14 +219,13 @@ class Dbt(Adapter):
         # Set invocation id
         events_functions.set_invocation_id()
 
-    
     def initialize_compile_task(self,
         profiles_dir: str,
         dbt_config: RuntimeConfig
     ):
         """
-        Initialize the compile task and call _runtime_initialize(). This must be done after the flags module has been
-        initialized.
+        Initialize the compile task and call _runtime_initialize(). This must be done
+        after the flags module has been initialized.
 
         args:
             profiles_dir: directory of dbt profiles
@@ -223,14 +236,16 @@ class Dbt(Adapter):
         # All the arguments to the compile task can be None or empty
         selector_name = None
         select: List[str] = []
-        exclude: Tuple[str, str] = tuple() # type: ignore
+        exclude: Tuple[str, str] = tuple()  # type: ignore
         state = None
-        args = InitializeDbtCompileTaskArgs(selector_name, select, select, exclude, state, None)
+        args = InitializeDbtCompileTaskArgs(
+            selector_name, select, select, exclude, state, None
+        )
 
-        # Initialize compile task. No need to call _runtime_initialize, because we do not need to read the graph
+        # Initialize compile task. No need to call _runtime_initialize, because we do
+        # not need to read the graph
         compile_task = CompileTask(args, dbt_config)
         return compile_task
-    
 
     def get_dbt_manifest(self,
         dbt_config: RuntimeConfig
@@ -243,7 +258,6 @@ class Dbt(Adapter):
         """
         return ManifestLoader.get_full_manifest(dbt_config)
 
-    
     def get_dbt_adapter(self,
         dbt_config: RuntimeConfig
     ):
@@ -260,12 +274,11 @@ class Dbt(Adapter):
         adapter: SQLAdapter = adapters_factory.get_adapter(dbt_config)
         return adapter
 
-
     def get_parsed_model_node(self,
         target_model_name: str,
         target_model_package: Optional[str],
         project_dir: str,
-        manifest: Manifest  
+        manifest: Manifest
     ) -> CompileResultNode:
         """
         Get the node associated with the inputted target model
@@ -278,9 +291,11 @@ class Dbt(Adapter):
         returns:
             node associated with inputted target model
         """
-        # Use `resolve_ref` method from manifest class. For simple projects, it should be the case that `node_package`
-        # is identical to `project_directory`. There may be more complex projects where this is not the case. We
-        # implement the simple version for now.
+        # Use `resolve_ref` method from manifest class. For simple projects, it should
+        # be the case that `node_package` is identical to `project_directory`. There may
+        # be more complex projects where this is not the case. We implement the simple
+        # version for now.
+
         # TODO: test target model creation where node_package != project_dir
         target_model: MaybeNonSource = manifest.resolve_ref(
             target_model_name=target_model_name,
@@ -289,18 +304,21 @@ class Dbt(Adapter):
             node_package=project_dir
         )
 
-        # If model isn't found, then throw an error. 
-        package_str = f"'{target_model_package}'." if target_model_package is not None else ""
+        # If model isn't found, then throw an error.
+        package_str = f"'{target_model_package}'." if target_model_package is not None else ""  # noqa: E501
         model_str = f"{package_str}'{target_model_name}'"
         if target_model is None:
-            raise prism.exceptions.RuntimeException(message=f'could not find model dbt model `{model_str}`')
+            raise prism.exceptions.RuntimeException(
+                message=f'could not find model dbt model `{model_str}`'
+            )
 
         # The model could be disabled
         if isinstance(target_model, Disabled):
-            raise prism.exceptions.RuntimeException(message=f'dbt model `{model_str}` is disabled')
+            raise prism.exceptions.RuntimeException(
+                message=f'dbt model `{model_str}` is disabled'
+            )
 
         return target_model
-
 
     def get_target_model_relation(self,
         target: CompileResultNode,
@@ -308,7 +326,8 @@ class Dbt(Adapter):
         manifest: Manifest
     ):
         """
-        Get target model relation (i.e., the location of target model in syntax of project's SQL engine)
+        Get target model relation (i.e., the location of target model in syntax of
+        project's SQL engine)
 
         args:
             target: target model node
@@ -317,7 +336,7 @@ class Dbt(Adapter):
         returns:
             target model relation
         """
-        
+
         # Create a unique adapter connection and avoid clashes
         name = "relation:" + str(hash(str(target))) + ":" + str(uuid4())
         relation = None
@@ -327,18 +346,19 @@ class Dbt(Adapter):
 
         # If relation is still none, throw an error
         if relation is None:
-            raise prism.exceptions.RuntimeException(message=f'cannot find relation for target `{target.unique_id}`')
-        
+            raise prism.exceptions.RuntimeException(
+                message=f'cannot find relation for target `{target.unique_id}`'
+            )
+
         return relation
 
-    
     def execute_sql(self,
         adapter: SQLAdapter,
         sql_query: str
     ) -> Tuple[AdapterResponse, RemoteRunResult]:
         """
         Use dbt adapter to execute SQL query
-        
+
         args:
             adapter: dbt SQLAdapter
             sql_query: SQL query
@@ -346,14 +366,15 @@ class Dbt(Adapter):
         # Create unique adapter connection to avoid clashes
         name = "SQL:" + str(hash(sql_query)) + ":" + str(uuid4())
         with adapter.connection_named(name):
-            response, adapter_exec_result = adapter.execute(sql_query, auto_begin=True, fetch=True)
+            response, adapter_exec_result = adapter.execute(
+                sql_query, auto_begin=True, fetch=True)
 
             # Create agate table
             table = ResultTable(
                 column_names=list(adapter_exec_result.column_names),
                 rows=[list(row) for row in adapter_exec_result],
             )
-            
+
             # Create remote run result
             result = RemoteRunResult(
                 raw_sql=sql_query,
@@ -365,9 +386,8 @@ class Dbt(Adapter):
                 generated_at=datetime.utcnow(),
             )
             adapter.commit_if_has_connection()
-        
-        return response, result
 
+        return response, result
 
     def remote_result_to_pd(self,
         result: RemoteRunResult
@@ -384,14 +404,13 @@ class Dbt(Adapter):
             result.table.rows, columns=result.table.column_names, coerce_float=True
         )
 
-    
     def handle_ref(self,
         target_1: str,
         target_2: Optional[str] = None
     ) -> pd.DataFrame:
         """
         Download a dbt model into a Pandas DataFrame:
-        
+
         args:
             target_1, target_2: dbt model
         returns:
@@ -403,12 +422,12 @@ class Dbt(Adapter):
         if target_2 is not None:
             target_package_name = target_1
             target_model_name = target_2
-        
+
         # Get target model
         target_model = self.get_parsed_model_node(
             target_model_name,
             target_package_name,
-            self.dbt_project_dir, 
+            self.dbt_project_dir,
             self.manifest
         )
 
@@ -425,7 +444,6 @@ class Dbt(Adapter):
         df = self.remote_result_to_pd(result)
         return df
 
-    
     def execute(self, return_type: str = "list"):
         """
         The `execute` method generates a string containing code to be executed
@@ -433,21 +451,18 @@ class Dbt(Adapter):
 
         execute_str = [
             "from prism.profiles.dbt import Dbt",
-            "DbtProject = Dbt(name='{name}', adapter_dict={adapter_dict})".format(name=self.name, adapter_dict=str(self.adapter_dict))
+            "DbtProject = Dbt(name='{name}', adapter_dict={adapter_dict})".format(name=self.name, adapter_dict=str(self.adapter_dict))  # noqa: E501
         ]
-        if return_type=="list":
+        if return_type == "list":
             return execute_str
         else:
             return '\n'.join(execute_str)
-    
 
     def create_engine(self,
         adapter_dict: Dict[str, Any],
         adapter_name: str,
         profile_name: str
     ):
-        # Unlike SQL adapters, the class itself is all that is required to handle DBT refs. Do nothing.
+        # Unlike SQL adapters, the class itself is all that is required to handle DBT
+        # refs. Do nothing.
         return
-        
-
-# EOF

@@ -6,9 +6,9 @@ Table of Contents
 - Class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 from typing import Any, Dict, List, Union
@@ -18,9 +18,9 @@ from .adapter import Adapter
 import prism.exceptions
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Pyspark(Adapter):
     """
@@ -28,9 +28,10 @@ class Pyspark(Adapter):
     """
 
     def get_alias(self):
-        return self.get_adapter_var(self.adapter_dict, "alias", self.name, self.profile_name)
+        return self.get_adapter_var(
+            self.adapter_dict, "alias", self.name, self.profile_name
+        )
 
-	
     def base_config_template(self):
         pyspark_config_exec_template = [
             "{alias} = SparkSession.builder.enableHiveSupport() \\",
@@ -38,7 +39,6 @@ class Pyspark(Adapter):
             "\t.getOrCreate()"
         ]
         return pyspark_config_exec_template
-
 
     def parse_adapter_dict(self,
         adapter_dict: Dict[str, Any],
@@ -57,55 +57,82 @@ class Pyspark(Adapter):
             config_exec: code to execute PySpark configuration
         """
         if return_type not in ["str", "list"]:
-            raise prism.exceptions.RuntimeException(message=f'invalid `{return_type}` in `{self.__class__.__name__}.parse_adapter_dict`, must be either "str" or "list"')
+            raise prism.exceptions.RuntimeException(
+                message=f'invalid `{return_type}` in `{self.__class__.__name__}.parse_adapter_dict`, must be either "str" or "list"'  # noqa: E501
+            )
 
         base = self.base_config_template()
 
         # Get alias and config dictionary
-        alias = self.get_adapter_var(adapter_dict, "alias", adapter_name, profile_name)
-        config = self.get_adapter_var(adapter_dict, "config", adapter_name, profile_name)
+        alias = self.get_adapter_var(
+            adapter_dict, "alias", adapter_name, profile_name
+        )
+        config = self.get_adapter_var(
+            adapter_dict, "config", adapter_name, profile_name
+        )
 
         # Iterate through config and create SparkContext builder
         config_idx = base.index("{config_vars}")
-        config_list = [f"\t.config('{k}', '{v}') \\" for k,v in config.items() if v is not None]
-        base[config_idx:config_idx+1] = config_list
+        config_list = [
+            f"\t.config('{k}', '{v}') \\" for k, v in config.items() if v is not None
+        ]
+        base[config_idx:config_idx + 1] = config_list
         profile_exec_list = []
         for elem in base:
             new_elem = elem.format(
                 alias=alias
             )
             profile_exec_list.append(new_elem)
-        
+
         # Return either list or string
-        if return_type=="list":
+        if return_type == "list":
             return profile_exec_list
         else:
             return '\n'.join(profile_exec_list)
 
+    def create_engine(self,
+        adapter_dict: Dict[str,
+        Any],
+        adapter_name: str,
+        profile_name: str
+    ):
+        from pyspark.sql import SparkSession  # noqa: F401
+        execution_code = self.parse_adapter_dict(
+            adapter_dict, adapter_name, profile_name, "str"
+        )
 
-    def create_engine(self, adapter_dict: Dict[str, Any], adapter_name: str, profile_name: str):
-        from pyspark.sql import SparkSession
-        execution_code = self.parse_adapter_dict(adapter_dict, adapter_name, profile_name, "str")
-        
         # For type hinting
         if isinstance(execution_code, list):
             execution_code = '\n'.join(execution_code)
         exec(execution_code, locals())
-        
+
         try:
-            log_level = self.get_adapter_var(adapter_dict, "loglevel", adapter_name, profile_name)
+            log_level = self.get_adapter_var(
+                adapter_dict, "loglevel", adapter_name, profile_name
+            )
         except prism.exceptions.InvalidProfileException:
             log_level = "WARN"
-        
-        if log_level not in ['ALL', 'DEBUG', 'ERROR', 'FATAL', 'INFO', 'OFF', 'TRACE', 'WARN']:
-                raise prism.exceptions.InvalidProfileException(message=f'invalid log level `{log_level}`')
+
+        accepted_log_levels = [
+            'ALL',
+            'DEBUG',
+            'ERROR',
+            'FATAL',
+            'INFO',
+            'OFF',
+            'TRACE',
+            'WARN'
+        ]
+        if log_level not in accepted_log_levels:
+            raise prism.exceptions.InvalidProfileException(
+                message=f'invalid log level `{log_level}`'
+            )
 
         # For type hinting
         alias = self.get_adapter_var(adapter_dict, "alias", adapter_name, profile_name)
         if not isinstance(alias, str):
-            raise prism.exceptions.InvalidProfileException(message=f'invalid `alias` type')
+            raise prism.exceptions.InvalidProfileException(
+                message='invalid `alias` type'
+            )
         locals()[alias].sparkContext.setLogLevel(log_level)
         return locals()[alias]
-
-
-# EOF

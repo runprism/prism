@@ -1,10 +1,10 @@
 """
-In this script, we... 
+In this script, we...
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Prism infrastructure imports
 import prism.task
@@ -14,13 +14,14 @@ import prism.decorators
 # Prism project imports
 import prism_project
 
-######################
-## Class definition ##
-######################
+
+###################
+# Task definition #
+###################
 
 class Module01(prism.task.PrismTask):
 
-    ## Run
+    # Run
     @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'hello_world.txt')
     def run(self, tasks, hooks):
         """
@@ -36,6 +37,3 @@ class Module01(prism.task.PrismTask):
             task output
         """
         return "Hello, world!"
-
-
-# EOF

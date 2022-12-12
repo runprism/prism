@@ -9,9 +9,9 @@ Table of Contents:
 - Test case class definition
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Standard library imports
 import os
@@ -23,9 +23,9 @@ import prism.exceptions
 from prism.infra import project
 
 
-###################################
-## Test case directory and paths ##
-###################################
+#################################
+# Test case directory and paths #
+#################################
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
@@ -57,7 +57,12 @@ class TestPrismProject(unittest.TestCase):
         Confirm that all test *.py files can be loaded without error
         """
         for filename in ALL_TEST_CASE_FILES:
-            prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=filename)
+            prism_project = project.PrismProject(
+                project_dir=PRISM_PROJECT_PY_TEST_CASES,
+                user_context={},
+                which="run",
+                filename=filename
+            )
         
 
     def test_non_null_profile(self):
@@ -65,7 +70,12 @@ class TestPrismProject(unittest.TestCase):
         The run task uses the AST module to extract the profile variable from the prism_project.py file without
         executing it. Confirm that this module extracts a non-null profile correctly.
         """
-        prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=NON_NULL_PROFILE)
+        prism_project = project.PrismProject(
+            project_dir=PRISM_PROJECT_PY_TEST_CASES,
+            user_context={},
+            which="run",
+            filename=NON_NULL_PROFILE
+        )
         prism_project_py_str = prism_project.prism_project_py_str
         profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
         expected_profile = 'this_is_a_test!!!'
@@ -80,7 +90,12 @@ class TestPrismProject(unittest.TestCase):
         """
         Confirm that the run task correctly extracts the profile variable when it is set to 'None'
         """
-        prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=NULL_PROFILE)
+        prism_project = project.PrismProject(
+            project_dir=PRISM_PROJECT_PY_TEST_CASES,
+            user_context={},
+            which="run",
+            filename=NULL_PROFILE
+        )
         prism_project_py_str = prism_project.prism_project_py_str
         profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
         self.assertTrue(profile is None)
@@ -91,7 +106,12 @@ class TestPrismProject(unittest.TestCase):
         Confirm that the run task correctly returns None when the inputted var (which will almost always be `profile`)
         is missing
         """
-        prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=NO_PROFILE)
+        prism_project = project.PrismProject(
+            project_dir=PRISM_PROJECT_PY_TEST_CASES,
+            user_context={},
+            which="run",
+            filename=NO_PROFILE
+        )
         prism_project_py_str = prism_project.prism_project_py_str
         profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')
         self.assertTrue(profile is None)
@@ -102,7 +122,12 @@ class TestPrismProject(unittest.TestCase):
         Confirm that the run task throws an error if there are multiple assignments for the inputted var (which will
         almost always be `profile`)
         """
-        prism_project = project.PrismProject(project_dir=PRISM_PROJECT_PY_TEST_CASES, profiles_path=None, env="local", which="run", filename=MULTIPLE_PROFILES)
+        prism_project = project.PrismProject(
+            project_dir=PRISM_PROJECT_PY_TEST_CASES,
+            user_context={},
+            which="run",
+            filename=MULTIPLE_PROFILES
+        )
         prism_project_py_str = prism_project.prism_project_py_str
         with self.assertRaises(prism.exceptions.InvalidProjectPyException) as cm:
             profile = prism_project.safe_eval_var_from_file(prism_project_py_str, 'PROFILE')

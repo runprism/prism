@@ -7,9 +7,9 @@ Table of Contents
 - Target decorators
 """
 
-#############
-## Imports ##
-#############
+###########
+# Imports #
+###########
 
 # Prism imports
 import prism.exceptions
@@ -17,9 +17,9 @@ import prism.infra.hooks
 import prism.infra.task_manager
 
 
-#######################
-## Class definitions ##
-#######################
+#####################
+# Class definitions #
+#####################
 
 class PrismTarget:
 
@@ -45,7 +45,7 @@ class PandasCsv(PrismTarget):
 
 
 class NumpyTxt(PrismTarget):
-    
+
     def save(self, **kwargs):
         import numpy as np
         np.savetxt(self.loc, self.obj, **kwargs)
@@ -63,6 +63,3 @@ class MatplotlibPNG(PrismTarget):
 
     def save(self, **kwargs):
         self.obj.savefig(self.loc, **kwargs)
-
-
-# EOF
