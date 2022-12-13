@@ -187,7 +187,7 @@ class PrismDAG(
         # Create DAG executor and Pipeline objects
         threads = prism_project.thread_count
         dag_executor = prism_executor.DagExecutor(
-            self.project_dir, compiled_dag, all_upstream, threads
+            self.project_dir, compiled_dag, all_upstream, threads, user_context
         )
         pipeline = self.create_pipeline(
             prism_project, dag_executor, self.run_context
