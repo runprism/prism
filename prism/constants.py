@@ -27,12 +27,12 @@ IGNORE_FILES = ["__pycache__", '*checkpoint.ipynb', '.ipynb_checkpoints']
 # Profile/adapter constants
 VALID_PROFILE_KEYS = ["adapters"]
 VALID_ADAPTERS = [
-    "snowflake",
-    "pyspark",
-    "dbt",
     "bigquery",
-    "redshift",
+    "dbt",
     "postgres",
+    "pyspark",
+    "redshift",
+    "snowflake",
     "trino",
 ]
 
