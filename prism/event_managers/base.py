@@ -117,6 +117,7 @@ class BaseEventManager:
     def manage_events_during_run(self,
         event_list: List[prism.logging.Event],
         fire_exec_events=True,
+        fire_empty_line_events=True,
         **kwargs
     ) -> EventManagerOutput:
         """
@@ -149,7 +150,8 @@ class BaseEventManager:
         except SyntaxError:
             if fire_exec_events:
                 event_list = self.fire_error_exec_event(start_time, event_list)
-            event_list = fire_empty_line_event(event_list)
+            if fire_empty_line_events:
+                event_list = fire_empty_line_event(event_list)
             exc_type, exc_value, exc_tb = sys.exc_info()
             if self.full_tb:
                 syntax_error_event = prism.logging.ExecutionSyntaxErrorEvent(
@@ -165,7 +167,8 @@ class BaseEventManager:
         except Exception:
             if fire_exec_events:
                 event_list = self.fire_error_exec_event(start_time, event_list)
-            event_list = fire_empty_line_event(event_list)
+            if fire_empty_line_events:
+                event_list = fire_empty_line_event(event_list)
             exc_type, exc_value, exc_tb = sys.exc_info()
             if self.full_tb:
                 exception_event = prism.logging.ExecutionErrorEvent(

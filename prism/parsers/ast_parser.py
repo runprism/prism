@@ -362,3 +362,57 @@ class AstParser:
                     target=self.module_relative_path, source=mr
                 )
             return all_task_refs
+
+    def get_variable_assignments(self, node, var_name: str):
+        """
+        Get `var_name` assignment from the Prism task. This can be used to assess the
+        number of retries and the retry delay seconds.
+
+        args:
+            node: parent node
+            var_name: variable name
+        returns:
+            assigned value of variable
+        """
+        # If the inputted node is an ast.Assign object, then the function is executing
+        # one of its recursive calls. In this case, walk through the assign object and
+        # find the names / constants.
+        if isinstance(node, ast.Assign):
+
+            # We eventually want to find names and constants. The order of the names
+            # should exactly match the order of the constants. E.g., if the user says
+            # VAR1, VAR2 = 30, 60, then the first name object will be VAR1 and the first
+            # constant object will be 30.
+            names = []
+            constants = []
+            for sub_node in ast.walk(node):
+                if isinstance(sub_node, ast.Name):
+                    names.append(sub_node.id)
+                if isinstance(sub_node, ast.Constant):
+                    constants.append(sub_node.value)
+
+            # Get the var name
+            for n, c in zip(names, constants):
+                if n == var_name:
+                    return c
+
+            # If nothing has been returned, return None
+
+        # Assume that the var name is an ast.Assign object. If it isn't, then it isn't a
+        # variable assignment, it's something else.
+        else:
+            assigns = []
+            for node in ast.walk(node):
+                if isinstance(node, ast.Assign):
+                    assigns.append(node)
+
+            # Iterate through assign objects
+            val = None
+            for ast_assign in assigns:
+                new_val = self.get_variable_assignments(ast_assign, var_name)
+                if new_val is not None:
+                    val = new_val
+
+            # Return val. This will return None if the var name is found, and it will
+            # return the last value for var name if it is defined multiple times.
+            return val

@@ -40,7 +40,8 @@ from prism.ui import (
     RESET,
     BRIGHT_GREEN,
     BOLD,
-    TERMINAL_WIDTH
+    MAGENTA,
+    TERMINAL_WIDTH,
 )
 
 
@@ -529,6 +530,18 @@ class ThreadsWarningEvent(Event):
 
     def message(self):
         return f'{YELLOW}`THREADS` not found in prism_project.py; defaulting to 1{RESET}'  # noqa: E501
+
+
+@dataclass
+class DelayEvent(Event):
+    name: str
+    delay_seconds: int
+
+    def message(self):
+        if self.delay_seconds > 0:
+            return f'{YELLOW}`{self.name}` failed...delaying {self.delay_seconds} before restarting'  # noqa: E501
+        else:
+            return f'{YELLOW}`{self.name}` failed...restarting immediately'
 
 
 def deprecated(deprecated_fn: str, updated_fn: str):

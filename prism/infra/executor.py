@@ -14,6 +14,7 @@ Table of Contents
 from dataclasses import dataclass
 from multiprocessing.dummy import Pool
 from pathlib import Path
+import time
 from typing import Any, Dict, List, Optional, Union
 
 # Prism-specific imports
@@ -22,7 +23,8 @@ from prism.infra import module as prism_module
 from prism.infra import compiler as prism_compiler
 from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
-from prism.logging import Event
+import prism.logging
+from prism.logging import Event, fire_console_event
 from prism.event_managers import base as base_event_manager
 from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAME
 
@@ -118,7 +120,6 @@ class DagExecutor:
         event_list: List[Event] = []
         if task_manager == 0:
             base_event_manager.EventManagerOutput(0, None, event_list)
-        name = module.name
         relative_path = module.module_relative_path
         full_path = module.module_full_path
 
@@ -156,22 +157,44 @@ class DagExecutor:
         self.run_context['__file__'] = str(
             self.project_dir / f'modules/{str(relative_path)}'
         )
-        script_manager = base_event_manager.BaseEventManager(
-            idx=idx,
-            total=total,
-            name=name,
-            full_tb=full_tb,
-            func=module.exec
-        )
-        script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(  # noqa: E501
-            event_list,
-            fire_exec_events,
-            run_context=self.run_context,
-            task_manager=task_manager,
-            hooks=hooks,
-            explicit_run=relative_path not in self.nodes_not_explicitly_run,
-            user_context=user_context
-        )
+
+        # Execute the module with appropriate number of retries
+        retries, retry_delay_seconds = module.grab_retries_metadata()
+        num_runs = 0
+        num_expected_runs = retries + 1
+        outputs = 0
+        name = module.name
+        while num_runs != num_expected_runs and outputs == 0:
+            num_runs += 1
+            if num_runs > 1:
+                event_list = fire_console_event(
+                    prism.logging.DelayEvent(name, retry_delay_seconds),
+                    log_level='warn'
+                )
+                time.sleep(retry_delay_seconds)
+                name = module.name + f' (RETRY {num_runs - 1})'
+
+            # Only fire empty line if last retry has been executed
+            fire_empty_line_events = num_runs == num_expected_runs
+            script_manager = base_event_manager.BaseEventManager(
+                idx=idx,
+                total=total,
+                name=name,
+                full_tb=full_tb,
+                func=module.exec
+            )
+            script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(  # noqa: E501
+                event_list,
+                fire_exec_events,
+                fire_empty_line_events,
+                run_context=self.run_context,
+                task_manager=task_manager,
+                hooks=hooks,
+                explicit_run=relative_path not in self.nodes_not_explicitly_run,
+                user_context=user_context
+            )
+            outputs = script_event_manager_result.outputs
+
         return script_event_manager_result
 
     def _cancel_connections(self, pool):
