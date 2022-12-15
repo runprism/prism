@@ -175,7 +175,8 @@ class InitTask(prism.cli.base.BaseTask):
             ),
             event_list,
             0,
-            log_level='info'
+            log_level='info',
+            formatted=False
         )
         event_list = fire_console_event(
             prism.logging.SeparatorEvent(),
