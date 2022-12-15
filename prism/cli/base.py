@@ -129,7 +129,7 @@ class BaseTask(base_mixins.BaseMixin):
 
         # Fire header events
         event_list = fire_console_event(
-            prism.logging.SeparatorEvent(), base_event_list, 1, 'info'
+            prism.logging.SeparatorEvent(), base_event_list, 1, 'info', False
         )
         event_list = fire_console_event(
             prism.logging.TaskRunEvent(version=prism.constants.VERSION),
@@ -169,7 +169,8 @@ class BaseTask(base_mixins.BaseMixin):
             prism.logging.SeparatorEvent(),
             event_list,
             sleep=0,
-            log_level='info'
+            log_level='info',
+            formatted=False
         )
         return event_list
 

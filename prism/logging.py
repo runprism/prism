@@ -36,10 +36,10 @@ from prism.ui import (
     RED,
     GREEN,
     YELLOW,
-    PURPLE,
     RESET,
     BRIGHT_GREEN,
     BOLD,
+    CYAN,
     MAGENTA,
     TERMINAL_WIDTH,
 )
@@ -116,7 +116,7 @@ def custom_ljust(string: str, width: int, char: str) -> str:
     return string_ljust_with_ansi
 
 
-def format_console_output(message, index, total, status, execution_time):
+def format_console_output(message, log_level = "info", formatted: bool = True):
     """
     Format message for console output
     """
@@ -125,30 +125,19 @@ def format_console_output(message, index, total, status, execution_time):
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
 
-    # Script number
-    if index is None or total is None:
-        progress = f'{PURPLE}{current_time}{RESET} | '
-    else:
-        progress = f'{PURPLE}{current_time}{RESET} | {index} of {total} '
-    prefix = f"{progress}{message}"
+    # Formatted log level
+    if not formatted:
+        return message
+    elif log_level == "info":
+        log_level_formatted = f'{CYAN}INFO {RESET}'
+    elif log_level == "warn":
+        log_level_formatted = f'{YELLOW}WARN {RESET}'
+    elif log_level:
+        log_level_formatted = f'{RED}{log_level.upper()}{RESET}'
 
-    try:
-        width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
-    except Exception:
-        width = TERMINAL_WIDTH
-    truncate_width = math.ceil(0.9 * (width))
-    justified = custom_ljust(prefix, width, ".")
-
-    if len(escape_ansi(justified)) > width:
-        justified = justified[:truncate_width]
-
-    if execution_time is None:
-        status_time = ""
-    else:
-        status_time = f" in {execution_time:0.2f}s"
-    colorized_status = colorize_status(status)
-    output = f"{justified} [{colorized_status}{status_time}]"
-    return output
+    progress = f'{current_time}{RESET} | {log_level_formatted} | '
+    formatted_msg = f"{progress}{message}"
+    return formatted_msg
 
 
 #################
@@ -233,7 +222,7 @@ class CurrentProjectDirEvent(Event):
     path: str
 
     def message(self):
-        return f'{BOLD}Found project directory at {YELLOW}{self.path}{RESET}'
+        return f'{BOLD}Found project directory at {MAGENTA}{self.path}{RESET}'
 
 
 @dataclass
@@ -314,7 +303,7 @@ class TaskRunEvent(Event):
     version: str
 
     def message(self):
-        return f'{BOLD}Running with prism {YELLOW}v{self.version}...{RESET}'
+        return f'{BOLD}Running with prism {MAGENTA}v{self.version}...{RESET}'
 
 
 @dataclass
@@ -366,33 +355,6 @@ class SeparatorEvent(Event):
 
 
 @dataclass
-class CompileStartEvent(Event):
-    modules: int
-    task_desc: str
-
-    def message(self):
-        return f'{BOLD}Found {self.modules} modules to {self.task_desc}{RESET}'
-
-
-@dataclass
-class CompileExecutionEvent(Event):
-    msg: str
-    num: int
-    total: int
-    status: str
-    execution_time: int
-
-    def message(self):
-        return format_console_output(
-            self.msg,
-            self.num,
-            self.total,
-            self.status,
-            self.execution_time
-        )
-
-
-@dataclass
 class ExecutionEvent(Event):
     msg: str
     num: Optional[int]
@@ -422,13 +384,28 @@ class ExecutionEvent(Event):
         return super().__str__() + " - " + event_name_str + " - " + self.status
 
     def message(self):
-        return format_console_output(
-            self.msg,
-            self.num,
-            self.total,
-            self.status,
-            self.execution_time
-        )
+        message = self.msg
+        if self.num is not None and self.total is not None:
+            message = f'{self.num} of {self.total} {self.msg}'
+
+        # Add execution time and status
+        try:
+            width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
+        except Exception:
+            width = TERMINAL_WIDTH
+        truncate_width = math.ceil(0.9 * (width))
+        justified = custom_ljust(message, width, ".")
+
+        if len(escape_ansi(justified)) > width:
+            justified = justified[:truncate_width]
+
+        if self.execution_time is None:
+            status_time = ""
+        else:
+            status_time = f" in {self.execution_time:0.2f}s"
+        colorized_status = colorize_status(self.status)
+        output = f"{justified} [{colorized_status}{status_time}]"
+        return output
 
 
 @dataclass
@@ -539,9 +516,9 @@ class DelayEvent(Event):
 
     def message(self):
         if self.delay_seconds > 0:
-            return f'{YELLOW}`{self.name}` failed...delaying {self.delay_seconds} before restarting'  # noqa: E501
+            return f'{YELLOW}{self.name} failed...delaying {self.delay_seconds} before restarting{RESET}'  # noqa: E501
         else:
-            return f'{YELLOW}`{self.name}` failed...restarting immediately'
+            return f'{YELLOW}{self.name} failed...restarting immediately{RESET}'
 
 
 def deprecated(deprecated_fn: str, updated_fn: str):
@@ -575,7 +552,8 @@ def fire_console_event(
     event: Optional[Event],
     event_list: List[Event] = [],
     sleep=0.01,
-    log_level: str = 'info'
+    log_level: str = 'info',
+    formatted: bool = True
 ):
     """
     Fire console event. Note that if --quietly is invoked, then we set the log level
@@ -590,13 +568,17 @@ def fire_console_event(
         event_list with `event` appended
     """
     if log_level == "info":
-        DEFAULT_LOGGER.info(event.message())  # type: ignore
+        msg = format_console_output(event.message(), log_level, formatted)
+        DEFAULT_LOGGER.info(msg)  # type: ignore
     elif log_level == "warn":
-        DEFAULT_LOGGER.warning(f'{YELLOW}[WARNING]: {RESET}' + event.message())  # type: ignore # noqa: E501
+        msg = format_console_output(event.message(), log_level, formatted)
+        DEFAULT_LOGGER.warn(msg)  # type: ignore
     elif log_level == "error":
-        DEFAULT_LOGGER.error(f'{RED}[ERROR]: {RESET}' + event.message())  # type: ignore # noqa: E501
+        msg = format_console_output(event.message(), log_level, formatted)
+        DEFAULT_LOGGER.error(msg)  # type: ignore
     elif log_level == "critical":
-        DEFAULT_LOGGER.critical(f'{RED}[CRITICAL]: {RESET}' + event.message())  # type: ignore # noqa: E501
+        msg = format_console_output(event.message(), log_level, formatted)
+        DEFAULT_LOGGER.critical(msg)  # type: ignore
 
     # Sleep
     time.sleep(sleep)

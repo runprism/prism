@@ -76,7 +76,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             event_list = fire_console_event(
                 compiled_dag_error_event,
                 event_list,
-                log_level='error'
+                log_level='error',
+                formatted=False
             )
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
@@ -125,7 +126,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             event_list = fire_console_event(
                 pipeline_event_to_fire,
                 event_list,
-                log_level='error'
+                log_level='error',
+                formatted=False
             )
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
@@ -163,7 +165,12 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
             # Fire error event and return
             event_list = fire_empty_line_event(event_list)
-            event_list = fire_console_event(error_event, event_list, log_level='error')
+            event_list = fire_console_event(
+                error_event,
+                event_list,
+                log_level='error',
+                formatted=False
+            )
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
@@ -182,7 +189,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 event_list = fire_console_event(
                     error_event,
                     event_list,
-                    log_level='error'
+                    log_level='error',
+                    formatted=False
                 )
                 event_list = self.fire_tail_event(event_list)
                 return prism.cli.base.TaskRunReturnResult(event_list, True)

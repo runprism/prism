@@ -105,7 +105,7 @@ class BaseEventManager:
 
         # Set the log-level to `info`. We'll fire the actual error using log-level
         # `error`.
-        event_list = fire_console_event(e, event_list, log_level='info')
+        event_list = fire_console_event(e, event_list, log_level='error')
         return event_list
 
     def run(self, **kwargs):
