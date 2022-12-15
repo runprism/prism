@@ -116,7 +116,7 @@ def custom_ljust(string: str, width: int, char: str) -> str:
     return string_ljust_with_ansi
 
 
-def format_console_output(message, log_level = "info", formatted: bool = True):
+def format_console_output(message, log_level="info", formatted: bool = True):
     """
     Format message for console output
     """
@@ -567,18 +567,19 @@ def fire_console_event(
     returns:
         event_list with `event` appended
     """
-    if log_level == "info":
-        msg = format_console_output(event.message(), log_level, formatted)
-        DEFAULT_LOGGER.info(msg)  # type: ignore
-    elif log_level == "warn":
-        msg = format_console_output(event.message(), log_level, formatted)
-        DEFAULT_LOGGER.warn(msg)  # type: ignore
-    elif log_level == "error":
-        msg = format_console_output(event.message(), log_level, formatted)
-        DEFAULT_LOGGER.error(msg)  # type: ignore
-    elif log_level == "critical":
-        msg = format_console_output(event.message(), log_level, formatted)
-        DEFAULT_LOGGER.critical(msg)  # type: ignore
+    if event is not None:
+        if log_level == "info":
+            msg = format_console_output(event.message(), log_level, formatted)
+            DEFAULT_LOGGER.info(msg)  # type: ignore
+        elif log_level == "warn":
+            msg = format_console_output(event.message(), log_level, formatted)
+            DEFAULT_LOGGER.warn(msg)  # type: ignore
+        elif log_level == "error":
+            msg = format_console_output(event.message(), log_level, formatted)
+            DEFAULT_LOGGER.error(msg)  # type: ignore
+        elif log_level == "critical":
+            msg = format_console_output(event.message(), log_level, formatted)
+            DEFAULT_LOGGER.critical(msg)  # type: ignore
 
     # Sleep
     time.sleep(sleep)
