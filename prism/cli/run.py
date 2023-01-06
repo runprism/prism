@@ -97,6 +97,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             self.project_dir,
             compiled_dag,
             self.args.all_upstream,
+            self.args.all_downstream,
             threads,
             user_context
         )

@@ -133,7 +133,7 @@ def format_console_output(message, log_level="info", formatted: bool = True):
     elif log_level == "warn":
         log_level_formatted = f'{YELLOW}WARN {RESET}'
     elif log_level:
-        log_level_formatted = f'{RED}{log_level.upper()} {RESET}'
+        log_level_formatted = f'{RED}{log_level.upper()}{RESET}'
 
     progress = f'{current_time}{RESET} | {log_level_formatted} | '
     formatted_msg = f"{progress}{message}"

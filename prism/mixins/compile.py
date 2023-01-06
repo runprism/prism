@@ -218,6 +218,7 @@ class CompileMixin():
         compiled_dir: Path,
         all_modules: List[Path],
         user_arg_modules: List[Path],
+        user_arg_all_downstream: bool = True,
         project: Optional[PrismProject] = None
     ) -> compiler.CompiledDag:
         """
@@ -227,12 +228,19 @@ class CompileMixin():
             project_dir: project directory
             all_modules: all modules in project
             user_arg_modules: modules passed in user argument
+            user_arg_all_downstream: boolean indicating whether the user wants to run
+                all modules downstream of inputted args
             compiler_globals: globals() dictionary
         returns:
             CompiledDag object
         """
         dag_compiler = compiler.DagCompiler(
-            project_dir, compiled_dir, all_modules, user_arg_modules, project
+            project_dir,
+            compiled_dir,
+            all_modules,
+            user_arg_modules,
+            user_arg_all_downstream,
+            project
         )
         compiled_dag = dag_compiler.compile()
 

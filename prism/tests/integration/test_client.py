@@ -343,22 +343,3 @@ class TestAPI(integration_test_class.IntegrationTestCase):
 
         # Set up directory for next test
         self._set_up_wkdir()
-
-
-# EOF
-
-
-        
-
-
-        
-
-        
-
-
-
-        
-        
-
-
-# EOF

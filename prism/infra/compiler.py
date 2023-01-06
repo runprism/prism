@@ -36,11 +36,13 @@ class CompiledDag:
     """
     def __init__(self,
         modules_dir: Path,
+        nxdag: nx.DiGraph,
         topological_sort: List[Path],
         user_arg_modules: List[Path],
         module_manifests: Dict[Path, ModuleManifest]
     ):
         self.modules_dir = modules_dir
+        self.nxdag = nxdag
         self.topological_sort = topological_sort
         self.user_arg_modules = user_arg_modules
         self.module_manifests = module_manifests
@@ -70,6 +72,7 @@ class DagCompiler:
         compiled_dir: Path,
         all_modules: List[Path],
         user_arg_modules: List[Path],
+        user_arg_all_downstream: bool,
         project: Optional[PrismProject] = None
     ):
         self.project_dir = project_dir
@@ -78,6 +81,19 @@ class DagCompiler:
         self.user_arg_modules = user_arg_modules
         self.project = project
         os.chdir(project_dir)
+
+        # Modules can only be executed if their predecessors are explicitly run or have
+        # targets. For example, if our DAG is A --> B --> C and we call `prism run
+        # --modules C`, then Prism will parse the execution order, instantiate but NOT
+        # execute tasks A and B, and then run task C. In other words, A and B will
+        # always be instantiated; the --all-upstream argument controls whether A and B
+        # are executed.
+
+        # This is why we don't need to keep track of the --all-upstream argument; it
+        # doesn't affect what our topological sort looks like. However, the
+        # --all-downstream argument does, since successors do not need to be
+        # instantiated at all.
+        self.user_arg_all_downstream = user_arg_all_downstream
 
         # Path of modules
         self.modules_dir = self.project_dir / 'modules'
@@ -250,6 +266,31 @@ class DagCompiler:
         unique_deps = list(set(deps))
         return unique_deps
 
+    def get_node_successors(self,
+        graph: nx.DiGraph,
+        start_nodes: List[Path]
+    ) -> List[Path]:
+        """
+        Parse the DiGraph and get all nodes downstream of the `start_nodes`
+
+        args:
+            graph: DAG
+            start_nodes: list of nodes for which to retrieve upstream dependencies
+        returns:
+            list of successors
+        """
+        # Add all start nodes to the list of successors with a depth of 0
+        successors = [x for x in start_nodes]
+
+        # Iterate through the start nodes and extract the predecessors
+        for node in successors:
+            for postnode in graph.successors(node):
+                successors.append(postnode)
+
+        # Get unique dependencies
+        unique_successors = list(set(successors))
+        return unique_successors
+
     def create_topsort(self,
         all_modules: List[Path],
         user_arg_modules: List[Path],
@@ -289,13 +330,18 @@ class DagCompiler:
             all_topological_sorts_list = next(all_topological_sorts)
 
         # Otherwise, the user has selected to run a subset of the modules. Identify all
-        # modules upstream of `user_arg_modules`.
+        # modules upstream (and potentially downstream) of `user_arg_modules`.
         else:
 
             # Keep only the dependencies, and create a topological sort.
-            all_deps = self.get_node_dependencies(dag, user_arg_modules)
-            dag_deps_only = dag.subgraph(all_deps)
-            all_topological_sorts = nx.algorithms.dag.all_topological_sorts(dag_deps_only)  # noqa: E501
+            all_nodes = self.get_node_dependencies(dag, user_arg_modules)
+
+            # Add successors if the user wants them
+            if self.user_arg_all_downstream:
+                all_nodes.extend(self.get_node_successors(dag, user_arg_modules))
+
+            subgraph = dag.subgraph(list(set(all_nodes)))
+            all_topological_sorts = nx.algorithms.dag.all_topological_sorts(subgraph)  # noqa: E501
             all_topological_sorts_list = next(all_topological_sorts)
 
         # Add each module to manifest
@@ -307,13 +353,13 @@ class DagCompiler:
                     message=f'module `{str(elem)}` not found in project'
                 )
 
-        return all_topological_sorts_list
+        return dag, all_topological_sorts_list
 
     def compile(self) -> CompiledDag:
         """
         Compile the DAG
         """
-        all_topological_sorts_list = self.create_topsort(
+        nxdag, all_topological_sorts_list = self.create_topsort(
             self.all_modules, self.user_arg_modules, self.modules_dir
         )
 
@@ -337,6 +383,7 @@ class DagCompiler:
         # Return dag
         dag = CompiledDag(
             self.modules_dir,
+            nxdag,
             all_topological_sorts_list,
             self.user_arg_modules,
             self.module_manifests

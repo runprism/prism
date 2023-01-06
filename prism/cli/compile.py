@@ -153,6 +153,9 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         user_arg_modules = self.user_arg_modules(self.args, modules_dir)
         all_modules = self.get_modules(modules_dir)
 
+        # All downstream
+        all_downstream = args.all_downstream
+
         # Create compiled directory
         compiled_dir = self.create_compiled_dir(project_dir)
 
@@ -171,6 +174,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             compiled_dir=compiled_dir,
             all_modules=all_modules,
             user_arg_modules=user_arg_modules,
+            user_arg_all_downstream=all_downstream,
             project=project
         )
         compiled_dag = compiled_event_manager_output.outputs

@@ -140,7 +140,8 @@ class PrismDAG(
         self.create_connection(connection_type, profiles_filepath)
 
     def compile(self,
-        modules: Optional[List[str]] = None
+        modules: Optional[List[str]] = None,
+        user_arg_all_downstream: bool = True
     ) -> prism_compiler.CompiledDag:
         """
         Compile the Prism project
@@ -158,12 +159,14 @@ class PrismDAG(
             self.project_dir,
             self.compiled_dir,
             self.all_modules,
-            self.user_arg_modules_list
+            self.user_arg_modules_list,
+            user_arg_all_downstream
         )
 
     def run(self,
         modules: Optional[List[str]] = None,
         all_upstream: bool = True,
+        all_downstream: bool = False,
         full_tb: bool = True,
         user_context: Optional[Dict[str, Any]] = None
     ):
@@ -182,12 +185,17 @@ class PrismDAG(
         )
 
         # Compile the DAG
-        compiled_dag = self.compile(modules)
+        compiled_dag = self.compile(modules, all_downstream)
 
         # Create DAG executor and Pipeline objects
         threads = prism_project.thread_count
         dag_executor = prism_executor.DagExecutor(
-            self.project_dir, compiled_dag, all_upstream, threads, user_context
+            self.project_dir,
+            compiled_dag,
+            all_upstream,
+            all_downstream,
+            threads,
+            user_context
         )
         pipeline = self.create_pipeline(
             prism_project, dag_executor, self.run_context

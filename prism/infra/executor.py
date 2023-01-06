@@ -54,6 +54,7 @@ class DagExecutor:
         project_dir: Path,
         compiled_dag: prism_compiler.CompiledDag,
         user_arg_all_upstream: bool,
+        user_arg_all_downstream: bool,
         threads: int,
         user_context: Dict[Any, Any] = {}
     ):
@@ -62,14 +63,16 @@ class DagExecutor:
 
         # Extract attributes from compiled_dag instance
         self.compiled_modules = self.compiled_dag.compiled_modules
+        self.nxdag = self.compiled_dag.nxdag
         self.topological_sort_relative_path = self.compiled_dag.topological_sort
         self.topological_sort_full_path = self.compiled_dag.topological_sort_full_path
         self.user_arg_modules = self.compiled_dag.user_arg_modules
         self.user_arg_all_upstream = user_arg_all_upstream
+        self.user_arg_all_downstream = user_arg_all_downstream
         self.user_context = user_context
 
         # Identify nodes not explicitly run and update (only if --all-upstream is False)
-        if not self.user_arg_all_upstream:
+        if not self.user_arg_all_upstream and not self.user_arg_all_downstream:
             self.nodes_not_explicitly_run = list(
                 set(self.topological_sort_relative_path) - set(self.user_arg_modules)
             )
@@ -127,7 +130,8 @@ class DagExecutor:
         # fire the exec events if the user did not explicitly include the script in
         # their arguments
         fire_exec_events = relative_path in self.user_arg_modules \
-            or self.user_arg_all_upstream
+            or self.user_arg_all_upstream \
+            or self.user_arg_all_downstream
 
         # If all upstream modules are to be run, the compute the idx and total using the
         # `dag`` list. Otherwise, if the script is explicitly included in the user's run
@@ -141,7 +145,7 @@ class DagExecutor:
         modules_sorted = [x for _, x in sorted(zip(modules_idx, self.user_arg_modules))]
 
         # Define the idx and total
-        if self.user_arg_all_upstream:
+        if self.user_arg_all_upstream or self.user_arg_all_downstream:
             idx = self.topological_sort_full_path.index(full_path) + 1
             total = len(self.topological_sort_full_path)
         elif relative_path in self.user_arg_modules:

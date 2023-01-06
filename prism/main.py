@@ -231,6 +231,16 @@ def build_run_subparser(sub, common_arguments_parser):
         """
     )
 
+    # Add argument for whether to run all upstream modules
+    run_sub.add_argument(
+        '--all-downstream',
+        required=False,
+        action='store_true',
+        help="""
+        Run all modules downstream of explicit run set
+        """
+    )
+
     # Set default class argument to RunTask()
     run_sub.set_defaults(cls=run.RunTask, which='run')
 
@@ -271,6 +281,16 @@ def build_spark_submit_subparser(sub, common_arguments_parser):
         action='store_true',
         help="""
         Run all modules upstream of explicit run set
+        """
+    )
+
+    # Add argument for whether to run all downstream modules
+    spark_submit_sub.add_argument(
+        '--all-downstream',
+        required=False,
+        action='store_true',
+        help="""
+        Run all modules downstream of explicit run set
         """
     )
 

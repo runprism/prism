@@ -535,4 +535,57 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
-# EOF
+    def test_all_downstream(self):
+        """
+        Test that `all-downstream` argument functions as expected
+        """
+        
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run all modules downstream of module01.py
+        args = ['run', '--modules', 'module01.py', '--all-downstream']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = run_success_starting_events + \
+            _execution_events_modules(
+                {
+                    'module01.py': 'DONE',
+                    'module02.py': 'DONE',
+                    'module03.py': 'DONE',
+                    'module04.py': 'DONE',
+                }) + \
+            _run_task_end_events('TaskSuccessfulEndEvent')
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Check manifest
+        self.assertTrue(Path(wkdir / '.compiled').is_dir())
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        module01_refs = self._load_module_refs("module01.py", manifest)
+        module02_refs = self._load_module_refs("module02.py", manifest)
+        module03_refs = self._load_module_refs("module03.py", manifest)
+        module04_refs = self._load_module_refs("module04.py", manifest)
+        self.assertEqual([], module01_refs)
+        self.assertEqual("module01.py", module02_refs)
+        self.assertEqual("module02.py", module03_refs)
+        self.assertEqual("module03.py", module04_refs)
+
+        # Check that outputs are created
+        self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
+        with open(Path(wkdir / 'output' / 'module02.txt'), 'r') as f:
+            module02_txt = f.read()
+        f.close()
+        self.assertEqual('Hello from module 1!' + '\n' + 'Hello from module 2!', module02_txt)
+
+        # Remove all files in the compiled and output directory
+        self._remove_compiled_dir(wkdir)
+        self._remove_files_in_output(wkdir)
