@@ -148,30 +148,6 @@ class PrismProject:
             self.profile.generate_adapters()
             self.adapters_object_dict = self.profile.get_adapters_obj_dict()
 
-    def adjust_prism_py_with_config(self,
-        config_dict: Dict[str, Any]
-    ):
-        """
-        Overwrite any variables in prism_project.py with those in config_dict.
-
-        args:
-            config_dict: configuration dictionary with var --> value mappings
-            globals_dict: namespace dictionary
-        returns:
-            None
-        """
-        self.prism_project_py_str_adjusted = self.prism_project_py_str + '\n'
-        for k, v in config_dict.items():
-            if isinstance(v, str):
-                self.prism_project_py_str_adjusted += f"{k} = '{v}'"
-            else:
-                self.prism_project_py_str_adjusted += f"{k} = {v}"
-
-        # Re-write the prism_project.py file -- we undo this later
-        with open(Path(self.project_dir / 'prism_project.py'), 'w') as f:
-            f.write(self.prism_project_py_str_adjusted)
-        f.close()
-
     def num_var_assignments_in_file(self,
         python_file: str,
         var: str
