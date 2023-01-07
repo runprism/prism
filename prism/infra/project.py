@@ -148,48 +148,6 @@ class PrismProject:
             self.profile.generate_adapters()
             self.adapters_object_dict = self.profile.get_adapters_obj_dict()
 
-    def num_var_assignments_in_file(self,
-        python_file: str,
-        var: str
-    ) -> int:
-        """
-        Get the number of times `var` is assigned a value in `python_file`
-
-        args:
-            python_file: Python file represented as a str
-            var: variable of interest
-        returns:
-            number of times `var` is assigned a value in `python_file`
-        """
-        ast_module = ast.parse(python_file)
-
-        # Only focus on the body; don't focus on contents of any functions / classes
-        assigns = []
-        for elem in ast_module.body:
-            if isinstance(elem, ast.Assign):
-                assigns.append(elem)
-
-        # Check targets
-        num_assignments = 0
-        for obj in assigns:
-            for target in obj.targets:
-
-                # If target is not an ast.Name (e.g., a, b = "Hello", "world"), then
-                # iterate through sub-notes of the target until we see an ast.Name
-                if not isinstance(target, ast.Name):
-                    for sub_elem in ast.walk(target):
-                        if isinstance(sub_elem, ast.Name):
-                            if sub_elem.id == var:
-                                num_assignments += 1
-                        else:
-                            continue
-
-                # Otherwise, check name of assignment var
-                else:
-                    if target.id == var:
-                        num_assignments += 1
-        return num_assignments
-
     def ast_unparse(self, elt: Any):
         """
         Some versions of Python do not support the `ast.unparse` method. This function
@@ -211,13 +169,15 @@ class PrismProject:
     def safe_eval_var_from_file(self,
         python_file: str,
         var: str,
-    ) -> Optional[Any]:
+        context: Dict[Any, Any],
+    ) -> Any:
         """
         Get `var` from `python_file`
 
         args:
             python_file: Python file represented as a str
             var: variable of interest
+            context: context dictionary
         returns:
             value of first `var` assignment in `python_file`
         """
@@ -228,34 +188,18 @@ class PrismProject:
                 message="`prism_project.py` is undefined"
             )
 
-        # If multiple assignments, throw an error
-        num_assigments = self.num_var_assignments_in_file(python_file, var)
-        if num_assigments > 1:
-            raise prism.exceptions.InvalidProjectPyException(
-                message=f"multiple assignments for `{var}` in `prism_project.py`"
-            )
-
-        # Parse the Python file. We will wrap this function in an event manager, so no
-        # need to handle exceptions at the moment.
+        # Iterate through ast.Assign objects. For each Assign object, unparse and check
+        # if the var is defined within it. If it is, then execute and return the
+        # executed value.
+        var_value = None
         ast_data = ast.parse(python_file)
-        for elem in ast_data.body:
+        for elem in ast.walk(ast_data):
             if isinstance(elem, ast.Assign):
-                if len(elem.targets) == 1:
-                    if getattr(elem.targets[0], "id", "") == var:
-
-                        # If the element is a list, then iterate through the elements
-                        # and return the string value. We'll execute it later.
-                        if isinstance(elem.value, ast.List):
-                            items = []
-                            for attr in elem.value.elts:
-                                items.append(self.ast_unparse(attr))
-                            return items
-
-                        elif isinstance(elem.value, ast.Attribute):
-                            return self.ast_unparse(elem.value)
-                        else:
-                            return ast.literal_eval(elem.value)
-        return None
+                elem_code = self.ast_unparse(elem)
+                if var in elem_code:
+                    exec(elem_code, context)
+                    var_value = context[var]
+        return var_value
 
     def get_profile_name(self,
         run_context: Dict[Any, Any]
