@@ -36,10 +36,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         """
         Execute run task. Function is organized as follows:
 
-        - Fire header events
-        - Get location of config files, and get modules to compile
-        - Create compiled DAG
-        - Create prism project
+        - Fire header events, get prism project
+        - Compile DAG
         - Create pipeline
         - Execute pipeline
         - Fire footer events
