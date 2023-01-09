@@ -157,23 +157,6 @@ class BaseTask(base_mixins.BaseMixin):
             event_list = self.fire_tail_event(event_list)
             return event_list, None
 
-    def fire_error_events(self,
-        event_list: List[prism.logging.Event],
-        error_event: prism.logging.Event,
-        formatted: bool = True
-    ):
-        """
-        Fire series of events to indicate a failed run
-        """
-        # event_list = fire_empty_line_event(event_list)
-        event_list = fire_console_event(
-            error_event,
-            event_list,
-            log_level='error',
-            formatted=formatted
-        )
-        return event_list
-
     def fire_tail_event(self,
         event_list: List[prism.logging.Event] = []
     ) -> List[prism.logging.Event]:
