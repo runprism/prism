@@ -72,12 +72,12 @@ class PrismCallback:
         # Must have a `type` parameter
         if "type" not in list(callback_spec.keys()):
             raise prism.exceptions.InvalidCallbackException(
-                msg=f"callback `{callback_name}` does not have a `type`"
+                message=f"callback `{callback_name}` does not have a `type`"
             )
         callback_type = callback_spec["type"]
         if callback_type not in ["function", "prism_project"]:
             raise prism.exceptions.InvalidCallbackException(
-                msg=f"callback `{callback_name}` has an invalid type `{callback_type}`"
+                message=f"callback `{callback_name}` has an invalid type `{callback_type}`"  # noqa: E501
             )
         if callback_type == "function":
             valid_keys = ["type", "function", "kwargs"]
@@ -120,7 +120,7 @@ class PrismCallback:
         """
         # Callback must be of type `function`
         if callback_spec["type"] != "function":
-            raise prism.exceptions.InvalidTriggerException(
+            raise prism.exceptions.InvalidCallbackException(
                 message=f"callback `{callback_name}` is not of type `function`"
             )
 
@@ -290,7 +290,7 @@ class CallbackManager:
                 event_list=event_list,
                 run_context=run_context
             )
-            event_list.append(cb_event_manager_output.event_list)
+            event_list.extend(cb_event_manager_output.event_list)
             if cb_event_manager_output.outputs == 0:
                 ev = cb_event_manager_output.event_to_fire
                 prism.logging.fire_console_event(ev)

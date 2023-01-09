@@ -54,7 +54,7 @@ class SysPathEngine(SysHandlerMixin):
         # Return run context
         return self.run_context
 
-    def remove_sys_path(self, run_context: Dict[Any, Any]):
+    def revert_to_base_sys_path(self, run_context: Dict[Any, Any]):
         """
         Remove project dir and all associated modules from sys path
         """

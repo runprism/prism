@@ -26,7 +26,7 @@ from prism.infra.sys_path import SysPathEngine
 
 # Ohter library imports
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 
 ####################
@@ -40,7 +40,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
     def fire_error_events(self,
         event_list: List[prism.logging.Event],
-        error_event: prism.logging.Event,
+        error_event: Optional[prism.logging.Event],
         formatted: bool,
         callback_manager: CallbackManager
     ):
@@ -127,7 +127,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 True,
                 callback_manager
             )
-            self.run_context = sys_path_engine.remove_sys_path(self.run_context)
+            self.run_context = sys_path_engine.revert_to_base_sys_path(self.run_context)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
@@ -176,7 +176,9 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 True,
                 callback_manager
             )
-            pipeline.run_context = sys_path_engine.remove_sys_path(pipeline.run_context)
+            pipeline.run_context = sys_path_engine.revert_to_base_sys_path(
+                pipeline.run_context
+            )
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
@@ -212,7 +214,9 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 True,
                 callback_manager
             )
-            pipeline.run_context = sys_path_engine.remove_sys_path(pipeline.run_context)
+            pipeline.run_context = sys_path_engine.revert_to_base_sys_path(
+                pipeline.run_context
+            )
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # Otherwise, check the status of the executor ouput
@@ -232,7 +236,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                     True,
                     callback_manager
                 )
-                pipeline.run_context = sys_path_engine.remove_sys_path(
+                pipeline.run_context = sys_path_engine.revert_to_base_sys_path(
                     pipeline.run_context
                 )
                 return prism.cli.base.TaskRunReturnResult(event_list, True)
