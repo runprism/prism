@@ -339,7 +339,7 @@ def build_graph_subparser(sub, common_arguments_parser):
     )
 
     # Set default class argument to RunTask()
-    graph_sub.set_defaults(cls=graph.GraphTask, which='graph')
+    graph_sub.set_defaults(cls=graph.GraphTask, all_downstream=True, which='graph')
 
 
 def build_full_arg_parser() -> argparse.ArgumentParser:
