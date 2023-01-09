@@ -364,7 +364,7 @@ class PrismProject:
 
     def get_callbacks(self,
         run_context: Dict[Any, Any]
-    ) -> int:
+    ) -> Optional[Dict[str, List[str]]]:
         """
         Get callbacks from current run context. This doesn't have to be specified.
 
