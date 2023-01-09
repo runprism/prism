@@ -100,10 +100,11 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         event_to_fire = event_manager_results.event_to_fire
         event_list = event_manager_results.event_list
         if success == 0:
-            event_list = self.fire_error_events(
-                event_list,
+            event_list = fire_empty_line_event(event_list)
+            event_list = fire_console_event(
                 event_to_fire,
-                True
+                event_list,
+                log_level='error'
             )
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
