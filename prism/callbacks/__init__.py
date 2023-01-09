@@ -10,16 +10,16 @@ Table of Contents
 # Imports #
 ###########
 
-# Standard library imports
-from pathlib import Path
-from typing import Any, Dict, List
-
 # Prism imports
 from prism.event_managers.base import BaseEventManager
 import prism.exceptions
 import prism.logging
 from prism.parsers import yml_parser
 from prism.infra.project import PrismProject
+
+# Standard library imports
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 ####################
@@ -178,32 +178,35 @@ class CallbackManager:
     """
 
     def __init__(self,
-        callbacks_yml_path: Path,
+        callbacks_yml_path: Optional[Path],
         prism_project: PrismProject,
     ):
-        parser = yml_parser.YamlParser(callbacks_yml_path)
-        self.callbacks_yml = parser.parse()
-        self.prism_project = prism_project
+        self.has_callbacks = callbacks_yml_path is not None
+        if self.has_callbacks:
+            parser = yml_parser.YamlParser(callbacks_yml_path)
+            self.callbacks_yml = parser.parse()
+            self.prism_project = prism_project
 
-        # Check the callbacks_yml structure
-        self.check_callbacks_yml_structure(self.callbacks_yml)
-        self.callbacks = self.callbacks_yml['callbacks']
+            # Check the callbacks_yml structure
+            self.check_callbacks_yml_structure(self.callbacks_yml)
+            self.callbacks = self.callbacks_yml['callbacks']
 
-        # This object will only be instantiated after the PrismProject has been setup.
-        if not (
-            hasattr(self.prism_project, "on_success_callbacks")
-            and hasattr(self.prism_project, "on_failure_callbacks")  # noqa: W503
-        ):
-            raise prism.exceptions.RuntimeException(
-                message="PrismProject has not been properly setup!"
-            )
+            # This object will only be instantiated after the PrismProject has been
+            # setup.
+            if not (
+                hasattr(self.prism_project, "on_success_callbacks")
+                and hasattr(self.prism_project, "on_failure_callbacks")  # noqa: W503
+            ):
+                raise prism.exceptions.RuntimeException(
+                    message="PrismProject has not been properly setup!"
+                )
 
-        self.on_success_callbacks = [
-            PrismCallback(name, self.callbacks[name]) for name in self.prism_project.on_success_callbacks  # noqa: E501
-        ]
-        self.on_failure_callbacks = [
-            PrismCallback(name, self.callbacks[name]) for name in self.prism_project.on_failure_callbacks  # noqa: E501
-        ]
+            self.on_success_callbacks = [
+                PrismCallback(name, self.callbacks[name]) for name in self.prism_project.on_success_callbacks  # noqa: E501
+            ]
+            self.on_failure_callbacks = [
+                PrismCallback(name, self.callbacks[name]) for name in self.prism_project.on_failure_callbacks  # noqa: E501
+            ]
 
     def check_callbacks_yml_structure(self,
         callbacks_yml: Dict[str, Any]
@@ -270,29 +273,30 @@ class CallbackManager:
         returns:
             ...
         """
-        if callback_type not in ["on_success", "on_failure"]:
-            raise prism.exceptions.RuntimeException(
-                message=f"invalid callback type `{callback_type}`, must be either `on_success` or `on_failure`"  # noqa: E501
-            )
+        if self.has_callbacks:
+            if callback_type not in ["on_success", "on_failure"]:
+                raise prism.exceptions.RuntimeException(
+                    message=f"invalid callback type `{callback_type}`, must be either `on_success` or `on_failure`"  # noqa: E501
+                )
 
-        # Keep track of outputs
-        for cb in getattr(self, f"{callback_type}_callbacks"):
+            # Keep track of outputs
+            for cb in getattr(self, f"{callback_type}_callbacks"):
 
-            # Event manager
-            cb_event_manager = BaseEventManager(
-                idx=None,
-                total=None,
-                name=f'callback {cb.name}',
-                full_tb=full_tb,
-                func=cb.execute_callback
-            )
-            cb_event_manager_output = cb_event_manager.manage_events_during_run(
-                event_list=event_list,
-                run_context=run_context
-            )
-            event_list.extend(cb_event_manager_output.event_list)
-            if cb_event_manager_output.outputs == 0:
-                ev = cb_event_manager_output.event_to_fire
-                prism.logging.fire_console_event(ev)
+                # Event manager
+                cb_event_manager = BaseEventManager(
+                    idx=None,
+                    total=None,
+                    name=f'callback {cb.name}',
+                    full_tb=full_tb,
+                    func=cb.execute_callback
+                )
+                cb_event_manager_output = cb_event_manager.manage_events_during_run(
+                    event_list=event_list,
+                    run_context=run_context
+                )
+                event_list.extend(cb_event_manager_output.event_list)
+                if cb_event_manager_output.outputs == 0:
+                    ev = cb_event_manager_output.event_to_fire
+                    prism.logging.fire_console_event(ev)
 
         return event_list

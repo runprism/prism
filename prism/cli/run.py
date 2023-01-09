@@ -96,7 +96,10 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # Prepare callbacks
 
         callbacks_dir = self.prism_project.callbacks_dir
-        callbacks_yml_path = Path(callbacks_dir) / 'callbacks.yml'
+        if callbacks_dir is None:
+            callbacks_yml_path = None
+        else:
+            callbacks_yml_path = Path(callbacks_dir) / 'callbacks.yml'
         callback_manager = CallbackManager(
             callbacks_yml_path,
             self.prism_project,
