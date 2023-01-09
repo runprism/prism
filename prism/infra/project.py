@@ -148,6 +148,17 @@ class PrismProject:
             self.profile.generate_adapters()
             self.adapters_object_dict = self.profile.get_adapters_obj_dict()
 
+        # ------------------------------------------------------------------------------
+        # Triggers directory and callbacks
+
+        self.callbacks_dir = self.get_callbacks_dir(self.run_context)
+        callbacks = self.get_callbacks(self.run_context)
+        if callbacks is None:
+            self.success_callbacks, self.failure_callbacks = [], []
+        else:
+            self.on_success_callbacks = callbacks["on_success"]
+            self.on_failure_callbacks = callbacks["on_failure"]
+
     def ast_unparse(self, elt: Any):
         """
         Some versions of Python do not support the `ast.unparse` method. This function
@@ -332,3 +343,69 @@ class PrismProject:
         # Raise all other exceptions
         except Exception as e:
             raise e
+
+    def get_callbacks_dir(self,
+        run_context: Dict[Any, Any]
+    ) -> Optional[Path]:
+        """
+        Get callbacks path from current run context. This doesn't have to be specified.
+
+        args:
+            run_context: dictionary with run context variables
+        returns:
+            callbacks path
+        """
+        callbacks = run_context.get('CALLBACKS_DIR', None)
+        if callbacks is None:
+            return None
+        if not (isinstance(callbacks, str) or isinstance(callbacks, Path)):
+            return None
+        return Path(callbacks)
+
+    def get_callbacks(self,
+        run_context: Dict[Any, Any]
+    ) -> int:
+        """
+        Get callbacks from current run context. This doesn't have to be specified.
+
+        args:
+            run_context: dictionary with run context variables
+        returns:
+            callbacks
+        """
+        callbacks = run_context.get("CALLBACKS", None)
+        if callbacks is None:
+            return None
+
+        # Triggers must be specified as a dictionary
+        if not isinstance(callbacks, dict):
+            raise prism.exceptions.InvalidProjectPyException(
+                message=f'invalid value `CALLBACKS = {callbacks}`, must be a dictionary'
+            )
+
+        # There can only be two types of callbacks: on_success and on_failure
+        callback_keys = list(callbacks.keys())
+        expected_keys = ['on_success', 'on_failure']
+        for k in callback_keys:
+            if k not in expected_keys:
+                raise prism.exceptions.InvalidProjectPyException(
+                    message=f'invalid key `{k}` in CALLBACKS dictionary'
+                )
+
+        # on_success and on_failure callbacks should be a list of strings
+        success_callbacks = callbacks['on_success']
+        failure_callbacks = callbacks['on_failure']
+        if not (
+            isinstance(success_callbacks, list)
+            and isinstance(failure_callbacks, list)  # noqa: W503
+            and all([isinstance(t, str) for t in success_callbacks])  # noqa: W503
+            and all([isinstance(t, str) for t in failure_callbacks])  # noqa: W503
+        ):
+            raise prism.exceptions.InvalidProjectPyException(
+                message='invalid CALLBACKS dictionary, both `on_success` and `on_failure` values must be a list of strings'  # noqa: E501
+            )
+
+        return {
+            "on_success": success_callbacks,
+            "on_failure": failure_callbacks,
+        }
