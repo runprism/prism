@@ -21,6 +21,12 @@ import prism.logging
 from prism.logging import fire_console_event, fire_empty_line_event
 from prism.event_managers import base as base_event_manager
 from prism.infra import executor as prism_executor
+from prism.callbacks import CallbackManager
+from prism.infra.sys_path import SysPathEngine
+
+# Ohter library imports
+from pathlib import Path
+from typing import List
 
 
 ####################
@@ -31,6 +37,33 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
     """
     Class for defining the "run" task
     """
+
+    def fire_error_events(self,
+        event_list: List[prism.logging.Event],
+        error_event: prism.logging.Event,
+        formatted: bool,
+        callback_manager: CallbackManager
+    ):
+        """
+        Fire error events, including callbacks
+        """
+        # Fire console event
+        event_list = fire_console_event(
+            error_event,
+            event_list,
+            log_level='error',
+            formatted=formatted
+        )
+
+        # Fire callbacks
+        event_list = callback_manager.exec(
+            'on_failure',
+            self.args.full_tb,
+            event_list,
+            self.run_context,
+        )
+        event_list = self.fire_tail_event(event_list)
+        return event_list
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
         """
@@ -52,6 +85,24 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         event_list = task_return_result.event_list
 
         # ------------------------------------------------------------------------------
+        # Run the sys.path engine
+
+        sys_path_engine = SysPathEngine(
+            self.prism_project, self.prism_project.run_context
+        )
+        self.run_context = sys_path_engine.modify_sys_path()
+
+        # ------------------------------------------------------------------------------
+        # Prepare callbacks
+
+        callbacks_dir = self.prism_project.callbacks_dir
+        callbacks_yml_path = Path(callbacks_dir) / 'callbacks.yml'
+        callback_manager = CallbackManager(
+            callbacks_yml_path,
+            self.prism_project,
+        )
+
+        # ------------------------------------------------------------------------------
         # Compile DAG
 
         result = super().run_for_subclass(
@@ -70,14 +121,13 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
         # If no modules in DAG, return
         if compiled_dag == 0 and compiled_dag_error_event is not None:
-            event_list = fire_empty_line_event(event_list)
-            event_list = fire_console_event(
-                compiled_dag_error_event,
+            event_list = self.fire_error_events(
                 event_list,
-                log_level='error',
-                formatted=False
+                compiled_dag_error_event,
+                True,
+                callback_manager
             )
-            event_list = self.fire_tail_event(event_list)
+            self.run_context = sys_path_engine.remove_sys_path(self.run_context)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
@@ -100,9 +150,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             user_context
         )
 
-        # Create pipeline
-        self.run_context = self.prism_project.run_context
-
         # Manager for creating pipeline
         pipeline_manager = base_event_manager.BaseEventManager(
             idx=None,
@@ -113,6 +160,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         )
         pipeline_event_manager_output = pipeline_manager.manage_events_during_run(
             event_list=event_list,
+            fire_exec_events=True,
+            fire_empty_line_events=True,
             project=self.prism_project,
             dag_executor=dag_executor,
             run_context=self.run_context
@@ -121,14 +170,13 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         pipeline_event_to_fire = pipeline_event_manager_output.event_to_fire
         event_list = pipeline_event_manager_output.event_list
         if pipeline == 0:
-            event_list = fire_empty_line_event(event_list)
-            event_list = fire_console_event(
-                pipeline_event_to_fire,
+            event_list = self.fire_error_events(
                 event_list,
-                log_level='error',
-                formatted=False
+                pipeline_event_to_fire,
+                True,
+                callback_manager
             )
-            event_list = self.fire_tail_event(event_list)
+            pipeline.run_context = sys_path_engine.remove_sys_path(pipeline.run_context)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
@@ -150,6 +198,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # capturing any non-module related errors in the logger.
         exec_event_manager_output = pipeline_exec_manager.manage_events_during_run(
             fire_exec_events=False,
+            fire_empty_line_events=False,
             event_list=event_list,
             full_tb=self.args.full_tb
         )
@@ -157,20 +206,13 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
         # If executor_output is 0, then an error occurred
         if executor_output == 0:
-
-            # Get the error event and event list
-            error_event = exec_event_manager_output.event_to_fire
-            executor_events = exec_event_manager_output.event_list
-
-            # Fire error event and return
-            event_list = fire_empty_line_event(event_list)
-            event_list = fire_console_event(
-                error_event,
-                event_list,
-                log_level='error',
-                formatted=False
+            event_list = self.fire_error_events(
+                exec_event_manager_output.event_list,
+                exec_event_manager_output.event_to_fire,
+                True,
+                callback_manager
             )
-            event_list = self.fire_tail_event(event_list)
+            pipeline.run_context = sys_path_engine.remove_sys_path(pipeline.run_context)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # Otherwise, check the status of the executor ouput
@@ -184,14 +226,15 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             # multiprocessing. This return structure is confusing; we should eventually
             # fix this.
             if success == 0:
-                event_list = fire_empty_line_event(event_list)
-                event_list = fire_console_event(
-                    error_event,
+                event_list = self.fire_error_events(
                     event_list,
-                    log_level='error',
-                    formatted=False
+                    error_event,
+                    True,
+                    callback_manager
                 )
-                event_list = self.fire_tail_event(event_list)
+                pipeline.run_context = sys_path_engine.remove_sys_path(
+                    pipeline.run_context
+                )
                 return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------

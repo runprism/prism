@@ -43,22 +43,6 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         self.run_context = run_context
 
         # ------------------------------------------------------------------------------
-        # sys.path configuration
-
-        # Identify default modules loaded in sys.modules and paths loaded in sys.paths.
-        # This will allow us to add/remove modules programatically without messing up
-        # the base configuration.
-        temp_context: Dict[Any, Any] = {}
-        exec('import sys', temp_context)
-        self.base_sys_path = [p for p in temp_context['sys'].path]
-        self.base_sys_modules = {
-            k: v for k, v in temp_context['sys'].modules.items()
-        }
-
-        # Configure sys.path
-        self.add_paths_to_sys_path(self.project.sys_path_config, self.run_context)
-
-        # ------------------------------------------------------------------------------
         # Adapters, task manager, and hooks
 
         adapter_types = []
@@ -118,11 +102,4 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
         if "bigquery" in list(self.project.adapters_object_dict.keys()):
             self.project.adapters_object_dict["bigquery"].engine.close()
 
-        # Remove project dir and all associated modules from sys path
-        self.run_context = self.remove_paths_from_sys_path(
-            self.base_sys_path, self.project.sys_path_config, self.run_context
-        )
-        self.run_context = self.remove_project_modules(
-            self.base_sys_modules, self.project.sys_path_config, self.run_context
-        )
         return executor_output
