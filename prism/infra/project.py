@@ -154,7 +154,7 @@ class PrismProject:
         self.callbacks_dir = self.get_callbacks_dir(self.run_context)
         callbacks = self.get_callbacks(self.run_context)
         if callbacks is None:
-            self.success_callbacks, self.failure_callbacks = [], []
+            self.on_success_callbacks, self.on_failure_callbacks = [], []
         else:
             self.on_success_callbacks = callbacks["on_success"]
             self.on_failure_callbacks = callbacks["on_failure"]
@@ -393,8 +393,8 @@ class PrismProject:
                 )
 
         # on_success and on_failure callbacks should be a list of strings
-        success_callbacks = callbacks['on_success']
-        failure_callbacks = callbacks['on_failure']
+        success_callbacks = callbacks['on_success'] if 'on_success' in callback_keys else []  # noqa: E501
+        failure_callbacks = callbacks['on_failure'] if 'on_failure' in callback_keys else []  # noqa: E501
         if not (
             isinstance(success_callbacks, list)
             and isinstance(failure_callbacks, list)  # noqa: W503

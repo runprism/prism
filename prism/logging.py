@@ -41,6 +41,7 @@ from prism.ui import (
     BOLD,
     CYAN,
     MAGENTA,
+    GRAY,
     TERMINAL_WIDTH,
 )
 
@@ -519,6 +520,21 @@ class DelayEvent(Event):
             return f'{YELLOW}{self.name} failed...delaying {self.delay_seconds} before restarting{RESET}'  # noqa: E501
         else:
             return f'{YELLOW}{self.name} failed...restarting immediately{RESET}'
+
+
+@dataclass
+class CallbacksHeaderEvent(Event):
+
+    def message(self):
+        header_fix = int((TERMINAL_WIDTH - len(' callbacks ')) / 2)
+        return f'{GRAY}{"=" * header_fix} callbacks {"=" * header_fix}{RESET}'
+
+
+@dataclass
+class CallbacksPathNotDefined(Event):
+
+    def message(self):
+        return f'{YELLOW}`CALLBACKS_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
 
 
 def deprecated(deprecated_fn: str, updated_fn: str):

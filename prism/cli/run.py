@@ -25,7 +25,6 @@ from prism.callbacks import CallbackManager
 from prism.infra.sys_path import SysPathEngine
 
 # Ohter library imports
-from pathlib import Path
 from typing import List, Optional
 
 
@@ -54,7 +53,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             log_level='error',
             formatted=formatted
         )
-
         # Fire callbacks
         event_list = callback_manager.exec(
             'on_failure',
@@ -96,12 +94,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # Prepare callbacks
 
         callbacks_dir = self.prism_project.callbacks_dir
-        if callbacks_dir is None:
-            callbacks_yml_path = None
-        else:
-            callbacks_yml_path = Path(callbacks_dir) / 'callbacks.yml'
         callback_manager = CallbackManager(
-            callbacks_yml_path,
+            callbacks_dir,
             self.prism_project,
         )
 
@@ -248,6 +242,21 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # Fire footer events
 
         event_list = fire_empty_line_event(event_list)
+        cb_return_result = callback_manager.exec(
+            'on_success',
+            self.args.full_tb,
+            event_list,
+            pipeline.run_context,
+        )
+        event_list.extend(cb_return_result.event_list)
+
+        # If the callbacks do not have an error, then fire a TaskSuccessfulEndEvent
+        if (
+            not cb_return_result.has_error
+            and len(callback_manager.on_success_callbacks) > 0  # noqa: W503
+        ):
+            event_list = fire_empty_line_event(event_list)
+
         event_list = fire_console_event(
             prism.logging.TaskSuccessfulEndEvent(),
             event_list,
