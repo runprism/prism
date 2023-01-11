@@ -47,20 +47,22 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         Fire error events, including callbacks
         """
         # Fire console event
+        event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
             error_event,
             event_list,
             log_level='error',
             formatted=formatted
         )
+
         # Fire callbacks
-        event_list = callback_manager.exec(
+        cb_output = callback_manager.exec(
             'on_failure',
             self.args.full_tb,
             event_list,
             self.run_context,
         )
-        event_list = self.fire_tail_event(event_list)
+        event_list = self.fire_tail_event(cb_output.event_list)
         return event_list
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
@@ -252,7 +254,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             event_list,
             pipeline.run_context,
         )
-        event_list.extend(cb_return_result.event_list)
+        event_list = cb_return_result.event_list
 
         # If the callbacks do not have an error, then fire a TaskSuccessfulEndEvent
         if (
@@ -268,6 +270,11 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             log_level='info'
         )
         event_list = self.fire_tail_event(event_list)
+
+        # Undo any sys.path changes
+        pipeline.run_context = sys_path_engine.revert_to_base_sys_path(
+            pipeline.run_context
+        )
 
         # Return
         return prism.cli.base.TaskRunReturnResult(event_list)

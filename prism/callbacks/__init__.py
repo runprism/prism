@@ -366,7 +366,7 @@ class CallbackManager:
             fire_exec_events=False,
             fire_empty_line_events=False
         )
-        event_list.extend(setup_event_manager_output.event_list)
+        event_list = setup_event_manager_output.event_list
         if setup_event_manager_output.outputs == 0:
             event_list = prism.logging.fire_empty_line_event(event_list)
             event_list = prism.logging.fire_console_event(
