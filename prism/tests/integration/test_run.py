@@ -533,6 +533,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             shutil.rmtree(Path(wkdir / '.compiled'))
         self.maxDiff = None
 
+        # Remove files in output folder
+        self._remove_files_in_output(wkdir)
+
         # New output path
         output_path = str(wkdir.parent)
         self.assertFalse((Path(output_path) / 'module01.txt').is_file())
@@ -547,9 +550,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
-
-        # Remove stuff in output to avoid recommitting to github
-        self._remove_files_in_output(wkdir)
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
@@ -609,6 +609,5 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             module02_txt
         )
 
-        # Remove all files in the compiled and output directory
+        # Remove all files in the compiled directory
         self._remove_compiled_dir(wkdir)
-        self._remove_files_in_output(wkdir)

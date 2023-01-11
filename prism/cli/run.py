@@ -175,8 +175,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 True,
                 callback_manager
             )
-            pipeline.run_context = sys_path_engine.revert_to_base_sys_path(
-                pipeline.run_context
+            self.run_context = sys_path_engine.revert_to_base_sys_path(
+                self.run_context
             )
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
