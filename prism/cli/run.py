@@ -182,6 +182,10 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # Execute pipeline
 
         event_list = fire_empty_line_event(event_list)
+        event_list = fire_console_event(
+            prism.logging.TasksHeaderEvent(),
+            event_list
+        )
 
         # Manager for executing pipeline.
         pipeline_exec_manager = base_event_manager.BaseEventManager(

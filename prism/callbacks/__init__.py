@@ -287,6 +287,11 @@ class CallbackManager:
                 self.defaulted_to_project_dir = True
                 self.callbacks_yml_path = self.prism_project.project_dir / 'callbacks.yml'  # noqa: E501
 
+            if not isinstance(self.callbacks_yml_path, Path):
+                raise prism.exceptions.InvalidCallbackException(
+                    message="something went wrong with callbacks YAML path"
+                )
+
             # If the callbacks path isn't actually a file, throw an error
             if not self.callbacks_yml_path.is_file():
                 raise prism.exceptions.InvalidCallbackException(

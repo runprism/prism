@@ -523,11 +523,23 @@ class DelayEvent(Event):
 
 
 @dataclass
-class CallbacksHeaderEvent(Event):
+class HeaderEvent(Event):
+
+    msg: str
 
     def message(self):
-        header_fix = int((TERMINAL_WIDTH - len(' callbacks ')) / 2)
-        return f'{GRAY}{"=" * header_fix} callbacks {"=" * header_fix}{RESET}'
+        header_fix = int((TERMINAL_WIDTH - len(' ' + self.msg + ' ')) / 2)
+        return f'{GRAY}{"=" * header_fix} {self.msg} {"=" * header_fix}{RESET}'
+
+
+@dataclass
+class TasksHeaderEvent(HeaderEvent):
+    msg: str = 'tasks'
+
+
+@dataclass
+class CallbacksHeaderEvent(HeaderEvent):
+    msg: str = 'callbacks'
 
 
 @dataclass
