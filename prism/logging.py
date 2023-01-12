@@ -538,15 +538,15 @@ class TasksHeaderEvent(HeaderEvent):
 
 
 @dataclass
-class CallbacksHeaderEvent(HeaderEvent):
-    msg: str = 'callbacks'
+class TriggersHeaderEvent(HeaderEvent):
+    msg: str = 'triggers'
 
 
 @dataclass
-class CallbacksPathNotDefined(Event):
+class TriggersPathNotDefined(Event):
 
     def message(self):
-        return f'{YELLOW}`CALLBACKS_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
+        return f'{YELLOW}`TRIGGERS_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
 
 
 def deprecated(deprecated_fn: str, updated_fn: str):

@@ -149,15 +149,15 @@ class PrismProject:
             self.adapters_object_dict = self.profile.get_adapters_obj_dict()
 
         # ------------------------------------------------------------------------------
-        # Triggers directory and callbacks
+        # Triggers directory and triggers
 
-        self.callbacks_dir = self.get_callbacks_dir(self.run_context)
-        callbacks = self.get_callbacks(self.run_context)
-        if callbacks is None:
-            self.on_success_callbacks, self.on_failure_callbacks = [], []
+        self.triggers_dir = self.get_triggers_dir(self.run_context)
+        triggers = self.get_triggers(self.run_context)
+        if triggers is None:
+            self.on_success_triggers, self.on_failure_triggers = [], []
         else:
-            self.on_success_callbacks = callbacks["on_success"]
-            self.on_failure_callbacks = callbacks["on_failure"]
+            self.on_success_triggers = triggers["on_success"]
+            self.on_failure_triggers = triggers["on_failure"]
 
     def ast_unparse(self, elt: Any):
         """
@@ -344,68 +344,68 @@ class PrismProject:
         except Exception as e:
             raise e
 
-    def get_callbacks_dir(self,
+    def get_triggers_dir(self,
         run_context: Dict[Any, Any]
     ) -> Optional[Path]:
         """
-        Get callbacks path from current run context. This doesn't have to be specified.
+        Get triggers path from current run context. This doesn't have to be specified.
 
         args:
             run_context: dictionary with run context variables
         returns:
-            callbacks path
+            triggers path
         """
-        callbacks = run_context.get('CALLBACKS_DIR', None)
-        if callbacks is None:
+        triggers = run_context.get('TRIGGERS_DIR', None)
+        if triggers is None:
             return None
-        if not (isinstance(callbacks, str) or isinstance(callbacks, Path)):
+        if not (isinstance(triggers, str) or isinstance(triggers, Path)):
             return None
-        return Path(callbacks)
+        return Path(triggers)
 
-    def get_callbacks(self,
+    def get_triggers(self,
         run_context: Dict[Any, Any]
     ) -> Optional[Dict[str, List[str]]]:
         """
-        Get callbacks from current run context. This doesn't have to be specified.
+        Get triggers from current run context. This doesn't have to be specified.
 
         args:
             run_context: dictionary with run context variables
         returns:
-            callbacks
+            triggers
         """
-        callbacks = run_context.get("CALLBACKS", None)
-        if callbacks is None:
+        triggers = run_context.get("TRIGGERS", None)
+        if triggers is None:
             return None
 
         # Triggers must be specified as a dictionary
-        if not isinstance(callbacks, dict):
+        if not isinstance(triggers, dict):
             raise prism.exceptions.InvalidProjectPyException(
-                message=f'invalid value `CALLBACKS = {callbacks}`, must be a dictionary'
+                message=f'invalid value `TRIGGERS = {triggers}`, must be a dictionary'
             )
 
-        # There can only be two types of callbacks: on_success and on_failure
-        callback_keys = list(callbacks.keys())
+        # There can only be two types of triggers: on_success and on_failure
+        trigger_keys = list(triggers.keys())
         expected_keys = ['on_success', 'on_failure']
-        for k in callback_keys:
+        for k in trigger_keys:
             if k not in expected_keys:
                 raise prism.exceptions.InvalidProjectPyException(
-                    message=f'invalid key `{k}` in CALLBACKS dictionary'
+                    message=f'invalid key `{k}` in TRIGGERS dictionary'
                 )
 
-        # on_success and on_failure callbacks should be a list of strings
-        success_callbacks = callbacks['on_success'] if 'on_success' in callback_keys else []  # noqa: E501
-        failure_callbacks = callbacks['on_failure'] if 'on_failure' in callback_keys else []  # noqa: E501
+        # on_success and on_failure triggers should be a list of strings
+        success_triggers = triggers['on_success'] if 'on_success' in trigger_keys else []  # noqa: E501
+        failure_triggers = triggers['on_failure'] if 'on_failure' in trigger_keys else []  # noqa: E501
         if not (
-            isinstance(success_callbacks, list)
-            and isinstance(failure_callbacks, list)  # noqa: W503
-            and all([isinstance(t, str) for t in success_callbacks])  # noqa: W503
-            and all([isinstance(t, str) for t in failure_callbacks])  # noqa: W503
+            isinstance(success_triggers, list)
+            and isinstance(failure_triggers, list)  # noqa: W503
+            and all([isinstance(t, str) for t in success_triggers])  # noqa: W503
+            and all([isinstance(t, str) for t in failure_triggers])  # noqa: W503
         ):
             raise prism.exceptions.InvalidProjectPyException(
-                message='invalid CALLBACKS dictionary, both `on_success` and `on_failure` values must be a list of strings'  # noqa: E501
+                message='invalid TRIGGERS dictionary, both `on_success` and `on_failure` values must be a list of strings'  # noqa: E501
             )
 
         return {
-            "on_success": success_callbacks,
-            "on_failure": failure_callbacks,
+            "on_success": success_triggers,
+            "on_failure": failure_triggers,
         }

@@ -21,7 +21,7 @@ import prism.logging
 from prism.logging import fire_console_event, fire_empty_line_event
 from prism.event_managers import base as base_event_manager
 from prism.infra import executor as prism_executor
-from prism.callbacks import CallbackManager
+from prism.triggers import TriggerManager
 from prism.infra.sys_path import SysPathEngine
 
 # Ohter library imports
@@ -41,10 +41,10 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         event_list: List[prism.logging.Event],
         error_event: Optional[prism.logging.Event],
         formatted: bool,
-        callback_manager: CallbackManager
+        trigger_manager: TriggerManager
     ):
         """
-        Fire error events, including callbacks
+        Fire error events, including triggers
         """
         # Fire console event
         event_list = fire_empty_line_event(event_list)
@@ -55,8 +55,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             formatted=formatted
         )
 
-        # Fire callbacks
-        cb_output = callback_manager.exec(
+        # Fire triggers
+        cb_output = trigger_manager.exec(
             'on_failure',
             self.args.full_tb,
             event_list,
@@ -93,11 +93,11 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         self.run_context = sys_path_engine.modify_sys_path()
 
         # ------------------------------------------------------------------------------
-        # Prepare callbacks
+        # Prepare triggers
 
-        callbacks_dir = self.prism_project.callbacks_dir
-        callback_manager = CallbackManager(
-            callbacks_dir,
+        triggers_dir = self.prism_project.triggers_dir
+        trigger_manager = TriggerManager(
+            triggers_dir,
             self.prism_project,
         )
 
@@ -124,7 +124,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 event_list,
                 compiled_dag_error_event,
                 True,
-                callback_manager
+                trigger_manager
             )
             self.run_context = sys_path_engine.revert_to_base_sys_path(self.run_context)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
@@ -173,7 +173,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 event_list,
                 pipeline_event_to_fire,
                 True,
-                callback_manager
+                trigger_manager
             )
             self.run_context = sys_path_engine.revert_to_base_sys_path(
                 self.run_context
@@ -215,7 +215,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 exec_event_manager_output.event_list,
                 exec_event_manager_output.event_to_fire,
                 True,
-                callback_manager
+                trigger_manager
             )
             pipeline.run_context = sys_path_engine.revert_to_base_sys_path(
                 pipeline.run_context
@@ -237,7 +237,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                     event_list,
                     error_event,
                     True,
-                    callback_manager
+                    trigger_manager
                 )
                 pipeline.run_context = sys_path_engine.revert_to_base_sys_path(
                     pipeline.run_context
@@ -248,7 +248,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # Fire footer events
 
         event_list = fire_empty_line_event(event_list)
-        cb_return_result = callback_manager.exec(
+        cb_return_result = trigger_manager.exec(
             'on_success',
             self.args.full_tb,
             event_list,
@@ -256,20 +256,25 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         )
         event_list = cb_return_result.event_list
 
-        # If the callbacks do not have an error, then fire a TaskSuccessfulEndEvent
-        if (
-            not cb_return_result.has_error
-            and len(callback_manager.on_success_callbacks) > 0  # noqa: W503
-        ):
-            event_list = fire_empty_line_event(event_list)
+        # If the triggers do not have an error, then fire a TaskSuccessfulEndEvent
+        if not cb_return_result.has_error:
 
-        event_list = fire_console_event(
-            prism.logging.TaskSuccessfulEndEvent(),
-            event_list,
-            0,
-            log_level='info'
-        )
-        event_list = self.fire_tail_event(event_list)
+            # Only fire an empty line if we had triggers to execute
+            if len(trigger_manager.on_success_triggers) > 0:
+                event_list = fire_empty_line_event(event_list)
+
+            # Task is successful
+            event_list = fire_console_event(
+                prism.logging.TaskSuccessfulEndEvent(),
+                event_list,
+                0,
+                log_level='info'
+            )
+            event_list = self.fire_tail_event(event_list)
+
+        # Otherwise, just fire the tail event
+        else:
+            event_list = self.fire_tail_event(event_list)
 
         # Undo any sys.path changes
         pipeline.run_context = sys_path_engine.revert_to_base_sys_path(

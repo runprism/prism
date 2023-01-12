@@ -178,7 +178,7 @@ class ParserException(PrismException):
         return self.message
 
 
-class InvalidCallbackException(PrismException):
+class InvalidTriggerException(PrismException):
     """
     Exception raised for invalid triggers.
     """
