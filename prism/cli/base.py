@@ -13,6 +13,7 @@ Table of Contents
 ###########
 
 # Standard library imports
+import json
 import os
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -192,7 +193,9 @@ class BaseTask(base_mixins.BaseMixin):
 
         # Get user-specified variables. These will override any variables in
         # `prism_project.py`.
-        user_context = self.args.vars
+        user_context = json.loads(self.args.context)
+        if user_context == {}:
+            user_context = self.args.vars
         if user_context is None:
             user_context = {}
 

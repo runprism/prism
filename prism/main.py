@@ -83,6 +83,18 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
         definitions in `prism_project.py`. All values are read as strings.
         """
     )
+
+    # Context JSON (as a string)
+    common_arguments_parser.add_argument(
+        '--context',
+        required=False,
+        type=str,
+        default='{}',
+        help="""
+        Prism variables as JSON. Cannot co-exist with --vars. These overwrite any
+        variable definitions in `prism_project.py`.
+        """
+    )
     return common_arguments_parser
 
 

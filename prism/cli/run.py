@@ -25,6 +25,7 @@ from prism.triggers import TriggerManager
 from prism.infra.sys_path import SysPathEngine
 
 # Ohter library imports
+import json
 from typing import List, Optional
 
 
@@ -134,7 +135,9 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
         # Get user-specified variables. These will override any variables in
         # `prism_project.py`.
-        user_context = self.args.vars
+        user_context = json.loads(self.args.context)
+        if user_context == {}:
+            user_context = self.args.vars
         if user_context is None:
             user_context = {}
 
