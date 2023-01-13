@@ -615,7 +615,7 @@ def fire_console_event(
             DEFAULT_LOGGER.info(msg)  # type: ignore
         elif log_level == "warn":
             msg = format_console_output(event.message(), log_level, formatted)
-            DEFAULT_LOGGER.warn(msg)  # type: ignore
+            DEFAULT_LOGGER.warning(msg)  # type: ignore
         elif log_level == "error":
             msg = format_console_output(event.message(), log_level, formatted)
             DEFAULT_LOGGER.error(msg)  # type: ignore
