@@ -140,14 +140,14 @@ class PrismTrigger:
 
         # Since it's of type function, we know that the spec will have a key `function`
         fn = trigger_spec["function"]
-        fn_split = fn.split('.')[:-1]
+        fn_split = fn.split('.')
 
         # If there is no parent module specified, then the function must be specified in
         # prism_project.py
         if len(fn_split) == 1:
             return
         else:
-            exec(f"import {'.'.join(fn_split)}", run_context)
+            exec(f"import {'.'.join(fn_split[:-1])}", run_context)
 
     def execute_trigger(self,
         run_context: Dict[Any, Any]
@@ -402,6 +402,7 @@ class TriggerManager:
             if self.defaulted_to_project_dir:
                 event_list = prism.logging.fire_console_event(
                     prism.logging.TriggersPathNotDefined(),
+                    event_list,
                     log_level='warn'
                 )
 
@@ -420,7 +421,7 @@ class TriggerManager:
                 run_context=run_context,
                 fire_empty_line_events=False
             )
-            event_list.extend(cb_event_manager_output.event_list)
+            event_list = cb_event_manager_output.event_list
 
             # Fire the error event. Don't return after the first error, because we want
             # to execute all triggers.

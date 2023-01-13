@@ -141,6 +141,8 @@ class BaseEventManager:
         except prism.exceptions.PrismException as err:
             if fire_exec_events:
                 event_list = self.fire_error_exec_event(start_time, event_list)
+            if fire_empty_line_events:
+                event_list = fire_empty_line_event(event_list)
             prism_exception_event = prism.logging.PrismExceptionErrorEvent(
                 err, self.name
             )

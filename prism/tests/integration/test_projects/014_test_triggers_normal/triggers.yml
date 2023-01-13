@@ -1,0 +1,6 @@
+triggers:
+  test_trigger_function:
+    type: function
+    function: common.functions.test_trigger_function
+    kwargs:
+      project_name: '014_test_triggers_normal'

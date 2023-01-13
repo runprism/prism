@@ -17,6 +17,7 @@ import pandas as pd
 import os
 from pathlib import Path
 import shutil
+from typing import Dict, List
 
 # Prism imports
 import prism.tests.integration.integration_test_class as integration_test_class
@@ -610,4 +611,160 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         )
 
         # Remove all files in the compiled directory
+        self._remove_compiled_dir(wkdir)
+
+    def _check_trigger_output(self, wkdir: Path):
+        """
+        Our test trigger function outputs a .txt file to the wkdir / 'output' folder.
+        Check that this exists.
+        """
+        self.assertTrue(Path(wkdir / '.compiled').is_dir())
+        self.assertTrue(Path(wkdir / 'output' / 'trigger.txt').is_file())
+        with open(Path(wkdir / 'output' / 'trigger.txt'), 'r') as f:
+            trigger_txt = f.read()
+        self.assertEqual('This is outputted from the trigger function!', trigger_txt)
+
+    def _check_trigger_events(self,
+        trigger_type: str,
+        execution_event_dict: Dict[str, str],
+        circa_trigger_header_event: List[str] = ['TriggersHeaderEvent'],
+        final_status: str = "DONE"
+    ):
+        """
+        Triggers kick of a predictable set of events. Check that these exist.
+        """
+        expected_events = run_success_starting_events + \
+            ['TasksHeaderEvent'] + \
+            _execution_events_modules(execution_event_dict) + \
+            ["EmptyLineEvent"] + \
+            circa_trigger_header_event + \
+            [
+                f"ExecutionEvent - on_{trigger_type} trigger test_trigger_function - RUN",  # noqa: E501
+                f"ExecutionEvent - on_{trigger_type} trigger test_trigger_function - {final_status}",  # noqa: E501
+            ]
+        return expected_events
+
+    def test_trigger_on_success(self):
+        """
+        Test on_success trigger
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '014_test_triggers_normal'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run all modules downstream of module01.py
+        args = ['run', '--modules', 'module01.py']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = self._check_trigger_events(
+            'success',
+            {'module01.py': 'DONE'}
+        ) + _run_task_end_events('TaskSuccessfulEndEvent')
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Check manifest / output
+        self._check_trigger_output(wkdir)
+
+        # Remove all files in the compiled directory
+        self._remove_compiled_dir(wkdir)
+
+    def test_trigger_on_failure(self):
+        """
+        Test on_failure trigger
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '014_test_triggers_normal'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run all modules downstream of module01.py
+        args = ['run', '--modules', 'module02.py']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = self._check_trigger_events(
+            'failure',
+            {'module02.py': 'ERROR'},
+            ["ExecutionErrorEvent", "TriggersHeaderEvent"]
+        ) + ["SeparatorEvent"]
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Check manifest / output
+        self._check_trigger_output(wkdir)
+
+        # Remove all files in the compiled directory
+        self._remove_compiled_dir(wkdir)
+
+    def test_trigger_no_directory(self):
+        """
+        Test trigger function when there is no `TRIGGERS_DIR` in prism_project.py
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '015_test_triggers_no_dir'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run all modules downstream of module01.py
+        args = ['run', '--modules', 'module01.py']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = self._check_trigger_events(
+            'success',
+            {'module01.py': 'DONE'},
+            ["TriggersHeaderEvent", "TriggersPathNotDefined"]
+        ) + _run_task_end_events('TaskSuccessfulEndEvent')
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Check that manifest was created
+        self._check_trigger_output(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+    def test_bad_trigger(self):
+        """
+        Test trigger function with a bad trigger
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '016_test_triggers_error'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run all modules downstream of module01.py
+        args = ['run']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = self._check_trigger_events(
+            'success',
+            {'module01.py': 'DONE'},
+            ["TriggersHeaderEvent", "TriggersPathNotDefined"],
+            'ERROR'
+        ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
