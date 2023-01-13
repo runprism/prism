@@ -161,6 +161,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
 
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
         # Execute command
         args = ['run']
         runtask_run = self._run_prism(args)
@@ -548,6 +551,10 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         module01_txt = self._file_as_str(Path(output_path) / 'module01.txt')
         self.assertEqual('Hello from module 1!', module01_txt)
         os.unlink(Path(output_path) / 'module01.txt')
+
+        # Re-run to place output in normal directory
+        args = ['run']
+        self._run_prism(args)
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
