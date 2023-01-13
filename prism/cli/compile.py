@@ -94,7 +94,6 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         event_to_fire = compiled_event_manager_output.event_to_fire
         event_list = compiled_event_manager_output.event_list
         if compiled_dag == 0:
-            event_list = fire_empty_line_event(event_list)
             event_list = fire_console_event(
                 event_to_fire,
                 event_list,
