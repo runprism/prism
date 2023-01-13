@@ -177,7 +177,7 @@ class Profile:
             else:
                 if flag_missing_named_profile:
                     if fire_warnings:
-                        e2 = prism.logging.ProfileNameExistsYamlDoesNotExist()
+                        e2 = prism.logging.ProfileNameExistsNamedProfileDoesNotExist()
                         prism.logging.fire_console_event(e2, [], 0, log_level='warn')
                     return False
 

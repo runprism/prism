@@ -279,6 +279,13 @@ class ProfileNameExistsYamlDoesNotExist(Event):
 
 
 @dataclass
+class ProfileNameExistsNamedProfileDoesNotExist(Event):
+
+    def message(self):
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but named profile not found in profile.yml{RESET}'  # noqa: E501
+
+
+@dataclass
 class ProfileNameDoesNotExistYamlExists(Event):
 
     def message(self):
