@@ -49,3 +49,6 @@ INTERNAL_HOOKS_VARNAME = '__PRISM_HOOKS__'
 
 # Python version
 PYTHON_VERSION = sys.version_info
+
+# Trigger types
+VALID_TRIGGER_TYPES = ["function", "prism_project"]

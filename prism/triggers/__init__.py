@@ -17,6 +17,7 @@ import prism.exceptions
 import prism.logging
 from prism.parsers import yml_parser
 from prism.infra.project import PrismProject
+from prism.constants import VALID_TRIGGER_TYPES
 
 # Standard library imports
 import jinja2
@@ -77,7 +78,7 @@ class PrismTrigger:
                 message=f"trigger `{trigger_name}` does not have a `type`"
             )
         trigger_type = trigger_spec["type"]
-        if trigger_type not in ["function", "prism_project"]:
+        if trigger_type not in VALID_TRIGGER_TYPES:
             raise prism.exceptions.InvalidTriggerException(
                 message=f"trigger `{trigger_name}` has an invalid type `{trigger_type}`"  # noqa: E501
             )
