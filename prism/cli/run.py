@@ -48,7 +48,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         Fire error events, including triggers
         """
         # Fire console event
-        event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
             error_event,
             event_list,
