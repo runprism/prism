@@ -15,15 +15,8 @@ Table of Contents:
 # Standard library imports
 import os
 from pathlib import Path
-import re
-import shutil
-import unittest
-import yaml
 
 # Prism imports
-import prism.cli.base
-from prism.main import main
-import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
@@ -36,9 +29,9 @@ TEST_CASE_WKDIR = os.path.dirname(__file__)
 TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 
 
-###############################
-## Expected events / results ##
-###############################
+#############################
+# Expected events / results #
+#############################
 
 # Header events constant all task runs
 header_events = [
@@ -51,8 +44,8 @@ header_events = [
     'EmptyLineEvent'
 ]
 
-# The events associated with the `connect` task not depend on the value of `--type`. All successful runs should result
-# in the same events being fired.
+# The events associated with the `connect` task not depend on the value of `--type`. All
+# successful runs should result in the same events being fired.
 connect_task_successful_expected_events = header_events + [
     'SettingUpProfileEvent',
     'EmptyLineEvent',
@@ -62,7 +55,7 @@ connect_task_successful_expected_events = header_events + [
 
 # Events associated with invalid profile type
 connect_task_invalid_expected_events = header_events + [
-    'InvalidAdapterType',
+    'InvalidType',
     'SeparatorEvent'
 ]
 
@@ -143,21 +136,20 @@ expected_snowflake_pyspark_dict = {
 }
 
 
-################################
-## Test case class definition ##
-################################
+##############################
+# Test case class definition #
+##############################
 
 class TestConnectIntegration(integration_test_class.IntegrationTestCase):
 
-
     def _test_profile_successfully_created(self, wkdir, task_run_return_result):
         """
-        Run a standard set of checks to confirm whether a profile was created successfully
+        Run a standard set of checks to confirm whether a profile was created
+        successfully
         """
         results = task_run_return_result.get_results()
         self.assertTrue(Path(wkdir / 'profile.yml').is_file())
         self.assertEqual(' | '.join(connect_task_successful_expected_events), results)
-
 
     def test_snowflake(self):
         """
@@ -183,7 +175,6 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for next test case
         self._set_up_wkdir()
 
-
     def test_pyspark(self):
         """
         `prism connect` using PySpark profile
@@ -208,7 +199,6 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for next test case
         self._set_up_wkdir()
 
-
     def test_add_diff_profile_to_existing_one(self):
         """
         `prism connect` using Snowflake + PySpark profile
@@ -221,8 +211,8 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         # Remove the .compiled directory, if it exists
         self._remove_profile_yml(wkdir)
 
-        # Execute command for Snowflake
         # -----------------------------
+        # Execute command for Snowflake
         args = ['connect', '--type', 'snowflake']
         connect_run = self._run_prism(args)
         self._test_profile_successfully_created(wkdir, connect_run)
@@ -231,9 +221,8 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         yml_dict = self._profile_yml_as_dict(wkdir)
         self.assertEqual(expected_snowflake_dict, yml_dict)
 
-
-        # Add Snowflake profile
         # ---------------------
+        # Add Snowflake profile
         args = ['connect', '--type', 'pyspark']
         connect_run = self._run_prism(args)
         self._test_profile_successfully_created(wkdir, connect_run)
@@ -245,7 +234,6 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for next test case
         self._set_up_wkdir()
 
-    
     def test_add_same_profile_to_existing_one(self):
         """
         `prism connect` using Snowflake + PySpark profile
@@ -268,7 +256,6 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         yml_dict = self._profile_yml_as_dict(wkdir)
         self.assertEqual(expected_snowflake_dict, yml_dict)
 
-
         # Add Snowflake profile again
         args = ['connect', '--type', 'snowflake']
         connect_run = self._run_prism(args)
@@ -283,7 +270,6 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
 
         # Set up wkdir for next test case
         self._set_up_wkdir()
-
 
     def test_invalid_type(self):
         """
@@ -302,17 +288,22 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         args = ['connect', '--type', 'dummy']
         connect_run = self._run_prism(args)
         connect_run_results = connect_run.get_results()
-        self.assertEqual(' | '.join(connect_task_invalid_expected_events), connect_run_results)
+        self.assertEqual(
+            ' | '.join(connect_task_invalid_expected_events),
+            connect_run_results
+        )
 
         # Execute command with a Null
         args = ['connect', '--type', '']
         connect_run = self._run_prism(args)
         connect_run_results = connect_run.get_results()
-        self.assertEqual(' | '.join(connect_task_invalid_expected_events), connect_run_results)
+        self.assertEqual(
+            ' | '.join(connect_task_invalid_expected_events),
+            connect_run_results
+        )
 
         # Set up wkdir for next test case
         self._set_up_wkdir()
-
 
     def test_no_prism_project_py(self):
         """
@@ -341,8 +332,3 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
 
         # Set up wkdir for next test case
         self._set_up_wkdir()
-
-
-
-        
-# EOF

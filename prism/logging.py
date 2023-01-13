@@ -250,16 +250,17 @@ class InitErrorEvent(Event):
 
 
 @dataclass
-class InvalidAdapterType(Event):
-    valid_adapters: List[str]
+class InvalidType(Event):
+    arg_type: str
+    valid_types: List[str]
     type: Optional[str] = None
 
     def message(self):
         if self.type is None:
-            return f'{RED}Specify profile type with --type arg{RESET}'
+            return f'{RED}Specify {self.arg_type} type with --type arg{RESET}'
         else:
-            valid_adapters_str = ','.join(f'`{a}`' for a in self.valid_adapters)
-            return f'{RED}Invalid adapter type; must be one of {valid_adapters_str}{RESET}'  # noqa: E501
+            valid_types_str = ','.join(f'`{a}`' for a in self.valid_types)
+            return f'{RED}Invalid {self.arg_type} type; must be one of {valid_types_str}{RESET}'  # noqa: E501
 
 
 @dataclass
