@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 # Functions
-def test_trigger_function(project_name: str):
+def test_trigger_function(project_name: str = '014_test_triggers_normal'):
     output_dir = Path(__file__).parent.parent / project_name / 'output'
     with open(output_dir / 'trigger.txt', 'w') as f:
         f.write('This is outputted from the trigger function!')
