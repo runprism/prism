@@ -20,6 +20,7 @@ import unittest
 
 # Prism imports
 from prism.infra import project
+import prism.exceptions
 
 
 #################################
@@ -35,6 +36,10 @@ MULTIPLE_PROFILES = 'multiple_profiles.py'
 NULL_PROFILE = 'null_profile.py'
 NON_NULL_PROFILE = 'non_null_profile.py'
 NO_PROFILE = 'no_profile.py'
+TRIGGERS_NORMAL = 'triggers_normal.py'
+ON_FAILURE_TRIGGERS_ONLY = 'on_failure_triggers_only.py'
+ON_SUCCESS_TRIGGERS_ONLY = 'on_success_triggers_only.py'
+BAD_TRIGGER_KEY = 'bad_trigger_key.py'
 
 # List of all test case .yml files
 ALL_TEST_CASE_FILES = [
@@ -122,8 +127,8 @@ class TestPrismProject(unittest.TestCase):
 
     def test_multiple_profiles(self):
         """
-        Confirm that the run task throws an error if there are multiple assignments for
-        the inputted var (which will almost always be `profile`)
+        If a var is defined multiple times, then the last definition will take
+        precedence.
         """
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
@@ -136,3 +141,97 @@ class TestPrismProject(unittest.TestCase):
             prism_project_py_str, 'PROFILE', {}
         )
         self.assertEqual(profile, "test2")
+
+    def test_normal_triggers(self):
+        """
+        Trigger directory and triggers are defined as expected
+        """
+        run_context = {
+            '__file__': str(PRISM_PROJECT_PY_TEST_CASES / TRIGGERS_NORMAL)
+        }
+        prism_project = project.PrismProject(
+            project_dir=PRISM_PROJECT_PY_TEST_CASES,
+            user_context={},
+            which="run",
+            filename=TRIGGERS_NORMAL
+        )
+        exec(prism_project.prism_project_py_str, run_context)
+
+        # Triggers directory
+        triggers_dir = prism_project.get_triggers_dir(run_context)
+        self.assertEqual(str(triggers_dir), str(PRISM_PROJECT_PY_TEST_CASES))
+
+        # Triggers
+        triggers = prism_project.get_triggers(run_context)
+        expected_triggers = {
+            "on_success": ['test_fn'],
+            "on_failure": ['test_fn'],
+        }
+        self.assertEqual(triggers, expected_triggers)
+
+    def test_on_failure_triggers_only(self):
+        """
+        on_success triggers is an empty list when not defined
+        """
+        run_context = {
+            '__file__': str(PRISM_PROJECT_PY_TEST_CASES / ON_FAILURE_TRIGGERS_ONLY)
+        }
+        prism_project = project.PrismProject(
+            project_dir=PRISM_PROJECT_PY_TEST_CASES,
+            user_context={},
+            which="run",
+            filename=ON_FAILURE_TRIGGERS_ONLY
+        )
+        exec(prism_project.prism_project_py_str, run_context)
+
+        # Triggers
+        triggers = prism_project.get_triggers(run_context)
+        expected_triggers = {
+            "on_success": [],
+            "on_failure": ['test_fn'],
+        }
+        self.assertEqual(triggers, expected_triggers)
+
+    def test_on_success_triggers_only(self):
+        """
+        on_failure triggers is an empty list when not defined
+        """
+        run_context = {
+            '__file__': str(PRISM_PROJECT_PY_TEST_CASES / ON_SUCCESS_TRIGGERS_ONLY)
+        }
+        prism_project = project.PrismProject(
+            project_dir=PRISM_PROJECT_PY_TEST_CASES,
+            user_context={},
+            which="run",
+            filename=ON_SUCCESS_TRIGGERS_ONLY
+        )
+        exec(prism_project.prism_project_py_str, run_context)
+
+        # Triggers
+        triggers = prism_project.get_triggers(run_context)
+        expected_triggers = {
+            "on_success": ['test_fn'],
+            "on_failure": [],
+        }
+        self.assertEqual(triggers, expected_triggers)
+
+    def test_bad_trigger_key(self):
+        """
+        on_failure triggers is an empty list when not defined
+        """
+        run_context = {
+            '__file__': str(PRISM_PROJECT_PY_TEST_CASES / BAD_TRIGGER_KEY)
+        }
+        prism_project = project.PrismProject(
+            project_dir=PRISM_PROJECT_PY_TEST_CASES,
+            user_context={},
+            which="run",
+            filename=BAD_TRIGGER_KEY
+        )
+        exec(prism_project.prism_project_py_str, run_context)
+
+        # Triggers
+        with self.assertRaises(prism.exceptions.InvalidProjectPyException) as cm:
+            prism_project.get_triggers(run_context)
+        expected_msg = 'invalid key `this_key_should_not_exist` in TRIGGERS dictionary'
+        self.assertEqual(str(cm.exception), expected_msg)
