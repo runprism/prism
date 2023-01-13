@@ -525,7 +525,6 @@ class DelayEvent(Event):
 
 @dataclass
 class HeaderEvent(Event):
-
     msg: str
 
     def message(self):
@@ -548,6 +547,13 @@ class TriggersPathNotDefined(Event):
 
     def message(self):
         return f'{YELLOW}`TRIGGERS_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
+
+
+@dataclass
+class SettingUpTriggersEvent(Event):
+
+    def message(self):
+        return 'Setting up triggers...'
 
 
 def deprecated(deprecated_fn: str, updated_fn: str):
