@@ -9,6 +9,7 @@ Prism constants.
 import os
 from pathlib import Path
 import sys
+import builtins
 
 
 #############
@@ -37,7 +38,10 @@ VALID_ADAPTERS = [
 ]
 
 # Context
-CONTEXT = {'__name__': '__main__'}
+CONTEXT = {
+    '__builtins__': builtins,
+    '__name__': '__main__'
+}
 
 # Internal names for task_manager and hooks
 INTERNAL_TASK_MANAGER_VARNAME = '__PRISM_TASK_MANAGER__'
