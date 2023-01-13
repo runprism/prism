@@ -83,23 +83,34 @@ class PrismTrigger:
                 message=f"trigger `{trigger_name}` has an invalid type `{trigger_type}`"  # noqa: E501
             )
         if trigger_type == "function":
-            valid_keys = ["type", "function", "kwargs"]
+            valid_keys = ["type", "function"]
+            optional_keys = ["kwargs"]
         else:
-            valid_keys = ["type", "project_dir", "context"]
+            valid_keys = ["type", "project_dir"]
+            optional_keys = ["context"]
 
         # Check keys
         trigger_keys = list(trigger_spec.keys())
         flag_expected_keys = all(
-            [k1 == k2 for k1, k2 in zip(trigger_keys, valid_keys)]
+            [
+                k1 == k2 or k1 in optional_keys for k1, k2 in zip(
+                    sorted(trigger_keys), sorted(valid_keys)
+                )
+            ]
         )
         if not flag_expected_keys:
             return flag_expected_keys
 
         # Check key types
-        valid_key_types = [str, str, dict]
+        valid_key_types = [str, str]
+        optional_key_types = [dict]
         for k, t in zip(valid_keys, valid_key_types):
             if not isinstance(trigger_spec[k], t):
                 return False
+        for k, t in zip(optional_keys, optional_key_types):  # type: ignore
+            if k in trigger_keys:
+                if not isinstance(trigger_spec[k], t):
+                    return False
 
         # Otherwise, return True
         return True
@@ -154,8 +165,11 @@ class PrismTrigger:
         self.import_function(self.name, self.spec, run_context)
         if self.spec["type"] == "function":
             fn = self.spec["function"]
-            kwargs_dict = self.spec["kwargs"]
-            exec(f"{fn}(**{kwargs_dict})", run_context)
+            if "kwargs" in list(self.spec.keys()):
+                kwargs_dict = self.spec["kwargs"]
+                exec(f"{fn}(**{kwargs_dict})", run_context)
+            else:
+                exec(f"{fn}()", run_context)
 
 
 class TriggerManager:
