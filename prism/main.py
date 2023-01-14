@@ -13,7 +13,7 @@ Table of Contents
 
 import argparse
 import prism.constants
-from prism.cli import connect, init, run, compile, spark_submit, graph
+from prism.cli import connect, init, run, compile, spark_submit, graph, trigger
 
 
 ##############
@@ -81,6 +81,18 @@ def build_common_arguments_parser() -> argparse.ArgumentParser:
         help="""
         Prism variables as key-value pairs `key=value`. These overwrite any variable
         definitions in `prism_project.py`. All values are read as strings.
+        """
+    )
+
+    # Context JSON (as a string)
+    common_arguments_parser.add_argument(
+        '--context',
+        required=False,
+        type=str,
+        default='{}',
+        help="""
+        Prism variables as JSON. Cannot co-exist with --vars. These overwrite any
+        variable definitions in `prism_project.py`.
         """
     )
     return common_arguments_parser
@@ -231,6 +243,16 @@ def build_run_subparser(sub, common_arguments_parser):
         """
     )
 
+    # Add argument for whether to run all upstream modules
+    run_sub.add_argument(
+        '--all-downstream',
+        required=False,
+        action='store_true',
+        help="""
+        Run all modules downstream of explicit run set
+        """
+    )
+
     # Set default class argument to RunTask()
     run_sub.set_defaults(cls=run.RunTask, which='run')
 
@@ -271,6 +293,16 @@ def build_spark_submit_subparser(sub, common_arguments_parser):
         action='store_true',
         help="""
         Run all modules upstream of explicit run set
+        """
+    )
+
+    # Add argument for whether to run all downstream modules
+    spark_submit_sub.add_argument(
+        '--all-downstream',
+        required=False,
+        action='store_true',
+        help="""
+        Run all modules downstream of explicit run set
         """
     )
 
@@ -319,7 +351,40 @@ def build_graph_subparser(sub, common_arguments_parser):
     )
 
     # Set default class argument to RunTask()
-    graph_sub.set_defaults(cls=graph.GraphTask, which='graph')
+    graph_sub.set_defaults(cls=graph.GraphTask, all_downstream=True, which='graph')
+
+
+def build_trigger_subparser(sub, common_arguments_parser):
+    """
+    Build subparser for trigger command line argument.
+
+    args:
+        sub: special-action object (see argparse docs) to add subparsers to
+        common_arguments_parser: parser with common arguments
+    returns:
+        None
+    """
+    trigger_sub = sub.add_parser(
+        'trigger',
+        parents=[common_arguments_parser],
+        help="""
+        Create a trigger
+        """
+    )
+
+    # Add argument for triggerion type
+    valid_triggers_str = ','.join([f'`{k}`' for k in prism.constants.VALID_ADAPTERS])
+    trigger_sub.add_argument(
+        '--type',
+        type=str,
+        required=True,
+        help=f"""
+        Trigger type. One of {valid_triggers_str}
+        """
+    )
+
+    # Set default class argument to RunTask()
+    trigger_sub.set_defaults(cls=trigger.TriggerTask, which='trigger')
 
 
 def build_full_arg_parser() -> argparse.ArgumentParser:
@@ -340,6 +405,7 @@ def build_full_arg_parser() -> argparse.ArgumentParser:
     build_connect_subparser(subparser, common_arguments_parser)
     build_spark_submit_subparser(subparser, common_arguments_parser)
     build_graph_subparser(subparser, common_arguments_parser)
+    build_trigger_subparser(subparser, common_arguments_parser)
 
     # Return base parser
     return base_parser

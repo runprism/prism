@@ -34,6 +34,7 @@ import prism.mixins.run
 import prism.mixins.sys_handler
 from prism.parsers import ast_parser
 import prism.logging
+from prism.infra.sys_path import SysPathEngine
 
 
 ####################
@@ -140,7 +141,8 @@ class PrismDAG(
         self.create_connection(connection_type, profiles_filepath)
 
     def compile(self,
-        modules: Optional[List[str]] = None
+        modules: Optional[List[str]] = None,
+        user_arg_all_downstream: bool = True
     ) -> prism_compiler.CompiledDag:
         """
         Compile the Prism project
@@ -158,19 +160,20 @@ class PrismDAG(
             self.project_dir,
             self.compiled_dir,
             self.all_modules,
-            self.user_arg_modules_list
+            self.user_arg_modules_list,
+            user_arg_all_downstream
         )
 
     def run(self,
         modules: Optional[List[str]] = None,
         all_upstream: bool = True,
+        all_downstream: bool = False,
         full_tb: bool = True,
         user_context: Optional[Dict[str, Any]] = None
     ):
         """
         Run the Prism project
         """
-
         # Create PrismProject
         if user_context is None:
             user_context = {}
@@ -181,13 +184,24 @@ class PrismDAG(
             filename="prism_project.py",
         )
 
+        # Modify sys.path
+        sys_path_engine = SysPathEngine(
+            prism_project, self.run_context
+        )
+        self.run_context = sys_path_engine.modify_sys_path()
+
         # Compile the DAG
-        compiled_dag = self.compile(modules)
+        compiled_dag = self.compile(modules, all_downstream)
 
         # Create DAG executor and Pipeline objects
         threads = prism_project.thread_count
         dag_executor = prism_executor.DagExecutor(
-            self.project_dir, compiled_dag, all_upstream, threads, user_context
+            self.project_dir,
+            compiled_dag,
+            all_upstream,
+            all_downstream,
+            threads,
+            user_context
         )
         pipeline = self.create_pipeline(
             prism_project, dag_executor, self.run_context
@@ -195,6 +209,7 @@ class PrismDAG(
 
         # Create args and exec
         output = pipeline.exec(full_tb)
+        self.run_context = sys_path_engine.revert_to_base_sys_path(self.run_context)
         if output.error_event is not None:
             event = output.error_event
             try:

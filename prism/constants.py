@@ -9,6 +9,7 @@ Prism constants.
 import os
 from pathlib import Path
 import sys
+import builtins
 
 
 #############
@@ -16,7 +17,7 @@ import sys
 #############
 
 # Version number
-VERSION = '0.1.7rc1'
+VERSION = '0.1.7rc2'
 
 # Root directory of project
 ROOT_DIR = str(Path(os.path.dirname(__file__)).parent)
@@ -37,7 +38,10 @@ VALID_ADAPTERS = [
 ]
 
 # Context
-CONTEXT = {'__name__': '__main__'}
+CONTEXT = {
+    '__builtins__': builtins,
+    '__name__': '__main__'
+}
 
 # Internal names for task_manager and hooks
 INTERNAL_TASK_MANAGER_VARNAME = '__PRISM_TASK_MANAGER__'
@@ -45,3 +49,6 @@ INTERNAL_HOOKS_VARNAME = '__PRISM_HOOKS__'
 
 # Python version
 PYTHON_VERSION = sys.version_info
+
+# Trigger types
+VALID_TRIGGER_TYPES = ["function", "prism_project"]

@@ -1,0 +1,4 @@
+triggers:
+  test_trigger_function:
+    type: function
+    function: common.functions.test_trigger_function

@@ -62,7 +62,7 @@ class CompiledModule:
 
         # Module as an AST
         parent_path = Path(str(module_full_path).replace(str(module_relative_path), ''))
-        self.ast_module = AstParser(self.module_relative_path, parent_path)
+        self.ast_parser = AstParser(self.module_relative_path, parent_path)
 
         # Module name
         self.name = str(self.module_relative_path)
@@ -84,6 +84,24 @@ class CompiledModule:
             refs = refs[0]
         return refs
 
+    def grab_retries_metadata(self):
+        """
+        Grab retry metadata, including:
+            1. How many retries to undertake
+            2. The delay between retries
+        """
+        retries = self.ast_parser.get_variable_assignments(
+            self.ast_parser.ast_module, 'RETRIES'
+        )
+        retry_delay_seconds = self.ast_parser.get_variable_assignments(
+            self.ast_parser.ast_module, 'RETRY_DELAY_SECONDS'
+        )
+        if retries is None:
+            retries = 0
+        if retry_delay_seconds is None:
+            retry_delay_seconds = 0
+        return retries, retry_delay_seconds
+
     def instantiate_module_class(self,
         run_context: Dict[Any, Any],
         task_manager: PrismTaskManager,
@@ -103,8 +121,8 @@ class CompiledModule:
             variable used to store task instantiation
         """
         # Get prism class from module
-        prism_task_class = self.ast_module.get_prism_task_node(
-            self.ast_module.classes, self.ast_module.bases
+        prism_task_class = self.ast_parser.get_prism_task_node(
+            self.ast_parser.classes, self.ast_parser.bases
         )
         if prism_task_class is None:
             raise prism.exceptions.ParserException(

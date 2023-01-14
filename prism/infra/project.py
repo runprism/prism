@@ -148,71 +148,16 @@ class PrismProject:
             self.profile.generate_adapters()
             self.adapters_object_dict = self.profile.get_adapters_obj_dict()
 
-    def adjust_prism_py_with_config(self,
-        config_dict: Dict[str, Any]
-    ):
-        """
-        Overwrite any variables in prism_project.py with those in config_dict.
+        # ------------------------------------------------------------------------------
+        # Triggers directory and triggers
 
-        args:
-            config_dict: configuration dictionary with var --> value mappings
-            globals_dict: namespace dictionary
-        returns:
-            None
-        """
-        self.prism_project_py_str_adjusted = self.prism_project_py_str + '\n'
-        for k, v in config_dict.items():
-            if isinstance(v, str):
-                self.prism_project_py_str_adjusted += f"{k} = '{v}'"
-            else:
-                self.prism_project_py_str_adjusted += f"{k} = {v}"
-
-        # Re-write the prism_project.py file -- we undo this later
-        with open(Path(self.project_dir / 'prism_project.py'), 'w') as f:
-            f.write(self.prism_project_py_str_adjusted)
-        f.close()
-
-    def num_var_assignments_in_file(self,
-        python_file: str,
-        var: str
-    ) -> int:
-        """
-        Get the number of times `var` is assigned a value in `python_file`
-
-        args:
-            python_file: Python file represented as a str
-            var: variable of interest
-        returns:
-            number of times `var` is assigned a value in `python_file`
-        """
-        ast_module = ast.parse(python_file)
-
-        # Only focus on the body; don't focus on contents of any functions / classes
-        assigns = []
-        for elem in ast_module.body:
-            if isinstance(elem, ast.Assign):
-                assigns.append(elem)
-
-        # Check targets
-        num_assignments = 0
-        for obj in assigns:
-            for target in obj.targets:
-
-                # If target is not an ast.Name (e.g., a, b = "Hello", "world"), then
-                # iterate through sub-notes of the target until we see an ast.Name
-                if not isinstance(target, ast.Name):
-                    for sub_elem in ast.walk(target):
-                        if isinstance(sub_elem, ast.Name):
-                            if sub_elem.id == var:
-                                num_assignments += 1
-                        else:
-                            continue
-
-                # Otherwise, check name of assignment var
-                else:
-                    if target.id == var:
-                        num_assignments += 1
-        return num_assignments
+        self.triggers_dir = self.get_triggers_dir(self.run_context)
+        triggers = self.get_triggers(self.run_context)
+        if triggers is None:
+            self.on_success_triggers, self.on_failure_triggers = [], []
+        else:
+            self.on_success_triggers = triggers["on_success"]
+            self.on_failure_triggers = triggers["on_failure"]
 
     def ast_unparse(self, elt: Any):
         """
@@ -235,13 +180,15 @@ class PrismProject:
     def safe_eval_var_from_file(self,
         python_file: str,
         var: str,
-    ) -> Optional[Any]:
+        context: Dict[Any, Any],
+    ) -> Any:
         """
         Get `var` from `python_file`
 
         args:
             python_file: Python file represented as a str
             var: variable of interest
+            context: context dictionary
         returns:
             value of first `var` assignment in `python_file`
         """
@@ -252,34 +199,18 @@ class PrismProject:
                 message="`prism_project.py` is undefined"
             )
 
-        # If multiple assignments, throw an error
-        num_assigments = self.num_var_assignments_in_file(python_file, var)
-        if num_assigments > 1:
-            raise prism.exceptions.InvalidProjectPyException(
-                message=f"multiple assignments for `{var}` in `prism_project.py`"
-            )
-
-        # Parse the Python file. We will wrap this function in an event manager, so no
-        # need to handle exceptions at the moment.
+        # Iterate through ast.Assign objects. For each Assign object, unparse and check
+        # if the var is defined within it. If it is, then execute and return the
+        # executed value.
+        var_value = None
         ast_data = ast.parse(python_file)
-        for elem in ast_data.body:
+        for elem in ast.walk(ast_data):
             if isinstance(elem, ast.Assign):
-                if len(elem.targets) == 1:
-                    if getattr(elem.targets[0], "id", "") == var:
-
-                        # If the element is a list, then iterate through the elements
-                        # and return the string value. We'll execute it later.
-                        if isinstance(elem.value, ast.List):
-                            items = []
-                            for attr in elem.value.elts:
-                                items.append(self.ast_unparse(attr))
-                            return items
-
-                        elif isinstance(elem.value, ast.Attribute):
-                            return self.ast_unparse(elem.value)
-                        else:
-                            return ast.literal_eval(elem.value)
-        return None
+                elem_code = self.ast_unparse(elem)
+                if var in elem_code:
+                    exec(elem_code, context)
+                    var_value = context[var]
+        return var_value
 
     def get_profile_name(self,
         run_context: Dict[Any, Any]
@@ -412,3 +343,69 @@ class PrismProject:
         # Raise all other exceptions
         except Exception as e:
             raise e
+
+    def get_triggers_dir(self,
+        run_context: Dict[Any, Any]
+    ) -> Optional[Path]:
+        """
+        Get triggers path from current run context. This doesn't have to be specified.
+
+        args:
+            run_context: dictionary with run context variables
+        returns:
+            triggers path
+        """
+        triggers = run_context.get('TRIGGERS_DIR', None)
+        if triggers is None:
+            return None
+        if not (isinstance(triggers, str) or isinstance(triggers, Path)):
+            return None
+        return Path(triggers)
+
+    def get_triggers(self,
+        run_context: Dict[Any, Any]
+    ) -> Optional[Dict[str, List[str]]]:
+        """
+        Get triggers from current run context. This doesn't have to be specified.
+
+        args:
+            run_context: dictionary with run context variables
+        returns:
+            triggers
+        """
+        triggers = run_context.get("TRIGGERS", None)
+        if triggers is None:
+            return None
+
+        # Triggers must be specified as a dictionary
+        if not isinstance(triggers, dict):
+            raise prism.exceptions.InvalidProjectPyException(
+                message=f'invalid value `TRIGGERS = {triggers}`, must be a dictionary'
+            )
+
+        # There can only be two types of triggers: on_success and on_failure
+        trigger_keys = list(triggers.keys())
+        expected_keys = ['on_success', 'on_failure']
+        for k in trigger_keys:
+            if k not in expected_keys:
+                raise prism.exceptions.InvalidProjectPyException(
+                    message=f'invalid key `{k}` in TRIGGERS dictionary'
+                )
+
+        # on_success and on_failure triggers should be a list of strings
+        success_triggers = triggers['on_success'] if 'on_success' in trigger_keys else []  # noqa: E501
+        failure_triggers = triggers['on_failure'] if 'on_failure' in trigger_keys else []  # noqa: E501
+        if not (
+            isinstance(success_triggers, list)
+            and isinstance(failure_triggers, list)  # noqa: W503
+            and all([isinstance(t, str) for t in success_triggers])  # noqa: W503
+            and all([isinstance(t, str) for t in failure_triggers])  # noqa: W503
+        ):
+            raise prism.exceptions.InvalidProjectPyException(
+                message='invalid TRIGGERS dictionary, both `on_success` and `on_failure` values must be a list of strings'  # noqa: E501
+            )
+
+        return {
+            "on_success": success_triggers,
+            "on_failure": failure_triggers,
+        }

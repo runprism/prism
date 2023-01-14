@@ -36,11 +36,13 @@ from prism.ui import (
     RED,
     GREEN,
     YELLOW,
-    PURPLE,
     RESET,
     BRIGHT_GREEN,
     BOLD,
-    TERMINAL_WIDTH
+    CYAN,
+    MAGENTA,
+    GRAY,
+    TERMINAL_WIDTH,
 )
 
 
@@ -115,7 +117,7 @@ def custom_ljust(string: str, width: int, char: str) -> str:
     return string_ljust_with_ansi
 
 
-def format_console_output(message, index, total, status, execution_time):
+def format_console_output(message, log_level="info", formatted: bool = True):
     """
     Format message for console output
     """
@@ -124,30 +126,19 @@ def format_console_output(message, index, total, status, execution_time):
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
 
-    # Script number
-    if index is None or total is None:
-        progress = f'{PURPLE}{current_time}{RESET} | '
-    else:
-        progress = f'{PURPLE}{current_time}{RESET} | {index} of {total} '
-    prefix = f"{progress}{message}"
+    # Formatted log level
+    if not formatted:
+        return message
+    elif log_level == "info":
+        log_level_formatted = f'{CYAN}INFO {RESET}'
+    elif log_level == "warn":
+        log_level_formatted = f'{YELLOW}WARN {RESET}'
+    elif log_level:
+        log_level_formatted = f'{RED}{log_level.upper()}{RESET}'
 
-    try:
-        width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
-    except Exception:
-        width = TERMINAL_WIDTH
-    truncate_width = math.ceil(0.9 * (width))
-    justified = custom_ljust(prefix, width, ".")
-
-    if len(escape_ansi(justified)) > width:
-        justified = justified[:truncate_width]
-
-    if execution_time is None:
-        status_time = ""
-    else:
-        status_time = f" in {execution_time:0.2f}s"
-    colorized_status = colorize_status(status)
-    output = f"{justified} [{colorized_status}{status_time}]"
-    return output
+    progress = f'{current_time}{RESET} | {log_level_formatted} | '
+    formatted_msg = f"{progress}{message}"
+    return formatted_msg
 
 
 #################
@@ -232,7 +223,7 @@ class CurrentProjectDirEvent(Event):
     path: str
 
     def message(self):
-        return f'{BOLD}Found project directory at {YELLOW}{self.path}{RESET}'
+        return f'{BOLD}Found project directory at {MAGENTA}{self.path}{RESET}'
 
 
 @dataclass
@@ -259,16 +250,17 @@ class InitErrorEvent(Event):
 
 
 @dataclass
-class InvalidAdapterType(Event):
-    valid_adapters: List[str]
+class InvalidType(Event):
+    arg_type: str
+    valid_types: List[str]
     type: Optional[str] = None
 
     def message(self):
         if self.type is None:
-            return f'{RED}Specify profile type with --type arg{RESET}'
+            return f'{RED}Specify {self.arg_type} type with --type arg{RESET}'
         else:
-            valid_adapters_str = ','.join(f'`{a}`' for a in self.valid_adapters)
-            return f'{RED}Invalid adapter type; must be one of {valid_adapters_str}{RESET}'  # noqa: E501
+            valid_types_str = ','.join(f'`{a}`' for a in self.valid_types)
+            return f'{RED}Invalid {self.arg_type} type; must be one of {valid_types_str}{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -284,6 +276,13 @@ class ProfileNameExistsYamlDoesNotExist(Event):
 
     def message(self):
         return f'{YELLOW}`PROFILE` var found in prism_project.py but profile.yml not found{RESET}'  # noqa: E501
+
+
+@dataclass
+class ProfileNameExistsNamedProfileDoesNotExist(Event):
+
+    def message(self):
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but named profile not found in profile.yml{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -313,7 +312,7 @@ class TaskRunEvent(Event):
     version: str
 
     def message(self):
-        return f'{BOLD}Running with prism {YELLOW}v{self.version}...{RESET}'
+        return f'{BOLD}Running with prism {MAGENTA}v{self.version}...{RESET}'
 
 
 @dataclass
@@ -365,33 +364,6 @@ class SeparatorEvent(Event):
 
 
 @dataclass
-class CompileStartEvent(Event):
-    modules: int
-    task_desc: str
-
-    def message(self):
-        return f'{BOLD}Found {self.modules} modules to {self.task_desc}{RESET}'
-
-
-@dataclass
-class CompileExecutionEvent(Event):
-    msg: str
-    num: int
-    total: int
-    status: str
-    execution_time: int
-
-    def message(self):
-        return format_console_output(
-            self.msg,
-            self.num,
-            self.total,
-            self.status,
-            self.execution_time
-        )
-
-
-@dataclass
 class ExecutionEvent(Event):
     msg: str
     num: Optional[int]
@@ -421,13 +393,28 @@ class ExecutionEvent(Event):
         return super().__str__() + " - " + event_name_str + " - " + self.status
 
     def message(self):
-        return format_console_output(
-            self.msg,
-            self.num,
-            self.total,
-            self.status,
-            self.execution_time
-        )
+        message = self.msg
+        if self.num is not None and self.total is not None:
+            message = f'{self.num} of {self.total} {self.msg}'
+
+        # Add execution time and status
+        try:
+            width = min(os.get_terminal_size(0)[0], TERMINAL_WIDTH)
+        except Exception:
+            width = TERMINAL_WIDTH
+        truncate_width = math.ceil(0.9 * (width))
+        justified = custom_ljust(message, width, ".")
+
+        if len(escape_ansi(justified)) > width:
+            justified = justified[:truncate_width]
+
+        if self.execution_time is None:
+            status_time = ""
+        else:
+            status_time = f" in {self.execution_time:0.2f}s"
+        colorized_status = colorize_status(self.status)
+        output = f"{justified} [{colorized_status}{status_time}]"
+        return output
 
 
 @dataclass
@@ -531,6 +518,51 @@ class ThreadsWarningEvent(Event):
         return f'{YELLOW}`THREADS` not found in prism_project.py; defaulting to 1{RESET}'  # noqa: E501
 
 
+@dataclass
+class DelayEvent(Event):
+    name: str
+    delay_seconds: int
+
+    def message(self):
+        if self.delay_seconds > 0:
+            return f'{YELLOW}{self.name} failed...delaying {self.delay_seconds} before restarting{RESET}'  # noqa: E501
+        else:
+            return f'{YELLOW}{self.name} failed...restarting immediately{RESET}'
+
+
+@dataclass
+class HeaderEvent(Event):
+    msg: str
+
+    def message(self):
+        header_fix = int((TERMINAL_WIDTH - len(' ' + self.msg + ' ')) / 2)
+        return f'{GRAY}{"=" * header_fix} {self.msg} {"=" * header_fix}{RESET}'
+
+
+@dataclass
+class TasksHeaderEvent(HeaderEvent):
+    msg: str = 'tasks'
+
+
+@dataclass
+class TriggersHeaderEvent(HeaderEvent):
+    msg: str = 'triggers'
+
+
+@dataclass
+class TriggersPathNotDefined(Event):
+
+    def message(self):
+        return f'{YELLOW}`TRIGGERS_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
+
+
+@dataclass
+class SettingUpTriggersEvent(Event):
+
+    def message(self):
+        return 'Setting up triggers...'
+
+
 def deprecated(deprecated_fn: str, updated_fn: str):
     """
     Decorator used to mark deprecated target function
@@ -562,7 +594,8 @@ def fire_console_event(
     event: Optional[Event],
     event_list: List[Event] = [],
     sleep=0.01,
-    log_level: str = 'info'
+    log_level: str = 'info',
+    formatted: bool = True
 ):
     """
     Fire console event. Note that if --quietly is invoked, then we set the log level
@@ -576,14 +609,19 @@ def fire_console_event(
     returns:
         event_list with `event` appended
     """
-    if log_level == "info":
-        DEFAULT_LOGGER.info(event.message())  # type: ignore
-    elif log_level == "warn":
-        DEFAULT_LOGGER.warning(f'{YELLOW}[WARNING]: {RESET}' + event.message())  # type: ignore # noqa: E501
-    elif log_level == "error":
-        DEFAULT_LOGGER.error(f'{RED}[ERROR]: {RESET}' + event.message())  # type: ignore # noqa: E501
-    elif log_level == "critical":
-        DEFAULT_LOGGER.critical(f'{RED}[CRITICAL]: {RESET}' + event.message())  # type: ignore # noqa: E501
+    if event is not None:
+        if log_level == "info":
+            msg = format_console_output(event.message(), log_level, formatted)
+            DEFAULT_LOGGER.info(msg)  # type: ignore
+        elif log_level == "warn":
+            msg = format_console_output(event.message(), log_level, formatted)
+            DEFAULT_LOGGER.warning(msg)  # type: ignore
+        elif log_level == "error":
+            msg = format_console_output(event.message(), log_level, formatted)
+            DEFAULT_LOGGER.error(msg)  # type: ignore
+        elif log_level == "critical":
+            msg = format_console_output(event.message(), log_level, formatted)
+            DEFAULT_LOGGER.critical(msg)  # type: ignore
 
     # Sleep
     time.sleep(sleep)

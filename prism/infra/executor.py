@@ -14,6 +14,7 @@ Table of Contents
 from dataclasses import dataclass
 from multiprocessing.dummy import Pool
 from pathlib import Path
+import time
 from typing import Any, Dict, List, Optional, Union
 
 # Prism-specific imports
@@ -22,7 +23,8 @@ from prism.infra import module as prism_module
 from prism.infra import compiler as prism_compiler
 from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
-from prism.logging import Event
+import prism.logging
+from prism.logging import Event, fire_console_event
 from prism.event_managers import base as base_event_manager
 from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAME
 
@@ -52,6 +54,7 @@ class DagExecutor:
         project_dir: Path,
         compiled_dag: prism_compiler.CompiledDag,
         user_arg_all_upstream: bool,
+        user_arg_all_downstream: bool,
         threads: int,
         user_context: Dict[Any, Any] = {}
     ):
@@ -60,14 +63,16 @@ class DagExecutor:
 
         # Extract attributes from compiled_dag instance
         self.compiled_modules = self.compiled_dag.compiled_modules
+        self.nxdag = self.compiled_dag.nxdag
         self.topological_sort_relative_path = self.compiled_dag.topological_sort
         self.topological_sort_full_path = self.compiled_dag.topological_sort_full_path
         self.user_arg_modules = self.compiled_dag.user_arg_modules
         self.user_arg_all_upstream = user_arg_all_upstream
+        self.user_arg_all_downstream = user_arg_all_downstream
         self.user_context = user_context
 
         # Identify nodes not explicitly run and update (only if --all-upstream is False)
-        if not self.user_arg_all_upstream:
+        if not self.user_arg_all_upstream and not self.user_arg_all_downstream:
             self.nodes_not_explicitly_run = list(
                 set(self.topological_sort_relative_path) - set(self.user_arg_modules)
             )
@@ -118,7 +123,6 @@ class DagExecutor:
         event_list: List[Event] = []
         if task_manager == 0:
             base_event_manager.EventManagerOutput(0, None, event_list)
-        name = module.name
         relative_path = module.module_relative_path
         full_path = module.module_full_path
 
@@ -126,7 +130,8 @@ class DagExecutor:
         # fire the exec events if the user did not explicitly include the script in
         # their arguments
         fire_exec_events = relative_path in self.user_arg_modules \
-            or self.user_arg_all_upstream
+            or self.user_arg_all_upstream \
+            or self.user_arg_all_downstream
 
         # If all upstream modules are to be run, the compute the idx and total using the
         # `dag`` list. Otherwise, if the script is explicitly included in the user's run
@@ -140,7 +145,7 @@ class DagExecutor:
         modules_sorted = [x for _, x in sorted(zip(modules_idx, self.user_arg_modules))]
 
         # Define the idx and total
-        if self.user_arg_all_upstream:
+        if self.user_arg_all_upstream or self.user_arg_all_downstream:
             idx = self.topological_sort_full_path.index(full_path) + 1
             total = len(self.topological_sort_full_path)
         elif relative_path in self.user_arg_modules:
@@ -156,22 +161,44 @@ class DagExecutor:
         self.run_context['__file__'] = str(
             self.project_dir / f'modules/{str(relative_path)}'
         )
-        script_manager = base_event_manager.BaseEventManager(
-            idx=idx,
-            total=total,
-            name=name,
-            full_tb=full_tb,
-            func=module.exec
-        )
-        script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(  # noqa: E501
-            event_list,
-            fire_exec_events,
-            run_context=self.run_context,
-            task_manager=task_manager,
-            hooks=hooks,
-            explicit_run=relative_path not in self.nodes_not_explicitly_run,
-            user_context=user_context
-        )
+
+        # Execute the module with appropriate number of retries
+        retries, retry_delay_seconds = module.grab_retries_metadata()
+        num_runs = 0
+        num_expected_runs = retries + 1
+        outputs = 0
+        name = module.name
+        while num_runs != num_expected_runs and outputs == 0:
+            num_runs += 1
+            if num_runs > 1:
+                event_list = fire_console_event(
+                    prism.logging.DelayEvent(name, retry_delay_seconds),
+                    log_level='warn'
+                )
+                time.sleep(retry_delay_seconds)
+                name = module.name + f' (RETRY {num_runs - 1})'
+
+            # Only fire empty line if last retry has been executed
+            fire_empty_line_events = num_runs == num_expected_runs
+            script_manager = base_event_manager.BaseEventManager(
+                idx=idx,
+                total=total,
+                name=name,
+                full_tb=full_tb,
+                func=module.exec
+            )
+            script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(  # noqa: E501
+                event_list,
+                fire_exec_events,
+                fire_empty_line_events,
+                run_context=self.run_context,
+                task_manager=task_manager,
+                hooks=hooks,
+                explicit_run=relative_path not in self.nodes_not_explicitly_run,
+                user_context=user_context
+            )
+            outputs = script_event_manager_result.outputs
+
         return script_event_manager_result
 
     def _cancel_connections(self, pool):

@@ -207,5 +207,5 @@ class ConnectMixin():
 
         # Save the new profile name
         with open(profiles_filepath, 'w') as f:
-            yaml.dump(base_yml_updated, f)
+            yaml.dump(base_yml_updated, f, sort_keys=False)
         f.close()

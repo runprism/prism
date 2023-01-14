@@ -52,14 +52,15 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
 
         # If adapter type is None, throw an error
         if adapter_type is None:
-            e = prism.logging.InvalidAdapterType(prism.constants.VALID_ADAPTERS)
+            e = prism.logging.InvalidType("adapter", prism.constants.VALID_ADAPTERS)
             event_list = fire_console_event(e, event_list, 0, log_level='error')
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
 
         # If adapter type isn't valid, then throw an error
         elif adapter_type not in prism.constants.VALID_ADAPTERS:
-            e = prism.logging.InvalidAdapterType(
+            e = prism.logging.InvalidType(
+                "adapter",
                 prism.constants.VALID_ADAPTERS,
                 adapter_type
             )
@@ -100,7 +101,6 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         event_to_fire = event_manager_results.event_to_fire
         event_list = event_manager_results.event_list
         if success == 0:
-            event_list = fire_empty_line_event(event_list)
             event_list = fire_console_event(
                 event_to_fire,
                 event_list,

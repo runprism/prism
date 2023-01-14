@@ -13,58 +13,34 @@ Table of Contents
 - Global variables / paths
 """
 
-###########
-# Imports #
-###########
-
+# Imports
 import logging
 from pathlib import Path
 
 
-###################
-# sys.path config #
-###################
-
+# sys.path config. This gives your tasks access to local modules / packages that exist
+# outside of your project structure.
 SYS_PATH_CONF = [
     Path(__file__).parent,
     # Add more paths here!
 ]
 
 
-################
-# Thread count #
-################
-
-# Number of workers to use to execute tasks concurrently. If set to 1, then 1 task is
-# run at a time.
+# Thread count: number of workers to use to execute tasks concurrently. If set to 1,
+# then 1 task is run at a time.
 THREADS = 1
 
 
-################
-# Profile name #
-################
-
-# If connecting to a data warehouse (e.g., Snowflake), specify the profile you want to
-# use. Profiles can be created with the prism connect command.
-PROFILES_DIR = Path(__file__).parent
-PROFILE = None
+# Profile directory and name
+PROFILES_DIR = Path(__file__).parent  # location of `profiles.yml` file
+PROFILE = None  # name of profile within `profiles.yml`
 
 
-##########
-# Logger #
-##########
-
-# The logger used to record events is called PRISM_LOGGER. Use this logger for your
-# project
+# Logger
 PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
-############################
-# Global variables / paths #
-############################
-
-# Specify global variables, parameters and paths to be used in the analysis. Capitalize
-# all names.
+# Other variables / parameters. Make sure to capitalize all of these!
 VAR_1 = {'a': 'b'}
 VAR_2 = 200
 VAR_3 = '2015-01-01'

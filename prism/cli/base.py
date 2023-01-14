@@ -13,6 +13,7 @@ Table of Contents
 ###########
 
 # Standard library imports
+import json
 import os
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -129,7 +130,7 @@ class BaseTask(base_mixins.BaseMixin):
 
         # Fire header events
         event_list = fire_console_event(
-            prism.logging.SeparatorEvent(), base_event_list, 1, 'info'
+            prism.logging.SeparatorEvent(), base_event_list, 1, 'info', False
         )
         event_list = fire_console_event(
             prism.logging.TaskRunEvent(version=prism.constants.VERSION),
@@ -169,7 +170,8 @@ class BaseTask(base_mixins.BaseMixin):
             prism.logging.SeparatorEvent(),
             event_list,
             sleep=0,
-            log_level='info'
+            log_level='info',
+            formatted=False
         )
         return event_list
 
@@ -191,7 +193,9 @@ class BaseTask(base_mixins.BaseMixin):
 
         # Get user-specified variables. These will override any variables in
         # `prism_project.py`.
-        user_context = self.args.vars
+        user_context = json.loads(self.args.context)
+        if user_context == {}:
+            user_context = self.args.vars
         if user_context is None:
             user_context = {}
 
