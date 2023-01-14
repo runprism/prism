@@ -1,21 +1,23 @@
 """
-@name: 001_init
-@author: ...
-@version: ...
-@description: ...
-
---------------------------------------------------------------------------------
-Table of Contents
-- Imports
-- Thread count
-- Profile name
-- Logger
-- Global variables / paths
+Prism project
 """
 
 # Imports
+from prism.admin import generate_run_id, generate_run_slug
 import logging
 from pathlib import Path
+
+
+# Project metadata
+NAME = "001_init"
+AUTHOR = ""
+VERSION = ""
+DESCRIPTION = """
+"""
+
+# Admin
+RUN_ID = generate_run_id()  # don't delete this!
+SLUG = generate_run_slug()  # don't delete this!
 
 
 # sys.path config. This gives your tasks access to local modules / packages that exist
@@ -38,6 +40,14 @@ PROFILE = None  # name of profile within `profiles.yml`
 
 # Logger
 PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
+
+
+# Triggers
+TRIGGERS_DIR = Path(__file__).parent  # location of triggers.yml file
+TRIGGERS = {
+    'on_success': [],  # triggers from triggers.yml to run on success
+    'on_failure': [],  # triggers from triggers.yml to run on success
+}
 
 
 # Other variables / parameters. Make sure to capitalize all of these!
