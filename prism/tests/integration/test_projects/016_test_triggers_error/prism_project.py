@@ -1,21 +1,23 @@
 """
-@name: ...
-@author: ...
-@version: ...
-@description: ...
-
---------------------------------------------------------------------------------
-Table of Contents
-- Imports
-- Thread count
-- Profile name
-- Logger
-- Global variables / paths
+Prism project
 """
 
 # Imports
 import logging
 from pathlib import Path
+from prism.admin import generate_run_id, generate_run_slug
+
+
+# Project metadata
+NAME = ""
+AUTHOR = ""
+VERSION = ""
+DESCRIPTION = """
+"""
+
+# Admin
+RUN_ID = generate_run_id()  # don't delete this!
+SLUG = generate_run_slug()  # don't delete this!
 
 
 # sys.path config. This gives your tasks access to local modules / packages that exist
@@ -52,6 +54,7 @@ OUTPUT = WKDIR / 'output'
 
 
 # Triggers
+TRIGGERS_DIR = Path(__file__).parent
 TRIGGERS = {
     'on_success': ['test_trigger_function'],
     'on_failure': ['test_trigger_function'],

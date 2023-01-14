@@ -3,7 +3,6 @@ Prism project
 """
 
 # Imports
-import os
 import logging
 from pathlib import Path
 from prism.admin import generate_run_id, generate_run_slug
@@ -31,7 +30,7 @@ SYS_PATH_CONF = [
 
 # Thread count: number of workers to use to execute tasks concurrently. If set to 1,
 # then 1 task is run at a time.
-THREADS = os.cpu_count()
+THREADS = 1
 
 
 # Profile directory and name
