@@ -187,7 +187,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
         event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
-            prism.logging.TasksHeaderEvent(msg='prehistoric-boar-9fc8e29b90d6'),
+            prism.logging.TasksHeaderEvent(msg=self.prism_project.slug),
             event_list
         )
 

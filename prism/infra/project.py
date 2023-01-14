@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Prism-specific imports
+# Prism-specific importss
 import prism.exceptions
 from prism.logging import fire_console_event
 import prism.logging
@@ -51,8 +51,6 @@ class PrismProject:
         self.prism_project_py_str = self.load_prism_project_py(
             self.project_dir, self.filename
         )
-        # Keep track of any adjustments made via configurations
-        self.prism_project_py_str_adjusted: Optional[str] = None
 
     def load_prism_project_py(self,
         project_dir: Path,
@@ -78,17 +76,25 @@ class PrismProject:
         return prism_project_py
 
     def exec(self,
-        run_context: Dict[Any, Any]
+        run_context: Dict[Any, Any],
     ):
         """
         Execute project
         """
-        run_context['__file__'] = str(self.project_dir / self.filename)
-        exec(self.prism_project_py_str, run_context)
+        # By importing the prism_project, we take advantage of Python's import
+        # caching. That is, if we execute a module that imports prism_project,
+        # Python will see that prism_project has already been imported and will not
+        # re-import it and overwrite the user context.
+        sys_path_adj_str = '\n'.join([
+            "import sys",
+            f"sys.path.insert(0, '{str(self.project_dir)}')",
+            f"import {self.filename.replace('.py', '')}"
+        ])
+        exec(sys_path_adj_str, run_context)
 
-        # Override `prism_project.py` with context vars
-        for k, v in self.user_context.items():
-            run_context[k] = v
+        # Update internal vars
+        for user_k, user_v in self.user_context.items():
+            setattr(run_context["prism_project"], user_k, user_v)
 
     def setup(self):
         """
@@ -98,6 +104,13 @@ class PrismProject:
         # Execute
         self.run_context = prism.constants.CONTEXT.copy()
         self.exec(self.run_context)
+
+        # ------------------------------------------------------------------------------
+        # Admin
+
+        admin = self.get_admin(self.run_context)
+        self.run_id = admin['run_id']
+        self.slug = admin['slug']
 
         # ------------------------------------------------------------------------------
         # Compiled sys.path config
@@ -212,6 +225,34 @@ class PrismProject:
                     var_value = context[var]
         return var_value
 
+    def get_admin(self,
+        run_context: Dict[Any, Any]
+    ):
+        """
+        Get Prism admin variables (as of now, that is the RUN_ID and the SLUG). If one
+        or both do not exist, throw an error.
+        """
+        try:
+            run_id = run_context[self.filename.replace(".py", "")].RUN_ID
+        except AttributeError:
+            run_id = None
+        try:
+            slug = run_context[self.filename.replace(".py", "")].SLUG
+        except AttributeError:
+            slug = None
+        if run_id is None:
+            raise prism.exceptions.RuntimeException(
+                message='`RUN_ID` not defined'
+            )
+        if slug is None:
+            raise prism.exceptions.RuntimeException(
+                message='`SLUG` not defined'
+            )
+        return {
+            'run_id': run_id,
+            'slug': slug,
+        }
+
     def get_profile_name(self,
         run_context: Dict[Any, Any]
     ) -> str:
@@ -223,7 +264,10 @@ class PrismProject:
         returns:
             profile_name
         """
-        profile_name = run_context.get("PROFILE", None)
+        try:
+            profile_name = run_context[self.filename.replace(".py", "")].PROFILE
+        except AttributeError:
+            profile_name = None
         if profile_name is None:
             return ""
         if not isinstance(profile_name, str):
@@ -241,7 +285,10 @@ class PrismProject:
         returns:
             profile path
         """
-        profiles_dir = run_context.get('PROFILES_DIR', None)
+        try:
+            profiles_dir = run_context[self.filename.replace(".py", "")].PROFILES_DIR  # noqa: E501
+        except AttributeError:
+            profiles_dir = None
         if profiles_dir is None:
             return None
         if not (isinstance(profiles_dir, str) or isinstance(profiles_dir, Path)):
@@ -259,7 +306,10 @@ class PrismProject:
         returns:
             sys_path configuration; this should be a list
         """
-        sys_path_config = run_context.get('SYS_PATH_CONF', None)
+        try:
+            sys_path_config = run_context[self.filename.replace(".py", "")].SYS_PATH_CONF  # noqa: E501
+        except AttributeError:
+            sys_path_config = None
         if sys_path_config is None:
             fire_console_event(
                 prism.logging.SysPathConfigWarningEvent(),
@@ -294,7 +344,10 @@ class PrismProject:
         returns:
             profile_name
         """
-        thread_count = run_context.get("THREADS", None)
+        try:
+            thread_count = run_context[self.filename.replace(".py", "")].THREADS  # noqa: E501
+        except AttributeError:
+            thread_count = None
         if thread_count is None:
             fire_console_event(
                 prism.logging.ThreadsWarningEvent(),
@@ -355,12 +408,15 @@ class PrismProject:
         returns:
             triggers path
         """
-        triggers = run_context.get('TRIGGERS_DIR', None)
-        if triggers is None:
+        try:
+            triggers_dir = run_context[self.filename.replace(".py", "")].TRIGGERS_DIR  # noqa: E501
+        except AttributeError:
+            triggers_dir = None
+        if triggers_dir is None:
             return None
-        if not (isinstance(triggers, str) or isinstance(triggers, Path)):
+        if not (isinstance(triggers_dir, str) or isinstance(triggers_dir, Path)):
             return None
-        return Path(triggers)
+        return Path(triggers_dir)
 
     def get_triggers(self,
         run_context: Dict[Any, Any]
@@ -373,7 +429,11 @@ class PrismProject:
         returns:
             triggers
         """
-        triggers = run_context.get("TRIGGERS", None)
+        try:
+            triggers = run_context[self.filename.replace(".py", "")].TRIGGERS
+        except AttributeError:
+            triggers = None
+
         if triggers is None:
             return None
 
