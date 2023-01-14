@@ -219,7 +219,6 @@ class BaseTask(base_mixins.BaseMixin):
 
         # Log an error if one occurs
         if self.prism_project == 0:
-            event_list = fire_empty_line_event(event_list)
             event_list = fire_console_event(
                 prism_project_event_to_fire,
                 event_list,
