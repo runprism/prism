@@ -1,59 +1,49 @@
 """
-Prism integration test project
+Prism project
 """
 
-###########
-# Imports #
-###########
-
+# Imports
+import os
 import logging
 from pathlib import Path
+from prism.admin import generate_run_id, generate_run_slug
 
 
-###################
-# sys.path config #
-###################
+# Project metadata
+NAME = ""
+AUTHOR = ""
+VERSION = ""
+DESCRIPTION = """
+"""
 
+# Admin
+RUN_ID = generate_run_id()  # don't delete this!
+SLUG = generate_run_slug()  # don't delete this!
+
+
+# sys.path config. This gives your tasks access to local modules / packages that exist
+# outside of your project structure.
 SYS_PATH_CONF = [
     Path(__file__).parent,
-    # Add more paths here!
+    Path(__file__).parent.parent,
 ]
 
 
-################
-# Thread count #
-################
-
-# Number of workers to use to execute tasks concurrently. If set to 1,
+# Thread count: number of workers to use to execute tasks concurrently. If set to 1,
 # then 1 task is run at a time.
-THREADS = 1
+THREADS = os.cpu_count()
 
 
-################
-# Profile name #
-################
-
-# If connecting to a data warehouse (e.g., Snowflake), specify the profile you
-# want to use. Profiles can be created with the prism connect command.
-PROFILES_DIR = Path(__file__).parent
-PROFILE = "default"
+# Profile directory and name
+PROFILES_DIR = Path(__file__).parent  # location of `profiles.yml` file
+PROFILE = 'default'  # name of profile within `profiles.yml`
 
 
-##########
-# Logger #
-##########
-
-# The logger used to record events is called PRISM_LOGGER. Use this logger
-# for your project
+# Logger
 PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
-############################
-# Global variables / paths #
-############################
-
-# Specify global variables, parameters and paths to be used in the analysis. Capitalize
-# all names.
+# Other variables / parameters. Make sure to capitalize all of these!
 VAR_1 = {'a': 'b'}
 VAR_2 = 200
 VAR_3 = '2015-01-01'
