@@ -7,6 +7,28 @@ import coolname
 import uuid
 import shortuuid
 
+# Words to ignore and exclude from slug
+IGNORE_LIST = {
+    "sexy",
+    "demonic",
+    "kickass",
+    "heretic",
+    "godlike",
+    "booby",
+    "chubby",
+    "gay",
+    "sloppy",
+    "funky",
+    "juicy",
+    "beaver",
+    "curvy",
+    "fat",
+    "flashy",
+    "flat",
+    "thick",
+    "nippy",
+}
+
 
 # Functions
 def generate_run_id() -> str:
@@ -23,4 +45,9 @@ def generate_run_slug() -> str:
     """
     uuid_short = str(shortuuid.ShortUUID().random(length=10))
     slug = coolname.generate_slug(2)
+
+    # Regenerate words if they include ignored words
+    while IGNORE_LIST.intersection(slug.split('-')):
+        slug = coolname.generate_slug(2)
+
     return f'{slug}-{uuid_short.replace("-", "")}'
