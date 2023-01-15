@@ -570,6 +570,16 @@ class SettingUpTriggersEvent(Event):
         return 'Setting up triggers...'
 
 
+@dataclass
+class DeprecationEvent(Event):
+    lineno: str
+    deprecated_fn: str
+    updated_fn: str
+
+    def message(self):
+        return f"{YELLOW}<line {self.lineno}>: the {self.deprecated_fn} method is deprecated, use {self.updated_fn} instead{RESET}"  # noqa: E501
+
+
 def deprecated(deprecated_fn: str, updated_fn: str):
     """
     Decorator used to mark deprecated target function
@@ -581,15 +591,22 @@ def deprecated(deprecated_fn: str, updated_fn: str):
 
             # Suppress warning using context manager; capture line no. information
             with warnings.catch_warnings(record=True) as w:
-                warnings.warn(f"{YELLOW}[WARNING]: {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",  # noqa: E501
-                        category=DeprecationWarning,
-                        stacklevel=2)
+                warnings.warn(
+                    f"{YELLOW}[WARNING]: {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}",  # noqa: E501
+                    category=DeprecationWarning,
+                    stacklevel=2
+                )
 
                 # Iterate through warnings
                 for wi in w:
                     wi = w[0]
                     lineno = wi.lineno
-                    DEFAULT_LOGGER.warning(f"{YELLOW}[WARNING] <line {lineno}>: the {deprecated_fn} method is deprecated, use {updated_fn} instead{RESET}")  # noqa: E501
+                    fire_console_event(
+                        DeprecationEvent(
+                            lineno, deprecated_fn, updated_fn
+                        ),
+                        log_level='warn'
+                    )
             return func(*args, **kwargs)
 
         return new_func
