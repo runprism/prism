@@ -572,7 +572,7 @@ class SettingUpTriggersEvent(Event):
 
 @dataclass
 class DeprecationEvent(Event):
-    lineno: str
+    lineno: int
     deprecated_fn: str
     updated_fn: str
 
