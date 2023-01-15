@@ -11,7 +11,6 @@ Table of Contents
 ###########
 
 # Prism-specific imports
-from prism.infra.project import PrismProject
 from prism.mixins.sys_handler import SysHandlerMixin
 
 # Standard library imports
@@ -28,19 +27,13 @@ class SysPathEngine(SysHandlerMixin):
     """
 
     def __init__(self,
-        project: PrismProject,
+        project,
         run_context: Dict[Any, Any]
     ):
         self.project = project
         self.run_context = run_context
 
-    def modify_sys_path(self):
-        """
-        Modify the sys.path values for this project
-        """
-        # Identify default modules loaded in sys.modules and paths loaded in sys.paths.
-        # This will allow us to add/remove modules programatically without messing up
-        # the base configuration.
+        # Define base sys path and base sys modules
         temp_context: Dict[Any, Any] = {}
         exec('import sys', temp_context)
         self.base_sys_path = [p for p in temp_context['sys'].path]
@@ -48,6 +41,10 @@ class SysPathEngine(SysHandlerMixin):
             k: v for k, v in temp_context['sys'].modules.items()
         }
 
+    def modify_sys_path(self):
+        """
+        Modify the sys.path values for this project
+        """
         # Configure sys.path
         self.add_paths_to_sys_path(self.project.sys_path_config, self.run_context)
 

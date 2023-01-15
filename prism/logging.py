@@ -42,6 +42,7 @@ from prism.ui import (
     CYAN,
     MAGENTA,
     GRAY,
+    GRAY_PINK,
     TERMINAL_WIDTH,
 )
 
@@ -534,14 +535,20 @@ class DelayEvent(Event):
 class HeaderEvent(Event):
     msg: str
 
+    def header_str(self):
+        return self.msg
+
     def message(self):
-        header_fix = int((TERMINAL_WIDTH - len(' ' + self.msg + ' ')) / 2)
-        return f'{GRAY}{"=" * header_fix} {self.msg} {"=" * header_fix}{RESET}'
+        header_fix = int((TERMINAL_WIDTH - len(' ' + escape_ansi(self.header_str()) + ' ')) / 2)  # noqa: E501
+        return f'{GRAY}{"=" * header_fix} {self.header_str()} {"=" * header_fix}{RESET}'
 
 
 @dataclass
 class TasksHeaderEvent(HeaderEvent):
-    msg: str = 'tasks'
+    msg: str
+
+    def header_str(self):
+        return f'tasks ({GRAY_PINK}{self.msg}{GRAY})'
 
 
 @dataclass

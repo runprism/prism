@@ -768,7 +768,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         expected_events = self._check_trigger_events(
             'success',
             {'module01.py': 'DONE'},
-            ["TriggersHeaderEvent", "TriggersPathNotDefined"],
+            ["TriggersHeaderEvent"],
             'ERROR'
         ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']
         self.assertEqual(' | '.join(expected_events), run_results)

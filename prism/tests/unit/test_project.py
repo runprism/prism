@@ -21,6 +21,7 @@ import unittest
 # Prism imports
 from prism.infra import project
 import prism.exceptions
+from prism.infra.sys_path import SysPathEngine
 
 
 #################################
@@ -146,16 +147,15 @@ class TestPrismProject(unittest.TestCase):
         """
         Trigger directory and triggers are defined as expected
         """
-        run_context = {
-            '__file__': str(PRISM_PROJECT_PY_TEST_CASES / TRIGGERS_NORMAL)
-        }
+        run_context = {}
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
             user_context={},
             which="run",
             filename=TRIGGERS_NORMAL
         )
-        exec(prism_project.prism_project_py_str, run_context)
+        engine = SysPathEngine(prism_project, run_context)
+        prism_project.exec(run_context, engine)
 
         # Triggers directory
         triggers_dir = prism_project.get_triggers_dir(run_context)
@@ -173,16 +173,15 @@ class TestPrismProject(unittest.TestCase):
         """
         on_success triggers is an empty list when not defined
         """
-        run_context = {
-            '__file__': str(PRISM_PROJECT_PY_TEST_CASES / ON_FAILURE_TRIGGERS_ONLY)
-        }
+        run_context = {}
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
             user_context={},
             which="run",
             filename=ON_FAILURE_TRIGGERS_ONLY
         )
-        exec(prism_project.prism_project_py_str, run_context)
+        engine = SysPathEngine(prism_project, run_context)
+        prism_project.exec(run_context, engine)
 
         # Triggers
         triggers = prism_project.get_triggers(run_context)
@@ -196,16 +195,15 @@ class TestPrismProject(unittest.TestCase):
         """
         on_failure triggers is an empty list when not defined
         """
-        run_context = {
-            '__file__': str(PRISM_PROJECT_PY_TEST_CASES / ON_SUCCESS_TRIGGERS_ONLY)
-        }
+        run_context = {}
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
             user_context={},
             which="run",
             filename=ON_SUCCESS_TRIGGERS_ONLY
         )
-        exec(prism_project.prism_project_py_str, run_context)
+        engine = SysPathEngine(prism_project, run_context)
+        prism_project.exec(run_context, engine)
 
         # Triggers
         triggers = prism_project.get_triggers(run_context)
@@ -219,16 +217,15 @@ class TestPrismProject(unittest.TestCase):
         """
         on_failure triggers is an empty list when not defined
         """
-        run_context = {
-            '__file__': str(PRISM_PROJECT_PY_TEST_CASES / BAD_TRIGGER_KEY)
-        }
+        run_context = {}
         prism_project = project.PrismProject(
             project_dir=PRISM_PROJECT_PY_TEST_CASES,
             user_context={},
             which="run",
             filename=BAD_TRIGGER_KEY
         )
-        exec(prism_project.prism_project_py_str, run_context)
+        engine = SysPathEngine(prism_project, run_context)
+        prism_project.exec(run_context, engine)
 
         # Triggers
         with self.assertRaises(prism.exceptions.InvalidProjectPyException) as cm:

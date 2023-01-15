@@ -24,6 +24,7 @@ BRIGHT_YELLOW = "\u001b[33;1m"
 BRIGHT_GREEN = "\u001b[32;1m"
 BOLD = "\u001b[1m"
 GRAY = "\u001b[38;5;240m"
+GRAY_PINK = "\u001b[38;5;96m"
 
 
 ##################

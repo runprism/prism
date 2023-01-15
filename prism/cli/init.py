@@ -93,10 +93,10 @@ class InitTask(prism.cli.base.BaseTask):
             lines = f.readlines()
         f.close()
         for line in lines:
-            if line != "@name: ...\n":
+            if line != 'NAME = ""\n':
                 new_lines.append(line)
-            elif line == "@name: ...\n":
-                new_lines.append(f"@name: {project_name}" + "\n")
+            elif line == 'NAME = ""\n':
+                new_lines.append(f'NAME = "{project_name}"' + "\n")
 
         # Write new file
         with open(project_yml_path, "w") as f:
@@ -117,7 +117,8 @@ class InitTask(prism.cli.base.BaseTask):
             prism.logging.SeparatorEvent(),
             event_list,
             0,
-            log_level='info'
+            log_level='info',
+            formatted=False
         )
         event_list = fire_console_event(
             prism.logging.TaskRunEvent(prism.constants.VERSION),
@@ -142,7 +143,8 @@ class InitTask(prism.cli.base.BaseTask):
                 prism.logging.SeparatorEvent(),
                 event_list,
                 0,
-                log_level='info'
+                log_level='info',
+                formatted=False
             )
             return prism.cli.base.TaskRunReturnResult(event_list)
 
@@ -182,7 +184,8 @@ class InitTask(prism.cli.base.BaseTask):
             prism.logging.SeparatorEvent(),
             event_list,
             0,
-            log_level='info'
+            log_level='info',
+            formatted=False
         )
 
         # Change working directory to the project directory

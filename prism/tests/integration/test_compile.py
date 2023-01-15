@@ -16,10 +16,8 @@ Table of Contents:
 import os
 from pathlib import Path
 import shutil
-import unittest
 
 # Prism imports
-import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
@@ -32,9 +30,9 @@ TEST_CASE_WKDIR = os.path.dirname(__file__)
 TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 
 
-#####################
-## Expected events ##
-#####################
+###################
+# Expected events #
+###################
 
 # Expected events for `compile` task when called on project with prism_project.py file
 no_project_py_expected_events = [
@@ -58,8 +56,9 @@ project_with_error_expected_events = [
     'SeparatorEvent'
 ]
 
-# Expected events for `compile` task when called on a simple project. Not that the `compile` task does not fire events
-# for each module that is compiled, so the different compile  CLI arguments below should produce the same events.
+# Expected events for `compile` task when called on a simple project. Not that the
+# `compile` task does not fire events for each module that is compiled, so the different
+# compile  CLI arguments below should produce the same events.
 simple_project_expected_events = [
     'SeparatorEvent',
     'TaskRunEvent',
@@ -73,13 +72,12 @@ simple_project_expected_events = [
 ]
 
 
-################################
-## Test case class definition ##
-################################
+##############################
+# Test case class definition #
+##############################
 
 class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
-    
     def test_no_project_py(self):
         """
         `prism compile` in a project without a `project.py` file
@@ -101,7 +99,6 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
-    
 
     def test_project_with_cycle(self):
         """
@@ -119,16 +116,18 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         args = ['compile']
         compile_run = self._run_prism(args)
         compile_run_results = compile_run.get_results()
-        self.assertEqual(' | '.join(project_with_error_expected_events), compile_run_results)
+        self.assertEqual(
+            ' | '.join(project_with_error_expected_events),
+            compile_run_results
+        )
 
         # Check that none of the modules are compiled
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
-        
+
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
-
 
     def test_simple_project_all_modules(self):
         """
@@ -146,7 +145,10 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         args = ['compile']
         compile_run = self._run_prism(args)
         compile_run_results = compile_run.get_results()
-        self.assertEqual(' | '.join(simple_project_expected_events), compile_run_results)
+        self.assertEqual(
+            ' | '.join(simple_project_expected_events),
+            compile_run_results
+        )
 
         # Check that .compiled directory is formed
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
@@ -164,7 +166,6 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
-    
 
     def test_project_nested_module_dirs(self):
         """
@@ -182,7 +183,10 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         args = ['compile']
         compile_run = self._run_prism(args)
         compile_run_results = compile_run.get_results()
-        self.assertEqual(' | '.join(simple_project_expected_events), compile_run_results)
+        self.assertEqual(
+            ' | '.join(simple_project_expected_events),
+            compile_run_results
+        )
 
         # Check that .compiled directory is formed
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
@@ -198,11 +202,10 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         self.assertEqual("extract/module01.py", extract_module02_refs)
         self.assertEqual("extract/module02.py", load_module03_refs)
         self.assertEqual("load/module03.py", module04_refs)
-        
+
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
-    
 
     def test_bad_task_ref(self):
         """
@@ -220,15 +223,15 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         args = ['compile']
         compile_run = self._run_prism(args)
         compile_run_results = compile_run.get_results()
-        self.assertEqual(' | '.join(project_with_error_expected_events), compile_run_results)
+        self.assertEqual(
+            ' | '.join(project_with_error_expected_events),
+            compile_run_results
+        )
 
         # Check that .compiled directory is not created
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
-        
+
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
-
-        
-# EOF
