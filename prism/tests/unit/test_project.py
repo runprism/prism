@@ -21,6 +21,7 @@ import unittest
 # Prism imports
 from prism.infra import project
 import prism.exceptions
+from prism.infra.sys_path import SysPathEngine
 
 
 #################################
@@ -153,7 +154,8 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=TRIGGERS_NORMAL
         )
-        prism_project.exec(run_context)
+        engine = SysPathEngine(prism_project, run_context)
+        prism_project.exec(run_context, engine)
 
         # Triggers directory
         triggers_dir = prism_project.get_triggers_dir(run_context)
@@ -178,7 +180,8 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=ON_FAILURE_TRIGGERS_ONLY
         )
-        prism_project.exec(run_context)
+        engine = SysPathEngine(prism_project, run_context)
+        prism_project.exec(run_context, engine)
 
         # Triggers
         triggers = prism_project.get_triggers(run_context)
@@ -199,7 +202,8 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=ON_SUCCESS_TRIGGERS_ONLY
         )
-        prism_project.exec(run_context)
+        engine = SysPathEngine(prism_project, run_context)
+        prism_project.exec(run_context, engine)
 
         # Triggers
         triggers = prism_project.get_triggers(run_context)
@@ -220,7 +224,8 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=BAD_TRIGGER_KEY
         )
-        prism_project.exec(run_context)
+        engine = SysPathEngine(prism_project, run_context)
+        prism_project.exec(run_context, engine)
 
         # Triggers
         with self.assertRaises(prism.exceptions.InvalidProjectPyException) as cm:

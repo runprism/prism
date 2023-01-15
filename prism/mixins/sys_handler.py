@@ -44,7 +44,11 @@ class SysHandlerMixin:
 
         # Add the paths before the standard sys.path locations, in case there are any
         # overwrites
-        globals_dict['sys'].path = [str(p) for p in paths] + globals_dict['sys'].path
+        paths_to_add = []
+        for p in paths:
+            if str(p) not in globals_dict['sys'].path:
+                paths_to_add.append(str(p))
+        globals_dict['sys'].path = paths_to_add + globals_dict['sys'].path
         return globals_dict
 
     def remove_paths_from_sys_path(self,
@@ -78,7 +82,8 @@ class SysHandlerMixin:
         Add project directory to sys.path
         """
         exec('import sys', globals_dict)
-        globals_dict['sys'].path.insert(0, str(project_dir))
+        if str(project_dir) not in globals_dict['sys'].path:
+            globals_dict['sys'].path.insert(0, str(project_dir))
         return globals_dict
 
     def remove_sys_path(self, project_dir: Path, globals_dict: Dict[Any, Any]):

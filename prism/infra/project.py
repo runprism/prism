@@ -25,13 +25,14 @@ from prism.logging import fire_console_event
 import prism.logging
 from prism.parsers import yml_parser
 from prism.profiles import profile
+from prism.infra.sys_path import SysPathEngine
 
 
 ####################
 # Class definition #
 ####################
 
-class PrismProject:
+class PrismProject():
     """
     Class to represent configuration files (prism_project.py and profile.yml)
     """
@@ -77,6 +78,7 @@ class PrismProject:
 
     def exec(self,
         run_context: Dict[Any, Any],
+        sys_path_engine: SysPathEngine,
     ):
         """
         Execute project
@@ -85,12 +87,8 @@ class PrismProject:
         # caching. That is, if we execute a module that imports prism_project,
         # Python will see that prism_project has already been imported and will not
         # re-import it and overwrite the user context.
-        sys_path_adj_str = '\n'.join([
-            "import sys",
-            f"sys.path.insert(0, '{str(self.project_dir)}')",
-            f"import {self.filename.replace('.py', '')}"
-        ])
-        exec(sys_path_adj_str, run_context)
+        sys_path_engine.add_sys_path(self.project_dir, run_context)
+        exec(f"import {self.filename.replace('.py', '')}", run_context)
 
         # Update internal vars
         for user_k, user_v in self.user_context.items():
@@ -101,9 +99,15 @@ class PrismProject:
         Set up prism project. This should always be directly after object instantiation
         (except for in testing).
         """
-        # Execute
         self.run_context = prism.constants.CONTEXT.copy()
-        self.exec(self.run_context)
+
+        # Create sys.path engine
+        self.sys_path_engine = SysPathEngine(
+            self, self.run_context
+        )
+
+        # Execute
+        self.exec(self.run_context, self.sys_path_engine)
 
         # ------------------------------------------------------------------------------
         # Admin
@@ -469,3 +473,12 @@ class PrismProject:
             "on_success": success_triggers,
             "on_failure": failure_triggers,
         }
+
+    def cleanup(self, run_context: Dict[Any, Any]):
+        """
+        Thin wrapper around SysPathEngine's `revert_to_base_sys_path` function. This
+        removes all project modules from sys.path
+        """
+        return self.sys_path_engine.revert_to_base_sys_path(
+            run_context
+        )

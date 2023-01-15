@@ -34,7 +34,6 @@ import prism.mixins.run
 import prism.mixins.sys_handler
 from prism.parsers import ast_parser
 import prism.logging
-from prism.infra.sys_path import SysPathEngine
 
 
 ####################
@@ -184,12 +183,6 @@ class PrismDAG(
             filename="prism_project.py",
         )
 
-        # Modify sys.path
-        sys_path_engine = SysPathEngine(
-            prism_project, self.run_context
-        )
-        self.run_context = sys_path_engine.modify_sys_path()
-
         # Compile the DAG
         compiled_dag = self.compile(modules, all_downstream)
 
@@ -209,7 +202,7 @@ class PrismDAG(
 
         # Create args and exec
         output = pipeline.exec(full_tb)
-        self.run_context = sys_path_engine.revert_to_base_sys_path(self.run_context)
+        self.run_context = prism_project.cleanup(self.run_context)
         if output.error_event is not None:
             event = output.error_event
             try:
