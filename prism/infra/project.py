@@ -136,12 +136,13 @@ class PrismProject():
         # generate the adapters; we only need to grab the profiles directory. If the
         # profiles dir isn't specified, default to the project dir.
         if self.which == "connect":
-            fire_console_event(
-                prism.logging.ProfileDirWarningEvent(),
-                [],
-                0.01,
-                'warn'
-            )
+            if self.profiles_dir is None:
+                fire_console_event(
+                    prism.logging.ProfileDirWarningEvent(),
+                    [],
+                    0.01,
+                    'warn'
+                )
             self.profiles_dir = self.project_dir
 
         # As of now, the only other tasks that sets up the project is the `run` and
