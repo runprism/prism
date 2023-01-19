@@ -141,7 +141,7 @@ class PrismDAG(
 
     def compile(self,
         modules: Optional[List[str]] = None,
-        user_arg_all_downstream: bool = True
+        all_downstream: bool = True
     ) -> prism_compiler.CompiledDag:
         """
         Compile the Prism project
@@ -160,7 +160,7 @@ class PrismDAG(
             self.compiled_dir,
             self.all_modules,
             self.user_arg_modules_list,
-            user_arg_all_downstream
+            all_downstream
         )
 
     def run(self,
