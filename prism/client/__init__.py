@@ -92,11 +92,8 @@ class PrismDAG(
 
         # Inputted project directory is not the same as the computed project directory
         if temp_project_dir != user_project_dir:
-            msg_list = [
-                f'no project at `{str(user_project_dir)}',
-                f'closest project found at `{str(temp_project_dir)}`'
-            ]
-            raise prism.exceptions.InvalidProjectException(message='\n'.join(msg_list))
+            msg = f'no project at `{str(user_project_dir)}, closest project found at `{str(temp_project_dir)}`'   # noqa: E501
+            raise prism.exceptions.InvalidProjectException(message=msg)
 
         # Modules folder is not found
         if not Path(user_project_dir / 'modules').is_dir():
@@ -122,11 +119,8 @@ class PrismDAG(
                 message='connection type must be a string'
             )
         if connection_type not in prism.constants.VALID_ADAPTERS:
-            msg_list = [
-                f'invalid connection type `{connection_type}',
-                f'must be one of {",".join(prism.constants.VALID_ADAPTERS)}'
-            ]
-            raise prism.exceptions.RuntimeException(message='\n'.join(msg_list))
+            msg = f'invalid connection type `{connection_type}; must be one of {",".join(prism.constants.VALID_ADAPTERS)}'  # noqa: E501
+            raise prism.exceptions.RuntimeException(message=msg)
 
         # Get profiles filepath
         prism_project = PrismProject(
