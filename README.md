@@ -17,9 +17,6 @@
 
 
 </div>
-<p align="center">
-    <i>Prism is currently in <b>alpha</b></i>.
-</p>
 
 # :wave: Welcome to Prism!
 [Prism](https://docs.runprism.com) is the easiest way to create data pipelines in Python.
