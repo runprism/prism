@@ -61,7 +61,7 @@ class AstParser:
         # Check existence of if-name-main
         bool_if_name_main = self.check_if_name_main(self.ast_module)
         if bool_if_name_main:
-            msg = f'found `if __name__=="__main__"` in `{str(self.module_relative_path)}`; all task-specific code should be placed in `run` method',  # noqa: E501
+            msg = f'found `if __name__ == "__main__"` in `{str(self.module_relative_path)}`; all task-specific code should be placed in `run` method'  # noqa: E501
             raise prism.exceptions.ParserException(message=msg)
 
         # Get classes and bases

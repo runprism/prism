@@ -244,7 +244,7 @@ class TestModuleParsing(unittest.TestCase):
         """
         with self.assertRaises(prism.exceptions.ParserException) as cm:
             _ = ast_parser.AstParser(IF_NAME_MAIN, MODULE_TEST_CASES)
-        expected_msg = f'found `if __name__=="__main__"` in `{str(IF_NAME_MAIN)}`; all task-specific code should be placed in `run` method'  # noqa: E501
+        expected_msg = f'found `if __name__ == "__main__"` in `{str(IF_NAME_MAIN)}`; all task-specific code should be placed in `run` method'  # noqa: E501
         self.assertEqual(expected_msg, str(cm.exception))
 
     def test_bad_runs(self):
