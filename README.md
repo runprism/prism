@@ -5,7 +5,8 @@
     <a href="https://pypi.python.org/pypi/prism-ds/" alt="PyPI version">
         <img alt="PyPI" src="https://img.shields.io/pypi/v/prism-ds?color=2081c1&labelColor=090422"></a>
     <a href="https://pepy.tech/badge/prism-ds/" alt="Downloads">
-        <img src="https://static.pepy.tech/personalized-badge/prism-ds?period=total&units=international_system&left_color=black&right_color=blue&left_text=Downloads" /></a>
+        <img src="https://static.pepy.tech/personalized-badge/prism-ds?period=total&units=international_system&left_color=black&right_color=blue&left_text=Downloads"/>
+    </a>
 </p>
 <div align="center">
 
