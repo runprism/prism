@@ -1,6 +1,12 @@
 <p align="center">
   <img src="https://github.com/runprism/prism/raw/main/.github/prism_logo_light.png" alt="prism logo" width="350"/>
 </p>
+<p align="center">
+    <a href="https://pypi.python.org/pypi/prism-ds/" alt="PyPI version">
+        <img alt="PyPI" src="https://img.shields.io/pypi/v/prism-ds?color=2081c1&labelColor=090422"></a>
+    <a href="https://pepy.tech/badge/prism-ds/" alt="Downloads">
+        <img src="https://static.pepy.tech/personalized-badge/prism-ds?period=total&units=international_system&left_color=black&right_color=blue&left_text=Downloads" /></a>
+</p>
 <div align="center">
 
 [![CI Linux](https://github.com/runprism/prism/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/runprism/prism/actions/workflows/ci-linux.yml)
@@ -8,8 +14,8 @@
 [![CI Windows](https://github.com/runprism/prism/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/runprism/prism/actions/workflows/ci-windows.yml)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 
-</div>
 
+</div>
 <p align="center">
     <i>Prism is currently in <b>alpha</b></i>.
 </p>
