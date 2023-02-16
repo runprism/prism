@@ -196,11 +196,8 @@ class ConnectMixin():
         if profile_type in prism.constants.VALID_ADAPTERS:
             new_connection = new_connection['adapters']
         else:
-            msg_list = [
-                "new profile_type is invalid",
-                f"must be one of `{prism.constants.VALID_ADAPTERS}`"
-            ]
-            raise prism.exceptions.InvalidProfileException(message='\n'.join(msg_list))
+            msg = f"new profile_type is invalid; must be one of `{prism.constants.VALID_ADAPTERS}`"  # noqa: E501
+            raise prism.exceptions.InvalidProfileException(message=msg)
 
         # Update the template_yml
         base_yml_updated = self.update_yml(base_yml, new_connection)

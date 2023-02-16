@@ -61,12 +61,8 @@ class AstParser:
         # Check existence of if-name-main
         bool_if_name_main = self.check_if_name_main(self.ast_module)
         if bool_if_name_main:
-            msg_list = [
-                f'found `if __name__=="__main__"` in `{str(self.module_relative_path)}`',  # noqa: E501
-                'all task-specific code should be placed in `run` method',
-                'please fix and try again'
-            ]
-            raise prism.exceptions.ParserException('\n'.join(msg_list))
+            msg = f'found `if __name__ == "__main__"` in `{str(self.module_relative_path)}`; all task-specific code should be placed in `run` method'  # noqa: E501
+            raise prism.exceptions.ParserException(message=msg)
 
         # Get classes and bases
         self.classes, self.bases = self.get_classes_bases(self.ast_module)
@@ -336,11 +332,8 @@ class AstParser:
             )
         run_args = self.get_func_args(run_func)
         if sorted(run_args) != sorted([prism_task_manager_alias, prism_hooks_alias, 'self']):  # noqa: E501
-            msg_list = [
-                f'invalid arguments in `run` function in PrismTask in {str(self.module_relative_path)}',  # noqa: E501
-                f'should only be "self", "{prism_task_manager_alias}", and "{prism_hooks_alias}"',        # noqa: E501
-            ]
-            raise prism.exceptions.ParserException(message='\n'.join(msg_list))
+            msg = f'invalid arguments in `run` function in PrismTask in {str(self.module_relative_path)}; should only be "self", "{prism_task_manager_alias}", and "{prism_hooks_alias}"'  # noqa: E501
+            raise prism.exceptions.ParserException(message=msg)
 
         # Parse targets
         target_locs = self.get_targets(run_func)

@@ -128,9 +128,6 @@ class PrismTask:
         # If self.output is None, then the user has not specified a target nor have they
         # explicitly run the task.
         if self.output is None:
-            msg_list = [
-                f"cannot access the output of `{self.__class__.__name__}` without",
-                "either explicitly running task or setting a target"
-            ]
-            raise prism.exceptions.RuntimeException(message='\n'.join(msg_list))
+            msg = f"cannot access the output of `{self.__class__.__name__}` without either explicitly running task or setting a target"  # noqa: E501
+            raise prism.exceptions.RuntimeException(message=msg)
         return self.output

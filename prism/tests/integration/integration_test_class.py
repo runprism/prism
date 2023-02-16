@@ -229,7 +229,7 @@ class IntegrationTestCase(unittest.TestCase):
 
     def _compiled_module_if_name_main(self, path):
         """
-        Get `if __name__=="__main__"` body from `path
+        Get `if __name__ == "__main__"` body from `path
         """
         compiled_module_str = self._file_as_str(path)
         if_name_main_body = self._get_if_name_main_body(compiled_module_str)

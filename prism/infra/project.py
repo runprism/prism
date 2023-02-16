@@ -362,12 +362,8 @@ class PrismProject():
             )
             return 1
         if not isinstance(thread_count, int):
-            msg_list = [
-                f'invalid value `THREADS = {thread_count}`',
-                'must be an integer'
-            ]
             raise prism.exceptions.InvalidProjectPyException(
-                message='\n'.join(msg_list)
+                message=f'invalid value `THREADS = {thread_count}`; must be an integer'
             )
         if thread_count < 1:
             return 1

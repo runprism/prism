@@ -500,9 +500,7 @@ class SysPathConfigWarningEvent(Event):
 class ProjectDirNotInSysPath(Event):
 
     def message(self):
-        return '\n'.join([
-            f'{YELLOW}project directory not in `SYS_PATH_CONF`{RESET}'
-        ])
+        return f'{YELLOW}project directory not in `SYS_PATH_CONF`{RESET}'
 
 
 @dataclass
