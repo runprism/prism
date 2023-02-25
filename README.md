@@ -66,8 +66,8 @@ In addition, check out some [example projects](https://github.com/runprism/prism
 
 We're always looking to improve our product. Here's what we're working on at the moment:
 
-- **Triggers**: trigger function calls on the success and/or failure of your project
-- **Additional adapters**: Celery, Dask, Docker, and more!
-- **Cloud deployment**: managed orchestration platform to deploy Prism projects in the cloud
+- **Agents**: Agents allow users to run their projects on containers (e.g., Docker) or virtual machines (e.g., Amazon EMR, Amazon EC2)
+- **Additional adapters**: Celery, Dask, MySQL, Presto, and more!
+- **Cloud deployment**: Managed orchestration platform to deploy Prism projects in the cloud
 
 Let us know if you'd like to see another feature!
