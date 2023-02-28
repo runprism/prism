@@ -13,7 +13,7 @@ Table of Contents
 
 import argparse
 import prism.constants
-from prism.cli import connect, init, run, compile, spark_submit, graph, trigger
+from prism.cli import connect, init, run, compile, spark_submit, graph, task, trigger
 
 
 ##############
@@ -354,6 +354,78 @@ def build_graph_subparser(sub, common_arguments_parser):
     graph_sub.set_defaults(cls=graph.GraphTask, all_downstream=True, which='graph')
 
 
+def build_task_subparser(sub, common_arguments_parser):
+    """
+    Build subparser for `task` command line argument.
+
+    args:
+        sub: special-action object (see argparse docs) to add subparsers to
+        common_arguments_parser: parser with common arguments
+    returns:
+        None
+    """
+    sub = sub.add_parser(
+        'task',
+        parents=[common_arguments_parser],
+        help="""
+        Create a task
+        """
+    )
+
+    # Add argument for task type
+    valid_triggers_str = ','.join([f'`{k}`' for k in prism.constants.VALID_TASK_TYPES])
+    sub.add_argument(
+        '--type',
+        type=str,
+        required=True,
+        default="python",
+        help=f"""
+        Task type. One of {valid_triggers_str}
+        """
+    )
+
+    # Add argument for number of tasks to create
+    sub.add_argument(
+        '--number',
+        '-n',
+        type=int,
+        required=False,
+        default=1,
+        help=f"""
+        Number of tasks to create. Default is 1.
+        """
+    )
+
+    # Add argument for the task name
+    sub.add_argument(
+        '--name',
+        type=str,
+        required=False,
+        default="new_task",
+        help=f"""
+        Task name. If only a single task is requested, then the task will be named
+        `<task_name>.py`>. If multiple tasks are requested, then the tasks will be named
+        `<task_name>_<number>.py`. Tasks should have short, all-lowercase names.
+        Underscores can be used in the module name if it improves readability.
+        """
+    )
+
+    # Add argument for the directory in which the new tasks should live
+    sub.add_argument(
+        '--dir',
+        type=str,
+        required=False,
+        default="",
+        help=f"""
+        Folder within the `modules` directory in which the new tasks should live. If not
+        specified, then new tasks will be dumpted into `modules/`
+        """
+    )
+
+    # Set default class argument to RunTask()
+    sub.set_defaults(cls=task.TaskTask, which='task')
+
+
 def build_trigger_subparser(sub, common_arguments_parser):
     """
     Build subparser for trigger command line argument.
@@ -405,6 +477,7 @@ def build_full_arg_parser() -> argparse.ArgumentParser:
     build_connect_subparser(subparser, common_arguments_parser)
     build_spark_submit_subparser(subparser, common_arguments_parser)
     build_graph_subparser(subparser, common_arguments_parser)
+    build_task_subparser(subparser, common_arguments_parser)
     build_trigger_subparser(subparser, common_arguments_parser)
 
     # Return base parser
