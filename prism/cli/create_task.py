@@ -36,7 +36,7 @@ class CreateTaskTask(
     prism.mixins.task.TaskMixins
 ):
     """
-    Class for create tasks. This is accessed via the `prism create task`.
+    Class for creating tasks. This is accessed via the `prism create task`.
     """
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
