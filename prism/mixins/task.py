@@ -22,6 +22,9 @@ import prism.exceptions
 import prism.constants
 import prism.logging
 
+# Other imports
+from jinja2 import Template
+
 
 ####################
 # Class definition #
@@ -62,9 +65,9 @@ class TaskMixins:
             class_name = name_proper_case.replace("_", "")
             return class_name
 
-    def create_task_modules(self,
+    def create_task_module(self,
         task_type: str,
-        task_template: str,
+        task_template: Template,
         args: Dict[str, str],
         user_task_name: str,
         task_dir: Path,
@@ -103,11 +106,14 @@ class TaskMixins:
         with open(task_dir / filename, 'w') as f:
             f.write(rendered_template)
 
+        # Return the path
+        return Path(task_dir / filename)
+
     def create_tasks(self,
         task_number: int,
         task_type: str,
         user_task_name: str,
-        task_template: str,
+        task_template: Template,
         task_dir: Path,
     ):
         f"""
@@ -129,7 +135,7 @@ class TaskMixins:
                     task_type, user_task_name
                 )
             }
-            self.create_task_modules(
+            self.create_task_module(
                 task_type,
                 task_template,
                 template_args,
@@ -150,7 +156,7 @@ class TaskMixins:
                 new_user_task_name = user_task_name + f"_{i}"
 
                 # Create task modules
-                self.create_task_modules(
+                self.create_task_module(
                     task_type,
                     task_template,
                     template_args,
