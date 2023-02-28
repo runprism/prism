@@ -41,7 +41,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
     def fire_error_events(self,
         event_list: List[prism.logging.Event],
         error_event: Optional[prism.logging.Event],
-        formatted: bool,
         trigger_manager: TriggerManager
     ):
         """
@@ -52,7 +51,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             error_event,
             event_list,
             log_level='error',
-            formatted=formatted
         )
 
         # Fire triggers
@@ -123,7 +121,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             event_list = self.fire_error_events(
                 event_list,
                 compiled_dag_error_event,
-                True,
                 trigger_manager
             )
             self.run_context = self.prism_project.cleanup(self.run_context)
@@ -174,7 +171,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             event_list = self.fire_error_events(
                 event_list,
                 pipeline_event_to_fire,
-                True,
                 trigger_manager
             )
             self.run_context = self.prism_project.cleanup(self.run_context)
@@ -214,7 +210,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             event_list = self.fire_error_events(
                 exec_event_manager_output.event_list,
                 exec_event_manager_output.event_to_fire,
-                True,
                 trigger_manager
             )
             pipeline.run_context = self.prism_project.cleanup(pipeline.run_context)
@@ -234,7 +229,6 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
                 event_list = self.fire_error_events(
                     event_list,
                     error_event,
-                    True,
                     trigger_manager
                 )
                 pipeline.run_context = self.prism_project.cleanup(pipeline.run_context)
