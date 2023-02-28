@@ -14,7 +14,7 @@ Table of Contents
 # Prism-specific imports
 import importlib
 import prism.cli.base
-import prism.mixins.task
+import prism.mixins.create_task
 import prism.mixins.compile
 import prism.exceptions
 import prism.constants
@@ -33,7 +33,7 @@ from jinja2 import Environment, BaseLoader
 class CreateTaskTask(
     prism.cli.base.BaseTask,
     prism.mixins.compile.CompileMixin,
-    prism.mixins.task.TaskMixins
+    prism.mixins.create_task.CreateTaskMixins
 ):
     """
     Class for creating tasks. This is accessed via the `prism create task`.
@@ -41,7 +41,7 @@ class CreateTaskTask(
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
         """
-        Execute triger task
+        Create new task(s) according to the user's specifications
         """
 
         # ------------------------------------------------------------------------------
@@ -88,6 +88,13 @@ class CreateTaskTask(
         else:
             task_dir = modules_dir / self.args.dir
 
+        # Fire events
+        event_list = fire_console_event(
+            prism.logging.CreatingTasksEvent(),
+            event_list,
+            log_level='info'
+        )
+
         # ------------------------------------------------------------------------------
         # Create tasks
 
@@ -100,6 +107,7 @@ class CreateTaskTask(
         )
         task_manager_output: EventManagerOutput = task_manager.manage_events_during_run(
             event_list=event_list,
+            fire_exec_events=False,
             task_number=task_number,
             task_type=task_type,
             user_task_name=user_task_name,

@@ -569,6 +569,13 @@ class SettingUpTriggersEvent(Event):
 
 
 @dataclass
+class CreatingTasksEvent(Event):
+
+    def message(self):
+        return 'Creating tasks...'
+
+
+@dataclass
 class DeprecationEvent(Event):
     lineno: int
     deprecated_fn: str

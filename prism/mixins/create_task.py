@@ -30,7 +30,7 @@ from jinja2 import Template
 # Class definition #
 ####################
 
-class TaskMixins:
+class CreateTaskMixins:
     """
     Mixin for Task task
     """

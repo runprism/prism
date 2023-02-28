@@ -54,7 +54,7 @@ expected_snowflake_pyspark_dict = test_connect.expected_snowflake_pyspark_dict
 # Test case class definition #
 ##############################
 
-class TestAPI(integration_test_class.IntegrationTestCase):
+class TestClient(integration_test_class.IntegrationTestCase):
 
     def test_prism_dag_init(self):
         """

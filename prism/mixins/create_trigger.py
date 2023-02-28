@@ -31,7 +31,7 @@ from prism.triggers import PrismTrigger
 # Class definition #
 ####################
 
-class TriggersMixin():
+class CreateTriggersMixin():
     """
     Mixin for GenerateTrigger task
     """
