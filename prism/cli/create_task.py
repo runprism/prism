@@ -30,13 +30,13 @@ from jinja2 import Environment, BaseLoader
 # Class definition #
 ####################
 
-class TaskTask(
+class CreateTaskTask(
     prism.cli.base.BaseTask,
     prism.mixins.compile.CompileMixin,
     prism.mixins.task.TaskMixins
 ):
     """
-    Class for create tasks. This is accessed via the `prism task`.
+    Class for create tasks. This is accessed via the `prism create task`.
     """
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
