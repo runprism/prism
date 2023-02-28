@@ -391,7 +391,7 @@ def build_task_subparser(sub, common_arguments_parser):
         type=int,
         required=False,
         default=1,
-        help=f"""
+        help="""
         Number of tasks to create. Default is 1.
         """
     )
@@ -402,7 +402,7 @@ def build_task_subparser(sub, common_arguments_parser):
         type=str,
         required=False,
         default="new_task",
-        help=f"""
+        help="""
         Task name. If only a single task is requested, then the task will be named
         `<task_name>.py`>. If multiple tasks are requested, then the tasks will be named
         `<task_name>_<number>.py`. Tasks should have short, all-lowercase names.
@@ -416,7 +416,7 @@ def build_task_subparser(sub, common_arguments_parser):
         type=str,
         required=False,
         default="",
-        help=f"""
+        help="""
         Folder within the `modules` directory in which the new tasks should live. If not
         specified, then new tasks will be dumpted into `modules/`
         """

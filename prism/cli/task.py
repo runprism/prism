@@ -19,9 +19,12 @@ import prism.mixins.compile
 import prism.exceptions
 import prism.constants
 import prism.logging
-from prism.event_managers.base import BaseEventManager
 from prism.logging import fire_console_event, fire_empty_line_event
+from prism.event_managers.base import BaseEventManager, EventManagerOutput
+
+# Other imports
 from jinja2 import Environment, BaseLoader
+
 
 ####################
 # Class definition #
@@ -30,7 +33,8 @@ from jinja2 import Environment, BaseLoader
 class TaskTask(
     prism.cli.base.BaseTask,
     prism.mixins.compile.CompileMixin,
-    prism.mixins.task.TaskMixins):
+    prism.mixins.task.TaskMixins
+):
     """
     Class for create tasks. This is accessed via the `prism task`.
     """
@@ -69,7 +73,7 @@ class TaskTask(
             name=f"prism.templates.tasks.{task_type}"
         )
         template = template_module.TEMPLATE
-        rtemplate = Environment(loader=BaseLoader).from_string(template)
+        task_template = Environment(loader=BaseLoader).from_string(template)
 
         # Get the number of tasks to create and the task name
         task_number = self.args.number
@@ -84,39 +88,45 @@ class TaskTask(
         else:
             task_dir = modules_dir / self.args.dir
 
-        # Only one task is requested
-        if task_number == 1:
-            template_args = {
-                "task_cls_name": self.user_task_name_to_classname(task_type, user_task_name)
-            }
-            self.create_task_modules(
-                task_type,
-                rtemplate,
-                template_args,
-                user_task_name,
-                task_dir
+        # ------------------------------------------------------------------------------
+        # Create tasks
+
+        task_manager = BaseEventManager(
+            idx=None,
+            total=None,
+            name='creating tasks',
+            full_tb=self.args.full_tb,
+            func=self.create_tasks
+        )
+        task_manager_output: EventManagerOutput = task_manager.manage_events_during_run(
+            event_list=event_list,
+            task_number=task_number,
+            task_type=task_type,
+            user_task_name=user_task_name,
+            task_template=task_template,
+            task_dir=task_dir
+        )
+        output = task_manager_output.outputs
+        event_to_fire = task_manager_output.event_to_fire
+        event_list = task_manager_output.event_list
+        if output == 0:
+            event_list = fire_console_event(
+                event_to_fire,
+                event_list,
+                log_level='error'
             )
-        
-        # Multiple tasks are requested
-        else:
-            for i in range(1, task_number + 1):
-                
-                # Add the task number to the class name and the user task name
-                cls_name = self.user_task_name_to_classname(task_type, user_task_name)
-                cls_name += str(i)
-                template_args = {
-                    "task_cls_name": cls_name
-                }
-                new_user_task_name = user_task_name + f"_{i}"
+            event_list = self.fire_tail_event(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
 
-                # Create task modules
-                self.create_task_modules(
-                    task_type,
-                    rtemplate,
-                    template_args,
-                    new_user_task_name,
-                    task_dir
-                )
+        # Print output message if successfully executed
+        event_list = fire_empty_line_event(event_list)
+        event_list = fire_console_event(
+            prism.logging.TaskSuccessfulEndEvent(),
+            event_list,
+            0,
+            log_level='info'
+        )
+        event_list = self.fire_tail_event(event_list)
 
-
-            
+        # Return
+        return prism.cli.base.TaskRunReturnResult(event_list)
