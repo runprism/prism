@@ -41,7 +41,6 @@ VALID_ADAPTERS = [
 VALID_TASK_TYPES = [
     "python",
     "pyspark",
-    "sql",
 ]
 
 # Context

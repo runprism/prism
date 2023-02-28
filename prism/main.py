@@ -248,7 +248,7 @@ def build_create_subparser(sub, common_arguments_parser):
     create_task_sub.add_argument(
         '--type',
         type=str,
-        required=True,
+        required=False,
         default="python",
         help=f"""
         Task type. One of {valid_triggers_str}
