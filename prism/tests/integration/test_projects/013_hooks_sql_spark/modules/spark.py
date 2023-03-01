@@ -22,7 +22,7 @@ import pyspark.sql.functions as F
 
 class PysparkTask(prism.task.PrismTask):
     
-    ## Run
+    # Run
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'machinery_sample_filtered.csv', index=False)
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'household_sample_filtered.csv', index=False)
     def run(self, tasks, hooks):
