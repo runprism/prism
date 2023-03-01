@@ -244,14 +244,14 @@ def build_create_subparser(sub, common_arguments_parser):
     )
 
     # Add argument for task type
-    valid_triggers_str = ','.join([f'`{k}`' for k in prism.constants.VALID_TASK_TYPES])
+    valid_tasks_str = ','.join([f'`{k}`' for k in prism.constants.VALID_TASK_TYPES])
     create_task_sub.add_argument(
         '--type',
         type=str,
         required=False,
         default="python",
         help=f"""
-        Task type. One of {valid_triggers_str}
+        Task type. One of {valid_tasks_str}
         """
     )
 
@@ -275,7 +275,7 @@ def build_create_subparser(sub, common_arguments_parser):
         default="new_task",
         help="""
         Task name. If only a single task is requested, then the task will be named
-        `<task_name>.py`>. If multiple tasks are requested, then the tasks will be named
+        `<task_name>.py`. If multiple tasks are requested, then the tasks will be named
         `<task_name>_<number>.py`. Tasks should have short, all-lowercase names.
         Underscores can be used in the module name if it improves readability.
         """
@@ -307,7 +307,9 @@ def build_create_subparser(sub, common_arguments_parser):
     )
 
     # Add argument for triggerion type
-    valid_triggers_str = ','.join([f'`{k}`' for k in prism.constants.VALID_ADAPTERS])
+    valid_triggers_str = ','.join(
+        [f'`{k}`' for k in prism.constants.VALID_TRIGGER_TYPES]
+    )
     trigger_sub.add_argument(
         '--type',
         type=str,
