@@ -35,7 +35,7 @@ import dbt.tracking
 from dbt.task.compile import CompileTask
 from dbt.parser.manifest import ManifestLoader
 from dbt.contracts.graph.manifest import Manifest, MaybeNonSource, Disabled
-from dbt.contracts.graph.compiled import CompileResultNode
+from dbt.contracts.graph.nodes import ResultNode
 from dbt.adapters.sql import SQLAdapter
 import dbt.adapters.factory as adapters_factory
 from dbt.contracts.sql import ResultTable, RemoteRunResult
@@ -56,6 +56,7 @@ class DbtRuntimeConfigArgs:
     profiles_dir: str
     threads: Optional[int]
     single_threaded: bool
+    profile: Optional[str]
     target: Optional[str]
 
 
@@ -176,6 +177,7 @@ class Dbt(Adapter):
         project_dir: str,
         profiles_dir: str,
         threads: Optional[int] = 1,
+        profile: Optional[str] = None,
         profile_target: Optional[str] = None,
     ) -> RuntimeConfig:
         """
@@ -189,12 +191,13 @@ class Dbt(Adapter):
         returns:
             RuntimeConfig object
         """
-
+        # Create a dummy dbt runtime config
         args = DbtRuntimeConfigArgs(
             project_dir=project_dir,
             profiles_dir=profiles_dir,
             threads=threads,
             single_threaded=False,
+            profile=profile,
             target=profile_target,
         )
         return RuntimeConfig.from_args(args)
@@ -279,7 +282,7 @@ class Dbt(Adapter):
         target_model_package: Optional[str],
         project_dir: str,
         manifest: Manifest
-    ) -> CompileResultNode:
+    ) -> ResultNode:
         """
         Get the node associated with the inputted target model
 
@@ -321,7 +324,7 @@ class Dbt(Adapter):
         return target_model
 
     def get_target_model_relation(self,
-        target: CompileResultNode,
+        target: ResultNode,
         adapter: SQLAdapter,
         manifest: Manifest
     ):
@@ -377,8 +380,8 @@ class Dbt(Adapter):
 
             # Create remote run result
             result = RemoteRunResult(
-                raw_sql=sql_query,
-                compiled_sql=sql_query,
+                raw_code=sql_query,
+                compiled_code=sql_query,
                 node=None,
                 table=table,
                 timing=[],

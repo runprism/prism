@@ -257,8 +257,8 @@ def build_create_subparser(sub, common_arguments_parser):
 
     # Add argument for number of tasks to create
     create_task_sub.add_argument(
-        '--number',
         '-n',
+        '--number',
         type=int,
         required=False,
         default=1,
