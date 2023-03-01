@@ -30,11 +30,11 @@ TEST_CASE_WKDIR = os.path.dirname(__file__)
 TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 
 
-################################
-## Test case class definition ##
-################################
+##############################
+# Test case class definition #
+##############################
 
-class TestSqlIntegration(integration_test_class.IntegrationTestCase): 
+class TestSqlIntegration(integration_test_class.IntegrationTestCase):
 
     def test_snowflake_spark(self):
         """
@@ -49,23 +49,27 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         if Path(wkdir / '.compiled').is_dir():
             shutil.rmtree(Path(wkdir / '.compiled'))
         self.maxDiff = None
-        
+
         # ------------------------------------------------------------------------------
         # Run snowflake.py and spark.py
 
         args = ['spark-submit', '--modules', 'snowflake.py', 'spark.py']
         self._run_prism(args)
-        
+
         # Get module 1 and 2 outputs
         machinery_sample = pd.read_csv(wkdir / 'output' / 'machinery_sample.csv')
         household_sample = pd.read_csv(wkdir / 'output' / 'household_sample.csv')
-        machinery_sample_filtered = pd.read_csv(wkdir / 'output' / 'machinery_sample_filtered.csv')
-        household_sample_filtered = pd.read_csv(wkdir / 'output' / 'household_sample_filtered.csv')
+        machinery_sample_filtered = pd.read_csv(
+            wkdir / 'output' / 'machinery_sample_filtered.csv'
+        )
+        household_sample_filtered = pd.read_csv(
+            wkdir / 'output' / 'household_sample_filtered.csv'
+        )
 
         # Sample data 1 and 2 should have 50 rows
         for df in [machinery_sample, household_sample]:
             self.assertEqual(df.shape[0], 50)
-        
+
         # Sample data 1 should only have C_MKTSEGMENT = MACHINERY
         machinery_sample_mktsegment = list(machinery_sample['C_MKTSEGMENT'].unique())
         self.assertEqual(len(machinery_sample_mktsegment), 1)
@@ -95,7 +99,6 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
-
     def test_bad_adapter(self):
         """
         Bad adapter will produce an error
@@ -114,12 +117,12 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         # Run bad_adapter.py
 
         args = ['spark-submit', '--modules', 'bad_adapter.py']
-        run_results = self._run_prism(args)
+        _ = self._run_prism(args)
 
-        # We can't check the error events directly; for now, let's just check that the output wasn't
-        # created.
+        # We can't check the error events directly; for now, let's just check that the
+        # output wasn't created.
         self.assertFalse(Path(wkdir / 'output' / 'bad_adapter.csv').is_file())
-        
+
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
 
@@ -128,7 +131,6 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
-
 
     def test_postgres(self):
         """
@@ -147,7 +149,7 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         # Check that expected output doesn't already exist
         expected_output = Path(wkdir) / 'output' / 'sample_postgres_data.csv'
         self.assertFalse(expected_output.is_file())
-        
+
         # Run project
         args = ['spark-submit', '--modules', 'postgres.py']
         self._run_prism(args)
