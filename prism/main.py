@@ -251,7 +251,7 @@ def build_create_subparser(sub, common_arguments_parser):
         required=False,
         default="python",
         help=f"""
-        Task type. One of {valid_tasks_str}
+        Task type. One of {valid_tasks_str}. Default is `python`
         """
     )
 
@@ -307,15 +307,12 @@ def build_create_subparser(sub, common_arguments_parser):
     )
 
     # Add argument for triggerion type
-    valid_triggers_str = ','.join(
-        [f'`{k}`' for k in prism.constants.VALID_TRIGGER_TYPES]
-    )
     trigger_sub.add_argument(
         '--type',
         type=str,
         required=True,
-        help=f"""
-        Trigger type. One of {valid_triggers_str}
+        help="""
+        Trigger type. As of now, only acceptable value is `function`
         """
     )
 
