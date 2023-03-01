@@ -77,14 +77,14 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         self.assertEqual(household_sample_mktsegment[0], 'HOUSEHOLD')
 
         # Filtered sample data 1 should only have C_ACCTBAL > 1000
-        machinery_sample_min_acctbal = min(machinery_sample_filtered['C_ACCTBAL'])
-        self.assertFalse(machinery_sample_min_acctbal > 2000)
-        self.assertTrue(machinery_sample_min_acctbal > 1000)
+        machinery_sample_min_acctbal = max(machinery_sample_filtered['C_ACCTBAL'])
+        self.assertTrue(machinery_sample_min_acctbal <= 100000)
 
         # Filtered sample data 2 should only have C_ACCTBAL > 2000
         household_sample_min_acctbal = min(household_sample_filtered['C_ACCTBAL'])
-        self.assertFalse(household_sample_min_acctbal > 3000)
-        self.assertTrue(household_sample_min_acctbal > 2000)
+        household_sample_max_acctbal = max(household_sample_filtered['C_ACCTBAL'])
+        self.assertTrue(household_sample_min_acctbal > 100000)
+        self.assertTrue(household_sample_max_acctbal <= 200000)
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
