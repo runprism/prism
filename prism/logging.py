@@ -22,7 +22,6 @@ import logging
 import time
 from typing import List, Union
 from dataclasses import dataclass
-from datetime import datetime
 import traceback
 import types
 from typing import Any, Optional
@@ -118,33 +117,32 @@ def custom_ljust(string: str, width: int, char: str) -> str:
     return string_ljust_with_ansi
 
 
-def format_console_output(message, log_level="info", formatted: bool = True):
-    """
-    Format message for console output
-    """
-
-    # Time
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-
-    # Formatted log level
-    if not formatted:
-        return message
-    elif log_level == "info":
-        log_level_formatted = f'{CYAN}INFO {RESET}'
-    elif log_level == "warn":
-        log_level_formatted = f'{YELLOW}WARN {RESET}'
-    elif log_level:
-        log_level_formatted = f'{RED}{log_level.upper()}{RESET}'
-
-    progress = f'{current_time}{RESET} | {log_level_formatted} | '
-    formatted_msg = f"{progress}{message}"
-    return formatted_msg
-
-
 #################
 # Create logger #
 #################
+
+class FormatterWithAnsi(logging.Formatter):
+
+    logging_format = "%(asctime)s | {color}{level}{reset} | %(message)s"
+
+    FORMATS = {
+        logging.INFO: logging_format.format(color=CYAN, level="INFO ", reset=RESET),
+        logging.WARNING: logging_format.format(color=YELLOW, level="WARN ", reset=RESET),  # noqa: E501
+        logging.ERROR: logging_format.format(color=RED, level="ERROR", reset=RESET),
+    }
+
+    def format(self, record):
+        # For empty lines / separator events, don't have any formatting
+        if re.findall(r"^[\-\s]+$", record.msg):
+            formatter = logging.Formatter("%(message)s")
+            return formatter.format(record)
+
+        # Otherwise, adjust the formatting based on the level
+        else:
+            log_fmt = self.FORMATS.get(record.levelno)
+            formatter = logging.Formatter(log_fmt, "%H:%M:%S")
+            return formatter.format(record)
+
 
 DEFAULT_LOGGER: logging.Logger
 
@@ -172,19 +170,18 @@ def set_up_logger(args: argparse.Namespace):
         # Stream handler
         handler = logging.StreamHandler()
         handler = _set_level(handler, args.log_level)
-        console_formatter = logging.Formatter(fmt="%(message)s")
-        handler.setFormatter(console_formatter)
+        # console_formatter = logging.Formatter(fmt="%(levelname)s | %(message)s")
+        handler.setFormatter(FormatterWithAnsi())
 
         # File handler -- remove ANSI codes
-        class FileHandlerFormatter(logging.Formatter):
+        class FileHandlerFormatter(FormatterWithAnsi):
             def format(self, record):
-                return escape_ansi(record.msg)
+                return escape_ansi(super().format(record))
 
         file_handler = logging.FileHandler('logs.log')
         file_handler = _set_level(file_handler, args.log_level)
         file_handler.setLevel(logging.INFO)
-        file_handler_formatter = FileHandlerFormatter(fmt="%(message)s")
-        file_handler.setFormatter(file_handler_formatter)
+        file_handler.setFormatter(FileHandlerFormatter())
 
         # Add handlers
         DEFAULT_LOGGER.addHandler(file_handler)
@@ -569,6 +566,13 @@ class SettingUpTriggersEvent(Event):
 
 
 @dataclass
+class CreatingTasksEvent(Event):
+
+    def message(self):
+        return 'Creating tasks...'
+
+
+@dataclass
 class DeprecationEvent(Event):
     lineno: int
     deprecated_fn: str
@@ -616,8 +620,7 @@ def fire_console_event(
     event: Optional[Event],
     event_list: List[Event] = [],
     sleep=0.01,
-    log_level: str = 'info',
-    formatted: bool = True
+    log_level: str = 'info'
 ):
     """
     Fire console event. Note that if --quietly is invoked, then we set the log level
@@ -633,17 +636,13 @@ def fire_console_event(
     """
     if event is not None:
         if log_level == "info":
-            msg = format_console_output(event.message(), log_level, formatted)
-            DEFAULT_LOGGER.info(msg)  # type: ignore
+            DEFAULT_LOGGER.info(event.message())  # type: ignore
         elif log_level == "warn":
-            msg = format_console_output(event.message(), log_level, formatted)
-            DEFAULT_LOGGER.warning(msg)  # type: ignore
+            DEFAULT_LOGGER.warning(event.message())  # type: ignore
         elif log_level == "error":
-            msg = format_console_output(event.message(), log_level, formatted)
-            DEFAULT_LOGGER.error(msg)  # type: ignore
+            DEFAULT_LOGGER.error(event.message())  # type: ignore
         elif log_level == "critical":
-            msg = format_console_output(event.message(), log_level, formatted)
-            DEFAULT_LOGGER.critical(msg)  # type: ignore
+            DEFAULT_LOGGER.critical(event.message())  # type: ignore
 
     # Sleep
     time.sleep(sleep)

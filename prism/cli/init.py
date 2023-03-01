@@ -117,8 +117,7 @@ class InitTask(prism.cli.base.BaseTask):
             prism.logging.SeparatorEvent(),
             event_list,
             0,
-            log_level='info',
-            formatted=False
+            log_level='info'
         )
         event_list = fire_console_event(
             prism.logging.TaskRunEvent(prism.constants.VERSION),
@@ -143,8 +142,7 @@ class InitTask(prism.cli.base.BaseTask):
                 prism.logging.SeparatorEvent(),
                 event_list,
                 0,
-                log_level='info',
-                formatted=False
+                log_level='info'
             )
             return prism.cli.base.TaskRunReturnResult(event_list)
 
@@ -177,15 +175,13 @@ class InitTask(prism.cli.base.BaseTask):
             ),
             event_list,
             0,
-            log_level='info',
-            formatted=False
+            log_level='info'
         )
         event_list = fire_console_event(
             prism.logging.SeparatorEvent(),
             event_list,
             0,
-            log_level='info',
-            formatted=False
+            log_level='info'
         )
 
         # Change working directory to the project directory

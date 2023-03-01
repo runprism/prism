@@ -13,7 +13,7 @@ Table of Contents
 
 # Prism-specific imports
 import prism.cli.base
-import prism.mixins.trigger
+import prism.mixins.create_trigger
 import prism.exceptions
 import prism.constants
 import prism.logging
@@ -25,15 +25,18 @@ from prism.logging import fire_console_event, fire_empty_line_event
 # Class definition #
 ####################
 
-class TriggerTask(prism.cli.base.BaseTask, prism.mixins.trigger.TriggersMixin):
+class CreateTriggerTask(
+    prism.cli.base.BaseTask,
+    prism.mixins.create_trigger.CreateTriggersMixin
+):
     """
-    Class for generating a triggers.yml file. This is accessed via the `prism
+    Class for generating a triggers.yml file. This is accessed via the `prism create
     trigger`.
     """
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
         """
-        Execute triger task
+        Create a `triggers.yml` file according to the user's specifications
         """
 
         # ------------------------------------------------------------------------------
@@ -79,8 +82,10 @@ class TriggerTask(prism.cli.base.BaseTask, prism.mixins.trigger.TriggersMixin):
         )
 
         # ------------------------------------------------------------------------------
-        # Get profiles dir
+        # Get triggers dir
 
+        if self.prism_project.triggers_dir is None:
+            self.prism_project.triggers_dir = self.prism_project.project_dir
         triggers_filepath = self.prism_project.triggers_dir / 'triggers.yml'
 
         # ------------------------------------------------------------------------------

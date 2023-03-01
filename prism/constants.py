@@ -37,6 +37,12 @@ VALID_ADAPTERS = [
     "trino",
 ]
 
+# Task types
+VALID_TASK_TYPES = [
+    "python",
+    "pyspark",
+]
+
 # Context
 CONTEXT = {
     '__builtins__': builtins,
