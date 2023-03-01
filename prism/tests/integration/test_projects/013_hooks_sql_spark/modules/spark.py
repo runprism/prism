@@ -45,14 +45,14 @@ class PysparkTask(prism.task.PrismTask):
         # Use spark to do some light processing for machinery df
         machinery_df = hooks.spark.read.option("header", "true").csv(machinery_df_path)
         machinery_df_filtered = machinery_df.sort(F.col('C_ACCTBAL').asc()) \
-            .filter(F.col('C_ACCTBAL') <= 100000)
+            .filter(F.col('C_ACCTBAL') <= 1000)
         machinery_df_filtered_pd = machinery_df_filtered.toPandas()
 
         # Use spark to do some light processing for household df
         household_df = hooks.spark.read.option("header", "true").csv(household_df_path)
         household_df_filtered = household_df.sort(F.col('C_ACCTBAL').asc()) \
-            .filter(F.col('C_ACCTBAL') > 100000) \
-            .filter(F.col('C_ACCTBAL') <= 200000)
+            .filter(F.col('C_ACCTBAL') > 1000) \
+            .filter(F.col('C_ACCTBAL') <= 2000)
         household_df_filtered_pd = household_df_filtered.toPandas()
 
         # Return

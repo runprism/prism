@@ -38,21 +38,25 @@ class SnowflakeTask(prism.task.PrismTask):
             task output
         """
         machinery_sql = f"""
-        SELECT 
-            * 
-        FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER" 
-        WHERE 
-            C_MKTSEGMENT = 'MACHINERY' 
+        SELECT
+            *
+        FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER"
+        WHERE
+            c_mktsegment = 'MACHINERY'
+        ORDER BY
+            c_custkey
         LIMIT 50
         """
         machinery_df = hooks.sql(adapter_name="snowflake_base", query=machinery_sql)
 
         household_sql = f"""
-        SELECT 
-            * 
-        FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER" 
-        WHERE 
-            C_MKTSEGMENT = 'HOUSEHOLD' 
+        SELECT
+            *
+        FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER"
+        WHERE
+            c_mktsegment = 'HOUSEHOLD'
+        ORDER BY
+            c_custkey
         LIMIT 50
         """
         household_df = hooks.sql(adapter_name="snowflake_base", query=household_sql)
