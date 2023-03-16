@@ -136,4 +136,6 @@ class Redshift(Adapter):
             cursor.close()
             return df
         else:
+            # Fetch one to ensure that the query was executed
+            cursor.fetchone()
             cursor.close()
