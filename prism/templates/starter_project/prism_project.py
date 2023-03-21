@@ -16,8 +16,8 @@ DESCRIPTION = """
 """
 
 # Admin
-RUN_ID = generate_run_id()  # don't delete this!
-SLUG = generate_run_slug()  # don't delete this!
+RUN_ID = generate_run_id()
+SLUG = generate_run_slug()
 
 
 # sys.path config. This gives your tasks access to local modules / packages that exist
@@ -34,8 +34,8 @@ THREADS = 1
 
 
 # Profile directory and name
-PROFILES_DIR = Path(__file__).parent  # location of `profiles.yml` file
-PROFILE = None  # name of profile within `profiles.yml`
+PROFILES_DIR = Path(__file__).parent
+PROFILE = None
 
 
 # Logger
@@ -43,10 +43,10 @@ PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
 # Triggers
-TRIGGERS_DIR = Path(__file__).parent  # location of triggers.yml file
+TRIGGERS_DIR = Path(__file__).parent
 TRIGGERS = {
-    'on_success': [],  # triggers from triggers.yml to run on success
-    'on_failure': [],  # triggers from triggers.yml to run on success
+    'on_success': [],
+    'on_failure': [],
 }
 
 

@@ -202,3 +202,42 @@ class TaskAlreadyExistsException(PrismException):
 
     def __str__(self):
         return self.message
+
+
+class InvalidAgentsYmlException(PrismException):
+    """
+    Exception raise if agent configuration is invalid
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class InvalidAgentsConfException(PrismException):
+    """
+    Exception raise if agent configuration is invalid
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class NotImplementedException(PrismException):
+    """
+    Exception raise if agent configuration is invalid
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message

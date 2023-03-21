@@ -37,6 +37,7 @@ class Profile:
     def __init__(self,
         profile_yml: Dict[str, Any],
         profile_name: str,
+        fire_warnings: bool = True
     ):
         self.profile_yml = profile_yml
         self.profile_name = profile_name
@@ -49,10 +50,10 @@ class Profile:
 
         # Check if all profiles exist
         self.bool_all_profiles_exist = self.all_profiles_exist(
-            self.profile_name, self.profile_yml, self.named_profile, True
+            self.profile_name, self.profile_yml, self.named_profile, fire_warnings
         )
 
-        # Check top-level keys -- should only be 'adapters' and 'clusters'
+        # Check top-level keys -- should only be 'adapters'
         if self.bool_all_profiles_exist:
             self.check_profile_toplevel_keys(self.named_profile)
             self.check_nonempty_profile(self.named_profile)

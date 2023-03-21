@@ -58,3 +58,23 @@ PYTHON_VERSION = sys.version_info
 
 # Trigger types
 VALID_TRIGGER_TYPES = ["function"]
+
+# Default image to use for Docker agent
+DEFAULT_DOCKER_IMAGE = "python:3.10.8-slim-bullseye"
+
+# Docker image build template
+DOCKER_IMAGE_BUILD_TEMPLATE = """FROM {base_image}
+
+# Copy requirements first and install. This layer is rate limiting, so we want to cache
+# it separately from copying the entire project directory.
+COPY {requirements_txt_path} ./{requirements_txt_path}
+RUN pip install --upgrade pip && pip install -r ./{requirements_txt_path}
+
+# Copy rest of project
+COPY {project_dir} ./{project_dir}
+{other_copy_commands}
+WORKDIR ./{project_dir}
+
+# Environment variables
+{env}
+"""

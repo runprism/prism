@@ -145,8 +145,22 @@ class PrismProject():
                 )
             self.profiles_dir = self.project_dir
 
-        # As of now, the only other tasks that sets up the project is the `run` and
-        # `spark-submit` tasks. For these, we do need to generate the adapters.
+        # If we're running the project using an agent, then we don't need to generate
+        # the adapters; we only need to parse the profile.yml file.
+        elif "agent-" in self.which:
+
+            # If the profiles directory isn't specified, then don't do anything. The
+            # user will encounter a warning / error in their agent's logs.
+            if self.profiles_dir is not None:
+                self.profiles_path = self.profiles_dir / 'profile.yml'
+
+            # Parse the profile.yml. Don't create the Profile object, because this will
+            # generate a ton of warnings that we don't want to display to the user at
+            # the moment.
+            self.profile_yml = self.load_profile_yml(self.profiles_path)
+
+        # Otherwise, the user wishes to run the project locally (either via the `run` or
+        # `spark-submit` commands). For these, we do need to generate the adapters.
         else:
             # If the profiles dir isn't specified, only raise a warning if the profile
             # name is non-empty.
