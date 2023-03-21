@@ -108,7 +108,7 @@ class Agent(metaclass=MetaAgent):
         requirements = agent_conf["requirements"]
         return requirements
 
-    def parse_environment_variables(self):
+    def parse_environment_variables(self, agent_conf: Dict[str, Any]) -> Dict[str, str]:
         raise prism.exceptions.NotImplementedException(
             message=f"`parse_environment_variables` not implemented for agent {self.__class__.__name__}"  # noqa: E501
         )

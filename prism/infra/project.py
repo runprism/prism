@@ -131,6 +131,7 @@ class PrismProject():
 
         self.profile_name = self.get_profile_name(self.run_context)
         self.profiles_dir = self.get_profiles_dir(self.run_context)
+        self.profiles_path: Optional[Path]
 
         # If we're creating the project as part of the `connect` task, we don't need to
         # generate the adapters; we only need to grab the profiles directory. If the

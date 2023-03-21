@@ -26,7 +26,7 @@ from uuid import uuid4
 from typing import Any, Dict
 
 # dbt imports
-from dbt.config import RuntimeConfig
+from dbt.config.runtime import RuntimeConfig
 import dbt.flags as flags
 from dbt.config.profile import read_user_config
 import dbt.semver
@@ -36,7 +36,7 @@ from dbt.task.compile import CompileTask
 from dbt.parser.manifest import ManifestLoader
 from dbt.contracts.graph.manifest import Manifest, MaybeNonSource, Disabled
 from dbt.contracts.graph.nodes import ResultNode
-from dbt.adapters.sql import SQLAdapter
+from dbt.adapters.sql.impl import SQLAdapter
 import dbt.adapters.factory as adapters_factory
 from dbt.contracts.sql import ResultTable, RemoteRunResult
 from dbt.contracts.connection import AdapterResponse
@@ -217,7 +217,7 @@ class Dbt(Adapter):
         try:
             flags.set_from_args(args, user_config)
         except TypeError:
-            flags.set_from_args(args)
+            flags.set_from_args(args, user_config)
 
         # Set invocation id
         events_functions.set_invocation_id()
@@ -382,7 +382,7 @@ class Dbt(Adapter):
             result = RemoteRunResult(
                 raw_code=sql_query,
                 compiled_code=sql_query,
-                node=None,
+                node=None,  # type: ignore
                 table=table,
                 timing=[],
                 logs=[],

@@ -97,6 +97,8 @@ class AgentTask(
             agent.apply()
             agent.run()
 
+        return
+
     def run(self) -> prism.cli.base.TaskRunReturnResult:
         """
         Create and/or run the project on an agent.
@@ -112,7 +114,7 @@ class AgentTask(
 
         # Get project directory
         self.project_dir = prism.cli.base.get_project_dir()
-        os.chdir(self.project_dir)
+        os.chdir(str(self.project_dir))
 
         # Grab agent file
         agent_yml_path = Path(self.args.file)
@@ -215,3 +217,5 @@ class AgentTask(
             prism.logging.SeparatorEvent(),
             event_list
         )
+
+        return prism.cli.base.TaskRunReturnResult(event_list, False)

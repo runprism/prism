@@ -14,6 +14,7 @@ import prism.event_managers.base
 import prism.exceptions
 from prism.infra.project import PrismProject
 import prism.logging
+import prism.ui
 
 # Standard library imports
 import argparse
@@ -46,7 +47,7 @@ class Docker(Agent):
         agent_conf: Dict[str, Any],
         project: PrismProject
     ):
-        self.image = None
+        self.image: Optional[str] = None
         super().__init__(args, agent_dir, agent_filename, agent_conf, project)
 
     def is_valid_conf(self, agent_conf: Dict[str, Any]):
@@ -84,7 +85,7 @@ class Docker(Agent):
                 )
 
         # Check optional keys, if they exist
-        for _key, _type in optional_keys.items():
+        for _key, _type in optional_keys.items():  # type: ignore
             if _key in list(agent_conf.keys()):
                 if not isinstance(agent_conf[_key], _type):
                     raise prism.exceptions.InvalidAgentsConfException(
@@ -229,6 +230,10 @@ class Docker(Agent):
             `pip install` command for requirements
         """
         if "image" in agent_conf.keys():
+            if not isinstance(agent_conf["image"], str):
+                raise prism.exceptions.InvalidAgentsConfException(
+                    "`image` is not correctly specified... should be a string"
+                )
             return agent_conf["image"]
 
         # If the user doesn't specify a base image, then use the default image specified
@@ -249,7 +254,7 @@ class Docker(Agent):
             environment variables as a dictionary
         """
         if "env" in agent_conf.keys():
-            env_vars = agent_conf["env"]
+            env_vars: Dict[str, str] = agent_conf["env"]
             return env_vars
         else:
             return {}
@@ -382,40 +387,13 @@ class Docker(Agent):
             remove=True
         )
 
-        import prism.ui
         # Get the container logs
         container = client.containers.get(container_id=container.id)
         for log in container.logs(stream=True, stdout=True, stderr=True):
             log_str = log.decode('utf-8')
             no_newline = log_str.replace("\n", "")
             if not re.findall(r"^[\-]+$", no_newline):
-                prism.logging.DEFAULT_LOGGER.agent(
+                prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
                     f"{prism.ui.AGENT_GRAY}{self.image}{prism.ui.RESET} | {no_newline}"
                 )
         return
-
-
-if __name__ == "__main__":
-    import argparse
-
-    # Project
-    binding_clf = Path('/Users/mihirtrivedi/Documents/datastack/git/prism_examples/examples/ml-intermediate/binding_clf')  # noqa: E501
-    project = PrismProject(
-        project_dir=binding_clf,
-        user_context={},
-        which='agent'
-    )
-    project.setup()
-
-    # Docker agent
-    args = argparse.Namespace()
-    docker_agent = Docker(
-        args,
-        "docker_test",
-        binding_clf,
-        project,
-        'agents.yml'
-    )
-
-    # Create agent
-    docker_agent.create_agent(docker_agent.agent_conf)

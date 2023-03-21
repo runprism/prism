@@ -184,7 +184,7 @@ class FormatterWithAnsi(logging.Formatter):
         logging.DEBUG: logging_format.format(
             color=ORANGE_BROWN, level="DEBUG", reset=RESET
         ),
-        logging.AGENT: agent_logging_format
+        logging.AGENT: agent_logging_format  # type: ignore
     }
 
     def format(self, record):
