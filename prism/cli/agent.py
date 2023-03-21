@@ -23,9 +23,10 @@ import prism.constants
 import prism.logging
 from prism.logging import fire_console_event, fire_empty_line_event, Event
 from prism.agents.meta import MetaAgent
-from prism.agents import meta, docker_agent  # noqa: F401
+from prism.agents import meta  # noqa: F401
 
 # Ohter library imports
+import importlib
 import json
 from pathlib import Path
 import os
@@ -80,7 +81,18 @@ class AgentTask(
         )
 
         # Create agent instance
-        agent: Agent = MetaAgent.get_agent(agent_conf["type"])(
+        agent_type = agent_conf["type"]
+        if agent_type == "docker":
+            agent_import = importlib.import_module(
+                f'prism.agents.{agent_type}_agent'
+            )
+            globals()[f"{agent_type}_agent"] = agent_import
+        else:
+            agent_import = importlib.import_module(
+                f'prism.agents.{agent_type}'
+            )
+            globals()[agent_type] = agent_import
+        agent: Agent = MetaAgent.get_agent(agent_type)(
             args,
             agent_yml_path.parent,
             agent_yml_path.name,
