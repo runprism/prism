@@ -74,7 +74,7 @@ class Docker(Agent):
 
             # We need to capture the float and string formats of the image version.
             latest_version_float = max([float(x) for x in img_versions])
-            latest_version_str = None
+            latest_version_str: str
             for v in img_versions:
                 if float(v) == latest_version_float:
                     latest_version_str = v
