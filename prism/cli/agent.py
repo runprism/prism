@@ -20,6 +20,7 @@ import prism.mixins.agent
 import prism.mixins.run
 import prism.exceptions
 import prism.constants
+from prism.infra.project import PrismProject
 import prism.logging
 from prism.logging import fire_console_event, fire_empty_line_event, Event
 from prism.agents.meta import MetaAgent
@@ -65,11 +66,11 @@ class AgentTask(
         agent_conf = self.is_valid_agent_yml(agent_filename, agent_yml)
         return agent_conf
 
-    def load_and_run_agent(self,
+    def build_agent(self,
         args,
-        agent_yml_path,
-        agent_filename,
-        prism_project,
+        agent_yml_path: Path,
+        agent_filename: str,
+        prism_project: PrismProject,
     ):
         """
         Create the agent instance
@@ -100,15 +101,22 @@ class AgentTask(
             prism_project,
         )
 
-        # Run
-        if args.which == "agent-apply":
-            agent.apply()
-        elif args.which == "agent-run":
-            agent.run()
+        # If we just want to run the agent, we do that in a separate function call.
+        if args.which == "agent-run":
+            return agent
+
+        # Otherwise, we either want to build the agent (`prism agent apply`) or build &
+        # run the agent (`prism agent build`). We run the agent in a separate function,
+        # so focus on just building it for now.
         else:
             agent.apply()
-            agent.run()
+            return agent
 
+    def run_agent(self, agent: Agent):
+        """
+        Thin wrapper around the agent `run` function.
+        """
+        agent.run()
         return
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
@@ -131,15 +139,6 @@ class AgentTask(
         # Grab agent file
         agent_yml_path = Path(self.args.file)
         agent_yml_filename = agent_yml_path.name
-
-        # Unlike other tasks, don't fire header events. These will be fired by the agent
-        # itself. Instead, just print out a log message indicating that the agent is
-        # being created.
-        if self.args.which in ["agent-apply", "agent-build"]:
-            event_list = fire_console_event(
-                prism.logging.CreatingAgentEvent(),
-                event_list
-            )
 
         # ------------------------------------------------------------------------------
         # Define PrismProject
@@ -182,22 +181,27 @@ class AgentTask(
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
-        # Create / execute the agent
+        # Create the agent
 
-        event_list = fire_console_event(
-            prism.logging.StreamingLogsStartEvent(),
-            event_list
-        )
-        event_list = fire_empty_line_event(event_list)
+        # Fire a log event indicating that we're creating the agent (we only do this for
+        # `agent-apply` and `agent-build`).
+        if self.args.which in ["agent-apply", "agent-build"]:
+            event_list = fire_console_event(
+                prism.logging.CreatingAgentEvent(),
+                event_list
+            )
 
-        agent_event_manager = base_event_manager.BaseEventManager(
+        # The build_agent function will only actually *build* the agent if `agent-apply`
+        # or `agent-build` is called. Otherwise, it will just instantiate the Agent
+        # object and return it.
+        build_manager = base_event_manager.BaseEventManager(
             idx=None,
             total=None,
             name='creating local agent',
             full_tb=self.args.full_tb,
-            func=self.load_and_run_agent
+            func=self.build_agent
         )
-        agent_event_manager_output = agent_event_manager.manage_events_during_run(
+        build_manager_output = build_manager.manage_events_during_run(
             fire_exec_events=False,
             event_list=event_list,
             args=self.args,
@@ -205,26 +209,66 @@ class AgentTask(
             agent_filename=agent_yml_filename,
             prism_project=self.prism_project,
         )
-        agent_output = agent_event_manager_output.outputs
-        agent_event_to_file = agent_event_manager_output.event_to_fire
-        event_list = agent_event_manager_output.event_list
+
+        agent = build_manager_output.outputs
+        build_event_to_fire = build_manager_output.event_to_fire
+        event_list = build_manager_output.event_list
 
         # Log an error if one occurs
-        if agent_output == 0:
+        if agent == 0:
             event_list = fire_console_event(
-                agent_event_to_file,
+                build_event_to_fire,
                 event_list,
                 log_level='error'
             )
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
-        # Fire tail events
-        event_list = fire_empty_line_event()
-        event_list = fire_console_event(
-            prism.logging.StreamingLogsEndEvent(),
-            event_list
-        )
+        # ------------------------------------------------------------------------------
+        # Execute the agent
+
+        # Only execute the agent with `agent-run` or `agent-build`
+        if self.args.which in ["agent-run", "agent-build"]:
+            event_list = fire_console_event(
+                prism.logging.StreamingLogsStartEvent(),
+                event_list
+            )
+            event_list = fire_empty_line_event(event_list)
+
+            agent_event_manager = base_event_manager.BaseEventManager(
+                idx=None,
+                total=None,
+                name='creating local agent',
+                full_tb=self.args.full_tb,
+                func=self.run_agent
+            )
+            agent_event_manager_output = agent_event_manager.manage_events_during_run(
+                fire_exec_events=False,
+                event_list=event_list,
+                agent=agent
+            )
+            agent_output = agent_event_manager_output.outputs
+            agent_event_to_fire = agent_event_manager_output.event_to_fire
+            event_list = agent_event_manager_output.event_list
+
+            # Log an error if one occurs
+            if agent_output == 0:
+                event_list = fire_console_event(
+                    agent_event_to_fire,
+                    event_list,
+                    log_level='error'
+                )
+                event_list = self.fire_tail_event(event_list)
+                return prism.cli.base.TaskRunReturnResult(event_list, True)
+
+            # Now, we're done streaming logs
+            event_list = fire_empty_line_event()
+            event_list = fire_console_event(
+                prism.logging.StreamingLogsEndEvent(),
+                event_list
+            )
+
+        # Tail events
         event_list = fire_console_event(
             prism.logging.SeparatorEvent(),
             event_list

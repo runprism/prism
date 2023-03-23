@@ -47,8 +47,60 @@ class Docker(Agent):
         agent_conf: Dict[str, Any],
         project: PrismProject
     ):
-        self.image: Optional[str] = None
         super().__init__(args, agent_dir, agent_filename, agent_conf, project)
+
+        # Image name, version
+        self.image_name = f"prism-dockeragent-{self.agent_name}"
+        self.image_version: Optional[str] = None
+
+        # Iterate through current images and get all images that resemble our image
+        # name.
+        img_list = client.images.list()
+        img_names = []
+        img_versions = []
+        for img in img_list:
+            if len(re.findall(
+                r"^" + r"prism\-dockeragent\-" + self.agent_name + r"\:[0-9\.]+$",
+                img.tags[0]
+            )) > 0:  # noqa: E501
+                name = img.tags[0].split(":")[0]
+                version = img.tags[0].split(":")[1]
+                img_names.append(name)
+                img_versions.append(version)
+
+        # If more than one image is found, then raise a warning and default to the
+        # latest image.
+        if len(img_versions) > 1:
+
+            # We need to capture the float and string formats of the image version.
+            latest_version_float = max([float(x) for x in img_versions])
+            latest_version_str = None
+            for v in img_versions:
+                if float(v) == latest_version_float:
+                    latest_version_str = v
+
+            # Make sure there is a corresponding image to this version.
+            try:
+                _ = img_names[img_versions.index(latest_version_str)]
+            except KeyError:
+                raise prism.exceptions.RuntimeException(
+                    message=f"could not find image associated with `{latest_version_str}`"  # noqa: E501
+                )
+
+            prism.logging.fire_console_event(
+                prism.logging.MultipleAgentsFound(self.image_name, latest_version_str),
+                log_level='warn'
+            )
+
+            self.image_version = latest_version_str
+
+        # If only one image is found, then we're fine
+        elif len(img_versions) == 1:
+            self.image_version = img_versions[0]
+
+        # Otherwise, this is the first time we're creating the docker image.
+        else:
+            self.image_version = None
 
     def is_valid_conf(self, agent_conf: Dict[str, Any]):
         """
@@ -269,20 +321,12 @@ class Docker(Agent):
         # requirements.txt path
         requirements_txt_path = Path(self.parse_requirements(self.agent_conf))
 
-        # Update the version number
-        image_name = f"prism-dockeragent-{self.agent_name}"
-        old_img_version = None
-        img_list = client.images.list()
-        for img in img_list:
-            if image_name in img.tags[0]:
-                old_img_version = img.tags[0].split(":")[1]
-
-        # If there is no image, then set the first image to be version 1.0
-        if old_img_version is None:
+        # Update the version number. If there is no image, then set the first image to
+        # be version 1.0
+        if self.image_version is None:
             new_img_version = "1.0"
         else:
-            new_img_version = str(round(float(old_img_version) + 0.1, 1))
-        new_image_name = image_name + f":{new_img_version}"
+            new_img_version = str(round(float(self.image_version) + 0.1, 1))
 
         with TemporaryDirectory(prefix="docker") as tmpdir:
             # Copy project directory and requirements.txt file to parent of
@@ -328,18 +372,17 @@ class Docker(Agent):
             # Create image
             client.images.build(
                 path=tmpdir,
-                tag=new_image_name
+                tag=f"{self.image_name}:{new_img_version}",
+                rm=True
             )
 
         # Remove the old image
-        if old_img_version is not None:
+        if self.image_version is not None:
             client.images.remove(
-                image=image_name + f":{old_img_version}",
+                image=f"{self.image_name}:{self.image_version}",
                 force=True
             )
-
-        # Set agent image
-        self.image = new_image_name
+            self.image_version = new_img_version
 
     def run(self):
         """
@@ -370,17 +413,9 @@ class Docker(Agent):
         # Full command
         full_cmd = f"prism run {full_tb_cmd} {log_level_cmd} {vars_cmd} {context_cmd} {modules_cmd} {all_upstream_cmd} {all_downstream_cmd}"  # noqa: E501
 
-        # Get the image name
-        if self.image is None:
-            image_name_base = f"prism-dockeragent-{self.agent_name}"
-            img_list = client.images.list()
-            for img in img_list:
-                if image_name_base in img.tags[0]:
-                    self.image = img.tags[0]
-
         # Run container
         container = client.containers.run(
-            self.image,
+            f"{self.image_name}:{self.image_version}",
             command=full_cmd,
             detach=True,
             stdout=True,
@@ -394,6 +429,6 @@ class Docker(Agent):
             no_newline = log_str.replace("\n", "")
             if not re.findall(r"^[\-]+$", no_newline):
                 prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                    f"{prism.ui.AGENT_GRAY}{self.image}{prism.ui.RESET} | {no_newline}"
+                    f"{prism.ui.AGENT_GRAY}{self.image_name}:{self.image_version}{prism.ui.RESET} | {no_newline}"  # noqa: E501
                 )
         return

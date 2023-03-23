@@ -638,6 +638,15 @@ class DeprecationEvent(Event):
 
 
 @dataclass
+class MultipleAgentsFound(Event):
+    image_name: str
+    latest_version: str
+
+    def message(self):
+        return f"More than one agent found like {self.image_name}...defaulting to {self.latest_version}"  # noqa: E501
+
+
+@dataclass
 class CreatingAgentEvent(Event):
 
     def message(self):
