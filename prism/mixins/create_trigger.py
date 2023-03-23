@@ -1,5 +1,5 @@
 """
-Mixin classes for each task
+Mixin class for the CreateTrigger task
 
 Table of Contents
 - Imports
@@ -33,7 +33,7 @@ from prism.triggers import PrismTrigger
 
 class CreateTriggersMixin():
     """
-    Mixin for GenerateTrigger task
+    Mixin for CreateTrigger task
     """
 
     def create_directory(self,

@@ -241,3 +241,16 @@ class NotImplementedException(PrismException):
 
     def __str__(self):
         return self.message
+
+
+class AgentAlreadyExistsException(PrismException):
+    """
+    Exception raise if agent YAML file already exists
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message

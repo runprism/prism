@@ -1,5 +1,5 @@
 """
-Class associated with `prism create trigger` CLI command.
+Class associated with `prism create agent` CLI command.
 
 Table of Contents
 - Imports
@@ -13,7 +13,7 @@ Table of Contents
 
 # Prism-specific imports
 import prism.cli.base
-import prism.mixins.create_trigger
+import prism.mixins.create_agent
 import prism.exceptions
 import prism.constants
 import prism.logging
@@ -25,18 +25,18 @@ from prism.logging import fire_console_event, fire_empty_line_event
 # Class definition #
 ####################
 
-class CreateTriggerTask(
+class CreateAgentTask(
     prism.cli.base.BaseTask,
-    prism.mixins.create_trigger.CreateTriggersMixin
+    prism.mixins.create_agent.CreateAgentMixin
 ):
     """
-    Class for generating a triggers.yml file. This is accessed via the `prism create
-    trigger`.
+    Class for generating a agent YAML file. This is accessed via the `prism create
+    agent`.
     """
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
         """
-        Create a `triggers.yml` file according to the user's specifications
+        Create a agent YML file according to the user's specifications
         """
 
         # ------------------------------------------------------------------------------
@@ -49,61 +49,58 @@ class CreateTriggerTask(
         event_list = fire_empty_line_event(event_list)
 
         # ------------------------------------------------------------------------------
-        # Define trigger type
+        # Define agent type
 
-        trigger_type = self.args.type
+        agent_type = self.args.type
 
         # If adapter type is None, throw an error
-        if trigger_type is None:
+        if agent_type is None:
             e = prism.logging.InvalidType(
-                "trigger",
-                prism.constants.VALID_TRIGGER_TYPES
+                "agent",
+                prism.constants.VALID_AGENTS
             )
             event_list = fire_console_event(e, event_list, 0, log_level='error')
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
 
-        # If adapter type isn't valid, then throw an error
-        elif trigger_type not in prism.constants.VALID_TRIGGER_TYPES:
+        # If agent type isn't valid, then throw an error
+        elif agent_type not in prism.constants.VALID_AGENTS:
             e = prism.logging.InvalidType(
-                "trigger",
-                prism.constants.VALID_TRIGGER_TYPES,
-                trigger_type
+                "agent",
+                prism.constants.VALID_AGENTS,
+                agent_type
             )
             event_list = fire_console_event(e, event_list, 0, log_level='error')
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
 
-        # Fire events
+        # ------------------------------------------------------------------------------
+        # Get agent filepath
+
+        from pathlib import Path
+        agent_filepath = Path(self.args.file)
         event_list = fire_console_event(
-            prism.logging.CreatingTriggersEvent(),
+            prism.logging.CreatingAgentYamlEvent(str(agent_filepath)),
             event_list,
             log_level='info'
         )
 
         # ------------------------------------------------------------------------------
-        # Get triggers dir
+        # Create agent
 
-        if self.prism_project.triggers_dir is None:
-            self.prism_project.triggers_dir = self.prism_project.project_dir
-        triggers_filepath = self.prism_project.triggers_dir / 'triggers.yml'
-
-        # ------------------------------------------------------------------------------
-        # Create trigger
-
-        # Create a event manager for the trigger setup
-        trigger_event_manager = BaseEventManager(
+        # Create a event manager for the agent setup
+        agent_event_manager = BaseEventManager(
             idx=None,
             total=None,
-            name='triggers setup',
+            name='agent setup',
             full_tb=self.args.full_tb,
-            func=self.create_trigger
+            func=self.create_agent
         )
-        event_manager_results = trigger_event_manager.manage_events_during_run(
+        event_manager_results = agent_event_manager.manage_events_during_run(
             event_list=event_list,
             fire_exec_events=False,
-            trigger_type=trigger_type,
-            triggers_filepath=triggers_filepath
+            agent_type=agent_type,
+            agent_filepath=agent_filepath
         )
         success = event_manager_results.outputs
         event_to_fire = event_manager_results.event_to_fire

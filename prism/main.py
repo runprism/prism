@@ -20,6 +20,7 @@ from prism.cli import (
     compile,
     spark_submit,
     graph,
+    create_agent,
     create_task,
     create_trigger,
     agent
@@ -234,6 +235,42 @@ def build_create_subparser(sub, common_arguments_parser):
         Create project components
         """
     )
+
+    # ----------------------------------------------------------------------------------
+    # Create agent parser
+
+    create_agent_sub = create_sub.add_parser(
+        'agent',
+        help="""
+        Create an agent YAML configuration file
+        """
+    )
+
+    # Add argument for agent type
+    valid_agents_str = ",".join(["`" + t + "`" for t in prism.constants.VALID_AGENTS])
+    create_agent_sub.add_argument(
+        '--type',
+        type=str,
+        required=True,
+        help=f"""
+        Agent type. Accepted types are {valid_agents_str}
+        """
+    )
+
+    # File name
+    create_agent_sub.add_argument(
+        '-f',
+        '--file',
+        default="./agent.yml",
+        type=str,
+        required=False,
+        help="""
+        File path for agent YAML configuration. Default is `./agent.yml`.
+        """
+    )
+
+    # Set default class argument to RunTask()
+    create_agent_sub.set_defaults(cls=create_agent.CreateAgentTask, which='agent')
 
     # ----------------------------------------------------------------------------------
     # Create task parser

@@ -59,6 +59,9 @@ PYTHON_VERSION = sys.version_info
 # Trigger types
 VALID_TRIGGER_TYPES = ["function"]
 
+# Valid agents
+VALID_AGENTS = ["docker"]
+
 # Default image to use for Docker agent
 DEFAULT_DOCKER_IMAGE = "python:3.10.8-slim-bullseye"
 

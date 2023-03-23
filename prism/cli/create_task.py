@@ -1,5 +1,5 @@
 """
-SparkSubmit class definition, called via `prism spark-submit`
+Class associated with `prism create task` CLI command.
 
 Table of Contents
 - Imports

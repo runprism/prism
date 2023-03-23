@@ -614,10 +614,10 @@ class TriggersPathNotDefined(Event):
 
 
 @dataclass
-class SettingUpTriggersEvent(Event):
+class CreatingTriggersEvent(Event):
 
     def message(self):
-        return 'Setting up triggers...'
+        return 'Creating triggers.yml...'
 
 
 @dataclass
@@ -625,6 +625,14 @@ class CreatingTasksEvent(Event):
 
     def message(self):
         return 'Creating tasks...'
+
+
+@dataclass
+class CreatingAgentYamlEvent(Event):
+    filepath: str
+
+    def message(self):
+        return f'Creating {self.filepath}...'
 
 
 @dataclass
