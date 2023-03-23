@@ -63,7 +63,7 @@ class CreateAgentMixin():
         """
 
         # Make the directory, if it doesn't exist
-        self.create_directory(agent_filepath.parent)
+        self.create_directory(str(agent_filepath.parent))
 
         # We only ever call this function after confirming that the agent YAML file does
         # not exist and that the type is valid.
