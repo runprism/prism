@@ -227,6 +227,10 @@ class AgentTask(
         # ------------------------------------------------------------------------------
         # Execute the agent
 
+        # If we built the agents and streamed the logs, then fire an empty line event.
+        if self.args.which in ["agent-apply", "agent-build"]:
+            event_list = fire_empty_line_event(event_list)
+
         # Only execute the agent with `agent-run` or `agent-build`
         if self.args.which in ["agent-run", "agent-build"]:
             event_list = fire_console_event(

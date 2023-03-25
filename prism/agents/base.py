@@ -106,7 +106,17 @@ class Agent(metaclass=MetaAgent):
         # We already know that the agent configuration is valid. Therefore, it must have
         # a requirements key.
         requirements = agent_conf["requirements"]
-        return requirements
+
+        # The `requirements.txt` path should always be specified relative to the
+        # directory of the agent YAML file.
+        absolute_requirements_path = Path(self.agent_dir / requirements).resolve()
+
+        # Check if this file exists
+        if not absolute_requirements_path.is_file():
+            raise prism.exceptions.FileNotFoundException(
+                f"no file found at {absolute_requirements_path}"
+            )
+        return absolute_requirements_path
 
     def parse_environment_variables(self, agent_conf: Dict[str, Any]) -> Dict[str, str]:
         raise prism.exceptions.NotImplementedException(

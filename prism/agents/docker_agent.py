@@ -25,6 +25,7 @@ import re
 from typing import Any, Dict, Optional, Union
 from tempfile import TemporaryDirectory
 import shutil
+import json
 
 
 #################
@@ -53,13 +54,38 @@ class Docker(Agent):
         self.image_name = f"prism-dockeragent-{self.agent_name}"
         self.image_version: Optional[str] = None
 
+        # Get the server URL, if it exists
+        if "server_url" in self.agent_conf.keys():
+            server_url = self.agent_conf["server_url"]
+
+            # If the specified server URL is blank, then default to
+            # "unix://var/run/docker.sock"
+            if server_url == "" or server_url is None:
+                prism.logging.fire_console_event(
+                    prism.logging.DefaultServerURLEvent()
+                )
+                prism.logging.fire_empty_line_event()
+                server_url = prism.constants.DEFAULT_SERVER_URL
+        else:
+            prism.logging.fire_console_event(
+                prism.logging.DefaultServerURLEvent()
+            )
+            prism.logging.fire_empty_line_event()
+            server_url = prism.constants.DEFAULT_SERVER_URL
+
+        # In addition, create a low-level API client. We need this to capture the logs
+        # when actually building the image.
+        self.build_client = docker.APIClient(base_url=server_url)
+
         # Iterate through current images and get all images that resemble our image
         # name.
         img_list = client.images.list()
         img_names = []
         img_versions = []
         for img in img_list:
-            if len(re.findall(
+            if img.tags == []:
+                continue
+            elif len(re.findall(
                 r"^" + r"prism\-dockeragent\-" + self.agent_name + r"\:[0-9\.]+$",
                 img.tags[0]
             )) > 0:  # noqa: E501
@@ -121,6 +147,7 @@ class Docker(Agent):
         }
         optional_keys = {
             "image": str,
+            "server_url": str,
             "env": dict
         }
 
@@ -370,11 +397,24 @@ class Docker(Agent):
             f.close()
 
             # Create image
-            client.images.build(
+            resp = self.build_client.build(
                 path=tmpdir,
                 tag=f"{self.image_name}:{new_img_version}",
                 rm=True
             )
+            for _l in resp:
+                _l_str = _l.decode('utf-8').strip('\r\n')
+                streams = _l_str.split('\n')
+                for stm in streams:
+                    if "stream" in stm:
+                        log = json.loads(
+                            stm.replace('\r', '').replace('\\n', '')
+                        )["stream"]
+                        if len(re.findall(r'^\s*$', log)) > 0:
+                            continue
+                        prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                            f"{prism.ui.AGENT_EVENT}{self.image_name}:{new_img_version}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET} | {log}"  # noqa: E501
+                        )
 
         # Remove the old image
         if self.image_version is not None:
@@ -429,6 +469,6 @@ class Docker(Agent):
             no_newline = log_str.replace("\n", "")
             if not re.findall(r"^[\-]+$", no_newline):
                 prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                    f"{prism.ui.AGENT_GRAY}{self.image_name}:{self.image_version}{prism.ui.RESET} | {no_newline}"  # noqa: E501
+                    f"{prism.ui.AGENT_EVENT}{self.image_name}:{self.image_version}{prism.ui.AGENT_WHICH_RUN}[run]{prism.ui.RESET} | {no_newline}"  # noqa: E501
                 )
         return

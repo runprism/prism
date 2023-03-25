@@ -62,6 +62,9 @@ VALID_TRIGGER_TYPES = ["function"]
 # Valid agents
 VALID_AGENTS = ["docker"]
 
+# Default Docker Daemon server URL
+DEFAULT_SERVER_URL = "unix://var/run/docker.sock"
+
 # Default image to use for Docker agent
 DEFAULT_DOCKER_IMAGE = "python:3.10.8-slim-bullseye"
 

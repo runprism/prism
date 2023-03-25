@@ -23,13 +23,15 @@ BRIGHT_WHITE = "\u001b[37;1m"
 BRIGHT_YELLOW = "\u001b[33;1m"
 BRIGHT_GREEN = "\u001b[32;1m"
 BOLD = "\u001b[1m"
-HEADER_GRAY = "\u001b[38;5;240m"
-AGENT_GRAY = "\u001b[38;5;8m"
+HEADER_GRAY = "\u001b[37m"
 GRAY_PINK = "\u001b[38;5;96m"
 ORANGE_BROWN = "\u001b[38;5;180m"
 
 # Event colors
 EVENT_COLOR = "\u001b[38;5;60m"
+AGENT_EVENT = "\u001b[38;5;237m"
+AGENT_WHICH_BUILD = "\u001b[38;5;58m"
+AGENT_WHICH_RUN = "\u001b[38;5;22m"
 
 
 ##################

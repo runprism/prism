@@ -37,6 +37,7 @@ from prism.ui import (
     YELLOW,
     RESET,
     BRIGHT_GREEN,
+    BRIGHT_YELLOW,
     BOLD,
     CYAN,
     MAGENTA,
@@ -659,6 +660,13 @@ class CreatingAgentEvent(Event):
 
     def message(self):
         return 'Creating agent...'
+
+
+@dataclass
+class DefaultServerURLEvent(Event):
+
+    def message(self):
+        return f"Did not find `server_url` in configuration...defaulting to {BRIGHT_YELLOW}{prism.constants.DEFAULT_SERVER_URL}{RESET}"  # noqa: E501
 
 
 @dataclass
