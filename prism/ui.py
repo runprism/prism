@@ -28,6 +28,9 @@ AGENT_GRAY = "\u001b[38;5;8m"
 GRAY_PINK = "\u001b[38;5;96m"
 ORANGE_BROWN = "\u001b[38;5;180m"
 
+# Event colors
+EVENT_COLOR = "\u001b[38;5;60m"
+
 
 ##################
 # Terminal width #
