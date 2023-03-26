@@ -166,7 +166,10 @@ class Docker(Agent):
         # Check optional keys, if they exist
         for _key, _type in optional_keys.items():  # type: ignore
             if _key in list(agent_conf.keys()):
-                if not isinstance(agent_conf[_key], _type):
+                if (
+                    agent_conf[_key] is not None
+                    and not isinstance(agent_conf[_key], _type)  # noqa: W503
+                ):
                     raise prism.exceptions.InvalidAgentsConfException(
                         message=f"`{_key}` is not the correct type"
                     )

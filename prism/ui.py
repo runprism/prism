@@ -28,7 +28,7 @@ GRAY_PINK = "\u001b[38;5;96m"
 ORANGE_BROWN = "\u001b[38;5;180m"
 
 # Event colors
-EVENT_COLOR = "\u001b[38;5;60m"
+EVENT_COLOR = "\u001b[38;5;102m"
 
 # Agent colors
 AGENT_EVENT = "\u001b[38;5;237m"
