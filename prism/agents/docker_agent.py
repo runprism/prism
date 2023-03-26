@@ -46,89 +46,93 @@ class Docker(Agent):
         agent_dir: Path,
         agent_filename: str,
         agent_conf: Dict[str, Any],
-        project: PrismProject
+        project: PrismProject,
+        mode: str = "prod"
     ):
-        super().__init__(args, agent_dir, agent_filename, agent_conf, project)
+        super().__init__(args, agent_dir, agent_filename, agent_conf, project, mode)
 
-        # Image name, version
-        self.image_name = f"prism-dockeragent-{self.agent_name}"
-        self.image_version: Optional[str] = None
+        if mode == "prod":
+            # Image name, version
+            self.image_name = f"prism-dockeragent-{self.agent_name}"
+            self.image_version: Optional[str] = None
 
-        # Get the server URL, if it exists
-        if "server_url" in self.agent_conf.keys():
-            server_url = self.agent_conf["server_url"]
+            # Get the server URL, if it exists
+            if "server_url" in self.agent_conf.keys():
+                server_url = self.agent_conf["server_url"]
 
-            # If the specified server URL is blank, then default to
-            # "unix://var/run/docker.sock"
-            if server_url == "" or server_url is None:
+                # If the specified server URL is blank, then default to
+                # "unix://var/run/docker.sock"
+                if server_url == "" or server_url is None:
+                    if self.args.which in ["agent-apply", "agent-build"]:
+                        prism.logging.fire_console_event(
+                            prism.logging.DefaultServerURLEvent()
+                        )
+                        prism.logging.fire_empty_line_event()
+                    server_url = prism.constants.DEFAULT_SERVER_URL
+            else:
                 if self.args.which in ["agent-apply", "agent-build"]:
                     prism.logging.fire_console_event(
                         prism.logging.DefaultServerURLEvent()
                     )
                     prism.logging.fire_empty_line_event()
                 server_url = prism.constants.DEFAULT_SERVER_URL
-        else:
-            if self.args.which in ["agent-apply", "agent-build"]:
+
+            # In addition, create a low-level API client. We need this to capture the
+            # logs when actually building the image.
+            self.build_client = docker.APIClient(base_url=server_url)
+
+            # Iterate through current images and get all images that resemble our image
+            # name.
+            img_list = client.images.list()
+            img_names = []
+            img_versions = []
+            for img in img_list:
+                if img.tags == []:
+                    continue
+                elif len(re.findall(
+                    r"^" + r"prism\-dockeragent\-" + self.agent_name + r"\:[0-9\.]+$",
+                    img.tags[0]
+                )) > 0:  # noqa: E501
+                    name = img.tags[0].split(":")[0]
+                    version = img.tags[0].split(":")[1]
+                    img_names.append(name)
+                    img_versions.append(version)
+
+            # If more than one image is found, then raise a warning and default to the
+            # latest image.
+            if len(img_versions) > 1:
+
+                # We need to capture the float and string formats of the image version.
+                latest_version_float = max([float(x) for x in img_versions])
+                latest_version_str: str
+                for v in img_versions:
+                    if float(v) == latest_version_float:
+                        latest_version_str = v
+
+                # Make sure there is a corresponding image to this version.
+                try:
+                    _ = img_names[img_versions.index(latest_version_str)]
+                except KeyError:
+                    raise prism.exceptions.RuntimeException(
+                        message=f"could not find image associated with `{latest_version_str}`"  # noqa: E501
+                    )
+
                 prism.logging.fire_console_event(
-                    prism.logging.DefaultServerURLEvent()
-                )
-                prism.logging.fire_empty_line_event()
-            server_url = prism.constants.DEFAULT_SERVER_URL
-
-        # In addition, create a low-level API client. We need this to capture the logs
-        # when actually building the image.
-        self.build_client = docker.APIClient(base_url=server_url)
-
-        # Iterate through current images and get all images that resemble our image
-        # name.
-        img_list = client.images.list()
-        img_names = []
-        img_versions = []
-        for img in img_list:
-            if img.tags == []:
-                continue
-            elif len(re.findall(
-                r"^" + r"prism\-dockeragent\-" + self.agent_name + r"\:[0-9\.]+$",
-                img.tags[0]
-            )) > 0:  # noqa: E501
-                name = img.tags[0].split(":")[0]
-                version = img.tags[0].split(":")[1]
-                img_names.append(name)
-                img_versions.append(version)
-
-        # If more than one image is found, then raise a warning and default to the
-        # latest image.
-        if len(img_versions) > 1:
-
-            # We need to capture the float and string formats of the image version.
-            latest_version_float = max([float(x) for x in img_versions])
-            latest_version_str: str
-            for v in img_versions:
-                if float(v) == latest_version_float:
-                    latest_version_str = v
-
-            # Make sure there is a corresponding image to this version.
-            try:
-                _ = img_names[img_versions.index(latest_version_str)]
-            except KeyError:
-                raise prism.exceptions.RuntimeException(
-                    message=f"could not find image associated with `{latest_version_str}`"  # noqa: E501
+                    prism.logging.MultipleAgentsFound(
+                        self.image_name, latest_version_str
+                    ),
+                    log_level='warn'
                 )
 
-            prism.logging.fire_console_event(
-                prism.logging.MultipleAgentsFound(self.image_name, latest_version_str),
-                log_level='warn'
-            )
+                self.image_version = latest_version_str
 
-            self.image_version = latest_version_str
+            # If only one image is found, then we're fine
+            elif len(img_versions) == 1:
+                self.image_version = img_versions[0]
 
-        # If only one image is found, then we're fine
-        elif len(img_versions) == 1:
-            self.image_version = img_versions[0]
-
-        # Otherwise, this is the first time we're creating the docker image.
-        else:
-            self.image_version = None
+            # Otherwise, this is the first time we're creating the docker image.
+            else:
+                self.image_version = None
 
     def is_valid_conf(self, agent_conf: Dict[str, Any]):
         """
@@ -233,8 +237,9 @@ class Docker(Agent):
             adapters = named_profile["adapters"]
             for _, adapter_conf in adapters.items():
                 if adapter_conf["type"] == 'dbt':
-                    paths.append(adapter_conf["project_dir"])
-                    paths.append(adapter_conf["profiles_dir"])
+                    for var in ["project_dir", "profiles_dir"]:
+                        if adapter_conf[var] not in paths:
+                            paths.append(adapter_conf[var])
                 if adapter_conf["type"] == "bigquery":
                     paths.append(adapter_conf["creds"])
 
@@ -249,7 +254,7 @@ class Docker(Agent):
 
     def prepare_paths_for_copy(self,
         project: PrismProject,
-        tmpdir: str
+        tmpdir: str,
     ):
         """
         Prism projects often rely on more than just their own directory. They can import
@@ -260,6 +265,7 @@ class Docker(Agent):
         args:
             project: Prism project
             tmpdir: temporary directory in which to copy directories
+
         returns:
             ...
         """
@@ -285,19 +291,21 @@ class Docker(Agent):
                 continue
 
             else:
-                copy_commands[_dir] = f"COPY {_dir} ./{str(_dir)[1:]}"
-                self._copy_file_dir(
-                    _dir,
-                    Path(tmpdir) / str(_dir)[1:]
-                )
+                copy_commands[_dir] = f"COPY {str(_dir)[1:]} ./{str(_dir)[1:]}"
+                if self.mode == "prod":
+                    self._copy_file_dir(
+                        _dir,
+                        Path(tmpdir) / str(_dir)[1:]
+                    )
         for _dir in sys_path_config:
             if _dir is None:
                 continue
             copy_commands[_dir] = f"COPY {str(_dir)[1:]} ./{str(_dir)[1:]}"
-            self._copy_file_dir(
-                _dir,
-                Path(tmpdir) / str(_dir)[1:]
-            )
+            if self.mode == "prod":
+                self._copy_file_dir(
+                    _dir,
+                    Path(tmpdir) / str(_dir)[1:]
+                )
 
         # Return copy commands
         return copy_commands

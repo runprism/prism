@@ -1,0 +1,31 @@
+agent_no_reqs:
+  image: python
+  type: docker
+  env:
+    env_var_1: value1
+
+agent_bad_env_arg:
+  image: python
+  type: docker
+  requirements: requirements.txt
+  env: 1
+
+agent_bad_image_arg:
+  image: 1
+  type: docker
+  requirements: requirements.txt
+  env:
+    env_var_1: value1
+  
+agent_bad_server_url_arg:
+  type: docker
+  server_url: 1 
+  requirements: requirements.txt
+  env:
+    env_var_1: value1
+
+agent_reqs_do_not_exist:
+  type: docker
+  requirements: requirements_does_not_exist.txt
+  env:
+    env_var_1: value1

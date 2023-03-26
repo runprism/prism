@@ -39,6 +39,7 @@ class Agent(metaclass=MetaAgent):
         agent_filename: str,
         agent_conf: Dict[str, Any],
         project: PrismProject,
+        mode: str = "prod"
     ):
         """
         Create agent
@@ -64,6 +65,9 @@ class Agent(metaclass=MetaAgent):
         # our code on our agent, because the prism_project.py tells us what paths we
         # will need to copy over (e.g., paths in SYS_PATH_CONF, profile paths, etc.)
         self.project = project
+
+        # Mode
+        self.mode = mode
 
         # We already confirm that the agent YAML is correctly structured
         self.agent_conf = agent_conf

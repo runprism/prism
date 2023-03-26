@@ -59,8 +59,9 @@ class AgentTask(
 
         args:
             agent_yml_path: Path to agent YAML configuration
+            agent_filename: agent YAML configuration filename
         returns:
-
+            agent configuration as a dictionary
         """
         agent_yml = self.load_agent_yml(agent_yml_path)
         agent_conf = self.is_valid_agent_yml(agent_filename, agent_yml)

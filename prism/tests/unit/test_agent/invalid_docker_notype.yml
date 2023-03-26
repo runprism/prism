@@ -1,0 +1,4 @@
+agent:
+  requirements: requirements.txt
+  env:
+    env_var_1: value1
