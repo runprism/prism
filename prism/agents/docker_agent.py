@@ -61,16 +61,18 @@ class Docker(Agent):
             # If the specified server URL is blank, then default to
             # "unix://var/run/docker.sock"
             if server_url == "" or server_url is None:
+                if self.args.which in ["agent-apply", "agent-build"]:
+                    prism.logging.fire_console_event(
+                        prism.logging.DefaultServerURLEvent()
+                    )
+                    prism.logging.fire_empty_line_event()
+                server_url = prism.constants.DEFAULT_SERVER_URL
+        else:
+            if self.args.which in ["agent-apply", "agent-build"]:
                 prism.logging.fire_console_event(
                     prism.logging.DefaultServerURLEvent()
                 )
                 prism.logging.fire_empty_line_event()
-                server_url = prism.constants.DEFAULT_SERVER_URL
-        else:
-            prism.logging.fire_console_event(
-                prism.logging.DefaultServerURLEvent()
-            )
-            prism.logging.fire_empty_line_event()
             server_url = prism.constants.DEFAULT_SERVER_URL
 
         # In addition, create a low-level API client. We need this to capture the logs
