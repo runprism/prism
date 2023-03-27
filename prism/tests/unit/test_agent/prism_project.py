@@ -34,7 +34,7 @@ THREADS = 1
 
 
 # Profile directory and name
-PROFILE_YML_PATH = Path(__file__).parent / 'profile.yml' / 'paths_test'
+PROFILE_YML_PATH = Path(__file__).parent / 'paths_test' / 'profile.yml'
 PROFILE = "profile_agent_test"
 
 
