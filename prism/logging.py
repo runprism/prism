@@ -560,7 +560,7 @@ class ProjectDirNotInSysPath(Event):
 class ProfileYmlWarningEvent(Event):
 
     def message(self):
-        return f'{YELLOW}`PROFILE_YML_PATH` not found in prism_project.py; defaulting to `profile YML` in project directory{RESET}'  # noqa: E501
+        return f'{YELLOW}`PROFILE_YML_PATH` not found in prism_project.py; defaulting to `profile.yml` in project directory{RESET}'  # noqa: E501
 
 
 @dataclass

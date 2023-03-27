@@ -130,14 +130,15 @@ class PrismDAG(
             filename="prism_project.py",
         )
 
-        # Get the profile YML path and create the connection
+        # Get the profile YML path and create the connection.
         profile_yml_path = prism_project.profile_yml_path
 
         # Try to create the connection. If we encounter an error, then cleanup first and
         # then raise the exception.
         self.run_context = prism_project.run_context
         try:
-            self.create_connection(connection_type, profile_yml_path)
+            # mypy doesn't recognize that we override profile_yml_path if it is None.
+            self.create_connection(connection_type, profile_yml_path)  # type: ignore
         except Exception as e:
             raise e
         finally:

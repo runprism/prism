@@ -136,7 +136,7 @@ class PrismProject():
 
         # If we're creating the project as part of the `connect` task, we don't need to
         # generate the adapters; we only need to grab the profiles directory. If the
-        # profiles dir isn't specified, default to the project dir.
+        # profile YML path isn't specified, default to the project dir.
         if self.which == "connect":
             if self.profile_yml_path is None:
                 fire_console_event(
@@ -145,6 +145,7 @@ class PrismProject():
                     0.01,
                     'warn'
                 )
+                self.profile_yml_path = self.project_dir / 'profile.yml'
 
         # If we're running the project using an agent, then we don't need to generate
         # the adapters; we only need to parse the profile YML file.
@@ -158,8 +159,8 @@ class PrismProject():
         # Otherwise, the user wishes to run the project locally (either via the `run` or
         # `spark-submit` commands). For these, we do need to generate the adapters.
         else:
-            # If the profiles dir isn't specified, only raise a warning if the profile
-            # name is non-empty.
+            # If the profile YML path isn't specified, only raise a warning if the
+            # profile name is non-empty.
             if self.profile_name != "" and self.profile_yml_path is None:
                 fire_console_event(
                     prism.logging.ProfileYmlWarningEvent(),
@@ -167,6 +168,7 @@ class PrismProject():
                     0.01,
                     'warn'
                 )
+                self.profile_yml_path = self.project_dir / 'profile.yml'
 
             # Do all the other profile-related stuff
             self.profile_yml = self.load_profile_yml(self.profile_yml_path)
@@ -305,7 +307,7 @@ class PrismProject():
                 or isinstance(profile_yml_path, Path)  # noqa: W503
             ):
                 return None
-            return profile_yml_path
+            return Path(profile_yml_path)
 
         # Profile YML path doesn't exist in the prism_project.py
         except AttributeError:
