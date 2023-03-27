@@ -34,7 +34,7 @@ THREADS = 1
 
 
 # Profile directory and name
-PROFILES_DIR = Path(__file__).parent
+PROFILE_YML_PATH = Path(__file__).parent / 'profile.yml'
 PROFILE = None
 
 
@@ -43,7 +43,7 @@ PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
 # Triggers
-TRIGGERS_DIR = Path(__file__).parent
+TRIGGERS_YML_PATH = Path(__file__).parent / 'triggers.yml'
 TRIGGERS = {
     'on_success': [],
     'on_failure': [],

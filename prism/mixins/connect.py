@@ -67,7 +67,7 @@ class ConnectMixin():
         # If the profile is empty, then throw an error
         if base_yml == {}:
             raise prism.exceptions.InvalidProfileException(
-                message="`profile.yml` is empty"
+                message="profile YML is empty"
             )
 
         # `base_yml` should have a single key representing the profile name
@@ -75,14 +75,14 @@ class ConnectMixin():
         values = list(base_yml.values())
         if len(keys) != 1 or len(values) != 1:
             raise prism.exceptions.InvalidProfileException(
-                message="invalid `profile.yml`"
+                message="invalid profile YML"
             )
 
         # The values for `base_yml` should be a dictionary
         values_dict = list(base_yml.values())[0]
         if not isinstance(values_dict, dict):
             raise prism.exceptions.InvalidProfileException(
-                message="invalid `profile.yml`; values should be nested dictionaries"
+                message="invalid profile YML; values should be nested dictionaries"
             )
 
         # The new dictionary should have a single key representing the profile to add
@@ -100,7 +100,7 @@ class ConnectMixin():
                 message="new profile not properly formatted"
             )
 
-        # Check that the profile.yml is properly structured
+        # Check that the profile YML is properly structured
         profile_body = list(base_yml.values())[0]
         profile_keys = list(profile_body.keys())
         invalid_keys = list(set(profile_keys) - set(prism.constants.VALID_PROFILE_KEYS))
@@ -109,7 +109,7 @@ class ConnectMixin():
                 [f'`{k}`' for k in prism.constants.VALID_PROFILE_KEYS]
             )
             raise prism.exceptions.InvalidProfileException(
-                message=f"invalid keys `{invalid_keys}` in profile.yml; supported keys are [{valid_keys_str}]"  # noqa: E501
+                message=f"invalid keys `{invalid_keys}` in profile YML; supported keys are [{valid_keys_str}]"  # noqa: E501
             )
 
         # Profile type must be a valid adapter or cluster
@@ -130,7 +130,7 @@ class ConnectMixin():
                 for adapter_name, adapter_body in profile_body['adapters'].items():
                     if profile_type == adapter_body['type']:
                         raise prism.exceptions.InvalidProfileException(
-                            message=f"profile of type `{profile_type}` already found in profile.yml"  # noqa: E501
+                            message=f"profile of type `{profile_type}` already found in profile YML"  # noqa: E501
                         )
 
             # THe 'adapters' section isn't defined as of yet
@@ -138,7 +138,7 @@ class ConnectMixin():
                 profile_body['adapters'] = {}
 
         # If new_profile is an adapter, add the profile to the `adapters` section of
-        # `profile.yml`
+        # profile YML
         if profile_type in prism.constants.VALID_ADAPTERS:
             profile_body['adapters'][profile_name] = new_profile_values_dict
 
@@ -147,43 +147,43 @@ class ConnectMixin():
 
     def create_profile_from_template(self,
         type: str,
-        profiles_filepath: Path
+        profile_yml_path: Path
     ):
         """
         Create a profiles.yml file using the template.
 
         args:
             type: connection type; one of "snowflake", "pyspark", or "dbt"
-            profiles_filepath: location to keep the the profile.yml file
+            profile_yml_path: location of profile YML
         returns:
             None
         """
 
-        # We only ever call this function after confirming that the profile.yml file
+        # We only ever call this function after confirming that the profile YML file
         # does not exist and that the type is valid.
         profiles_template_path = Path(profiles_template_dir) / type / 'profile.yml'
-        shutil.copyfile(profiles_template_path, profiles_filepath)
+        shutil.copyfile(profiles_template_path, profile_yml_path)
 
     def create_connection(self,
         profile_type: str,
-        profiles_filepath: Path
+        profile_yml_path: Path
     ):
         """
         Create a connection for the inputted `profile_type`
 
         args:
             profile_type: profile type
-            profiles_filepath: path to profile.yml
+            profile_yml_path: path to profile YML
         returns:
-            profile.yml with added profile of type `profile_type`
+            profile YML with added profile of type `profile_type`
         """
         # If the profile doesn't exist, then create it
-        if not profiles_filepath.is_file():
-            self.create_profile_from_template(profile_type, profiles_filepath)
+        if not profile_yml_path.is_file():
+            self.create_profile_from_template(profile_type, profile_yml_path)
             return
 
         # If the profile does exist, then update the profile based on the profile type
-        with open(profiles_filepath) as f:
+        with open(profile_yml_path) as f:
             base_yml = yaml.safe_load(f)
         f.close()
 
@@ -203,6 +203,6 @@ class ConnectMixin():
         base_yml_updated = self.update_yml(base_yml, new_connection)
 
         # Save the new profile name
-        with open(profiles_filepath, 'w') as f:
+        with open(profile_yml_path, 'w') as f:
             yaml.dump(base_yml_updated, f, sort_keys=False)
         f.close()

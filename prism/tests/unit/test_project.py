@@ -154,7 +154,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=TRIGGERS_NORMAL
         )
-        engine = SysPathEngine(prism_project, run_context)
+        engine = SysPathEngine(run_context)
         prism_project.exec(run_context, engine)
 
         # Triggers directory
@@ -180,7 +180,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=ON_FAILURE_TRIGGERS_ONLY
         )
-        engine = SysPathEngine(prism_project, run_context)
+        engine = SysPathEngine(run_context)
         prism_project.exec(run_context, engine)
 
         # Triggers
@@ -202,7 +202,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=ON_SUCCESS_TRIGGERS_ONLY
         )
-        engine = SysPathEngine(prism_project, run_context)
+        engine = SysPathEngine(run_context)
         prism_project.exec(run_context, engine)
 
         # Triggers
@@ -224,7 +224,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=BAD_TRIGGER_KEY
         )
-        engine = SysPathEngine(prism_project, run_context)
+        engine = SysPathEngine(run_context)
         prism_project.exec(run_context, engine)
 
         # Triggers

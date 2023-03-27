@@ -20,7 +20,6 @@ from prism.infra import task_manager, hooks
 import prism.constants
 import prism.exceptions
 import prism.logging
-from prism.mixins import sys_handler
 from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAME
 
 
@@ -28,7 +27,7 @@ from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAM
 # Class definition #
 ####################
 
-class PrismPipeline(sys_handler.SysHandlerMixin):
+class PrismPipeline:
     """
     Class for managing prism project components and scope
     """
@@ -59,12 +58,12 @@ class PrismPipeline(sys_handler.SysHandlerMixin):
                     message='`spark-submit` command requires a `pyspark` adapter'
                 )
 
-        # If the profile.yml contains a pyspark adapter, then the user should use the
+        # If the profile YML contains a pyspark adapter, then the user should use the
         # spark-submit command
         if 'pyspark' in adapter_types:
             if self.project.which == 'run':
                 raise prism.exceptions.RuntimeException(
-                    message='`pyspark` adapter found in profile.yml, use `spark-submit` command'  # noqa; E501
+                    message='`pyspark` adapter found in profile YML, use `spark-submit` command'  # noqa; E501
                 )
 
         # Create task_manager and hooks objects

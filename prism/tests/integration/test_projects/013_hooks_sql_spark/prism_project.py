@@ -34,7 +34,7 @@ THREADS = 2
 
 
 # Profile directory and name
-PROFILES_DIR = Path(__file__).parent  # location of `profiles.yml` file
+PROFILE_YML_PATH = Path(__file__).parent / 'profile.yml'
 PROFILE = 'profile_name'  # name of profile within `profiles.yml`
 
 

@@ -26,7 +26,6 @@ import prism.exceptions
 from prism.infra import executor as prism_executor
 from prism.infra import module as prism_module
 from prism.infra import compiler as prism_compiler
-from prism.infra.project import PrismProject
 import prism.mixins.base
 import prism.mixins.compile
 import prism.mixins.connect
@@ -104,7 +103,8 @@ class PrismDAG(
         return True
 
     def connect(self,
-        connection_type: str
+        connection_type: str,
+        user_context: Optional[Dict[str, Any]] = None
     ):
         """
         Connect task to an adapter
@@ -122,16 +122,26 @@ class PrismDAG(
             msg = f'invalid connection type `{connection_type}; must be one of {",".join(prism.constants.VALID_ADAPTERS)}'  # noqa: E501
             raise prism.exceptions.RuntimeException(message=msg)
 
-        # Get profiles filepath
-        prism_project = PrismProject(
+        # Create the project. We need this to grab the profile YML path.
+        prism_project = self.create_project(
             project_dir=self.project_dir,
-            user_context={},
+            user_context={} if user_context is None else user_context,
             which="connect",
-            filename="prism_project.py"
+            filename="prism_project.py",
         )
-        profiles_dir = prism_project.project_dir
-        profiles_filepath = profiles_dir / 'profile.yml'
-        self.create_connection(connection_type, profiles_filepath)
+
+        # Get the profile YML path and create the connection
+        profile_yml_path = prism_project.profile_yml_path
+
+        # Try to create the connection. If we encounter an error, then cleanup first and
+        # then raise the exception.
+        self.run_context = prism_project.run_context
+        try:
+            self.create_connection(connection_type, profile_yml_path)
+        except Exception as e:
+            raise e
+        finally:
+            self.run_context = prism_project.cleanup(self.run_context)
 
     def compile(self,
         modules: Optional[List[str]] = None,
@@ -177,6 +187,12 @@ class PrismDAG(
             filename="prism_project.py",
         )
 
+        # Run sys.path engine
+        sys_path_engine = prism_project.sys_path_engine
+        self.run_context = sys_path_engine.modify_sys_path(
+            prism_project.sys_path_config
+        )
+
         # Compile the DAG
         compiled_dag = self.compile(modules, all_downstream)
 
@@ -196,7 +212,13 @@ class PrismDAG(
 
         # Create args and exec
         output = pipeline.exec(full_tb)
-        self.run_context = prism_project.cleanup(self.run_context)
+
+        # Cleanup
+        self.run_context = prism_project.cleanup(
+            self.run_context
+        )
+
+        # Write error
         if output.error_event is not None:
             event = output.error_event
             try:
@@ -247,7 +269,6 @@ class PrismDAG(
         returns:
             task output
         """
-
         # The user may have run the project in their script. Try retrieving the output
         try:
             task_cls = self._get_task_cls_from_namespace(module_path)
@@ -280,22 +301,38 @@ class PrismDAG(
                     which="run",
                     filename="prism_project.py"
                 )
-                self.add_paths_to_sys_path(
-                    prism_project.sys_path_config,
-                    prism_project.run_context
+
+                # Run sys.path engine
+                sys_path_engine = prism_project.sys_path_engine
+                self.run_context = sys_path_engine.modify_sys_path(
+                    prism_project.sys_path_config
                 )
 
                 # Execute the class definition code
-                exec(parsed_ast_module.module_str, prism_project.run_context)
-                task = prism_project.run_context[prism_task_cls_name](False)  # type: ignore # noqa: E501
+                exec(parsed_ast_module.module_str, self.run_context)
+                task = self.run_context[prism_task_cls_name](False)  # type: ignore # noqa: E501
 
                 # No need for an actual task_manager/hooks, since we're only accessing
                 # the target
-                task.set_hooks(None)
-                task.set_task_manager(None)
-                task.exec()
-                output = task.get_output()
-                return output
+                try:
+                    task.set_hooks(None)
+                    task.set_task_manager(None)
+                    task.exec()
+                    output = task.get_output()
+
+                    # Cleanup
+                    self.run_context = prism_project.cleanup(
+                        self.run_context
+                    )
+                    return output
+
+                # If there is some error when executing the task, then cleanup first and
+                # then raise the exception.
+                except Exception as e:
+                    self.run_context = prism_project.cleanup(
+                        self.run_context
+                    )
+                    raise e
 
     def get_pipeline_output(self, bool_run: bool = False) -> Any:
         """

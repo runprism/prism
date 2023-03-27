@@ -34,7 +34,7 @@ from prism.infra.sys_path import SysPathEngine
 
 class PrismProject():
     """
-    Class to represent configuration files (prism_project.py and profile.yml)
+    Class to represent configuration files (prism_project.py and profile YML)
     """
 
     def __init__(self,
@@ -83,11 +83,13 @@ class PrismProject():
         """
         Execute project
         """
+        os.chdir(self.project_dir)
+
         # By importing the prism_project, we take advantage of Python's import
         # caching. That is, if we execute a module that imports prism_project,
         # Python will see that prism_project has already been imported and will not
         # re-import it and overwrite the user context.
-        sys_path_engine.add_sys_path(self.project_dir, run_context)
+        run_context = sys_path_engine.add_sys_path(self.project_dir, run_context)
         exec(f"import {self.filename.replace('.py', '')}", run_context)
 
         # Update internal vars
@@ -103,7 +105,7 @@ class PrismProject():
 
         # Create sys.path engine
         self.sys_path_engine = SysPathEngine(
-            self, self.run_context
+            self.run_context
         )
 
         # Execute
@@ -130,53 +132,44 @@ class PrismProject():
         # Profile name, profiles dir, and profiles path
 
         self.profile_name = self.get_profile_name(self.run_context)
-        self.profiles_dir = self.get_profiles_dir(self.run_context)
-        self.profiles_path: Optional[Path]
+        self.profile_yml_path = self.get_profile_yml_path(self.run_context)
 
         # If we're creating the project as part of the `connect` task, we don't need to
         # generate the adapters; we only need to grab the profiles directory. If the
         # profiles dir isn't specified, default to the project dir.
         if self.which == "connect":
-            if self.profiles_dir is None:
+            if self.profile_yml_path is None:
                 fire_console_event(
-                    prism.logging.ProfileDirWarningEvent(),
+                    prism.logging.ProfileYmlWarningEvent(),
                     [],
                     0.01,
                     'warn'
                 )
-            self.profiles_dir = self.project_dir
 
         # If we're running the project using an agent, then we don't need to generate
-        # the adapters; we only need to parse the profile.yml file.
+        # the adapters; we only need to parse the profile YML file.
         elif "agent-" in self.which:
 
-            # If the profiles directory isn't specified, then don't do anything. The
-            # user will encounter a warning / error in their agent's logs.
-            if self.profiles_dir is not None:
-                self.profiles_path = self.profiles_dir / 'profile.yml'
-
-            # Parse the profile.yml. Don't create the Profile object, because this will
+            # Parse the profile YML. Don't create the Profile object, because this will
             # generate a ton of warnings that we don't want to display to the user at
             # the moment.
-            self.profile_yml = self.load_profile_yml(self.profiles_path)
+            self.profile_yml = self.load_profile_yml(self.profile_yml_path)
 
         # Otherwise, the user wishes to run the project locally (either via the `run` or
         # `spark-submit` commands). For these, we do need to generate the adapters.
         else:
             # If the profiles dir isn't specified, only raise a warning if the profile
             # name is non-empty.
-            if self.profile_name != "" and self.profiles_dir is None:
+            if self.profile_name != "" and self.profile_yml_path is None:
                 fire_console_event(
-                    prism.logging.ProfileDirWarningEvent(),
+                    prism.logging.ProfileYmlWarningEvent(),
                     [],
                     0.01,
                     'warn'
                 )
-                self.profiles_dir = self.project_dir
-            self.profiles_path = self.profiles_dir / 'profile.yml' if self.profiles_dir is not None else None  # noqa: E501
 
             # Do all the other profile-related stuff
-            self.profile_yml = self.load_profile_yml(self.profiles_path)
+            self.profile_yml = self.load_profile_yml(self.profile_yml_path)
             self.profile = profile.Profile(self.profile_yml, self.profile_name)
             self.profile.generate_adapters()
             self.adapters_object_dict = self.profile.get_adapters_obj_dict()
@@ -294,7 +287,7 @@ class PrismProject():
             return ""
         return profile_name
 
-    def get_profiles_dir(self,
+    def get_profile_yml_path(self,
         run_context: Dict[Any, Any]
     ) -> Optional[Path]:
         """
@@ -306,14 +299,17 @@ class PrismProject():
             profile path
         """
         try:
-            profiles_dir = run_context[self.filename.replace(".py", "")].PROFILES_DIR  # noqa: E501
+            profile_yml_path = run_context[self.filename.replace(".py", "")].PROFILE_YML_PATH  # noqa: E501
+            if not (
+                isinstance(profile_yml_path, str)
+                or isinstance(profile_yml_path, Path)  # noqa: W503
+            ):
+                return None
+            return profile_yml_path
+
+        # Profile YML path doesn't exist in the prism_project.py
         except AttributeError:
-            profiles_dir = None
-        if profiles_dir is None:
             return None
-        if not (isinstance(profiles_dir, str) or isinstance(profiles_dir, Path)):
-            return None
-        return Path(profiles_dir)
 
     def get_sys_path_config(self,
         run_context: Dict[Any, Any]
@@ -385,23 +381,23 @@ class PrismProject():
         return thread_count
 
     def load_profile_yml(self,
-        profiles_path: Optional[Path]
+        profile_yml_path: Optional[Path]
     ) -> Dict[Any, Any]:
         """
-        Load profile.yml file
+        Load profile YML file
 
         args:
-            profiles_path: path to profile.yml
+            profile_yml_path: path to profile YML
         returns:
-            profile_yml: profile.yml file represented as a dict
+            profile_yml: profile YML file represented as a dict
         """
         # If no profile path is specified, return None
-        if profiles_path is None:
+        if profile_yml_path is None:
             return {}
 
         # Otherwise, try and load a template
         try:
-            parser = yml_parser.YamlParser(profiles_path)
+            parser = yml_parser.YamlParser(profile_yml_path)
             profile_yml = parser.parse()
             return profile_yml
 
@@ -492,5 +488,6 @@ class PrismProject():
         removes all project modules from sys.path
         """
         return self.sys_path_engine.revert_to_base_sys_path(
+            self.sys_path_config,
             run_context
         )

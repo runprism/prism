@@ -1,5 +1,5 @@
 """
-Base parser class. Parsers are used to parse Jinja in YAML files (e.g., profile.yml).
+Base parser class. Parsers are used to parse Jinja in YAML files (e.g., profile YML).
 
 Table of Contents:
 - Imports

@@ -1,6 +1,6 @@
 """
 Unit testing for functions in YamlParser class. The YamlParser is called in both the compile task (for prism_project.py) and
-the run task (for profile.yml).
+the run task (for profile YML).
 
 Table of Contents:
 - Imports
@@ -63,12 +63,12 @@ class TestJinjaFunctions(unittest.TestCase):
         profiles_path: Path
     ) -> dict:
         """
-        Load profile.yml file
+        Load profile YML file
 
         args:
-            profiles_path: path to profile.yml
+            profiles_path: path to profile YML
         returns:
-            profile_yml: profile.yml file represented as a dict
+            profile_yml: profile YML file represented as a dict
         """
         try:
             parser = yml_parser.YamlParser(profiles_path)

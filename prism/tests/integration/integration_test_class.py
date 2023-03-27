@@ -119,7 +119,7 @@ class IntegrationTestCase(unittest.TestCase):
 
     def _get_profile_name(self, wkdir):
         """
-        Get the profile name from the profile.yml file at `wkdir`
+        Get the profile name from the profile YML file at `wkdir`
         """
         with open(Path(wkdir / 'profile.yml')) as f:
             yml_dict = yaml.safe_load(f)
@@ -254,7 +254,7 @@ class IntegrationTestCase(unittest.TestCase):
     
     def _remove_profile_yml(self, wkdir):
         """
-        Remove the profile.yml file, if it exists
+        Remove the profile YML file, if it exists
         """
         if Path(wkdir / 'profile.yml').is_file():
             os.unlink(Path(wkdir / 'profile.yml'))
@@ -262,7 +262,7 @@ class IntegrationTestCase(unittest.TestCase):
 
     def _profile_yml_as_dict(self, wkdir):
         """
-        Open the profile.yml file as a dict
+        Open the profile YML file as a dict
         """
         with open(Path(wkdir / 'profile.yml'), 'r') as f:
             yml_dict = yaml.safe_load(f)

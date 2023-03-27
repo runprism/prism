@@ -22,7 +22,7 @@ THREADS = os.cpu_count()
 
 
 # Profile directory and name
-PROFILES_DIR = Path(__file__).parent  # location of `profiles.yml` file
+PROFILE_YML_PATH = Path(__file__).parent / 'profile.yml'
 PROFILE = 'hi'  # name of profile within `profiles.yml`
 
 

@@ -40,7 +40,7 @@ import prism.logging
 
 # Directory containing test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
-PROFILE_YML_TEST_CASES = Path(TEST_CASE_WKDIR) / 'test_profile_yml' / 'profile.yml'
+PROFILE_YML_TEST_CASES = Path(TEST_CASE_WKDIR) / 'test_profile_yml' / 'profile YML'
 PROFILE_YML_EMPTY = Path(TEST_CASE_WKDIR) / 'test_profile_yml' / 'profile_empty.yml'
 
 
@@ -52,12 +52,12 @@ def _load_profile_yml(
     profiles_path: Path
 ) -> dict:
     """
-    Load profile.yml file
+    Load profile YML file
 
     args:
-        profiles_path: path to profile.yml
+        profiles_path: path to profile YML
     returns:
-        profile_yml: profile.yml file represented as a dict
+        profile_yml: profile YML file represented as a dict
     """
     try:
         parser = yml_parser.YamlParser(profiles_path)
@@ -88,7 +88,7 @@ def _load_named_profile_adapters(
 
 
 ######################
-## Load profile.yml ##
+## Load profile YML ##
 ######################
 
 profile_yml_tests = _load_profile_yml(PROFILE_YML_TEST_CASES)
@@ -125,7 +125,7 @@ class TestAdapter(unittest.TestCase):
         # get_adapter_var throws an error for missing variable
         with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
             snowflake_adapter.get_adapter_var(adapter_dict, 'this_does_not_exist', adapter_name, profile_name)
-        self.assertEqual(f"`this_does_not_exist` not found - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml", str(cm.exception))
+        self.assertEqual(f"`this_does_not_exist` not found - see `{adapter_name}` adapter in `{profile_name}` profile in profile YML", str(cm.exception))
     
 
     def test_error_snowflake_adapter(self):
@@ -150,9 +150,9 @@ class TestAdapter(unittest.TestCase):
                 snowflake_adapter.is_valid_config(adapter_dict, adapter_name, p)
             msgs[p] = str(cm.exception)
         
-        self.assertEqual(msgs['profile_snowflake_none_config'], f'`schema` cannot be None - see `{adapter_name}` adapter in `profile_snowflake_none_config` profile in profile.yml')
-        self.assertEqual(msgs['profile_snowflake_missing_config'], f'`database` must be defined - see `{adapter_name}` adapter in `profile_snowflake_missing_config` profile in profile.yml')
-        self.assertEqual(msgs['profile_snowflake_extra_config'], f'invalid var `extra_config` - see `{adapter_name}` adapter in `profile_snowflake_extra_config` profile in profile.yml')
+        self.assertEqual(msgs['profile_snowflake_none_config'], f'`schema` cannot be None - see `{adapter_name}` adapter in `profile_snowflake_none_config` profile in profile YML')
+        self.assertEqual(msgs['profile_snowflake_missing_config'], f'`database` must be defined - see `{adapter_name}` adapter in `profile_snowflake_missing_config` profile in profile YML')
+        self.assertEqual(msgs['profile_snowflake_extra_config'], f'invalid var `extra_config` - see `{adapter_name}` adapter in `profile_snowflake_extra_config` profile in profile YML')
 
     
     def test_normal_pyspark_adapter(self):
@@ -195,8 +195,8 @@ class TestAdapter(unittest.TestCase):
                 pyspark_adapter.get_alias()
             msgs[p] = str(cm.exception)
         
-        self.assertEqual(msgs['profile_pyspark_none_alias'], f'`alias` cannot be None - see `{adapter_name}` adapter in `profile_pyspark_none_alias` profile in profile.yml')
-        self.assertEqual(msgs['profile_pyspark_missing_alias'], f'`alias` not found - see `{adapter_name}` adapter in `profile_pyspark_missing_alias` profile in profile.yml')
+        self.assertEqual(msgs['profile_pyspark_none_alias'], f'`alias` cannot be None - see `{adapter_name}` adapter in `profile_pyspark_none_alias` profile in profile YML')
+        self.assertEqual(msgs['profile_pyspark_missing_alias'], f'`alias` not found - see `{adapter_name}` adapter in `profile_pyspark_missing_alias` profile in profile YML')
 
 
 class TestProfile(unittest.TestCase):
@@ -208,7 +208,7 @@ class TestProfile(unittest.TestCase):
         """
         with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
             pr.Profile(profile_yml_tests, "profile_too_many_toplevel_keys")
-        msg = "invalid keys `['clusters', 'this_does_not_belong']` in profile.yml; supported keys are [`adapters`]"
+        msg = "invalid keys `['clusters', 'this_does_not_belong']` in profile YML; supported keys are [`adapters`]"
         self.assertEqual(msg, str(cm.exception))
 
 
@@ -288,7 +288,7 @@ class TestProfile(unittest.TestCase):
         self.assertEqual(profile.adapters_obj_dict, {})
         with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
             profile.generate_adapters()
-        self.assertEqual('invalid adapter `postgres_sql` in profile.yml', str(cm.exception))
+        self.assertEqual('invalid adapter `postgres_sql` in profile YML', str(cm.exception))
 
 
     #################
@@ -297,7 +297,7 @@ class TestProfile(unittest.TestCase):
 
     def test_missing_profile_yml(self):
         """
-        Attempting to load a non-existent profile.yml should produce an empty dictionary. Note that _load_profile_yml
+        Attempting to load a non-existent profile YML should produce an empty dictionary. Note that _load_profile_yml
         is identical to the load_profile_yml method in the Project class.
         """
         nonexistent_profile = _load_profile_yml(Path(TEST_CASE_WKDIR) / 'test_profile_yml' / 'error.yml')
@@ -306,7 +306,7 @@ class TestProfile(unittest.TestCase):
 
     def test_empty_profile_yml(self):
         """
-        Loading an empty profile.yml file should produce an empty dictionary
+        Loading an empty profile YML file should produce an empty dictionary
         """
         self.assertEqual({}, profile_yml_empty)
 

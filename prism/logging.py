@@ -329,21 +329,21 @@ class ProfileAlreadyExists(Event):
 class ProfileNameExistsYamlDoesNotExist(Event):
 
     def message(self):
-        return f'{YELLOW}`PROFILE` var found in prism_project.py but profile.yml not found{RESET}'  # noqa: E501
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but profile YML not found{RESET}'  # noqa: E501
 
 
 @dataclass
 class ProfileNameExistsNamedProfileDoesNotExist(Event):
 
     def message(self):
-        return f'{YELLOW}`PROFILE` var found in prism_project.py but named profile not found in profile.yml{RESET}'  # noqa: E501
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but named profile not found in profile YML{RESET}'  # noqa: E501
 
 
 @dataclass
 class ProfileNameDoesNotExistYamlExists(Event):
 
     def message(self):
-        return f'{YELLOW}profile.yml found but `PROFILE` var not found in prism_project.py{RESET}'  # noqa: E501
+        return f'{YELLOW}profile YML found but `PROFILE` var not found in prism_project.py{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -557,10 +557,10 @@ class ProjectDirNotInSysPath(Event):
 
 
 @dataclass
-class ProfileDirWarningEvent(Event):
+class ProfileYmlWarningEvent(Event):
 
     def message(self):
-        return f'{YELLOW}`PROFILES_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
+        return f'{YELLOW}`PROFILE_YML_PATH` not found in prism_project.py; defaulting to `profile YML` in project directory{RESET}'  # noqa: E501
 
 
 @dataclass

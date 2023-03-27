@@ -32,14 +32,14 @@ class Redshift(Adapter):
         profile_name: str,
     ) -> bool:
         """
-        Check that config dictionary is profile.yml is valid
+        Check that config dictionary is profile YML is valid
 
         args:
-            config_dict: config dictionary under Redshift adapter in profile.yml
+            config_dict: config dictionary under Redshift adapter in profile YML
             adapter_name: name assigned to adapter
             profile_name: profile name containing adapter
         returns:
-            boolean indicating whether config dictionary in profile.yml is valid
+            boolean indicating whether config dictionary in profile YML is valid
         """
 
         # Required config vars
@@ -65,19 +65,19 @@ class Redshift(Adapter):
         for k, v in config_dict.items():
             if k not in required_config_vars and k not in optional_config_vars:
                 raise prism.exceptions.InvalidProfileException(
-                    message=f'invalid var `{k}` - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+                    message=f'invalid var `{k}` - see `{adapter_name}` adapter in `{profile_name}` profile in profile YML'  # noqa: E501
                 )
             if k in required_config_vars:
                 actual_config_vars.append(k)
             if v is None:
                 raise prism.exceptions.InvalidProfileException(
-                    message=f'var `{k}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+                    message=f'var `{k}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile YML'  # noqa: E501
                 )
         vars_not_defined = list(set(required_config_vars) - set(actual_config_vars))
         if len(vars_not_defined) > 0:
             v = vars_not_defined.pop()
             raise prism.exceptions.InvalidProfileException(
-                message=f'var `{v}` must be defined - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+                message=f'var `{v}` must be defined - see `{adapter_name}` adapter in `{profile_name}` profile in profile YML'  # noqa: E501
             )
 
         # If no exception has been raised, return True

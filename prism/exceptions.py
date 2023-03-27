@@ -78,7 +78,7 @@ class ModulesDirNotFoundException(PrismException):
 
 class YamlNotFoundException(PrismException):
     """
-    Exception raised if the profile.yml not found
+    Exception raised if the profile YML not found
     """
 
     def __init__(self, message):

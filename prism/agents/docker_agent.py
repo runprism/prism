@@ -271,8 +271,11 @@ class Docker(Agent):
         """
         project_dir = project.project_dir
         sys_path_config = project.sys_path_config
-        profiles_dir = project.profiles_dir
+        profile_yml_path = project.profile_yml_path
         triggers_dir = project.triggers_dir
+
+        # Get the profile dir
+        profile_yml_dir = None if profile_yml_path is None else Path(profile_yml_path).parent  # noqa: E501
 
         # Get paths of files / directories associated with profiles
         profile_paths = self.parse_profile_paths(project)
@@ -281,7 +284,7 @@ class Docker(Agent):
         copy_commands = {}
 
         # Copy directories into tmpdir
-        for _dir in [profiles_dir, triggers_dir] + profile_paths:
+        for _dir in [profile_yml_dir, triggers_dir] + profile_paths:
             if _dir is None:
                 continue
 
