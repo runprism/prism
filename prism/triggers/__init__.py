@@ -178,14 +178,11 @@ class TriggerManager:
     """
 
     def __init__(self,
-        triggers_dir: Optional[Path],
+        triggers_yml_path: Optional[Path],
         prism_project: PrismProject,
     ):
         self.prism_project = prism_project
-        if triggers_dir is None:
-            self.triggers_yml_path = None
-        else:
-            self.triggers_yml_path = Path(triggers_dir) / 'triggers.yml'
+        self.triggers_yml_path = triggers_yml_path
         self.flag_has_triggers_yml_path = self.triggers_yml_path is not None
 
         # This object will only be instantiated after the PrismProject has been

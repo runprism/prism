@@ -716,7 +716,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
     def test_trigger_no_directory(self):
         """
-        Test trigger function when there is no `TRIGGERS_DIR` in prism_project.py
+        Test trigger function when there is no `TRIGGERS_YML_PATH` in prism_project.py
         """
 
         # Set working directory

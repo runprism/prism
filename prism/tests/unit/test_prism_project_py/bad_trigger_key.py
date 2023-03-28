@@ -42,7 +42,7 @@ OUTPUT = WKDIR / 'output'
 
 
 # Triggers
-TRIGGERS_DIR = Path(__file__).parent  # location of `triggers.yml` file
+TRIGGERS_YML_PATH = Path(__file__).parent / 'triggers.yml'  # location of `triggers.yml` file
 TRIGGERS = {
     'on_success': ["test_fn"],
     'on_failure': ["test_fn"],

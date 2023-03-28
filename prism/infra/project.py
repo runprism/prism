@@ -179,7 +179,7 @@ class PrismProject():
         # ------------------------------------------------------------------------------
         # Triggers directory and triggers
 
-        self.triggers_dir = self.get_triggers_dir(self.run_context)
+        self.triggers_yml_path = self.get_triggers_yml_path(self.run_context)
         triggers = self.get_triggers(self.run_context)
         if triggers is None:
             self.on_success_triggers, self.on_failure_triggers = [], []
@@ -411,7 +411,7 @@ class PrismProject():
         except Exception as e:
             raise e
 
-    def get_triggers_dir(self,
+    def get_triggers_yml_path(self,
         run_context: Dict[Any, Any]
     ) -> Optional[Path]:
         """
@@ -423,14 +423,15 @@ class PrismProject():
             triggers path
         """
         try:
-            triggers_dir = run_context[self.filename.replace(".py", "")].TRIGGERS_DIR  # noqa: E501
+            triggers_yml_path = run_context[self.filename.replace(".py", "")].TRIGGERS_YML_PATH  # noqa: E501
+            if not (
+                isinstance(triggers_yml_path, str)
+                or isinstance(triggers_yml_path, Path)  # noqa: W503
+            ):
+                return None
+            return Path(triggers_yml_path)
         except AttributeError:
-            triggers_dir = None
-        if triggers_dir is None:
             return None
-        if not (isinstance(triggers_dir, str) or isinstance(triggers_dir, Path)):
-            return None
-        return Path(triggers_dir)
 
     def get_triggers(self,
         run_context: Dict[Any, Any]

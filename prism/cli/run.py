@@ -92,9 +92,9 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # ------------------------------------------------------------------------------
         # Prepare triggers
 
-        triggers_dir = self.prism_project.triggers_dir
+        triggers_yml_path = self.prism_project.triggers_yml_path
         trigger_manager = TriggerManager(
-            triggers_dir,
+            triggers_yml_path,
             self.prism_project,
         )
 

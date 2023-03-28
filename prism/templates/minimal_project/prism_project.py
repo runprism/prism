@@ -43,7 +43,7 @@ PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
 # Triggers
-TRIGGERS_DIR = Path(__file__).parent  # location of triggers.yml file
+TRIGGERS_YML_PATH = Path(__file__).parent / 'triggers.yml'  # location of triggers.yml file
 TRIGGERS = {
     'on_success': [],  # triggers from triggers.yml to run on success
     'on_failure': [],  # triggers from triggers.yml to run on success

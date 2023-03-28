@@ -611,7 +611,7 @@ class TriggersHeaderEvent(HeaderEvent):
 class TriggersPathNotDefined(Event):
 
     def message(self):
-        return f'{YELLOW}`TRIGGERS_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
+        return f'{YELLOW}`TRIGGERS_YML_PATH` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
 
 
 @dataclass

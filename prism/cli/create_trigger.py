@@ -84,9 +84,10 @@ class CreateTriggerTask(
         # ------------------------------------------------------------------------------
         # Get triggers dir
 
-        if self.prism_project.triggers_dir is None:
-            self.prism_project.triggers_dir = self.prism_project.project_dir
-        triggers_filepath = self.prism_project.triggers_dir / 'triggers.yml'
+        if self.prism_project.triggers_yml_path is None:
+            triggers_filepath = self.prism_project.project_dir / 'triggers.yml'
+        else:
+            triggers_filepath = self.prism_project.triggers_yml_path
 
         # ------------------------------------------------------------------------------
         # Create trigger

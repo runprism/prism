@@ -272,10 +272,13 @@ class Docker(Agent):
         project_dir = project.project_dir
         sys_path_config = project.sys_path_config
         profile_yml_path = project.profile_yml_path
-        triggers_dir = project.triggers_dir
+        triggers_yml_path = project.triggers_yml_path
 
         # Get the profile dir
         profile_yml_dir = None if profile_yml_path is None else Path(profile_yml_path).parent  # noqa: E501
+
+        # Get the triggers dir
+        triggers_dir = None if triggers_yml_path is None else Path(triggers_yml_path).parent  # noqa: E501
 
         # Get paths of files / directories associated with profiles
         profile_paths = self.parse_profile_paths(project)
