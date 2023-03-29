@@ -43,9 +43,9 @@ PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
 # Triggers
-TRIGGERS_YML_PATH = Path(__file__).parent / 'triggers.yml'.parent / 'test_trigger_yml'
+TRIGGERS_YML_PATH = Path(__file__).parent.parent / 'test_trigger_yml' / 'triggers.yml'
 TRIGGERS = {
-    'on_success': ["test_fn.test_agent_trigger"],
+    'on_success': ["test_agent_trigger"],
     'on_failure': [],
 }
 

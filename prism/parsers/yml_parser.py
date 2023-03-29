@@ -38,12 +38,12 @@ class YamlParser(BaseParser):
         """
         return str(self.path.parent)
 
-    def parent_dir(self,
+    def parent(self,
         input_path: str
     ) -> str:
         """
         Return the parent directory {input_path}. Can be called in YAML file via {{
-        parent_dir(...) }}
+        parent(...) }}
         """
         path = Path(input_path)
         return str(path.parent)
@@ -101,7 +101,7 @@ class YamlParser(BaseParser):
         # Define function dictionary
         func_dict = {
             "wkdir": self.wkdir,
-            "parent_dir": self.parent_dir,
+            "parent": self.parent,
             "env": self.env,
             "concat": self.concat
         }

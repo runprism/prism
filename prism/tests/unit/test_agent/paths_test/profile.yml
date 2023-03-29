@@ -1,7 +1,7 @@
 jinja:
-  - "{% set AGENT_TEST_WKDIR = parent_dir(wkdir()) %}"
-  - "{% set UNIT_TEST_WKDIR = parent_dir(AGENT_TEST_WKDIR) %}"
-  - "{% set TEST_WKDIR = parent_dir(UNIT_TEST_WKDIR) %}"
+  - "{% set AGENT_TEST_WKDIR = parent(wkdir()) %}"
+  - "{% set UNIT_TEST_WKDIR = parent(AGENT_TEST_WKDIR) %}"
+  - "{% set TEST_WKDIR = parent(UNIT_TEST_WKDIR) %}"
   - "{% set INTEGRATION_TEST_PROJECTS_WKDIR = concat(TEST_WKDIR, "/integration/test_projects") %}"
   - "{% set DBT_PROJECT_WKDIR = concat(INTEGRATION_TEST_PROJECTS_WKDIR, '/009_simple_dbt_project/jaffle_shop') %}"
 

@@ -1,6 +1,6 @@
 jinja_commands:
   - '{% set BASE_DIR = wkdir() %}'
-  - '{% set PARENT_DIR = parent_dir(BASE_DIR) %}'
+  - '{% set PARENT_DIR = parent(BASE_DIR) %}'
 
 profile_name:
   dbt:

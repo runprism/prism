@@ -1,6 +1,6 @@
 """
-Unit testing for functions in YamlParser class. The YamlParser is called in both the compile task (for prism_project.py) and
-the run task (for profile YML).
+Unit testing for functions in YamlParser class. The YamlParser is called in both the
+compile task (for prism_project.py) and the run task (for profile YML).
 
 Table of Contents:
 - Imports
@@ -15,16 +15,12 @@ Table of Contents:
 ###########
 
 # Standard library imports
-import argparse
 import jinja2
 import os
 from pathlib import Path
 import unittest
 
 # Prism imports
-import prism.exceptions
-from prism.cli import compile
-from prism.cli import run
 from prism.parsers import yml_parser
 
 
@@ -40,7 +36,7 @@ PROJECT_YML_TEST_CASES = Path(TEST_CASE_WKDIR) / 'test_jinja_functions'
 CONCAT = PROJECT_YML_TEST_CASES / 'concat.yml'
 ENV_DOESNT_EXIST = PROJECT_YML_TEST_CASES / 'env_doesnt_exist.yml'
 ENV_EXISTS = PROJECT_YML_TEST_CASES / 'env_exists.yml'
-PARENT_DIR = PROJECT_YML_TEST_CASES / 'parent_dir.yml'
+PARENT = PROJECT_YML_TEST_CASES / 'parent.yml'
 WKDIR = PROJECT_YML_TEST_CASES / 'wkdir.yml'
 
 # List of all test case .yml files
@@ -48,14 +44,14 @@ ALL_TEST_CASE_YML_FILES = [
     CONCAT,
     ENV_DOESNT_EXIST,
     ENV_EXISTS,
-    PARENT_DIR,
+    PARENT,
     WKDIR
 ]
 
 
-################################
-## Test case class definition ##
-################################
+##############################
+# Test case class definition #
+##############################
 
 class TestJinjaFunctions(unittest.TestCase):
 
@@ -74,15 +70,14 @@ class TestJinjaFunctions(unittest.TestCase):
             parser = yml_parser.YamlParser(profiles_path)
             profile_yml = parser.parse()
             return profile_yml
-        
+
         # If template isn't found, return an empty dictionary
         except jinja2.exceptions.TemplateNotFound:
             return {}
-        
+
         # Raise all other exceptions
         except Exception as e:
             raise e
-    
 
     ###################################################
     # Common test cases across prism_project.py files #
@@ -94,7 +89,6 @@ class TestJinjaFunctions(unittest.TestCase):
         for file in ALL_TEST_CASE_YML_FILES:
             self._load_profile_yml(file)
 
-    
     #######################################
     # Test cases for individual functions #
     #######################################
@@ -107,7 +101,6 @@ class TestJinjaFunctions(unittest.TestCase):
         actual_user = yml['profile_name']['snowflake']['config']['user']
         self.assertEqual(expected_user, actual_user)
 
-    
     def test_env_doesnt_exist(self):
         """
         env() function returns a blank string if the environment variable doesn't exist
@@ -117,7 +110,6 @@ class TestJinjaFunctions(unittest.TestCase):
         actual_user = yml['profile_name']['snowflake']['config']['user']
         self.assertEqual(expected_user, actual_user)
 
-
     def test_concat(self):
         """
         concat() function concatenates two strings correctly
@@ -126,17 +118,15 @@ class TestJinjaFunctions(unittest.TestCase):
         expected_yml_keys = ['jinja_commands', 'base_etl']
         self.assertEqual(set(expected_yml_keys), set(list(yml.keys())))
 
-    
-    def test_parent_dir(self):
+    def test_parent(self):
         """
-        parent_dir() function returns the parent directory for the inputted path
+        parent() function returns the parent directory for the inputted path
         """
-        yml = self._load_profile_yml(PARENT_DIR)
-        expected_profiles_dir = PARENT_DIR.parent.parent
+        yml = self._load_profile_yml(PARENT)
+        expected_profiles_dir = PARENT.parent.parent
         actual_profiles_dir = yml['profile_name']['dbt']['profiles_dir']
         self.assertEqual(str(expected_profiles_dir), actual_profiles_dir)
 
-    
     def test_wkdir(self):
         """
         wkdir() function returns the current directory
@@ -145,6 +135,3 @@ class TestJinjaFunctions(unittest.TestCase):
         expected_profiles_dir = WKDIR.parent
         actual_profiles_dir = yml['profile_name']['dbt']['profiles_dir']
         self.assertEqual(str(expected_profiles_dir), actual_profiles_dir)
-
-
-# EOF

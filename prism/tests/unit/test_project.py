@@ -159,7 +159,10 @@ class TestPrismProject(unittest.TestCase):
 
         # Triggers directory
         triggers_yml_path = prism_project.get_triggers_yml_path(run_context)
-        self.assertEqual(str(triggers_yml_path), str(PRISM_PROJECT_PY_TEST_CASES))
+        self.assertEqual(
+            str(triggers_yml_path),
+            str(PRISM_PROJECT_PY_TEST_CASES / 'triggers.yml')
+        )
 
         # Triggers
         triggers = prism_project.get_triggers(run_context)

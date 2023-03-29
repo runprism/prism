@@ -7,3 +7,6 @@ triggers:
   test_trigger_invalid_type:
     type: other_type
     function: dummy_function
+  test_agent_trigger:
+    type: function
+    function: test_fn.test_agent_trigger

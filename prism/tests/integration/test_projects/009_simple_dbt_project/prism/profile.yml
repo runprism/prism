@@ -1,6 +1,6 @@
 jinja:
   - "{% set PRISM_DIR = wkdir() %}"
-  - "{% set WKDIR = parent_dir(PRISM_DIR) %}"
+  - "{% set WKDIR = parent(PRISM_DIR) %}"
   - "{% set DBT_DIR = concat(WKDIR, '/jaffle_shop') %}"
 
 default:
