@@ -15,7 +15,7 @@ Table of Contents:
 import os
 from pathlib import Path
 import yaml
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Prism imports
 import prism.exceptions
@@ -63,7 +63,7 @@ class YamlParser(BaseParser):
         """
         Get environment variable {var}. Can be called in YAML file via {{ env(...) }}
         """
-        val = os.environ.get(var, None)
+        val: Optional[str] = os.environ.get(var, None)
         if val is None:
             raise prism.exceptions.EnvironmentVariableNotFoundException(var)
         return val
