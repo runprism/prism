@@ -611,7 +611,7 @@ class TriggersHeaderEvent(HeaderEvent):
 class TriggersPathNotDefined(Event):
 
     def message(self):
-        return f'{YELLOW}`TRIGGERS_YML_PATH` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
+        return f'{YELLOW}`TRIGGERS_YML_PATH` not found in prism_project.py; defaulting to `triggers.yml` in project directory{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -622,11 +622,11 @@ class CreatingTriggersEvent(Event):
 
 
 @dataclass
-class UnexpectedTriggersYmlKeys(Event):
+class UnexpectedTriggersYmlKeysEvent(Event):
     unexpected_keys: List[str]
 
     def message(self):
-        return f"Found unexpected keys in the triggers YML file: `{self.unexpected_keys}`"  # noqa: E501
+        return f"{YELLOW}found unexpected keys in the triggers YML file: `{self.unexpected_keys}`{RESET}"  # noqa: E501
 
 
 @dataclass

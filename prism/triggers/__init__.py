@@ -236,6 +236,9 @@ class TriggerManager:
         raises:
             InvalidTriggerException if triggers_yml fails any of the conditions above
         """
+        # Warning events
+        warning_events = []
+
         # Expected keys
         expected_keys = ["include", "triggers"]
 
@@ -245,10 +248,8 @@ class TriggerManager:
         # Identify keys that are not in the expected keys
         unexpected_keys = list(set(top_level_keys) - set(expected_keys))
         if len(unexpected_keys) > 0:
-            prism.logging.fire_console_event(
-                prism.logging.UnexpectedTriggersYmlKeys(unexpected_keys),
-                [],
-                log_level='warn'
+            warning_events.append(
+                prism.logging.UnexpectedTriggersYmlKeysEvent(unexpected_keys)
             )
 
         # We definitely need the triggers YML to have `triggers`. The `include` key is
@@ -259,7 +260,7 @@ class TriggerManager:
             )
 
         # If nothing is raised, then return True
-        return True
+        return warning_events
 
     def create_trigger_instances(self,
         triggers_yml_path: Optional[Path],
@@ -336,16 +337,24 @@ class TriggerManager:
                 )
 
             # Check the triggers_yml structure
-            self.check_triggers_yml_structure(self.triggers_yml)
+            warning_events = self.check_triggers_yml_structure(self.triggers_yml)
             self.triggers = self.triggers_yml['triggers']
 
             # Add the paths in `include` to the project's sys.path
             if 'include' in self.triggers_yml.keys():
                 if len(self.triggers_yml['include']) > 0:
+
+                    # Add the paths to sys.path
                     self.prism_project.sys_path_engine.add_paths_to_sys_path(
-                        self.triggers_yml['include'],
+                        [Path(_p) for _p in self.triggers_yml['include']],
                         run_context
                     )
+
+                    # Add the paths to the project's sys.path.config. This will allow us
+                    # to properly remove them.
+                    for _p in self.triggers_yml['include']:
+                        if Path(_p) not in self.prism_project.sys_path_config:
+                            self.prism_project.sys_path_config.append(Path(_p))
 
             # Success triggers
             self.on_success_triggers = self.create_trigger_instances(
@@ -360,6 +369,9 @@ class TriggerManager:
                 self.prism_project.on_failure_triggers,
                 self.triggers
             )
+
+            # Return warning events
+            return warning_events
 
     def exec(self,
         trigger_type: str,
@@ -406,6 +418,9 @@ class TriggerManager:
                 event_list, True
             )
 
+        # Warning events
+        warning_events = setup_event_manager_output.outputs
+
         # Trigger header events
         triggers_to_exec = getattr(self, f"{trigger_type}_triggers")
         if len(triggers_to_exec) > 0:
@@ -418,6 +433,14 @@ class TriggerManager:
             if self.defaulted_to_project_dir:
                 event_list = prism.logging.fire_console_event(
                     prism.logging.TriggersPathNotDefined(),
+                    event_list,
+                    log_level='warn'
+                )
+
+            # Fire all other warnings encountered during setup
+            for ev in warning_events:
+                event_list = prism.logging.fire_console_event(
+                    ev,
                     event_list,
                     log_level='warn'
                 )
