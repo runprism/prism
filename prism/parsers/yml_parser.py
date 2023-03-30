@@ -63,11 +63,17 @@ class YamlParser(BaseParser):
         """
         Get environment variable {var}. Can be called in YAML file via {{ env(...) }}
         """
-        env_var = os.getenv(var)
-        if env_var is None:
-            return ""
-        else:
-            return env_var
+        val = os.environ.get(var, None)
+        if val is None:
+            raise prism.exceptions.EnvironmentVariableNotFoundException(var)
+        return val
+
+    def string_to_path(self, string: str):
+        """
+        Return string as a Path. This allows users to user pathlib's Path object in
+        their Jinja as they would in Python.
+        """
+        return Path(string)
 
     def create_yml_dict(self,
         rendered_str: str
@@ -103,7 +109,8 @@ class YamlParser(BaseParser):
             "wkdir": self.wkdir,
             "parent": self.parent,
             "env": self.env,
-            "concat": self.concat
+            "concat": self.concat,
+            "Path": self.string_to_path,
         }
 
         # Rendered string

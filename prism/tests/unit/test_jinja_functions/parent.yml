@@ -1,11 +1,6 @@
-jinja_commands:
-  - '{% set BASE_DIR = wkdir() %}'
-  - '{% set PARENT_DIR = parent(BASE_DIR) %}'
-
 profile_name:
-  dbt:
-    project_dir:
-    profiles_dir: '{{ PARENT_DIR }}'
-
-
-# EOF
+  adapters:
+    dbt:
+      type: dbt
+      project_dir:
+      profiles_dir: '{{ parent(wkdir()) }}'

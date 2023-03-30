@@ -21,6 +21,7 @@ from pathlib import Path
 import unittest
 
 # Prism imports
+import prism.exceptions
 from prism.parsers import yml_parser
 
 
@@ -38,14 +39,15 @@ ENV_DOESNT_EXIST = PROJECT_YML_TEST_CASES / 'env_doesnt_exist.yml'
 ENV_EXISTS = PROJECT_YML_TEST_CASES / 'env_exists.yml'
 PARENT = PROJECT_YML_TEST_CASES / 'parent.yml'
 WKDIR = PROJECT_YML_TEST_CASES / 'wkdir.yml'
+PATH_STUFF = PROJECT_YML_TEST_CASES / 'path_stuff.yml'
 
 # List of all test case .yml files
 ALL_TEST_CASE_YML_FILES = [
     CONCAT,
-    ENV_DOESNT_EXIST,
     ENV_EXISTS,
     PARENT,
-    WKDIR
+    WKDIR,
+    PATH_STUFF,
 ]
 
 
@@ -82,6 +84,7 @@ class TestJinjaFunctions(unittest.TestCase):
     ###################################################
     # Common test cases across prism_project.py files #
     ###################################################
+
     def test_load_yml(self):
         """
         Test that test case .yml files can be loaded
@@ -92,23 +95,24 @@ class TestJinjaFunctions(unittest.TestCase):
     #######################################
     # Test cases for individual functions #
     #######################################
+
     def test_env_exists(self):
         """
         env() function returns an environment variable
         """
         yml = self._load_profile_yml(ENV_EXISTS)
         expected_user = "/bin/bash"
-        actual_user = yml['profile_name']['snowflake']['config']['user']
+        actual_user = yml['profile_name']['adapters']['snowflake_adapter_name_here']['user']  # noqa: E501
         self.assertEqual(expected_user, actual_user)
 
     def test_env_doesnt_exist(self):
         """
         env() function returns a blank string if the environment variable doesn't exist
         """
-        yml = self._load_profile_yml(ENV_DOESNT_EXIST)
-        expected_user = ""
-        actual_user = yml['profile_name']['snowflake']['config']['user']
-        self.assertEqual(expected_user, actual_user)
+        with self.assertRaises(prism.exceptions.EnvironmentVariableNotFoundException) as cm:  # noqa: E501
+            _ = self._load_profile_yml(ENV_DOESNT_EXIST)
+        expected_msg = "environment variable `THIS_SHOULD_FAIL` not found"
+        self.assertEqual(expected_msg, str(cm.exception))
 
     def test_concat(self):
         """
@@ -124,7 +128,7 @@ class TestJinjaFunctions(unittest.TestCase):
         """
         yml = self._load_profile_yml(PARENT)
         expected_profiles_dir = PARENT.parent.parent
-        actual_profiles_dir = yml['profile_name']['dbt']['profiles_dir']
+        actual_profiles_dir = yml['profile_name']['adapters']['dbt']['profiles_dir']
         self.assertEqual(str(expected_profiles_dir), actual_profiles_dir)
 
     def test_wkdir(self):
@@ -133,5 +137,18 @@ class TestJinjaFunctions(unittest.TestCase):
         """
         yml = self._load_profile_yml(WKDIR)
         expected_profiles_dir = WKDIR.parent
-        actual_profiles_dir = yml['profile_name']['dbt']['profiles_dir']
+        actual_profiles_dir = yml['profile_name']['adapters']['dbt']['profiles_dir']
         self.assertEqual(str(expected_profiles_dir), actual_profiles_dir)
+    
+    def test_path(self):
+        """
+        Path(__file__) returns the path of the YAML file and can be manipulated like
+        Pathlib's Path object.
+        """
+        yml = self._load_profile_yml(PATH_STUFF)
+        expected_project_dir = PATH_STUFF
+        expected_profiles_dir = PATH_STUFF.parent
+        actual_project_dir = yml['profile_name']['adapters']['dbt']['project_dir']
+        actual_profiles_dir = yml['profile_name']['adapters']['dbt']['profiles_dir']
+        self.assertEqual(str(expected_project_dir), str(actual_project_dir))
+        self.assertEqual(str(expected_profiles_dir), str(actual_profiles_dir))

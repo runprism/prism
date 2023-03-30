@@ -1,6 +1,6 @@
 profile_name:
-  dbt:
-    project_dir:
-    profiles_dir: '{{ wkdir() }}'
-
-# EOF
+  adapters:
+    dbt:
+      type: dbt
+      project_dir:
+      profiles_dir: '{{ wkdir() }}'

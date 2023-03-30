@@ -1,7 +1,7 @@
 profile_name:
-  snowflake:
-    alias: conn
-    config:
+  adapters:
+    snowflake_adapter_name_here: # change this!
+      type: snowflake
       user: "{{ env('THIS_SHOULD_FAIL') }}"
       password:
       account:
@@ -9,6 +9,3 @@ profile_name:
       warehouse:
       database:
       schema:
-
-
-# EOF
