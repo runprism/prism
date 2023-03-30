@@ -139,7 +139,7 @@ class TestJinjaFunctions(unittest.TestCase):
         expected_profiles_dir = WKDIR.parent
         actual_profiles_dir = yml['profile_name']['adapters']['dbt']['profiles_dir']
         self.assertEqual(str(expected_profiles_dir), actual_profiles_dir)
-    
+
     def test_path(self):
         """
         Path(__file__) returns the path of the YAML file and can be manipulated like
