@@ -267,3 +267,16 @@ class FileNotFoundException(PrismException):
 
     def __str__(self):
         return self.message
+
+
+class EnvironmentVariableNotFoundException(PrismException):
+    """
+    Exception raise if agent YAML file already exists
+    """
+
+    def __init__(self, environment_var):
+        self.message = f"environment variable `{environment_var}` not found"
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
