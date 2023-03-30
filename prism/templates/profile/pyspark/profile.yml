@@ -15,6 +15,3 @@ profile_name:
         spark.task.cpus:
         spark.sql.broadcastTimeout:
         # Add additional config variables here!
-
-
-# EOF
