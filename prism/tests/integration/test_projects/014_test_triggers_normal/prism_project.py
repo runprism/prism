@@ -24,7 +24,6 @@ SLUG = generate_run_slug()  # don't delete this!
 # outside of your project structure.
 SYS_PATH_CONF = [
     Path(__file__).parent,
-    Path(__file__).parent.parent,
 ]
 
 

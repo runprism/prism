@@ -622,6 +622,14 @@ class CreatingTriggersEvent(Event):
 
 
 @dataclass
+class UnexpectedTriggersYmlKeys(Event):
+    unexpected_keys: List[str]
+
+    def message(self):
+        return f"Found unexpected keys in the triggers YML file: `{self.unexpected_keys}`"  # noqa: E501
+
+
+@dataclass
 class CreatingTasksEvent(Event):
 
     def message(self):

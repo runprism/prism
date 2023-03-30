@@ -142,10 +142,12 @@ class PrismTrigger:
         fn = trigger_spec["function"]
         fn_split = fn.split('.')
 
-        # If there is no parent module specified, then the function must be specified in
-        # prism_project.py
+        # There must be a parent module specified. If there isn't, then something is
+        # wrong.
         if len(fn_split) == 1:
-            return
+            raise prism.exceptions.RuntimeException(
+                message=f"no parent module specified for trigger `{trigger_name}`"
+            )
         else:
             exec(f"import {'.'.join(fn_split[:-1])}", run_context)
 
@@ -234,18 +236,26 @@ class TriggerManager:
         raises:
             InvalidTriggerException if triggers_yml fails any of the conditions above
         """
+        # Expected keys
+        expected_keys = ["include", "triggers"]
 
         # Check top-level keys
         top_level_keys = list(triggers_yml.keys())
-        if len(top_level_keys) > 1:
-            raise prism.exceptions.InvalidTriggerException(
-                message="too many top-level keys; should only be `triggers`"
+
+        # Identify keys that are not in the expected keys
+        unexpected_keys = list(set(top_level_keys) - set(expected_keys))
+        if len(unexpected_keys) > 0:
+            prism.logging.fire_console_event(
+                prism.logging.UnexpectedTriggersYmlKeys(unexpected_keys),
+                [],
+                log_level='warn'
             )
-        top_level_key = top_level_keys[0]
-        allowed_key = 'triggers'
-        if top_level_key != allowed_key:
+
+        # We definitely need the triggers YML to have `triggers`. The `include` key is
+        # optional.
+        if "triggers" not in top_level_keys:
             raise prism.exceptions.InvalidTriggerException(
-                message=f"invalid top-level key `{top_level_key}`; should only be `{allowed_key}`"  # noqa: E501
+                message="could not find `triggers` key in triggers YML file"
             )
 
         # If nothing is raised, then return True
@@ -278,7 +288,7 @@ class TriggerManager:
                 )
         return trigger_objs
 
-    def check_trigger_components(self):
+    def check_trigger_components(self, run_context: Dict[Any, Any]):
         """
         Confirm that all the components for triggers (i.e., the YAML file, the
         variables in prism_project.py, etc.) are properly defined.
@@ -301,7 +311,7 @@ class TriggerManager:
 
             if not isinstance(self.triggers_yml_path, Path):
                 raise prism.exceptions.InvalidTriggerException(
-                    message="something went wrong with triggers YAML path"
+                    message="something went wrong with triggers YML path"
                 )
 
             # If the triggers path isn't actually a file, throw an error
@@ -328,6 +338,14 @@ class TriggerManager:
             # Check the triggers_yml structure
             self.check_triggers_yml_structure(self.triggers_yml)
             self.triggers = self.triggers_yml['triggers']
+
+            # Add the paths in `include` to the project's sys.path
+            if 'include' in self.triggers_yml.keys():
+                if len(self.triggers_yml['include']) > 0:
+                    self.prism_project.sys_path_engine.add_paths_to_sys_path(
+                        self.triggers_yml['include'],
+                        run_context
+                    )
 
             # Success triggers
             self.on_success_triggers = self.create_trigger_instances(
@@ -376,7 +394,8 @@ class TriggerManager:
         setup_event_manager_output = setup_event_manager.manage_events_during_run(
             event_list=event_list,
             fire_exec_events=False,
-            fire_empty_line_events=False
+            fire_empty_line_events=False,
+            run_context=run_context
         )
         event_list = setup_event_manager_output.event_list
         if setup_event_manager_output.outputs == 0:

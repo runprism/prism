@@ -23,8 +23,7 @@ SLUG = generate_run_slug()  # don't delete this!
 # sys.path config. This gives your tasks access to local modules / packages that exist
 # outside of your project structure.
 SYS_PATH_CONF = [
-    Path(__file__).parent,
-    Path(__file__).parent.parent,
+    Path(__file__).parent
 ]
 
 

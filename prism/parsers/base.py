@@ -52,6 +52,10 @@ class BaseParser:
         # Load environment and template
         env = Environment(loader=FileSystemLoader(str(parent_path)))
         jinja_template = env.get_template(filename)
+        self.globals = jinja_template.globals
+
+        # Store the path of the file itself in `__file__`
+        self.globals["__file__"] = str(self.path)
 
         # Update template globals with inputted function dictinoary
         jinja_template.globals.update(func_dict)
