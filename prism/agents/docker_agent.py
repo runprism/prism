@@ -264,7 +264,9 @@ class Docker(Agent):
         """
         # Load the user's triggers YML
         triggers_yml_path = project.triggers_yml_path
-        if not Path(triggers_yml_path).is_file() or triggers_yml_path is None:
+        if triggers_yml_path is None:
+            return []
+        if not Path(triggers_yml_path).is_file():
             return []
 
         # Create the manager
