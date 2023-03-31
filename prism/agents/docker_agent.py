@@ -14,6 +14,7 @@ import prism.event_managers.base
 import prism.exceptions
 from prism.infra.project import PrismProject
 import prism.logging
+from prism.triggers import TriggerManager
 import prism.ui
 
 # Standard library imports
@@ -22,7 +23,7 @@ import docker
 import os
 from pathlib import Path
 import re
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from tempfile import TemporaryDirectory
 import shutil
 import json
@@ -252,6 +253,36 @@ class Docker(Agent):
         except Exception:
             return paths
 
+    def parse_triggers_path(self,
+        project: PrismProject
+    ) -> List[Path]:
+        """
+        Users can augment their sys.path by specifying paths in the `include` key in
+        triggers.yml. The paths under this key tell Prism where to look to import the
+        trigger functions specified. We will need to copy these over into our agent as
+        well.
+        """
+        # Load the user's triggers YML
+        triggers_yml_path = project.triggers_yml_path
+        if not Path(triggers_yml_path).is_file() or triggers_yml_path is None:
+            return []
+
+        # Create the manager
+        try:
+            triggers_manager = TriggerManager(
+                triggers_yml_path,
+                project
+            )
+            triggers_yml = triggers_manager.load_triggers_yml(triggers_yml_path)
+            include_paths = triggers_manager.get_include_paths(triggers_yml)
+            return include_paths
+
+        # For any error, just return. If there truly is an error in the project, then
+        # it will be revealed when the user runs the project in the agent's computing
+        # environment.
+        except Exception:
+            return []
+
     def prepare_paths_for_copy(self,
         project: PrismProject,
         tmpdir: str,
@@ -283,11 +314,14 @@ class Docker(Agent):
         # Get paths of files / directories associated with profiles
         profile_paths = self.parse_profile_paths(project)
 
+        # Get triggers paths
+        triggers_paths = self.parse_triggers_path(project)
+
         # Copy commands
         copy_commands = {}
 
         # Copy directories into tmpdir
-        for _dir in [profile_yml_dir, triggers_dir] + profile_paths:
+        for _dir in [profile_yml_dir, triggers_dir] + profile_paths + triggers_paths:
             if _dir is None:
                 continue
 
