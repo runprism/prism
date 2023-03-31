@@ -294,3 +294,7 @@ class TestAgent(unittest.TestCase):
         )
 
         _remove_logs()
+
+
+# Cleanup
+project.cleanup(project.run_context)

@@ -118,8 +118,9 @@ class PrismTrigger:
     def import_function(self,
         trigger_name: str,
         trigger_spec: Dict[Any, Any],
-        run_context: Dict[Any, Any]
-    ):
+        run_context: Dict[Any, Any],
+        mode="prod"
+    ) -> Optional[str]:
         """
         For function triggers, we may need to import the function from a module. Note
         that the user must ensure that the path to that module is contained in
@@ -149,7 +150,11 @@ class PrismTrigger:
                 message=f"no parent module specified for trigger `{trigger_name}`"
             )
         else:
-            exec(f"import {'.'.join(fn_split[:-1])}", run_context)
+            if mode == "prod":
+                exec(f"import {'.'.join(fn_split[:-1])}", run_context)
+                return None
+            else:
+                return f"import {'.'.join(fn_split[:-1])}"
 
     def execute_trigger(self,
         run_context: Dict[Any, Any]
@@ -259,6 +264,39 @@ class TriggerManager:
                 message="could not find `triggers` key in triggers YML file"
             )
 
+        # The value of `triggers` must be a dictionary
+        if not isinstance(triggers_yml["triggers"], dict):
+            msg = "\n".join([
+                "bad `triggers` format...use the following structure",
+                "",
+                "  triggers:",
+                "    <trigger name>",
+                "      type: function",
+                "      function: ...",
+                "      kwargs:",
+                "      arg1: value1",
+                "    <trigger_name>",
+                "      type: prism_project",
+                "      project_dir: ...",
+                "      context:",
+                "      var1: value2",
+            ])
+            raise prism.exceptions.InvalidTriggerException(message=msg)
+
+        # The value of `include` must be a list
+        if "include" in top_level_keys:
+            if not isinstance(triggers_yml["include"], list):
+                raise prism.exceptions.InvalidTriggerException(
+                    message="\n".join([
+                        "bad `include` format...use the following structure",
+                        "",
+                        "  include:",
+                        '    - "{{ Path(__file__).parent }}"',
+                        '    - <path 2>',
+                        '    - ...'
+                    ])
+                )
+
         # If nothing is raised, then return True
         return warning_events
 
@@ -288,6 +326,39 @@ class TriggerManager:
                     message=f"trigger `{name}` not found in `{triggers_yml_path}`"
                 )
         return trigger_objs
+
+    def load_triggers_yml(self, triggers_yml_path: Path):
+        """
+        Parse the YAML file. If it doesn't exist, then throw an error.
+
+        args:
+            triggers_yml_path: path to trigger YML file
+        returns:
+            trigger YML file as a dictionary
+        raises:
+            prism.exceptions.InvalidTriggerException if the file is not found
+        """
+        try:
+            parser = yml_parser.YamlParser(triggers_yml_path)
+            triggers_yml = parser.parse()
+            return triggers_yml
+        except jinja2.exceptions.TemplateNotFound:
+            raise prism.exceptions.InvalidTriggerException(
+                message=f"could not find `{self.triggers_yml_path}`"
+            )
+        except Exception as e:
+            raise e
+
+    def get_include_paths(self, triggers_yml: Dict[str, Any]) -> List[Path]:
+        """
+        Get the paths listed under `include`
+        """
+        if 'include' in triggers_yml.keys():
+            if len(triggers_yml['include']) > 0:
+                return [Path(_p) for _p in triggers_yml["include"]]
+
+        # Otherwise, return an empty list
+        return []
 
     def check_trigger_components(self, run_context: Dict[Any, Any]):
         """
@@ -322,13 +393,7 @@ class TriggerManager:
                 )
 
             # Parse the YAML file. If it doesn't exist, then throw an error.
-            try:
-                parser = yml_parser.YamlParser(self.triggers_yml_path)
-                self.triggers_yml = parser.parse()
-            except jinja2.exceptions.TemplateNotFound:
-                raise prism.exceptions.InvalidTriggerException(
-                    message=f"could not find `{self.triggers_yml_path}`"
-                )
+            self.triggers_yml = self.load_triggers_yml(self.triggers_yml_path)
 
             # If parsed file is empty, throw an error
             if self.triggers_yml == {}:
@@ -340,21 +405,19 @@ class TriggerManager:
             warning_events = self.check_triggers_yml_structure(self.triggers_yml)
             self.triggers = self.triggers_yml['triggers']
 
-            # Add the paths in `include` to the project's sys.path
-            if 'include' in self.triggers_yml.keys():
-                if len(self.triggers_yml['include']) > 0:
+            # Add the paths in `include` to the project's sys.path. Add the paths to
+            # sys.path
+            include_paths: List[Path] = self.get_include_paths(self.triggers_yml)
+            self.prism_project.sys_path_engine.add_paths_to_sys_path(
+                include_paths,
+                run_context
+            )
 
-                    # Add the paths to sys.path
-                    self.prism_project.sys_path_engine.add_paths_to_sys_path(
-                        [Path(_p) for _p in self.triggers_yml['include']],
-                        run_context
-                    )
-
-                    # Add the paths to the project's sys.path.config. This will allow us
-                    # to properly remove them.
-                    for _p in self.triggers_yml['include']:
-                        if Path(_p) not in self.prism_project.sys_path_config:
-                            self.prism_project.sys_path_config.append(Path(_p))
+            # Add the paths to the project's sys.path.config. This will allow us
+            # to properly remove them.
+            for _p in include_paths:
+                if _p not in self.prism_project.sys_path_config:
+                    self.prism_project.sys_path_config.append(Path(_p))
 
             # Success triggers
             self.on_success_triggers = self.create_trigger_instances(
