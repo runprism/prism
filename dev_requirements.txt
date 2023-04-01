@@ -6,4 +6,4 @@
 -e .[pyspark]
 -e .[dbt]
 -e .[docker]
--e .[test2]
+-e .[testing]
