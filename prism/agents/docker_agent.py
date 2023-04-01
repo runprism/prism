@@ -36,7 +36,7 @@ import json
 # For testing
 SERVER_URL = os.environ.get("__PRISM_TEST_DOCKER_SERVER_URL__", None)
 if SERVER_URL is not None:
-    client = docker.from_env(base_url=SERVER_URL)
+    client = docker.from_env(DOCKER_HOST=SERVER_URL)
 else:
     client = docker.from_env()
 
