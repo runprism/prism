@@ -33,7 +33,12 @@ import json
 # Docker client #
 #################
 
-client = docker.from_env()
+# For testing
+SERVER_URL = os.environ.get("__PRISM_TEST_DOCKER_SERVER_URL__", None)
+if SERVER_URL is not None:
+    client = docker.from_env(base_url=SERVER_URL)
+else:
+    client = docker.from_env()
 
 
 ####################
@@ -80,7 +85,10 @@ class Docker(Agent):
 
             # In addition, create a low-level API client. We need this to capture the
             # logs when actually building the image.
-            self.build_client = docker.APIClient(base_url=server_url)
+            if SERVER_URL is not None:
+                self.build_client = docker.APIClient(base_url=SERVER_URL)
+            else:
+                self.build_client = docker.APIClient(base_url=server_url)
 
             # Iterate through current images and get all images that resemble our image
             # name.

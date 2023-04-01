@@ -51,4 +51,5 @@ jobs:
         POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
         GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        __PRISM_TEST_DOCKER_SERVER_URL__: unix://Users/runner/.colima/docker.sock
       run: tox
