@@ -18,6 +18,8 @@ import os
 from pathlib import Path
 import unittest
 from typing import Any, Dict
+import pytest
+import sys
 
 # Prism imports
 from prism.cli.agent import AgentTask
@@ -25,6 +27,11 @@ from prism.infra.project import PrismProject
 from prism.agents.docker_agent import Docker
 import prism.constants
 import prism.exceptions
+
+
+# Skip these tests if we're running in Windows.
+if sys.platform.startswith("win"):
+    pytest.skip("Skipping agent tests on Windows", allow_module_level=True)
 
 
 #################################
