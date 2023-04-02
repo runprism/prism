@@ -80,7 +80,8 @@ class AgentTask(
         # Load the agent configuration
         agent_conf = self.load_agent_conf(
             agent_yml_path,
-            agent_filename
+            agent_filename,
+            prism_project
         )
 
         # Create agent instance
