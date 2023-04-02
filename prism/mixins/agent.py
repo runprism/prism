@@ -30,7 +30,8 @@ class AgentMixin():
     """
 
     def load_agent_yml(self,
-        agent_yml_path: Path
+        agent_yml_path: Path,
+        prism_project
     ) -> Dict[str, Any]:
         """
         Load agents.yml file and store in a dictionary
@@ -40,7 +41,7 @@ class AgentMixin():
         returns:
             agents YAML file as a dictionary
         """
-        parser = YamlParser(agent_yml_path)
+        parser = YamlParser(agent_yml_path, prism_project)
         agent_yml = parser.parse()
         return agent_yml
 

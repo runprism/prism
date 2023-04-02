@@ -399,7 +399,7 @@ class PrismProject():
 
         # Otherwise, try and load a template
         try:
-            parser = yml_parser.YamlParser(profile_yml_path)
+            parser = yml_parser.YamlParser(profile_yml_path, self)
             profile_yml = parser.parse()
             return profile_yml
 

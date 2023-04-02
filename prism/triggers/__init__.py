@@ -339,7 +339,10 @@ class TriggerManager:
             prism.exceptions.InvalidTriggerException if the file is not found
         """
         try:
-            parser = yml_parser.YamlParser(triggers_yml_path)
+            parser = yml_parser.YamlParser(
+                triggers_yml_path,
+                self.prism_project
+            )
             triggers_yml = parser.parse()
             return triggers_yml
         except jinja2.exceptions.TemplateNotFound:

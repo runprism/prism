@@ -53,6 +53,7 @@ class AgentTask(
     def load_agent_conf(self,
         agent_yml_path: Path,
         agent_filename: str,
+        prism_project: PrismProject,
     ):
         """
         Load the agent configuration from the agent YAML
@@ -63,7 +64,7 @@ class AgentTask(
         returns:
             agent configuration as a dictionary
         """
-        agent_yml = self.load_agent_yml(agent_yml_path)
+        agent_yml = self.load_agent_yml(agent_yml_path, prism_project)
         agent_conf = self.is_valid_agent_yml(agent_filename, agent_yml)
         return agent_conf
 

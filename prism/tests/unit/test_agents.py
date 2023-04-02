@@ -82,7 +82,7 @@ def _create_valid_docker_agent():
     """
     # Agent YAML is valid
     agent_fname = 'valid_docker.yml'
-    agent_yml = agent_task.load_agent_yml(TEST_AGENT / agent_fname)
+    agent_yml = agent_task.load_agent_yml(TEST_AGENT / agent_fname, project)
     conf = agent_task.is_valid_agent_yml(agent_fname, agent_yml)
 
     # Agent configuration is valid (this function is automatically called on object
@@ -125,7 +125,7 @@ class TestAgent(unittest.TestCase):
 
         # Iterate through dictionary
         for fname, msg in fname_expected_msg_dict.items():
-            agent_yml = agent_task.load_agent_yml(TEST_AGENT / fname)
+            agent_yml = agent_task.load_agent_yml(TEST_AGENT / fname, project)
             if fname == "invalid_docker_notype.yml":
                 with self.assertRaises(prism.exceptions.InvalidAgentsConfException) as cm:  # noqa: E501
                     agent_task.is_valid_agent_yml(fname, agent_yml)
@@ -146,7 +146,7 @@ class TestAgent(unittest.TestCase):
         # All invalid configurations
         agent_fname = 'invalid_docker_confs.yml'
         all_invalid_confs = agent_task.load_agent_yml(
-            TEST_AGENT / agent_fname
+            TEST_AGENT / agent_fname, project
         )
 
         # No `requirements`
@@ -178,13 +178,13 @@ class TestAgent(unittest.TestCase):
         # All invalid configurations
         invalid_agent_fname = 'invalid_docker_confs.yml'
         all_invalid_confs = agent_task.load_agent_yml(
-            TEST_AGENT / invalid_agent_fname
+            TEST_AGENT / invalid_agent_fname, project
         )
 
         # Requirements path exists
         valid_agent_fname = 'valid_docker_reqs.yml'
         reqs_exists_yml = agent_task.load_agent_yml(
-            TEST_AGENT / valid_agent_fname
+            TEST_AGENT / valid_agent_fname, project
         )
         reqs_exists_conf = agent_task.is_valid_agent_yml(
             valid_agent_fname,
@@ -277,7 +277,8 @@ class TestAgent(unittest.TestCase):
         agent_fname = "valid_docker_image.yml"
         agent_conf = agent_task.load_agent_conf(
             TEST_AGENT / agent_fname,
-            agent_fname
+            agent_fname,
+            project
         )
         agent = _create_docker_agent(
             agent_fname,

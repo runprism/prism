@@ -201,6 +201,7 @@ class TestTrigger(unittest.TestCase):
         """
         # Path of interest
         DUMMY_MODULES = Path(TEST_CASE_WKDIR) / 'dummy_modules'
+        print(prism_project.run_context['sys'].path)
 
         # In `prism_project.py`, we have `Path(__file__).parent` in `SYS_PATH_CONFIG`.
         # Therefore, `test_trigger_yml` should be in the project's sys.path.
