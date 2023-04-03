@@ -1,5 +1,6 @@
 agent:
   type: docker
+  image: <base image>
   server_url:  # URL to the docker server
   requirements:  # path to requirements.txt, relative to this file
   env:

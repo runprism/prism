@@ -61,7 +61,8 @@ class Docker(Agent):
 
         if mode == "prod":
             # Image name, version
-            self.image_name = f"prism-dockeragent-{self.agent_name}"
+            project_name = self.project.project_dir.name.replace("_", "-")
+            self.image_name = f"{project_name}-{self.agent_name}"
             self.image_version: Optional[str] = None
 
             # Get the server URL, if it exists
@@ -101,7 +102,7 @@ class Docker(Agent):
                 if img.tags == []:
                     continue
                 elif len(re.findall(
-                    r"^" + r"prism\-dockeragent\-" + self.agent_name + r"\:[0-9\.]+$",
+                    r"^" + project_name + r"\-" + self.agent_name + r"\:[0-9\.]+$",  # noqa: E501
                     img.tags[0]
                 )) > 0:  # noqa: E501
                     name = img.tags[0].split(":")[0]
@@ -487,7 +488,7 @@ class Docker(Agent):
                 image=f"{self.image_name}:{self.image_version}",
                 force=True
             )
-            self.image_version = new_img_version
+        self.image_version = new_img_version
 
     def run(self):
         """
