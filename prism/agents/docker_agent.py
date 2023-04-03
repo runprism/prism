@@ -379,6 +379,8 @@ class Docker(Agent):
                 raise prism.exceptions.InvalidAgentsConfException(
                     "`image` is not correctly specified... should be a string"
                 )
+            if agent_conf["image"] is None:
+                return prism.constants.DEFAULT_DOCKER_IMAGE
             return agent_conf["image"]
 
         # If the user doesn't specify a base image, then use the default image specified
