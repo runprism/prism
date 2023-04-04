@@ -78,9 +78,9 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         )
 
         # ------------------------------------------------------------------------------
-        # Get profiles dir
+        # Get profile YML path
 
-        profiles_filepath = self.prism_project.profiles_dir / 'profile.yml'
+        profile_yml_path = self.prism_project.profile_yml_path
 
         # ------------------------------------------------------------------------------
         # Create connection
@@ -97,7 +97,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
             event_list=event_list,
             fire_exec_events=False,
             profile_type=adapter_type,
-            profiles_filepath=profiles_filepath
+            profile_yml_path=profile_yml_path
         )
         success = event_manager_results.outputs
         event_to_fire = event_manager_results.event_to_fire

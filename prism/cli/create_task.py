@@ -1,5 +1,5 @@
 """
-SparkSubmit class definition, called via `prism spark-submit`
+Class associated with `prism create task` CLI command.
 
 Table of Contents
 - Imports
@@ -73,7 +73,7 @@ class CreateTaskTask(
             name=f"prism.templates.tasks.{task_type}"
         )
         template = template_module.TEMPLATE
-        task_template = Environment(loader=BaseLoader).from_string(template)
+        task_template = Environment(loader=BaseLoader).from_string(template)  # type: ignore # noqa: E501
 
         # Get the number of tasks to create and the task name
         task_number = self.args.number

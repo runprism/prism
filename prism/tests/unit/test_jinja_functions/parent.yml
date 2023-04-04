@@ -1,0 +1,6 @@
+profile_name:
+  adapters:
+    dbt:
+      type: dbt
+      project_dir:
+      profiles_dir: '{{ parent(wkdir()) }}'

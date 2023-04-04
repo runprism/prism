@@ -154,12 +154,15 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=TRIGGERS_NORMAL
         )
-        engine = SysPathEngine(prism_project, run_context)
+        engine = SysPathEngine(run_context)
         prism_project.exec(run_context, engine)
 
         # Triggers directory
-        triggers_dir = prism_project.get_triggers_dir(run_context)
-        self.assertEqual(str(triggers_dir), str(PRISM_PROJECT_PY_TEST_CASES))
+        triggers_yml_path = prism_project.get_triggers_yml_path(run_context)
+        self.assertEqual(
+            str(triggers_yml_path),
+            str(PRISM_PROJECT_PY_TEST_CASES / 'triggers.yml')
+        )
 
         # Triggers
         triggers = prism_project.get_triggers(run_context)
@@ -180,7 +183,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=ON_FAILURE_TRIGGERS_ONLY
         )
-        engine = SysPathEngine(prism_project, run_context)
+        engine = SysPathEngine(run_context)
         prism_project.exec(run_context, engine)
 
         # Triggers
@@ -202,7 +205,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=ON_SUCCESS_TRIGGERS_ONLY
         )
-        engine = SysPathEngine(prism_project, run_context)
+        engine = SysPathEngine(run_context)
         prism_project.exec(run_context, engine)
 
         # Triggers
@@ -224,7 +227,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=BAD_TRIGGER_KEY
         )
-        engine = SysPathEngine(prism_project, run_context)
+        engine = SysPathEngine(run_context)
         prism_project.exec(run_context, engine)
 
         # Triggers

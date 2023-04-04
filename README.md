@@ -12,7 +12,6 @@
 
 [![CI Linux](https://github.com/runprism/prism/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/runprism/prism/actions/workflows/ci-linux.yml)
 [![CI MacOS](https://github.com/runprism/prism/actions/workflows/ci-macos.yml/badge.svg)](https://github.com/runprism/prism/actions/workflows/ci-macos.yml)
-[![CI Windows](https://github.com/runprism/prism/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/runprism/prism/actions/workflows/ci-windows.yml)
 [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
 
 
@@ -41,7 +40,21 @@ pip install --upgrade pip
 pip install prism-ds
 ```
 
-Prism also supports several adapters! They can be installed with the following commands:
+To get started with Prism projects, check out our [documentation](https://docs.runprism.com). Some sections of interest include:
+
+- :key: [Fundamentals](https://docs.runprism.com/fundamentals)
+- :seedling: [CLI](https://docs.runprism.com/cli)
+- :electric_plug: [Integrations](https://docs.runprism.com/integrations)
+- :bulb: [Use Cases](https://docs.runprism.com/use-cases)
+
+In addition, check out some [example projects](https://github.com/runprism/prism_examples).
+
+
+## Integrations
+Prism integrates with a wide variety of third-party developer tools There are two kinds of integrations that Prism supports: adapters, and agents.
+
+### Adapters
+Adapters allow users to connect to data warehouses or analytics engines. Prism currently supports the following adapters:
 | Adapter      | Command |
 | ------------ | ----------- |
 | **dbt** | ```pip install "prism-ds[dbt]"``` |
@@ -52,14 +65,11 @@ Prism also supports several adapters! They can be installed with the following c
 | **Snowflake** | ```pip install "prism-ds[snowflake]"``` |
 | **Trino** | ```pip install "prism-ds[trino]"``` |
 
-To get started with Prism projects, check out our [documentation](https://docs.runprism.com). Some sections of interest include:
-
-- :key: [Fundamentals](https://docs.runprism.com/fundamentals)
-- :seedling: [CLI](https://docs.runprism.com/cli)
-- :electric_plug: [Integrations](https://docs.runprism.com/integrations)
-- :bulb: [Use Cases](https://docs.runprism.com/use-cases)
-
-In addition, check out some [example projects](https://github.com/runprism/prism_examples).
+### Agents
+Agents allow users to run their projects on external computing environments, e.g., Docker containers, EC2 instances, EMR clusters, and more. Prism currently supports the following agents:
+| Agent      | Command |
+| ------------ | ----------- |
+| **docker** | ```pip install "prism-ds[docker]"``` |
 
 
 ## Product Roadmap

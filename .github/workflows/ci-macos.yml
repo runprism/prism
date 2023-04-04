@@ -28,6 +28,14 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install tox tox-gh-actions
+    - name: Install docker
+      run: |
+        brew install docker
+        colima start
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
     - name: Test with tox
       env:
         SHELL: ${{ secrets.SHELL }}
@@ -42,4 +50,6 @@ jobs:
         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
         POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        __PRISM_TEST_DOCKER_SERVER_URL__: unix://Users/runner/.colima/docker.sock
       run: tox

@@ -24,7 +24,6 @@ SLUG = generate_run_slug()  # don't delete this!
 # outside of your project structure.
 SYS_PATH_CONF = [
     Path(__file__).parent,
-    Path(__file__).parent.parent,
 ]
 
 
@@ -34,7 +33,7 @@ THREADS = 1
 
 
 # Profile directory and name
-PROFILES_DIR = Path(__file__).parent  # location of `profiles.yml` file
+PROFILE_YML_PATH = Path(__file__).parent / 'profile.yml'
 PROFILE = None  # name of profile within `profiles.yml`
 
 
@@ -54,7 +53,7 @@ OUTPUT = WKDIR / 'output'
 
 
 # Triggers
-TRIGGERS_DIR = Path(__file__).parent
+TRIGGERS_YML_PATH = Path(__file__).parent / 'triggers.yml'
 TRIGGERS = {
     'on_success': ['test_trigger_function'],
     'on_failure': ['test_trigger_function'],

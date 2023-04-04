@@ -72,7 +72,7 @@ class Adapter(metaclass=MetaAdapter):
         Parse adapter dictionary and return inputted `var`
 
         args:
-            adapter_dict: adapter from profile.yml file represented as dict
+            adapter_dict: adapter from profile YML file represented as dict
             var: var to retrieve
             adapter_name: adapter name
             profile_name: name of profile containing adapter
@@ -83,11 +83,11 @@ class Adapter(metaclass=MetaAdapter):
             if k == var:
                 if v is None:
                     raise prism.exceptions.InvalidProfileException(
-                        message=f'`{var}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+                        message=f'`{var}` cannot be None - see `{adapter_name}` adapter in `{profile_name}` profile in profile YML'  # noqa: E501
                     )
                 return v
         raise prism.exceptions.InvalidProfileException(
-            message=f'`{var}` not found - see `{adapter_name}` adapter in `{profile_name}` profile in profile.yml'  # noqa: E501
+            message=f'`{var}` not found - see `{adapter_name}` adapter in `{profile_name}` profile in profile YML'  # noqa: E501
         )
 
     def parse_config(self):

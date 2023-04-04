@@ -3,9 +3,9 @@ jinja_commands:
   - '{% set CURR_PROFILE_NAME = concat(BASE_PROFILE_NAME, "_etl") %}'
 
 '{{ CURR_PROFILE_NAME }}':
-  snowflake:
-    alias: conn
-    config:
+  adapters:
+    snowflake_adapter_name_here: # change this!
+      type: snowflake
       user:
       password:
       account:
@@ -13,6 +13,3 @@ jinja_commands:
       warehouse:
       database:
       schema:
-
-
-# EOF

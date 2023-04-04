@@ -1,5 +1,5 @@
 """
-Mixins use to create tasks
+Mixin class for the CreateTask task
 
 Table of Contents
 - Imports
@@ -32,7 +32,7 @@ from jinja2 import Template
 
 class CreateTaskMixins:
     """
-    Mixin for Task task
+    Mixin for CreateTask task
     """
 
     def user_task_name_to_classname(self,

@@ -1,9 +1,15 @@
+include:
+  - "{{ Path(__file__).parent }}"
+
 triggers:
   test_trigger_good_structure:
     type: function
-    function: dummy_function
+    function: test_fn.test_agent_trigger
   test_trigger_no_type:
-    function: dummy_function
+    function: test_fn.test_agent_trigger
   test_trigger_invalid_type:
     type: other_type
-    function: dummy_function
+    function: test_fn.test_agent_trigger
+  test_agent_trigger:
+    type: function
+    function: test_fn.test_agent_trigger

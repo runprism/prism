@@ -1,0 +1,5 @@
+agent:
+  type: docker
+  requirements: reqs_test/requirements.txt
+  env:
+    env_var_1: value1

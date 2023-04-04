@@ -168,7 +168,7 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         connect_run = self._run_prism(args)
         self._test_profile_successfully_created(wkdir, connect_run)
 
-        # See contents of profile.yml
+        # See contents of profile YML
         yml_dict = self._profile_yml_as_dict(wkdir)
         self.assertEqual(expected_snowflake_dict, yml_dict)
 
@@ -192,7 +192,7 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         connect_run = self._run_prism(args)
         self._test_profile_successfully_created(wkdir, connect_run)
 
-        # See contents of profile.yml
+        # See contents of profile YML
         yml_dict = self._profile_yml_as_dict(wkdir)
         self.assertEqual(expected_pyspark_dict, yml_dict)
 
@@ -217,7 +217,7 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         connect_run = self._run_prism(args)
         self._test_profile_successfully_created(wkdir, connect_run)
 
-        # See contents of profile.yml
+        # See contents of profile YML
         yml_dict = self._profile_yml_as_dict(wkdir)
         self.assertEqual(expected_snowflake_dict, yml_dict)
 
@@ -227,7 +227,7 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         connect_run = self._run_prism(args)
         self._test_profile_successfully_created(wkdir, connect_run)
 
-        # See contents of profile.yml
+        # See contents of profile YML
         yml_dict = self._profile_yml_as_dict(wkdir)
         self.assertEqual(expected_snowflake_pyspark_dict, yml_dict)
 
@@ -252,7 +252,7 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
         connect_run = self._run_prism(args)
         self._test_profile_successfully_created(wkdir, connect_run)
 
-        # See contents of profile.yml
+        # See contents of profile YML
         yml_dict = self._profile_yml_as_dict(wkdir)
         self.assertEqual(expected_snowflake_dict, yml_dict)
 

@@ -620,6 +620,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the compiled directory
         self._remove_compiled_dir(wkdir)
 
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
     def _check_trigger_output(self, wkdir: Path):
         """
         Our test trigger function outputs a .txt file to the wkdir / 'output' folder.
@@ -682,6 +685,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the compiled directory
         self._remove_compiled_dir(wkdir)
 
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
     def test_trigger_on_failure(self):
         """
         Test on_failure trigger
@@ -714,9 +720,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the compiled directory
         self._remove_compiled_dir(wkdir)
 
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
     def test_trigger_no_directory(self):
         """
-        Test trigger function when there is no `TRIGGERS_DIR` in prism_project.py
+        Test trigger function when there is no `TRIGGERS_YML_PATH` in prism_project.py
         """
 
         # Set working directory
@@ -745,6 +754,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
 
     def test_bad_trigger(self):
         """
@@ -775,3 +787,75 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
+    def test_triggers_with_extra_key(self):
+        """
+        An extra key in `triggers.yml` should raise a warning
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '017_test_triggers_extra_key'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run all modules downstream of module01.py
+        args = ['run']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = self._check_trigger_events(
+            'success',
+            {'module01.py': 'DONE'},
+            ["TriggersHeaderEvent", "UnexpectedTriggersYmlKeysEvent"]
+        ) + _run_task_end_events('TaskSuccessfulEndEvent')
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Check that manifest was created
+        self._check_trigger_output(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
+    def test_triggers_no_include(self):
+        """
+        A trigger function in an external module/package without an accompanying
+        `include` path will throw an error.
+        """
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '018_test_triggers_no_include'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run all modules downstream of module01.py
+        args = ['run']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = self._check_trigger_events(
+            'success',
+            {'module01.py': 'DONE'},
+            ["TriggersHeaderEvent"],
+            'ERROR'
+        ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()

@@ -1,5 +1,5 @@
 """
-SparkSubmit class definition, called via `prism spark-submit`
+Class associated with `prism create trigger` CLI command.
 
 Table of Contents
 - Imports
@@ -76,7 +76,7 @@ class CreateTriggerTask(
 
         # Fire events
         event_list = fire_console_event(
-            prism.logging.SettingUpTriggersEvent(),
+            prism.logging.CreatingTriggersEvent(),
             event_list,
             log_level='info'
         )
@@ -84,9 +84,10 @@ class CreateTriggerTask(
         # ------------------------------------------------------------------------------
         # Get triggers dir
 
-        if self.prism_project.triggers_dir is None:
-            self.prism_project.triggers_dir = self.prism_project.project_dir
-        triggers_filepath = self.prism_project.triggers_dir / 'triggers.yml'
+        if self.prism_project.triggers_yml_path is None:
+            triggers_filepath = self.prism_project.project_dir / 'triggers.yml'
+        else:
+            triggers_filepath = self.prism_project.triggers_yml_path
 
         # ------------------------------------------------------------------------------
         # Create trigger

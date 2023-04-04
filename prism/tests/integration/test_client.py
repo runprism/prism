@@ -54,7 +54,9 @@ expected_snowflake_pyspark_dict = test_connect.expected_snowflake_pyspark_dict
 # Test case class definition #
 ##############################
 
-class TestClient(integration_test_class.IntegrationTestCase):
+class TestClient(
+    integration_test_class.IntegrationTestCase
+):
 
     def test_prism_dag_init(self):
         """
@@ -148,7 +150,7 @@ class TestClient(integration_test_class.IntegrationTestCase):
         """
         dag = prism.client.PrismDAG(P006_SIMPLE_PROJECT_WITH_PROFILE)
 
-        # Remove profile.yml
+        # Remove profile YML
         self._remove_profile_yml(P006_SIMPLE_PROJECT_WITH_PROFILE)
 
         # Connect to snowflake
@@ -159,7 +161,7 @@ class TestClient(integration_test_class.IntegrationTestCase):
         # Try connecting to Snowflake again, this should produce an error
         with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
             dag.connect(connection_type='snowflake')
-        expected_msg = 'profile of type `snowflake` already found in profile.yml'
+        expected_msg = 'profile of type `snowflake` already found in profile YML'
         self.assertEqual(expected_msg, str(cm.exception))
 
         # Connect to PySpark
@@ -221,7 +223,6 @@ class TestClient(integration_test_class.IntegrationTestCase):
 
         # -------------------------------------------------------
         # With `module` param
-
         dag5.run(modules=['module01.py'])
 
         # Confirm creation of manifest
@@ -314,7 +315,6 @@ class TestClient(integration_test_class.IntegrationTestCase):
         """
         Test task output retrieval
         """
-
         # Use P005_SIMPLE_PROJECT_NO_NULL for testing
         dag5 = prism.client.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
 
@@ -349,7 +349,6 @@ class TestClient(integration_test_class.IntegrationTestCase):
         """
         Test pipeline output retrieval
         """
-
         # Use P005_SIMPLE_PROJECT_NO_NULL for testing
         dag5 = prism.client.PrismDAG(P005_SIMPLE_PROJECT_NO_NULL)
 

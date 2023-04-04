@@ -30,13 +30,14 @@ from prism.profiles import meta, adapter  # noqa: F401
 
 class Profile:
     """
-    Class associated with profile.yml. You can think of a Profile object as being a
+    Class associated with profile YML. You can think of a Profile object as being a
     dictionary of adapters
     """
 
     def __init__(self,
         profile_yml: Dict[str, Any],
         profile_name: str,
+        fire_warnings: bool = True
     ):
         self.profile_yml = profile_yml
         self.profile_name = profile_name
@@ -49,10 +50,10 @@ class Profile:
 
         # Check if all profiles exist
         self.bool_all_profiles_exist = self.all_profiles_exist(
-            self.profile_name, self.profile_yml, self.named_profile, True
+            self.profile_name, self.profile_yml, self.named_profile, fire_warnings
         )
 
-        # Check top-level keys -- should only be 'adapters' and 'clusters'
+        # Check top-level keys -- should only be 'adapters'
         if self.bool_all_profiles_exist:
             self.check_profile_toplevel_keys(self.named_profile)
             self.check_nonempty_profile(self.named_profile)
@@ -61,11 +62,11 @@ class Profile:
         profile: Dict[str, Optional[Dict[str, Any]]],
     ) -> bool:
         """
-        Check that `profile.yml` has at most two top-level keys, and that those
+        Check that profile YML has at most two top-level keys, and that those
         top-level keys are valid
 
         args:
-            profile: profile.yml represented as a dict
+            profile: profile YML represented as a dict
         """
         valid_keys_str = ','.join(
             [f'`{k}`' for k in prism.constants.VALID_PROFILE_KEYS]
@@ -78,7 +79,7 @@ class Profile:
 
         if len(invalid_profile_keys) > 0:
             raise prism.exceptions.InvalidProfileException(
-                message=f"invalid keys `{invalid_profile_keys}` in profile.yml; supported keys are [{valid_keys_str}]"  # noqa: E501
+                message=f"invalid keys `{invalid_profile_keys}` in profile YML; supported keys are [{valid_keys_str}]"  # noqa: E501
             )
 
         # If no exception has been raised, return true
@@ -88,18 +89,18 @@ class Profile:
         profile: Dict[str, Optional[Dict[str, Any]]],
     ) -> bool:
         """
-        Check that `profile.yml` is non-empty
+        Check that profile YML is non-empty
 
         args:
-            profile: profile.yml represented as a dict
+            profile: profile YML represented as a dict
         """
         if not isinstance(profile, dict):
             raise prism.exceptions.InvalidProfileException(
-                message="invalid syntax in `profile.yml`"
+                message="invalid syntax in profile YML"
             )
         if profile == {} or profile is None:
             raise prism.exceptions.InvalidProfileException(
-                message="named profile in profile.yml is empty"
+                message="named profile in profile YML is empty"
             )
 
         # If no exception has been raised, return true
@@ -113,7 +114,7 @@ class Profile:
         Load profile associated with {profile_name} from {profile_yml}
 
         args:
-            profile_yml: profile.yml file represented as dict
+            profile_yml: profile YML file represented as dict
             profile_name: name of profile to use for project
         returns:
             profile associated with inputted profile_name
@@ -143,7 +144,7 @@ class Profile:
         args:
             args: user arguments
             prism_project_py: prism_project.py represented as a str
-            profiles_path: path to profile.yml
+            profiles_path: path to profile YML
             fire_warnings: boolean indicating whether to fire warning console events;
                            default is True
         returns:
@@ -161,7 +162,7 @@ class Profile:
                     prism.logging.fire_console_event(e2, [], 0, log_level='warn')
             return False
 
-        # Handle cases where the profile.yml is non-empty
+        # Handle cases where the profile YML is non-empty
         else:
 
             # If missing profile name, then the named profile will, by definition, be
@@ -202,7 +203,7 @@ class Profile:
                     types.append(adapter_conf['type'])
                 return types
 
-            # The profile.yml does not contain an adapters top-level key
+            # The profile YML does not contain an adapters top-level key
             except KeyError:
                 return []
 
@@ -228,7 +229,7 @@ class Profile:
                     # If the adapter is not supported, throw an error
                     if adapter_type not in prism.constants.VALID_ADAPTERS:
                         raise prism.exceptions.InvalidProfileException(
-                            message=f"invalid adapter `{adapter_type}` in profile.yml"
+                            message=f"invalid adapter `{adapter_type}` in profile YML"
                         )
 
                     # Import
@@ -241,7 +242,7 @@ class Profile:
                     )
                     self.adapters_obj_dict[name] = user_defined_adapter
 
-            # The profile.yml does not contain an adapters top-level key. This is
+            # The profile YML does not contain an adapters top-level key. This is
             # checked upon profile instantiation, so this should never happen.
             except KeyError:
                 pass

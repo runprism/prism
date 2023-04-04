@@ -78,7 +78,7 @@ class ModulesDirNotFoundException(PrismException):
 
 class YamlNotFoundException(PrismException):
     """
-    Exception raised if the profile.yml not found
+    Exception raised if the profile YML not found
     """
 
     def __init__(self, message):
@@ -198,6 +198,84 @@ class TaskAlreadyExistsException(PrismException):
 
     def __init__(self, message):
         self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class InvalidAgentsYmlException(PrismException):
+    """
+    Exception raise if agent configuration is invalid
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class InvalidAgentsConfException(PrismException):
+    """
+    Exception raise if agent configuration is invalid
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class NotImplementedException(PrismException):
+    """
+    Exception raise if agent configuration is invalid
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class AgentAlreadyExistsException(PrismException):
+    """
+    Exception raise if agent YAML file already exists
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class FileNotFoundException(PrismException):
+    """
+    Exception raise if agent YAML file already exists
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class EnvironmentVariableNotFoundException(PrismException):
+    """
+    Exception raise if agent YAML file already exists
+    """
+
+    def __init__(self, environment_var):
+        self.message = f"environment variable `{environment_var}` not found"
         super().__init__(self.message)
 
     def __str__(self):

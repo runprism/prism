@@ -118,8 +118,9 @@ class PrismTrigger:
     def import_function(self,
         trigger_name: str,
         trigger_spec: Dict[Any, Any],
-        run_context: Dict[Any, Any]
-    ):
+        run_context: Dict[Any, Any],
+        mode="prod"
+    ) -> Optional[str]:
         """
         For function triggers, we may need to import the function from a module. Note
         that the user must ensure that the path to that module is contained in
@@ -142,12 +143,18 @@ class PrismTrigger:
         fn = trigger_spec["function"]
         fn_split = fn.split('.')
 
-        # If there is no parent module specified, then the function must be specified in
-        # prism_project.py
+        # There must be a parent module specified. If there isn't, then something is
+        # wrong.
         if len(fn_split) == 1:
-            return
+            raise prism.exceptions.RuntimeException(
+                message=f"no parent module specified for trigger `{trigger_name}`"
+            )
         else:
-            exec(f"import {'.'.join(fn_split[:-1])}", run_context)
+            if mode == "prod":
+                exec(f"import {'.'.join(fn_split[:-1])}", run_context)
+                return None
+            else:
+                return f"import {'.'.join(fn_split[:-1])}"
 
     def execute_trigger(self,
         run_context: Dict[Any, Any]
@@ -178,14 +185,11 @@ class TriggerManager:
     """
 
     def __init__(self,
-        triggers_dir: Optional[Path],
+        triggers_yml_path: Optional[Path],
         prism_project: PrismProject,
     ):
         self.prism_project = prism_project
-        if triggers_dir is None:
-            self.triggers_yml_path = None
-        else:
-            self.triggers_yml_path = Path(triggers_dir) / 'triggers.yml'
+        self.triggers_yml_path = triggers_yml_path
         self.flag_has_triggers_yml_path = self.triggers_yml_path is not None
 
         # This object will only be instantiated after the PrismProject has been
@@ -237,22 +241,64 @@ class TriggerManager:
         raises:
             InvalidTriggerException if triggers_yml fails any of the conditions above
         """
+        # Warning events
+        warning_events = []
+
+        # Expected keys
+        expected_keys = ["include", "triggers"]
 
         # Check top-level keys
         top_level_keys = list(triggers_yml.keys())
-        if len(top_level_keys) > 1:
-            raise prism.exceptions.InvalidTriggerException(
-                message="too many top-level keys; should only be `triggers`"
-            )
-        top_level_key = top_level_keys[0]
-        allowed_key = 'triggers'
-        if top_level_key != allowed_key:
-            raise prism.exceptions.InvalidTriggerException(
-                message=f"invalid top-level key `{top_level_key}`; should only be `{allowed_key}`"  # noqa: E501
+
+        # Identify keys that are not in the expected keys
+        unexpected_keys = list(set(top_level_keys) - set(expected_keys))
+        if len(unexpected_keys) > 0:
+            warning_events.append(
+                prism.logging.UnexpectedTriggersYmlKeysEvent(unexpected_keys)
             )
 
+        # We definitely need the triggers YML to have `triggers`. The `include` key is
+        # optional.
+        if "triggers" not in top_level_keys:
+            raise prism.exceptions.InvalidTriggerException(
+                message="could not find `triggers` key in triggers YML file"
+            )
+
+        # The value of `triggers` must be a dictionary
+        if not isinstance(triggers_yml["triggers"], dict):
+            msg = "\n".join([
+                "bad `triggers` format...use the following structure",
+                "",
+                "  triggers:",
+                "    <trigger name>",
+                "      type: function",
+                "      function: ...",
+                "      kwargs:",
+                "      arg1: value1",
+                "    <trigger_name>",
+                "      type: prism_project",
+                "      project_dir: ...",
+                "      context:",
+                "      var1: value2",
+            ])
+            raise prism.exceptions.InvalidTriggerException(message=msg)
+
+        # The value of `include` must be a list
+        if "include" in top_level_keys:
+            if not isinstance(triggers_yml["include"], list):
+                raise prism.exceptions.InvalidTriggerException(
+                    message="\n".join([
+                        "bad `include` format...use the following structure",
+                        "",
+                        "  include:",
+                        '    - "{{ Path(__file__).parent }}"',
+                        '    - <path 2>',
+                        '    - ...'
+                    ])
+                )
+
         # If nothing is raised, then return True
-        return True
+        return warning_events
 
     def create_trigger_instances(self,
         triggers_yml_path: Optional[Path],
@@ -281,7 +327,43 @@ class TriggerManager:
                 )
         return trigger_objs
 
-    def check_trigger_components(self):
+    def load_triggers_yml(self, triggers_yml_path: Path):
+        """
+        Parse the YAML file. If it doesn't exist, then throw an error.
+
+        args:
+            triggers_yml_path: path to trigger YML file
+        returns:
+            trigger YML file as a dictionary
+        raises:
+            prism.exceptions.InvalidTriggerException if the file is not found
+        """
+        try:
+            parser = yml_parser.YamlParser(
+                triggers_yml_path,
+                self.prism_project
+            )
+            triggers_yml = parser.parse()
+            return triggers_yml
+        except jinja2.exceptions.TemplateNotFound:
+            raise prism.exceptions.InvalidTriggerException(
+                message=f"could not find `{self.triggers_yml_path}`"
+            )
+        except Exception as e:
+            raise e
+
+    def get_include_paths(self, triggers_yml: Dict[str, Any]) -> List[Path]:
+        """
+        Get the paths listed under `include`
+        """
+        if 'include' in triggers_yml.keys():
+            if len(triggers_yml['include']) > 0:
+                return [Path(_p) for _p in triggers_yml["include"]]
+
+        # Otherwise, return an empty list
+        return []
+
+    def check_trigger_components(self, run_context: Dict[Any, Any]):
         """
         Confirm that all the components for triggers (i.e., the YAML file, the
         variables in prism_project.py, etc.) are properly defined.
@@ -304,7 +386,7 @@ class TriggerManager:
 
             if not isinstance(self.triggers_yml_path, Path):
                 raise prism.exceptions.InvalidTriggerException(
-                    message="something went wrong with triggers YAML path"
+                    message="something went wrong with triggers YML path"
                 )
 
             # If the triggers path isn't actually a file, throw an error
@@ -314,13 +396,7 @@ class TriggerManager:
                 )
 
             # Parse the YAML file. If it doesn't exist, then throw an error.
-            try:
-                parser = yml_parser.YamlParser(self.triggers_yml_path)
-                self.triggers_yml = parser.parse()
-            except jinja2.exceptions.TemplateNotFound:
-                raise prism.exceptions.InvalidTriggerException(
-                    message=f"could not find `{self.triggers_yml_path}`"
-                )
+            self.triggers_yml = self.load_triggers_yml(self.triggers_yml_path)
 
             # If parsed file is empty, throw an error
             if self.triggers_yml == {}:
@@ -329,8 +405,22 @@ class TriggerManager:
                 )
 
             # Check the triggers_yml structure
-            self.check_triggers_yml_structure(self.triggers_yml)
+            warning_events = self.check_triggers_yml_structure(self.triggers_yml)
             self.triggers = self.triggers_yml['triggers']
+
+            # Add the paths in `include` to the project's sys.path. Add the paths to
+            # sys.path
+            include_paths: List[Path] = self.get_include_paths(self.triggers_yml)
+            self.prism_project.sys_path_engine.add_paths_to_sys_path(
+                include_paths,
+                run_context
+            )
+
+            # Add the paths to the project's sys.path.config. This will allow us
+            # to properly remove them.
+            for _p in include_paths:
+                if _p not in self.prism_project.sys_path_config:
+                    self.prism_project.sys_path_config.append(Path(_p))
 
             # Success triggers
             self.on_success_triggers = self.create_trigger_instances(
@@ -345,6 +435,9 @@ class TriggerManager:
                 self.prism_project.on_failure_triggers,
                 self.triggers
             )
+
+            # Return warning events
+            return warning_events
 
     def exec(self,
         trigger_type: str,
@@ -379,7 +472,8 @@ class TriggerManager:
         setup_event_manager_output = setup_event_manager.manage_events_during_run(
             event_list=event_list,
             fire_exec_events=False,
-            fire_empty_line_events=False
+            fire_empty_line_events=False,
+            run_context=run_context
         )
         event_list = setup_event_manager_output.event_list
         if setup_event_manager_output.outputs == 0:
@@ -389,6 +483,9 @@ class TriggerManager:
             return TaskRunReturnResult(
                 event_list, True
             )
+
+        # Warning events
+        warning_events = setup_event_manager_output.outputs
 
         # Trigger header events
         triggers_to_exec = getattr(self, f"{trigger_type}_triggers")
@@ -402,6 +499,14 @@ class TriggerManager:
             if self.defaulted_to_project_dir:
                 event_list = prism.logging.fire_console_event(
                     prism.logging.TriggersPathNotDefined(),
+                    event_list,
+                    log_level='warn'
+                )
+
+            # Fire all other warnings encountered during setup
+            for ev in warning_events:
+                event_list = prism.logging.fire_console_event(
+                    ev,
                     event_list,
                     log_level='warn'
                 )

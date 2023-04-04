@@ -71,7 +71,7 @@ class PrismHooks:
         Get dbt model as a Pandas DataFrame
 
         args:
-            adapter_name: name of dbt adapter in `profile.yml`
+            adapter_name: name of dbt adapter in profile YML
             target_1: dbt model (or package)
             target_2: dbt model (if `target_1` is a package); default is None
         returns:

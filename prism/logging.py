@@ -37,11 +37,13 @@ from prism.ui import (
     YELLOW,
     RESET,
     BRIGHT_GREEN,
+    BRIGHT_YELLOW,
     BOLD,
     CYAN,
     MAGENTA,
-    GRAY,
+    HEADER_GRAY,
     GRAY_PINK,
+    ORANGE_BROWN,
     TERMINAL_WIDTH,
 )
 
@@ -121,14 +123,69 @@ def custom_ljust(string: str, width: int, char: str) -> str:
 # Create logger #
 #################
 
+# Agent level num
+AGENT_LEVEL = logging.INFO + 5
+
+
+# Add logging level
+def add_logging_level(level_name, level_num, method_name=None):
+    """
+    Comprehensively adds a new logging level to the `logging` module and the
+    currently configured logging class. Inspired heavily by the answer here:
+    https://stackoverflow.com/a/35804945/1691778
+
+    args:
+        level_name: desired level name
+        level_num: number associated with level
+        method_name: method name used to invoke log level. If not specified,
+                     `level_name.lower()` is used.
+    return:
+        `level_name` becomes an attribute of the `logging` module with the value
+        `level_num`
+    """
+    if not method_name:
+        method_name = level_name.lower()
+
+    if hasattr(logging, level_name):
+        raise AttributeError('{} already defined in logging module'.format(level_name))
+    if hasattr(logging, method_name):
+        raise AttributeError('{} already defined in logging module'.format(method_name))
+    if hasattr(logging.getLoggerClass(), method_name):
+        raise AttributeError('{} already defined in logger class'.format(method_name))
+
+    # This method was inspired by the answers to Stack Overflow post
+    # http://stackoverflow.com/q/2183233/2988730, especially
+    # http://stackoverflow.com/a/13638084/2988730
+    def logForLevel(self, message, *args, **kwargs):
+        if self.isEnabledFor(level_num):
+            self._log(level_num, message.format(**kwargs), args)
+
+    def logToRoot(message, *args, **kwargs):
+        logging.log(level_num, message.format(**kwargs), *args)
+
+    # Add level
+    logging.addLevelName(level_num, level_name)
+    setattr(logging, level_name, level_num)
+    setattr(logging.getLoggerClass(), method_name, logForLevel)
+    setattr(logging, method_name, logToRoot)
+
+
+add_logging_level('AGENT', AGENT_LEVEL)
+
+
 class FormatterWithAnsi(logging.Formatter):
 
     logging_format = "%(asctime)s | {color}{level}{reset} | %(message)s"
+    agent_logging_format = "%(message)s"
 
     FORMATS = {
         logging.INFO: logging_format.format(color=CYAN, level="INFO ", reset=RESET),
         logging.WARNING: logging_format.format(color=YELLOW, level="WARN ", reset=RESET),  # noqa: E501
         logging.ERROR: logging_format.format(color=RED, level="ERROR", reset=RESET),
+        logging.DEBUG: logging_format.format(
+            color=ORANGE_BROWN, level="DEBUG", reset=RESET
+        ),
+        logging.AGENT: agent_logging_format  # type: ignore
     }
 
     def format(self, record):
@@ -160,8 +217,8 @@ def set_up_logger(args: argparse.Namespace):
                 obj.setLevel(logging.WARN)
             elif level == 'error':
                 obj.setLevel(logging.ERROR)
-            elif level == 'critical':
-                obj.setLevel(logging.CRITICAL)
+            elif level == 'debug':
+                obj.setLevel(logging.DEBUG)
             return obj
 
         # Set the appropriate log level
@@ -170,7 +227,6 @@ def set_up_logger(args: argparse.Namespace):
         # Stream handler
         handler = logging.StreamHandler()
         handler = _set_level(handler, args.log_level)
-        # console_formatter = logging.Formatter(fmt="%(levelname)s | %(message)s")
         handler.setFormatter(FormatterWithAnsi())
 
         # File handler -- remove ANSI codes
@@ -273,21 +329,21 @@ class ProfileAlreadyExists(Event):
 class ProfileNameExistsYamlDoesNotExist(Event):
 
     def message(self):
-        return f'{YELLOW}`PROFILE` var found in prism_project.py but profile.yml not found{RESET}'  # noqa: E501
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but profile YML not found{RESET}'  # noqa: E501
 
 
 @dataclass
 class ProfileNameExistsNamedProfileDoesNotExist(Event):
 
     def message(self):
-        return f'{YELLOW}`PROFILE` var found in prism_project.py but named profile not found in profile.yml{RESET}'  # noqa: E501
+        return f'{YELLOW}`PROFILE` var found in prism_project.py but named profile not found in profile YML{RESET}'  # noqa: E501
 
 
 @dataclass
 class ProfileNameDoesNotExistYamlExists(Event):
 
     def message(self):
-        return f'{YELLOW}profile.yml found but `PROFILE` var not found in prism_project.py{RESET}'  # noqa: E501
+        return f'{YELLOW}profile YML found but `PROFILE` var not found in prism_project.py{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -501,10 +557,10 @@ class ProjectDirNotInSysPath(Event):
 
 
 @dataclass
-class ProfileDirWarningEvent(Event):
+class ProfileYmlWarningEvent(Event):
 
     def message(self):
-        return f'{YELLOW}`PROFILES_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
+        return f'{YELLOW}`PROFILE_YML_PATH` not found in prism_project.py; defaulting to `profile.yml` in project directory{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -535,7 +591,7 @@ class HeaderEvent(Event):
 
     def message(self):
         header_fix = int((TERMINAL_WIDTH - len(' ' + escape_ansi(self.header_str()) + ' ')) / 2)  # noqa: E501
-        return f'{GRAY}{"=" * header_fix} {self.header_str()} {"=" * header_fix}{RESET}'
+        return f'{HEADER_GRAY}{"=" * header_fix} {self.header_str()} {"=" * header_fix}{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -543,7 +599,7 @@ class TasksHeaderEvent(HeaderEvent):
     msg: str
 
     def header_str(self):
-        return f'tasks ({GRAY_PINK}{self.msg}{GRAY})'
+        return f'tasks ({GRAY_PINK}{self.msg}{HEADER_GRAY})'
 
 
 @dataclass
@@ -555,14 +611,22 @@ class TriggersHeaderEvent(HeaderEvent):
 class TriggersPathNotDefined(Event):
 
     def message(self):
-        return f'{YELLOW}`TRIGGERS_DIR` not found in prism_project.py; defaulting to project directory{RESET}'  # noqa: E501
+        return f'{YELLOW}`TRIGGERS_YML_PATH` not found in prism_project.py; defaulting to `triggers.yml` in project directory{RESET}'  # noqa: E501
 
 
 @dataclass
-class SettingUpTriggersEvent(Event):
+class CreatingTriggersEvent(Event):
 
     def message(self):
-        return 'Setting up triggers...'
+        return 'Creating triggers.yml...'
+
+
+@dataclass
+class UnexpectedTriggersYmlKeysEvent(Event):
+    unexpected_keys: List[str]
+
+    def message(self):
+        return f"{YELLOW}found unexpected keys in the triggers YML file: `{self.unexpected_keys}`{RESET}"  # noqa: E501
 
 
 @dataclass
@@ -573,6 +637,14 @@ class CreatingTasksEvent(Event):
 
 
 @dataclass
+class CreatingAgentYamlEvent(Event):
+    filepath: str
+
+    def message(self):
+        return f'Creating {self.filepath}...'
+
+
+@dataclass
 class DeprecationEvent(Event):
     lineno: int
     deprecated_fn: str
@@ -580,6 +652,43 @@ class DeprecationEvent(Event):
 
     def message(self):
         return f"{YELLOW}<line {self.lineno}>: the {self.deprecated_fn} method is deprecated, use {self.updated_fn} instead{RESET}"  # noqa: E501
+
+
+@dataclass
+class MultipleAgentsFound(Event):
+    image_name: str
+    latest_version: str
+
+    def message(self):
+        return f"More than one agent found like {self.image_name}...defaulting to {self.latest_version}"  # noqa: E501
+
+
+@dataclass
+class CreatingAgentEvent(Event):
+
+    def message(self):
+        return 'Creating agent...'
+
+
+@dataclass
+class DefaultServerURLEvent(Event):
+
+    def message(self):
+        return f"Did not find `server_url` in configuration...defaulting to {BRIGHT_YELLOW}{prism.constants.DEFAULT_SERVER_URL}{RESET}"  # noqa: E501
+
+
+@dataclass
+class StreamingLogsStartEvent(Event):
+
+    def message(self):
+        return 'Streaming agent logs...'
+
+
+@dataclass
+class StreamingLogsEndEvent(Event):
+
+    def message(self):
+        return 'Done streaming agent logs'
 
 
 def deprecated(deprecated_fn: str, updated_fn: str):
@@ -630,7 +739,7 @@ def fire_console_event(
         event: instance of Event class
         event_list: list of events
         sleep: number of seconds to pause after firing the event
-        log_level: one of `info`, `warn`, `error`, or `critical`
+        log_level: one of `info`, `warn`, `error`, or `debug`
     returns:
         event_list with `event` appended
     """
@@ -641,8 +750,8 @@ def fire_console_event(
             DEFAULT_LOGGER.warning(event.message())  # type: ignore
         elif log_level == "error":
             DEFAULT_LOGGER.error(event.message())  # type: ignore
-        elif log_level == "critical":
-            DEFAULT_LOGGER.critical(event.message())  # type: ignore
+        elif log_level == "debug":
+            DEFAULT_LOGGER.debug(event.message())  # type: ignore
 
     # Sleep
     time.sleep(sleep)

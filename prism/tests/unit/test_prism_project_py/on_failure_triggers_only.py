@@ -22,7 +22,7 @@ THREADS = os.cpu_count()
 
 
 # Profile directory and name
-PROFILES_DIR = Path(__file__).parent  # location of `profiles.yml` file
+PROFILE_YML_PATH = Path(__file__).parent / 'profile.yml'
 PROFILE = 'hi'  # name of profile within `profiles.yml`
 
 
@@ -42,7 +42,7 @@ OUTPUT = WKDIR / 'output'
 
 
 # Triggers
-TRIGGERS_DIR = Path(__file__).parent  # location of `triggers.yml` file
+TRIGGERS_YML_PATH = Path(__file__).parent / 'triggers.yml'  # location of `triggers.yml` file
 TRIGGERS = {
     'on_failure': ["test_fn"],
 }

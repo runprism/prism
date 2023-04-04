@@ -20,7 +20,7 @@ from typing import Any, Callable, List, Optional, Union
 import prism.logging
 import prism.exceptions
 from prism.logging import Event, fire_console_event, fire_empty_line_event
-from prism.ui import RED, GREEN, BLUE, RESET
+from prism.ui import RED, GREEN, EVENT_COLOR, RESET
 
 
 ####################
@@ -60,7 +60,7 @@ class BaseEventManager:
         Create ExecutionEvent informing user of task execution
         """
         e = prism.logging.ExecutionEvent(
-            msg=f"RUNNING {BLUE}{self.name}{RESET}",
+            msg=f"RUNNING {EVENT_COLOR}{self.name}{RESET}",
             num=self.idx,
             total=self.total,
             status="RUN",
@@ -78,7 +78,7 @@ class BaseEventManager:
         """
         execution_time = time.time() - start_time
         e = prism.logging.ExecutionEvent(
-            msg=f"{GREEN}FINISHED{RESET} {BLUE}{self.name}{RESET}",
+            msg=f"{GREEN}FINISHED{RESET} {EVENT_COLOR}{self.name}{RESET}",
             num=self.idx,
             total=self.total,
             status="DONE",
@@ -96,7 +96,7 @@ class BaseEventManager:
         """
         execution_time = time.time() - start_time
         e = prism.logging.ExecutionEvent(
-            msg=f"{RED}ERROR{RESET} {BLUE}{self.name}{RESET}",
+            msg=f"{RED}ERROR{RESET} {EVENT_COLOR}{self.name}{RESET}",
             num=self.idx,
             total=self.total,
             status="ERROR",

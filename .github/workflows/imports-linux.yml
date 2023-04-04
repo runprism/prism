@@ -27,8 +27,11 @@ jobs:
         pip install .[snowflake]
         pip install .[bigquery]
         pip install .[redshift]
+        pip install .[postgres]
+        pip install .[trino]
         pip install .[pyspark]
         pip install .[dbt]
+        pip install .[docker]
 
 
 # EOF

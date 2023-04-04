@@ -82,8 +82,11 @@ class SysHandlerMixin:
         Add project directory to sys.path
         """
         exec('import sys', globals_dict)
-        if str(project_dir) not in globals_dict['sys'].path:
-            globals_dict['sys'].path.insert(0, str(project_dir))
+
+        # We only handle the sys.path stuff when defining the run context at the
+        # beginning of a project run (e.g., we never call this when executing specific
+        # tasks).
+        globals_dict['sys'].path.insert(0, str(project_dir))
         return globals_dict
 
     def remove_sys_path(self, project_dir: Path, globals_dict: Dict[Any, Any]):
@@ -94,7 +97,6 @@ class SysHandlerMixin:
         return globals_dict
 
     def remove_project_modules(self,
-        base_sys_modules: Dict[str, Any],
         paths: List[Path],
         globals_dict: Dict[Any, Any]
     ):

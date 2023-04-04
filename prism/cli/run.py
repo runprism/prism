@@ -22,7 +22,6 @@ from prism.logging import fire_console_event, fire_empty_line_event
 from prism.event_managers import base as base_event_manager
 from prism.infra import executor as prism_executor
 from prism.triggers import TriggerManager
-from prism.infra.sys_path import SysPathEngine
 
 # Ohter library imports
 import json
@@ -85,17 +84,17 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         # ------------------------------------------------------------------------------
         # Run the sys.path engine
 
-        sys_path_engine = SysPathEngine(
-            self.prism_project, self.prism_project.run_context
+        sys_path_engine = self.prism_project.sys_path_engine
+        self.run_context = sys_path_engine.modify_sys_path(
+            self.prism_project.sys_path_config
         )
-        self.run_context = sys_path_engine.modify_sys_path()
 
         # ------------------------------------------------------------------------------
         # Prepare triggers
 
-        triggers_dir = self.prism_project.triggers_dir
+        triggers_yml_path = self.prism_project.triggers_yml_path
         trigger_manager = TriggerManager(
-            triggers_dir,
+            triggers_yml_path,
             self.prism_project,
         )
 

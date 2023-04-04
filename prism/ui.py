@@ -23,9 +23,20 @@ BRIGHT_WHITE = "\u001b[37;1m"
 BRIGHT_YELLOW = "\u001b[33;1m"
 BRIGHT_GREEN = "\u001b[32;1m"
 BOLD = "\u001b[1m"
-GRAY = "\u001b[38;5;240m"
+HEADER_GRAY = "\u001b[0m"
 GRAY_PINK = "\u001b[38;5;96m"
+ORANGE_BROWN = "\u001b[38;5;180m"
 
+# Event colors
+EVENT_COLOR = "\u001b[38;5;102m"
+
+# Agent colors
+AGENT_EVENT = "\u001b[38;5;32m"
+AGENT_WHICH_BUILD = "\u001b[38;5;178m"
+AGENT_WHICH_RUN = "\u001b[38;5;10m"
+
+# 178
+# 32
 
 ##################
 # Terminal width #

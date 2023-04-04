@@ -1,0 +1,10 @@
+agent:
+  type: docker
+  requirements: requirements.txt
+  env:
+    env_var_1: value1
+agent2:
+  type: docker
+  requirements: requirements.txt
+  env:
+    env_var_1: value1

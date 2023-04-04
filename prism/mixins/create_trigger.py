@@ -1,5 +1,5 @@
 """
-Mixin classes for each task
+Mixin class for the CreateTrigger task
 
 Table of Contents
 - Imports
@@ -33,7 +33,7 @@ from prism.triggers import PrismTrigger
 
 class CreateTriggersMixin():
     """
-    Mixin for GenerateTrigger task
+    Mixin for CreateTrigger task
     """
 
     def create_directory(self,
@@ -135,7 +135,7 @@ class CreateTriggersMixin():
             trigger_type: trigger type (either `function` or `prism_project`)
             triggers_filepath: path to triggers.yml
         returns:
-            profile.yml with added profile of type `trigger_type`
+            profile YML with added profile of type `trigger_type`
         """
         # If the profile doesn't exist, then create it
         if not triggers_filepath.is_file():
