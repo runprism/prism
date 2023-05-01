@@ -44,8 +44,8 @@ using Python!
 
 To get started, navigate to your newly created project "{project_name}" and try
 running the following commands:
-    prism compile
-    prism run
+    > $ prism compile
+    > $ prism run
 
 Consult the documentation here for more information on how to get started.
     {docs_url}
