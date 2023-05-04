@@ -65,7 +65,8 @@ class PrismHooks:
     def dbt_ref(self,
         adapter_name: str,
         target_1: str,
-        target_2: Optional[str] = None
+        target_2: Optional[str] = None,
+        target_version: Optional[str] = None
     ) -> pd.DataFrame:
         """
         Get dbt model as a Pandas DataFrame
@@ -84,5 +85,5 @@ class PrismHooks:
                 message=f'adapter `{adapter_name}` not defined'
             )
 
-        df = dbt_project.handle_ref(target_1, target_2)
+        df = dbt_project.handle_ref(target_1, target_2, target_version)
         return df

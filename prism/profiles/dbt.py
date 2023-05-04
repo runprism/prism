@@ -106,15 +106,15 @@ class Dbt(Adapter):
             profile_target=self.dbt_profiles_target
         )
 
-        # Initialize flags and compile task
-        self.compile_task = self.initialize_compile_task(self.dbt_profiles_dir, config)
-        dbt.tracking.initialize_tracking(self.dbt_profiles_dir)
-
-        # Manifest
-        self.manifest = self.get_dbt_manifest(config)
-
         # Get adapter
         self.adapter = self.get_dbt_adapter(config)
+
+        # Initialize flags and compile task
+        dbt.tracking.initialize_from_flags(True, self.dbt_profiles_dir)
+        self.manifest = self.get_dbt_manifest(config)
+        self.compile_task = self.initialize_compile_task(
+            self.dbt_profiles_dir, config, self.manifest
+        )
 
     def parse_adapter_dict(self,
         adapter_dict: Dict[str, Optional[str]],
@@ -224,7 +224,8 @@ class Dbt(Adapter):
 
     def initialize_compile_task(self,
         profiles_dir: str,
-        dbt_config: RuntimeConfig
+        dbt_config: RuntimeConfig,
+        manifest,
     ):
         """
         Initialize the compile task and call _runtime_initialize(). This must be done
@@ -234,7 +235,7 @@ class Dbt(Adapter):
             profiles_dir: directory of dbt profiles
         """
         # Initialize tracking
-        dbt.tracking.initialize_tracking(profiles_dir)
+        dbt.tracking.initialize_from_flags(True, profiles_dir)
 
         # All the arguments to the compile task can be None or empty
         selector_name = None
@@ -247,7 +248,7 @@ class Dbt(Adapter):
 
         # Initialize compile task. No need to call _runtime_initialize, because we do
         # not need to read the graph
-        compile_task = CompileTask(args, dbt_config)
+        compile_task = CompileTask(args, dbt_config, manifest)
         return compile_task
 
     def get_dbt_manifest(self,
@@ -280,6 +281,7 @@ class Dbt(Adapter):
     def get_parsed_model_node(self,
         target_model_name: str,
         target_model_package: Optional[str],
+        target_model_version: Optional[str],
         project_dir: str,
         manifest: Manifest
     ) -> ResultNode:
@@ -303,6 +305,7 @@ class Dbt(Adapter):
         target_model: MaybeNonSource = manifest.resolve_ref(
             target_model_name=target_model_name,
             target_model_package=target_model_package,
+            target_model_version=target_model_version,
             current_project=project_dir,
             node_package=project_dir
         )
@@ -409,7 +412,8 @@ class Dbt(Adapter):
 
     def handle_ref(self,
         target_1: str,
-        target_2: Optional[str] = None
+        target_2: Optional[str] = None,
+        target_version: Optional[str] = None,
     ) -> pd.DataFrame:
         """
         Download a dbt model into a Pandas DataFrame:
@@ -430,6 +434,7 @@ class Dbt(Adapter):
         target_model = self.get_parsed_model_node(
             target_model_name,
             target_package_name,
+            target_version,
             self.dbt_project_dir,
             self.manifest
         )

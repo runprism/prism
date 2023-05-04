@@ -248,7 +248,6 @@ class TestClient(
 
         # -------------------------------------------------------
         # Without `module` param
-
         dag5.run()
 
         # Confirm creation of outputs
