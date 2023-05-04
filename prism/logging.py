@@ -430,9 +430,9 @@ class ExecutionEvent(Event):
     def __str__(self):
         """
         ExecutionEvent messages are either:
-            RUNNING {event.name}
-            FINISHED {event.name}
-            ERROR {event.name}
+            RUNNING EVENT {event.name}
+            FINISHED EVENT {event.name}
+            ERROR IN EVENT {event.name}
 
         Add name of event (after removing event status and ANSI codes) to string
         representation of event.
@@ -444,9 +444,14 @@ class ExecutionEvent(Event):
         status_regex = re.compile('(RUNNING|FINISHED|ERROR)')
         msg_no_ansi_status = status_regex.sub('', msg_no_ansi)
 
+        # Remove EVENT and quotation marks
+        event_name_str = msg_no_ansi_status \
+            .replace("IN EVENT", "") \
+            .replace("EVENT", "") \
+            .replace("'", "")
+
         # Remove all trailing / leading spaces
-        event_name_str = msg_no_ansi_status.strip()
-        return super().__str__() + " - " + event_name_str + " - " + self.status
+        return super().__str__() + " - " + event_name_str.strip() + " - " + self.status
 
     def message(self):
         message = self.msg
@@ -601,7 +606,7 @@ class TasksHeaderEvent(HeaderEvent):
     msg: str
 
     def header_str(self):
-        return f'tasks ({GRAY_PINK}{self.msg}{HEADER_GRAY})'
+        return f"tasks {GRAY_PINK}'{self.msg}'{HEADER_GRAY}"
 
 
 @dataclass

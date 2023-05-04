@@ -517,7 +517,7 @@ class TriggerManager:
             cb_event_manager = BaseEventManager(
                 idx=None,
                 total=None,
-                name=f'{trigger_type} trigger {cb.name}',
+                name=f'{cb.name}',
                 full_tb=full_tb,
                 func=cb.execute_trigger
             )

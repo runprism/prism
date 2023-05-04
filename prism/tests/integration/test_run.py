@@ -635,7 +635,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertEqual('This is outputted from the trigger function!', trigger_txt)
 
     def _check_trigger_events(self,
-        trigger_type: str,
         execution_event_dict: Dict[str, str],
         circa_trigger_header_event: List[str] = ['TriggersHeaderEvent'],
         final_status: str = "DONE"
@@ -649,8 +648,8 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             ["EmptyLineEvent"] + \
             circa_trigger_header_event + \
             [
-                f"ExecutionEvent - on_{trigger_type} trigger test_trigger_function - RUN",  # noqa: E501
-                f"ExecutionEvent - on_{trigger_type} trigger test_trigger_function - {final_status}",  # noqa: E501
+                "ExecutionEvent - test_trigger_function - RUN",  # noqa: E501
+                f"ExecutionEvent - test_trigger_function - {final_status}",  # noqa: E501
             ]
         return expected_events
 
@@ -674,7 +673,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            'success',
             {'module01.py': 'DONE'}
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -708,7 +706,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            'failure',
             {'module02.py': 'ERROR'},
             ["ExecutionErrorEvent", "TriggersHeaderEvent"]
         ) + ["SeparatorEvent"]
@@ -743,7 +740,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            'success',
             {'module01.py': 'DONE'},
             ["TriggersHeaderEvent", "TriggersPathNotDefined"]
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
@@ -778,7 +774,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            'success',
             {'module01.py': 'DONE'},
             ["TriggersHeaderEvent"],
             'ERROR'
@@ -811,7 +806,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            'success',
             {'module01.py': 'DONE'},
             ["TriggersHeaderEvent", "UnexpectedTriggersYmlKeysEvent"]
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
@@ -847,7 +841,6 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            'success',
             {'module01.py': 'DONE'},
             ["TriggersHeaderEvent"],
             'ERROR'

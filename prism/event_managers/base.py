@@ -60,7 +60,7 @@ class BaseEventManager:
         Create ExecutionEvent informing user of task execution
         """
         e = prism.logging.ExecutionEvent(
-            msg=f"RUNNING {EVENT_COLOR}{self.name}{RESET}",
+            msg=f"RUNNING EVENT {EVENT_COLOR}'{self.name}'{RESET}",
             num=self.idx,
             total=self.total,
             status="RUN",
@@ -78,7 +78,7 @@ class BaseEventManager:
         """
         execution_time = time.time() - start_time
         e = prism.logging.ExecutionEvent(
-            msg=f"{GREEN}FINISHED{RESET} {EVENT_COLOR}{self.name}{RESET}",
+            msg=f"{GREEN}FINISHED{RESET} EVENT {EVENT_COLOR}'{self.name}'{RESET}",
             num=self.idx,
             total=self.total,
             status="DONE",
@@ -96,7 +96,7 @@ class BaseEventManager:
         """
         execution_time = time.time() - start_time
         e = prism.logging.ExecutionEvent(
-            msg=f"{RED}ERROR{RESET} {EVENT_COLOR}{self.name}{RESET}",
+            msg=f"{RED}ERROR{RESET} IN EVENT {EVENT_COLOR}'{self.name}'{RESET}",
             num=self.idx,
             total=self.total,
             status="ERROR",
