@@ -244,8 +244,9 @@ class Profile:
 
             # The profile YML does not contain an adapters top-level key. This is
             # checked upon profile instantiation, so this should never happen.
-            except KeyError:
-                pass
+            except KeyError as e:
+                raise e
+                # pass
 
     def get_adapters_obj_dict(self):
         """

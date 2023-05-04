@@ -44,8 +44,8 @@ using Python!
 
 To get started, navigate to your newly created project "{project_name}" and try
 running the following commands:
-    prism compile
-    prism run
+    > $ prism compile
+    > $ prism run
 
 Consult the documentation here for more information on how to get started.
     {docs_url}
@@ -175,7 +175,7 @@ class InitTask(prism.cli.base.BaseTask):
             ),
             event_list,
             0,
-            log_level='info'
+            log_level='agent'
         )
         event_list = fire_console_event(
             prism.logging.SeparatorEvent(),

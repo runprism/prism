@@ -219,6 +219,8 @@ def set_up_logger(args: argparse.Namespace):
                 obj.setLevel(logging.ERROR)
             elif level == 'debug':
                 obj.setLevel(logging.DEBUG)
+            elif level == 'agent':
+                obj.setLevel(logging.AGENT)  # type: ignore
             return obj
 
         # Set the appropriate log level
@@ -752,6 +754,8 @@ def fire_console_event(
             DEFAULT_LOGGER.error(event.message())  # type: ignore
         elif log_level == "debug":
             DEFAULT_LOGGER.debug(event.message())  # type: ignore
+        elif log_level == "agent":
+            DEFAULT_LOGGER.agent(event.message())  # type: ignore
 
     # Sleep
     time.sleep(sleep)
