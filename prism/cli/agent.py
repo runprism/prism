@@ -108,6 +108,9 @@ class AgentTask(
         if args.which == "agent-run":
             return agent
 
+        elif args.which == "agent-delete":
+            agent.delete()
+
         # Otherwise, we either want to build the agent (`prism agent apply`) or build &
         # run the agent (`prism agent build`). We run the agent in a separate function,
         # so focus on just building it for now.
@@ -184,11 +187,22 @@ class AgentTask(
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
+        # Delete the agent
+
+        # If the user wants to delete the agent, then execute the delete function and
+        # return
+        if self.args.which == "agent-delete":
+            event_list = fire_console_event(
+                prism.logging.DeletingAgentEvent(),
+                event_list
+            )
+
+        # ------------------------------------------------------------------------------
         # Create the agent
 
         # Fire a log event indicating that we're creating the agent (we only do this for
         # `agent-apply` and `agent-build`).
-        if self.args.which in ["agent-apply", "agent-build"]:
+        elif self.args.which in ["agent-apply", "agent-build"]:
             event_list = fire_console_event(
                 prism.logging.CreatingAgentEvent(),
                 event_list
@@ -229,10 +243,7 @@ class AgentTask(
 
         # ------------------------------------------------------------------------------
         # Execute the agent
-
-        # If we built the agents and streamed the logs, then fire an empty line event.
-        if self.args.which in ["agent-apply", "agent-build"]:
-            event_list = fire_empty_line_event(event_list)
+        event_list = fire_empty_line_event(event_list)
 
         # Only execute the agent with `agent-run` or `agent-build`
         if self.args.which in ["agent-run", "agent-build"]:

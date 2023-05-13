@@ -280,3 +280,29 @@ class EnvironmentVariableNotFoundException(PrismException):
 
     def __str__(self):
         return self.message
+
+
+class ClusterNotFoundException(PrismException):
+    """
+    Exception raise if the EMR agent (cluster) is not found
+    """
+
+    def __init__(self, cluster_id: str):
+        self.message = f"cluster `{cluster_id}` not found!"
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class AwsException(PrismException):
+    """
+    Exception raise if the EMR agent (cluster) is not found
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message

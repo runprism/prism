@@ -169,31 +169,11 @@ class Docker(Agent):
             "env": dict
         }
 
-        # Check required keys
-        for _key, _type in required_keys.items():
-            if _key not in list(agent_conf.keys()):
-                raise prism.exceptions.InvalidAgentsConfException(
-                    message=f"`{_key}` not in agent `{self.agent_name}` configuration"
-                )
-
-            if not isinstance(agent_conf[_key], _type):
-                raise prism.exceptions.InvalidAgentsConfException(
-                    message=f"`{_key}` is not the correct type"
-                )
-
-        # Check optional keys, if they exist
-        for _key, _type in optional_keys.items():  # type: ignore
-            if _key in list(agent_conf.keys()):
-                if (
-                    agent_conf[_key] is not None
-                    and not isinstance(agent_conf[_key], _type)  # noqa: W503
-                ):
-                    raise prism.exceptions.InvalidAgentsConfException(
-                        message=f"`{_key}` is not the correct type"
-                    )
-
-        # If no exception has been raised, return True
-        return True
+        return self.check_conf_keys(
+            agent_conf,
+            required_keys,
+            optional_keys
+        )
 
     def _copy_file_dir(self,
         src: Optional[Union[str, Path]],
