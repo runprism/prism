@@ -14,7 +14,7 @@ Table of Contents
 import os
 from pathlib import Path
 import shutil
-from typing import Any
+from typing import Any, Optional
 import stat
 
 import prism.constants
@@ -53,7 +53,7 @@ class AwsMixin():
         ec2_client: Any,
         key_name: str,
         directory: Path = Path(os.path.expanduser("~/.aws"))
-    ) -> Path:
+    ) -> Optional[Path]:
         """
         Create a PEM key pair. This PEM key is required to SSH / copy files into our EC2
         instance / EMR cluster. We will call this function before the user first creates
@@ -87,28 +87,3 @@ class AwsMixin():
         # by `agent apply` to execute the operation. For now, return the path. We'll
         # save out a JSON with this path in the agent class.
         return Path(directory / f"{key_name}.pem")
-
-    def delete_key_pair(self,
-        ec2_client: Any,
-        key_name: str,
-        directory: Path = Path(os.path.expanduser("~/.aws"))
-    ) -> Path:
-        """
-        Create a PEM key pair. This PEM key is required to SSH / copy files into our EC2
-        instance / EMR cluster.
-
-        args:
-            client: Boto3 EC2 client
-            key_name: name of the new key pair
-            directory: directory in which to place the keypair; default is ~/.aws/
-        returns:
-            path to newly created PEM key
-        raises:
-            UnauthorizedOperation if the user does not have the required permissions to
-            create a key pair
-        """
-        _ = ec2_client.delete_key_pair(
-            KeyName=key_name,
-        )
-        if Path(directory / f"{key_name}.pem").is_file():
-            os.unlink(Path(directory / f"{key_name}.pem"))

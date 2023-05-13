@@ -16,6 +16,7 @@ Table of Contents
 ###########
 
 # Standard library imports
+from argparse import Namespace
 from dataclasses import dataclass
 from datetime import datetime
 import os
@@ -61,7 +62,7 @@ class DbtRuntimeConfigArgs:
 
 
 @dataclass
-class InitializeFlagsArgs:
+class InitializeFlagsArgs(Namespace):
     profiles_dir: str
     use_colors: Optional[bool]
 

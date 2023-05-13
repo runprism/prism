@@ -27,7 +27,6 @@ from enum import Enum
 import json
 import os
 from pathlib import Path
-import re
 import time
 from typing import Any, Dict, List, Optional
 import subprocess
@@ -76,12 +75,12 @@ class Ec2(
 
         # Get previous instance data.
         if not Path(prism.constants.INTERNAL_FOLDER / 'ec2.json').is_file():
-            self.instance_id = None
-            self.public_dns_name = None
-            self.security_group_id = None
-            self.key_name = None
-            self.pem_key_path = None
-            self.state = None
+            self.instance_id: Optional[str] = None
+            self.public_dns_name: Optional[str] = None
+            self.security_group_id: Optional[str] = None
+            self.key_name: Optional[str] = None
+            self.pem_key_path: Optional[Path] = None
+            self.state: Optional[str] = None
         else:
             with open(Path(prism.constants.INTERNAL_FOLDER / 'ec2.json'), 'r') as f:
                 data = json.loads(f.read())
@@ -105,7 +104,7 @@ class Ec2(
             if "pem_key_path" in data["files"].keys():
                 self.pem_key_path = Path(data["files"]["pem_key_path"])
 
-    def write_json(self, data: Dict[str, str]):
+    def write_json(self, data: Dict[str, Dict[str, Any]]):
         """
         Write `data` to ~/.prism/ec2.json
 
@@ -167,7 +166,7 @@ class Ec2(
         returns:
             dictionary of resources
         """
-        resources = {}
+        resources: Dict[str, Optional[Dict[str, str]]] = {}
 
         # Key pair
         resources["key_pair"] = None
@@ -222,7 +221,7 @@ class Ec2(
     def check_instance_data(self,
         ec2_client: Any,
         instance_id: Optional[str]
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """
         Check if the instance exists
 
@@ -238,7 +237,7 @@ class Ec2(
                 "state": ...,
             }
         """
-        results = {}
+        results: Dict[str, Any] = {}
 
         # If the instance is None, then return an empty dictionary. This happens if the
         # user is creating their first instance or deleted their previous agent and is
@@ -697,7 +696,7 @@ class Ec2(
 
     def parse_instance_type(self,
         agent_conf: Dict[str, Any]
-    ) -> str:
+    ) -> Any:
         """
         Get the user-specified instance type from the agent's configuration
 
@@ -783,7 +782,7 @@ class Ec2(
             universal_newlines=True,
         )
         while True:
-            output = process.stdout.readline()
+            output = process.stdout.readline()  # type: ignore
             if process.poll() is not None:
                 break
             if output:
@@ -840,7 +839,7 @@ class Ec2(
             self.ec2_client.delete_key_pair(
                 KeyName=self.key_name
             )
-            os.unlink(self.pem_key_path)
+            os.unlink(str(self.pem_key_path))
 
         # Instance
         if self.instance_id is None:
