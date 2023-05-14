@@ -27,6 +27,7 @@ from enum import Enum
 import json
 import os
 from pathlib import Path
+import re
 import time
 from typing import Any, Dict, List, Optional
 import subprocess
@@ -63,6 +64,7 @@ class Ec2(
         # Bash dir
         self.SCRIPTS_DIR = f"{os.path.dirname(__file__)}/scripts"
         self.AGENT_APPLY_SCRIPT = f"{self.SCRIPTS_DIR}/apply.sh"
+        self.AGENT_RUN_SCRIPT = f"{self.SCRIPTS_DIR}/run.sh"
 
         # Create the client
         self.aws_cli()
@@ -486,6 +488,9 @@ class Ec2(
                 f"{log_prefix} | Using existing security group {log_security_group_id}"
             )
 
+        # Log instance ID template
+        log_instance_id_template = f"{prism.ui.MAGENTA}{{instance_id}}{prism.ui.RESET}"
+
         # Instance
         if resources["instance"] is None:
             instance = ec2_resource.create_instances(
@@ -512,9 +517,8 @@ class Ec2(
             instance_id = instance[0].id
 
             # Log
-            log_instance_id = f"{prism.ui.MAGENTA}{instance_id}{prism.ui.RESET}"
             prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | Created EC2 instance with ID {log_instance_id}"
+                f"{log_prefix} | Created EC2 instance with ID {log_instance_id_template.format(instance_id=instance_id)}"  # noqa: E501
             )
             time.sleep(1)
         else:
@@ -523,9 +527,8 @@ class Ec2(
             instance_id = self.instance_id
 
             # Log
-            log_instance_id = f"{prism.ui.MAGENTA}{instance_id}{prism.ui.RESET}"
             prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | Using existing EC2 instance with ID {log_instance_id}"
+                f"{log_prefix} | Using existing EC2 instance with ID {log_instance_id_template.format(instance_id=instance_id)}"  # noqa: E501
             )
 
         # Instance data
@@ -542,10 +545,17 @@ class Ec2(
         # If the instance exists and is running, then just return
         elif len(resp.keys()) > 0 and resp["state"] in [State.PENDING, State.RUNNING]:
             while resp["state"] == State.PENDING:
+
+                # Log
+                log_pending_status = f"{prism.ui.YELLOW}pending{prism.ui.RESET}"
+                prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{log_prefix} | Instance {log_instance_id_template.format(instance_id=instance_id)} is `{log_pending_status}`... checking again in 5 seconds"  # noqa: E501
+                )
                 resp = self.check_instance_data(
                     ec2_client,
                     instance_id
                 )
+                time.sleep(5)
 
         # If the state exiss but has stopped, then restart it
         elif len(resp.keys()) > 0 and resp["state"] in [State.STOPPED, State.STOPPING]:
@@ -725,6 +735,62 @@ class Ec2(
         else:
             return {}
 
+    def _log_output(self,
+        color: str,
+        which: str,
+        output: Any,
+    ):
+        if output:
+            if isinstance(output, str):
+                if not re.findall(r"^[\-]+$", output.rstrip()):
+                    prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                        f"{prism.ui.AGENT_EVENT}{self.instance_name}{color}[{which}]{prism.ui.RESET} | {output.rstrip()}"  # noqa: E501
+                    )
+            else:
+                if not re.findall(r"^[\-]+$", output.decode().rstrip()):
+                    prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                        f"{prism.ui.AGENT_EVENT}{self.instance_name}{color}[{which}]{prism.ui.RESET} | {output.decode().rstrip()}"  # noqa: E501
+                    )
+
+    def stream_logs(self,
+        cmd: List[str],
+        color: str,
+        which: str
+    ):
+        """
+        Stream Bash script logs. We use bash scripts to run our `apply` and `run`
+        commands.
+
+        args:
+            cmd: subprocess command
+            color: color to use in log styling
+            which: one of `build` or `run`
+        returns:
+            subprocess return code
+        """
+        # Open a subprocess and stream the logs
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=False,
+            universal_newlines=True,
+        )
+        while True:
+            # For whatever reason, the `prism` command places the log in stderr, not
+            # stdout
+            if which == "build":
+                output = process.stdout.readline()  # type: ignore
+            else:
+                output = process.stderr.readline()  # type: ignore
+
+            # Stream the logs
+            if process.poll() is not None:
+                break
+            self._log_output(color, which, output)
+
+        return process.stdout, process.stderr
+
     def apply(self):
         """
         Create the EC2 instance image
@@ -774,35 +840,43 @@ class Ec2(
         ]
 
         # Open a subprocess and stream the logs
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=False,
-            universal_newlines=True,
-        )
-        while True:
-            output = process.stdout.readline()  # type: ignore
-            if process.poll() is not None:
-                break
-            if output:
-                if isinstance(output, str):
-                    prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                        f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET} | {output.strip()}"  # noqa: E501
-                    )
-                else:
-                    prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                        f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET} | {output.decode().strip()}"  # noqa: E501
-                    )
-
-        return_code = process.poll()
+        return_code = self.stream_logs(cmd, prism.ui.AGENT_WHICH_BUILD, "build")
         return return_code
 
     def run(self):
         """
         Run the project using the EC2 agent
         """
-        pass
+        # Full command
+        full_cmd = self.construct_command()
+
+        # Logging styling
+        if self.instance_name is None or self.instance_id is None:
+            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                "Agent data not found! Use `prism agent apply` to create your agent"
+            )
+            return
+
+        # Check the ingress rules
+        if self.security_group_id is not None:
+            self.check_ingress_ip(self.ec2_client, self.security_group_id)
+
+        # The agent data should exist...Build the shell command
+        cmd = [
+            '/bin/sh', self.AGENT_RUN_SCRIPT,
+            '-p', str(self.pem_key_path),
+            '-u', 'ec2-user',
+            '-n', self.public_dns_name,
+            '-d', str(self.project.project_dir),
+            '-c', full_cmd,
+        ]
+        out, _ = self.stream_logs(cmd, prism.ui.AGENT_WHICH_RUN, "run")
+
+        # Log anything from stdout that was printed in the project
+        for line in out.readlines():
+            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_RUN}[run]{prism.ui.RESET} | {line.rstrip()}"  # noqa: E501
+            )
 
     def delete(self):
         """
@@ -816,11 +890,12 @@ class Ec2(
         # Fire an empty line -- it just looks a little nicer
         prism.logging.fire_console_event(prism.logging.EmptyLineEvent())
 
-        # If there is no instance, then return
+        # Logging styling
         if self.instance_name is None:
             prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                "No agent found! If this is a mistake, then you may need to reset your resource data"  # noqa: E501
+                "Agent data not found! Did you manually delete the ~/.prism/ec2.json file?"  # noqa: E501
             )
+            return
 
         # Logging styling
         log_prefix = f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.RED}[delete]{prism.ui.RESET}"  # noqa: E501
@@ -828,7 +903,7 @@ class Ec2(
         # Key pair
         if self.key_name is None:
             prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | No key-pair found! If this is a mistake, then you may need to reset your resource data"  # noqa: E501
+                f"{log_prefix} | No agent data found!"
             )
         else:
             log_key_pair = f"{prism.ui.MAGENTA}{self.key_name}{prism.ui.RESET}"
@@ -844,7 +919,7 @@ class Ec2(
         # Instance
         if self.instance_id is None:
             prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | No instance found! If this is a mistake, then you may need to reset your resource data"  # noqa: E501
+                f"{log_prefix} | No instance found!"
             )
         else:
             log_instance_id = f"{prism.ui.MAGENTA}{self.instance_id}{prism.ui.RESET}"

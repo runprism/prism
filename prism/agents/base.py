@@ -164,6 +164,37 @@ class Agent(metaclass=MetaAgent):
             )
         return absolute_requirements_path
 
+    def construct_command(self):
+        """
+        Construct Prism CLI command from arguments
+        """
+
+        # Construct command
+        full_tb = self.args.full_tb
+        log_level = self.args.log_level
+        vars = self.args.vars
+        context = self.args.context
+        modules = self.args.modules
+        all_upstream = self.args.all_upstream
+        all_downstream = self.args.all_downstream
+
+        # Namespace to string conversion
+        full_tb_cmd = "" if not full_tb else "--full-tb"
+        log_level_cmd = "" if log_level == "info" else f"--log-level {log_level}"
+        vars_cmd = "" if vars is None else " ".join([
+            f"{k}={v}" for k, v in vars.items()
+        ])
+        context_cmd = "" if context == '{}' else f"--context '{context}'"
+        modules_cmd = "" if modules is None else "--modules " + " ".join([
+            m for m in modules
+        ])
+        all_upstream_cmd = "" if not all_upstream else "--all-upstream"
+        all_downstream_cmd = "" if not all_downstream else "--all-downstream"
+
+        # Full command
+        full_cmd = f"prism run {full_tb_cmd} {log_level_cmd} {vars_cmd} {context_cmd} {modules_cmd} {all_upstream_cmd} {all_downstream_cmd}"  # noqa: E501
+        return full_cmd
+
     def parse_environment_variables(self, agent_conf: Dict[str, Any]) -> Dict[str, str]:
         raise prism.exceptions.NotImplementedException(
             message=f"`parse_environment_variables` not implemented for agent {self.__class__.__name__}"  # noqa: E501

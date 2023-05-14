@@ -243,7 +243,9 @@ class AgentTask(
 
         # ------------------------------------------------------------------------------
         # Execute the agent
-        event_list = fire_empty_line_event(event_list)
+
+        if self.args.which in ["agent-apply", "agent-build"]:
+            event_list = fire_empty_line_event(event_list)
 
         # Only execute the agent with `agent-run` or `agent-build`
         if self.args.which in ["agent-run", "agent-build"]:

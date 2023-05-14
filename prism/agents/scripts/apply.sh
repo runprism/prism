@@ -89,4 +89,7 @@ done
 # Reload .bashrc to update environment variables
 ssh -i ${pem_path} ${user}@${public_dns_name} "source ~/.bashrc"
 
+# Move all folders into the root folder
+ssh -i ${pem_path} ${user}@${public_dns_name} 'cd ~ && for dir in */; do sudo mv $dir ../../$dir ; done'
+
 echo "Done updating remote project and file paths"
