@@ -46,6 +46,11 @@ class State(str, Enum):
     TERMINATED = "terminated"
 
 
+class IpAddressType(str, Enum):
+    V4 = "ipv4"
+    V6 = "ipv6"
+
+
 class Ec2(
     Agent,
     AwsMixin,
@@ -307,6 +312,84 @@ class Ec2(
         # If nothing's been returned, then the instance should already be running
         return state
 
+    def check_ip_address_type(self,
+        external_ip: str
+    ) -> IpAddressType:
+        """
+        Determine whether `external_ip` is an IPv4 or IPv6 address
+
+        args:
+            external_ip: external IP address
+        returns:
+            IpAddressType
+        """
+        flag_is_ipv4 = re.findall(
+            r'(^(?:\d{1,3}\.){3}\d{1,3}$)',
+            external_ip
+        )
+        flag_is_ipv6 = re.findall(
+            r'^((?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4})$',
+            external_ip
+        )
+
+        # IP address must be IPv4 or IPv6, but not both
+        if flag_is_ipv4 and flag_is_ipv6:
+            raise prism.exceptions.RuntimeException(
+                f"Unrecognized IP address type `{external_ip}`"
+            )
+        if not (flag_is_ipv4 or flag_is_ipv6):
+            raise prism.exceptions.RuntimeException(
+                f"Unrecognized IP address type `{external_ip}`"
+            )
+
+        # Return
+        if flag_is_ipv4:
+            return IpAddressType('ipv4')
+        else:
+            return IpAddressType('ipv6')
+
+    def add_ingress_rule(self,
+        ec2_client: Any,
+        security_group_id: str,
+        external_ip: str
+    ):
+        """
+        Add an ingress rule that allows SSH traffic from `external_ip`
+
+        args:
+            ec2_client: Boto3 EC2 client
+            security_group_id: security group ID
+            external_ip: external IP address from which to allow traffic
+        returns:
+            None
+        """
+        ip_address_type = self.check_ip_address_type(external_ip)
+
+        # Add rule
+        if ip_address_type == IpAddressType('ipv4'):
+            ip_permissions = [
+                {
+                    'IpProtocol': 'tcp',
+                    'FromPort': 22,
+                    'ToPort': 22,
+                    'IpRanges': [{'CidrIp': f'{external_ip}/32'}]
+                },
+            ]
+        else:
+            ip_permissions = [
+                {
+                    'IpProtocol': 'tcp',
+                    'FromPort': 22,
+                    'ToPort': 22,
+                    'Ipv6Ranges': [{'CidrIpv6': f'{external_ip}'}]
+                },
+            ]
+
+        _ = ec2_client.authorize_security_group_ingress(
+            GroupId=security_group_id,
+            IpPermissions=ip_permissions
+        )
+
     def create_new_security_group(self,
         ec2_client: Any,
         instance_name: str,
@@ -336,18 +419,11 @@ class Ec2(
 
         # IP address
         external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
-
-        # Add inbound rule
-        _ = ec2_client.authorize_security_group_ingress(
-            GroupId=security_group_id,
-            IpPermissions=[
-                {
-                    'IpProtocol': 'tcp',
-                    'FromPort': 22,
-                    'ToPort': 22,
-                    'IpRanges': [{'CidrIp': f'{external_ip}/32'}]
-                },
-            ])
+        self.add_ingress_rule(
+            ec2_client,
+            security_group_id,
+            external_ip
+        )
         return security_group_id, vpc_id
 
     def check_ingress_ip(self,
@@ -371,6 +447,7 @@ class Ec2(
 
         # Get current IP address
         external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+        external_ip_type = self.check_ip_address_type(external_ip)
 
         # Check if IP is in ingress rules
         for ingress_permissions in curr_sg["IpPermissions"]:
@@ -382,24 +459,25 @@ class Ec2(
                 and ingress_permissions["ToPort"] == 22  # noqa: W503
             ):
                 # Check if SSH traffic from the current IP address is allowed
-                ip_ranges = ingress_permissions["IpRanges"]
+                if external_ip_type == IpAddressType('ipv4'):
+                    ip_ranges = ingress_permissions["IpRanges"]
+                    for ipr in ip_ranges:
+                        if external_ip in ipr["CidrIp"]:
+                            ip_allowed = True
+                else:
+                    ip_ranges = ingress_permissions["Ipv6Ranges"]
+                    for ipr in ip_ranges:
+                        if external_ip in ipr["CidrIpv6"]:
+                            ip_allowed = True
                 ip_allowed = False
-                for ipr in ip_ranges:
-                    if external_ip in ipr["CidrIp"]:
-                        ip_allowed = True
 
         # If SSH traffic from the current IP address it not allowed, then authorize it.
         if not ip_allowed:
-            _ = ec2_client.authorize_security_group_ingress(
-                GroupId=security_group_id,
-                IpPermissions=[
-                    {
-                        'IpProtocol': 'tcp',
-                        'FromPort': 22,
-                        'ToPort': 22,
-                        'IpRanges': [{'CidrIp': f'{external_ip}/32'}]
-                    },
-                ])
+            self.add_ingress_rule(
+                ec2_client,
+                security_group_id,
+                external_ip
+            )
 
     def create_instance(self,
         ec2_client: Any,
