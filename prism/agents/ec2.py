@@ -459,6 +459,7 @@ class Ec2(
                 and ingress_permissions["ToPort"] == 22  # noqa: W503
             ):
                 # Check if SSH traffic from the current IP address is allowed
+                ip_allowed = False
                 if external_ip_type == IpAddressType('ipv4'):
                     ip_ranges = ingress_permissions["IpRanges"]
                     for ipr in ip_ranges:
@@ -469,7 +470,6 @@ class Ec2(
                     for ipr in ip_ranges:
                         if external_ip in ipr["CidrIpv6"]:
                             ip_allowed = True
-                ip_allowed = False
 
         # If SSH traffic from the current IP address it not allowed, then authorize it.
         if not ip_allowed:
