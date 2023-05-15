@@ -158,10 +158,10 @@ def add_logging_level(level_name, level_num, method_name=None):
     # http://stackoverflow.com/a/13638084/2988730
     def logForLevel(self, message, *args, **kwargs):
         if self.isEnabledFor(level_num):
-            self._log(level_num, message.format(**kwargs), args)
+            self._log(level_num, message, args, **kwargs)
 
     def logToRoot(message, *args, **kwargs):
-        logging.log(level_num, message.format(**kwargs), *args)
+        logging.log(level_num, message, *args, **kwargs)
 
     # Add level
     logging.addLevelName(level_num, level_name)

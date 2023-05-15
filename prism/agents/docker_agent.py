@@ -190,10 +190,11 @@ class Docker(Agent):
         """
         if src is None:
             return
-        if Path(src).is_dir() and not target.is_dir():
+        if Path(src).is_dir():
             shutil.copytree(
                 src,
-                target
+                target,
+                dirs_exist_ok=True
             )
         elif Path(src).is_file() and not target.is_file():
             # Make the parent directory first
@@ -203,7 +204,7 @@ class Docker(Agent):
             # Copy file
             shutil.copyfile(
                 src,
-                target
+                target,
             )
         return
 
@@ -326,6 +327,7 @@ class Docker(Agent):
             else:
                 copy_commands[_dir] = f"COPY {str(_dir)[1:]} ./{str(_dir)[1:]}"
                 if self.mode == "prod":
+                    print(str(_dir)[1:])
                     self._copy_file_dir(
                         _dir,
                         Path(tmpdir) / str(_dir)[1:]
@@ -335,6 +337,7 @@ class Docker(Agent):
                 continue
             copy_commands[_dir] = f"COPY {str(_dir)[1:]} ./{str(_dir)[1:]}"
             if self.mode == "prod":
+                print(str(_dir)[1:])
                 self._copy_file_dir(
                     _dir,
                     Path(tmpdir) / str(_dir)[1:]
@@ -404,6 +407,7 @@ class Docker(Agent):
             new_img_version = str(round(float(self.image_version) + 0.1, 1))
 
         with TemporaryDirectory(prefix="docker") as tmpdir:
+            print(tmpdir)
             # Copy project directory and requirements.txt file to parent of
             # newly-created NamedTemporaryFile. We do this because all paths in the
             # Docker build context have to be relative to the location of the Docker
@@ -498,3 +502,8 @@ class Docker(Agent):
                     f"{prism.ui.AGENT_EVENT}{self.image_name}:{self.image_version}{prism.ui.AGENT_WHICH_RUN}[run]{prism.ui.RESET} | {no_newline}"  # noqa: E501
                 )
         return
+
+    def delete(self):
+        """
+        Delete the Docker agent
+        """
