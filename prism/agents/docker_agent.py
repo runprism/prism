@@ -190,10 +190,12 @@ class Docker(Agent):
         """
         if src is None:
             return
-        if Path(src).is_dir() and not target.is_dir():
-            shutil.copytree(
+        if Path(src).is_dir():
+            # Mypy doesn't think the `dirs_exist_ok` argument exists, but it does...
+            shutil.copytree(  # type: ignore
                 src,
-                target
+                target,
+                dirs_exist_ok=True
             )
         elif Path(src).is_file() and not target.is_file():
             # Make the parent directory first
@@ -203,7 +205,7 @@ class Docker(Agent):
             # Copy file
             shutil.copyfile(
                 src,
-                target
+                target,
             )
         return
 
@@ -498,3 +500,23 @@ class Docker(Agent):
                     f"{prism.ui.AGENT_EVENT}{self.image_name}:{self.image_version}{prism.ui.AGENT_WHICH_RUN}[run]{prism.ui.RESET} | {no_newline}"  # noqa: E501
                 )
         return
+
+    def delete(self):
+        """
+        Delete the Docker agent
+        """
+        # Fire an empty line event... it just looks nicer
+        prism.logging.fire_empty_line_event()
+        log_prefix = f"{prism.ui.AGENT_EVENT}{self.image_name}:{self.image_version}{prism.ui.RED}[delete]{prism.ui.RESET}"  # noqa: E501
+
+        # Remove all images with the label "stage=intermediate"
+        images = client.images.list(
+            filters={"label": "stage=intermediate"}
+        )
+        for img in images:
+            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                f"{log_prefix} | Deleting image {prism.ui.MAGENTA}{img.tags[0]}{prism.ui.RESET}"  # noqa: E501
+            )
+            client.images.remove(
+                image=img.tags[0]
+            )
