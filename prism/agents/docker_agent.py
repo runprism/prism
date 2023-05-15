@@ -192,10 +192,10 @@ class Docker(Agent):
             return
         if Path(src).is_dir():
             # Mypy doesn't think the `dirs_exist_ok` argument exists, but it does...
-            shutil.copytree(
+            shutil.copytree(  # type: ignore
                 src,
                 target,
-                dirs_exist_ok=True  # type: ignore
+                dirs_exist_ok=True
             )
         elif Path(src).is_file() and not target.is_file():
             # Make the parent directory first
