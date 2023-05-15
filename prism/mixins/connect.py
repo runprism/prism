@@ -124,13 +124,13 @@ class ConnectMixin():
                 message=f"invalid type `{profile_type}`"
             )
 
-        # Check if profile already exists in adapters or clusters
+        # Check if the adapters key is defined at all
         if profile_type in prism.constants.VALID_ADAPTERS:
             try:
-                for adapter_name, adapter_body in profile_body['adapters'].items():
-                    if profile_type == adapter_body['type']:
+                for adapter_name, _ in profile_body['adapters'].items():
+                    if adapter_name == f"{profile_type}_adapter_name_here":
                         raise prism.exceptions.InvalidProfileException(
-                            message=f"profile of type `{profile_type}` already found in profile YML"  # noqa: E501
+                            message=f"adapter with name `{profile_type}_adapter_name_here` already exists! Change this adapter name and try again"  # noqa: E501
                         )
 
             # THe 'adapters' section isn't defined as of yet
@@ -175,7 +175,7 @@ class ConnectMixin():
             profile_type: profile type
             profile_yml_path: path to profile YML
         returns:
-            profile YML with added profile of type `profile_type`
+            profile YML with added adapter of type `profile_type`
         """
         # If the profile doesn't exist, then create it
         if not profile_yml_path.is_file():

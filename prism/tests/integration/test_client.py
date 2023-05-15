@@ -161,7 +161,7 @@ class TestClient(
         # Try connecting to Snowflake again, this should produce an error
         with self.assertRaises(prism.exceptions.InvalidProfileException) as cm:
             dag.connect(connection_type='snowflake')
-        expected_msg = 'profile of type `snowflake` already found in profile YML'
+        expected_msg = "adapter with name `snowflake_adapter_name_here` already exists! Change this adapter name and try again"  # noqa: E501
         self.assertEqual(expected_msg, str(cm.exception))
 
         # Connect to PySpark
