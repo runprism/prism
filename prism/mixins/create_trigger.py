@@ -135,7 +135,7 @@ class CreateTriggersMixin():
             trigger_type: trigger type (either `function` or `prism_project`)
             triggers_filepath: path to triggers.yml
         returns:
-            profile YML with added profile of type `trigger_type`
+            trigger YML with added trigger of type `trigger_type`
         """
         # If the profile doesn't exist, then create it
         if not triggers_filepath.is_file():

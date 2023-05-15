@@ -678,6 +678,13 @@ class CreatingAgentEvent(Event):
 
 
 @dataclass
+class DeletingAgentEvent(Event):
+
+    def message(self):
+        return 'Deleting agent...'
+
+
+@dataclass
 class DefaultServerURLEvent(Event):
 
     def message(self):

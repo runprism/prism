@@ -733,6 +733,39 @@ def build_agent_parser(sub):
     # Set defaults
     agent_build_sub.set_defaults(cls=agent.AgentTask, which='agent-build')
 
+    # ----------------------------------------------------------------------------------
+    # Add a subparser for the "run" command. This command runs the project on the agent.
+
+    desc = """
+    Delete your agent
+    """
+    agent_delete_sub = agent_sub.add_parser(
+        'delete',
+        help=desc,
+        description=desc,
+        formatter_class=RichHelpFormatter
+    )
+
+    subcommand_options = agent_delete_sub.add_argument_group('Subcommand Options')
+    subcommand_options.add_argument(
+        "-f",
+        "--file",
+        required=True,
+        help="""
+        Path to agent configuration YML
+        """
+    )
+
+    # General options
+    general_options = agent_delete_sub.add_argument_group("General Options")
+    general_options = add_other_option_arguments(general_options)
+
+    # Set defaults
+    agent_delete_sub.set_defaults(
+        cls=agent.AgentTask,
+        which='agent-delete'
+    )
+
 
 def build_full_arg_parser() -> argparse.ArgumentParser:
     """

@@ -82,6 +82,48 @@ class Agent(metaclass=MetaAgent):
             message=f"`is_valid_conf` not implemented for agent {self.__class__.__name__}"  # noqa: E501
         )
 
+    def check_conf_keys(self,
+        agent_conf: Dict[str, Any],
+        required_keys: Dict[str, Any],
+        optional_keys: Dict[str, Any]
+    ):
+        """
+        Check the presence of required and/or optional keys in the agent's configuration
+
+        args:
+            agent_conf: agent configuration
+            required_keys: the agent's required keys
+            optional_keys: the agent's optional keys
+        returns:
+            True if the configuration has all required keys and the required keys are
+            the correct type. False otherwise
+        """
+        # Check required keys
+        for _key, _type in required_keys.items():
+            if _key not in list(agent_conf.keys()):
+                raise prism.exceptions.InvalidAgentsConfException(
+                    message=f"`{_key}` not in agent `{self.agent_name}` configuration"
+                )
+
+            if not isinstance(agent_conf[_key], _type):
+                raise prism.exceptions.InvalidAgentsConfException(
+                    message=f"`{_key}` is not the correct type"
+                )
+
+        # Check optional keys, if they exist
+        for _key, _type in optional_keys.items():  # type: ignore
+            if _key in list(agent_conf.keys()):
+                if (
+                    agent_conf[_key] is not None
+                    and not isinstance(agent_conf[_key], _type)  # noqa: W503
+                ):
+                    raise prism.exceptions.InvalidAgentsConfException(
+                        message=f"`{_key}` is not the correct type"
+                    )
+
+        # If no exception has been raised, return True
+        return True
+
     def prepare_paths_for_copy(self, project: PrismProject, tmpdir: str):
         """
         Prism projects often rely on more than just their own directory. They can import
@@ -122,6 +164,37 @@ class Agent(metaclass=MetaAgent):
             )
         return absolute_requirements_path
 
+    def construct_command(self):
+        """
+        Construct Prism CLI command from arguments
+        """
+
+        # Construct command
+        full_tb = self.args.full_tb
+        log_level = self.args.log_level
+        vars = self.args.vars
+        context = self.args.context
+        modules = self.args.modules
+        all_upstream = self.args.all_upstream
+        all_downstream = self.args.all_downstream
+
+        # Namespace to string conversion
+        full_tb_cmd = "" if not full_tb else "--full-tb"
+        log_level_cmd = "" if log_level == "info" else f"--log-level {log_level}"
+        vars_cmd = "" if vars is None else " ".join([
+            f"{k}={v}" for k, v in vars.items()
+        ])
+        context_cmd = "" if context == '{}' else f"--context '{context}'"
+        modules_cmd = "" if modules is None else "--modules " + " ".join([
+            m for m in modules
+        ])
+        all_upstream_cmd = "" if not all_upstream else "--all-upstream"
+        all_downstream_cmd = "" if not all_downstream else "--all-downstream"
+
+        # Full command
+        full_cmd = f"prism run {full_tb_cmd} {log_level_cmd} {vars_cmd} {context_cmd} {modules_cmd} {all_upstream_cmd} {all_downstream_cmd}"  # noqa: E501
+        return full_cmd
+
     def parse_environment_variables(self, agent_conf: Dict[str, Any]) -> Dict[str, str]:
         raise prism.exceptions.NotImplementedException(
             message=f"`parse_environment_variables` not implemented for agent {self.__class__.__name__}"  # noqa: E501
@@ -135,4 +208,9 @@ class Agent(metaclass=MetaAgent):
     def run(self):
         raise prism.exceptions.NotImplementedException(
             message=f"`run` not implemented for agent {self.__class__.__name__}"  # noqa: E501
+        )
+
+    def delete(self):
+        raise prism.exceptions.NotImplementedException(
+            message=f"`delete` not implemented for agent {self.__class__.__name__}"  # noqa: E501
         )
