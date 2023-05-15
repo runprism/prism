@@ -327,7 +327,6 @@ class Docker(Agent):
             else:
                 copy_commands[_dir] = f"COPY {str(_dir)[1:]} ./{str(_dir)[1:]}"
                 if self.mode == "prod":
-                    print(str(_dir)[1:])
                     self._copy_file_dir(
                         _dir,
                         Path(tmpdir) / str(_dir)[1:]
@@ -337,7 +336,6 @@ class Docker(Agent):
                 continue
             copy_commands[_dir] = f"COPY {str(_dir)[1:]} ./{str(_dir)[1:]}"
             if self.mode == "prod":
-                print(str(_dir)[1:])
                 self._copy_file_dir(
                     _dir,
                     Path(tmpdir) / str(_dir)[1:]
@@ -407,7 +405,6 @@ class Docker(Agent):
             new_img_version = str(round(float(self.image_version) + 0.1, 1))
 
         with TemporaryDirectory(prefix="docker") as tmpdir:
-            print(tmpdir)
             # Copy project directory and requirements.txt file to parent of
             # newly-created NamedTemporaryFile. We do this because all paths in the
             # Docker build context have to be relative to the location of the Docker
@@ -507,3 +504,18 @@ class Docker(Agent):
         """
         Delete the Docker agent
         """
+        # Fire an empty line event... it just looks nicer
+        prism.logging.fire_empty_line_event()
+        log_prefix = f"{prism.ui.AGENT_EVENT}{self.image_name}:{self.image_version}{prism.ui.RED}[delete]{prism.ui.RESET}"  # noqa: E501
+
+        # Remove all images with the label "stage=intermediate"
+        images = client.images.list(
+            filters={"label": "stage=intermediate"}
+        )
+        for img in images:
+            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                f"{log_prefix} | Deleting image {prism.ui.MAGENTA}{img.tags[0]}{prism.ui.RESET}"  # noqa: E501
+            )
+            client.images.remove(
+                image=img.tags[0]
+            )

@@ -70,6 +70,7 @@ DEFAULT_DOCKER_IMAGE = "python:3.10.8-slim-bullseye"
 
 # Docker image build template
 DOCKER_IMAGE_BUILD_TEMPLATE = """FROM {base_image}
+LABEL stage=intermediate
 
 # Copy requirements first and install. This layer is rate limiting, so we want to cache
 # it separately from copying the entire project directory.
