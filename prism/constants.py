@@ -60,7 +60,7 @@ PYTHON_VERSION = sys.version_info
 VALID_TRIGGER_TYPES = ["function"]
 
 # Valid agents
-VALID_AGENTS = ["docker"]
+VALID_AGENTS = ["docker", "ec2"]
 
 # Default Docker Daemon server URL
 DEFAULT_SERVER_URL = "unix://var/run/docker.sock"
