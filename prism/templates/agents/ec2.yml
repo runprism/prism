@@ -1,0 +1,6 @@
+agent:
+  type: ec2
+  instance_type: t2.micro
+  requirements: # path to requirements.txt, relative to this file
+  env:
+    <your environment variable here>: '<your environment variable value'
