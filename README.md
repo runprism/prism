@@ -70,13 +70,14 @@ Agents allow users to run their projects on external computing environments, e.g
 | Agent      | Command |
 | ------------ | ----------- |
 | **docker** | ```pip install "prism-ds[docker]"``` |
+| **ec2** | N/A - comes with base Prism |
 
 
 ## Product Roadmap
 
 We're always looking to improve our product. Here's what we're working on at the moment:
 
-- **Agents**: Agents allow users to run their projects on containers (e.g., Docker) or virtual machines (e.g., Amazon EMR, Amazon EC2)
+- **Additional Agents**: EMR clusters, Databricks clusters, and more!
 - **Additional adapters**: Celery, Dask, MySQL, Presto, and more!
 - **Cloud deployment**: Managed orchestration platform to deploy Prism projects in the cloud
 
