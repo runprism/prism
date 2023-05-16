@@ -1,2 +1,3 @@
 recursive-include prism/templates *.png *.svg *.exists *.ico *.txt *.ipynb *.py *.sql *.yml *.html *.md .gitkeep .gitignore
 recursive-include prism/docs *.png *.svg *.ico *.txt *.html
+recursive-include prism/agents *.sh
