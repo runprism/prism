@@ -902,6 +902,8 @@ class Ec2(
         # The `create_instance` command is blocking — it won't finish until the instance
         # is up and running.
         user = "ec2-user"
+        if "user" in self.agent_conf.keys():
+            user = self.agent_conf["user"]
         public_dns_name = data["resources"]["public_dns_name"]
         pem_key_path = data["files"]["pem_key_path"]
 
