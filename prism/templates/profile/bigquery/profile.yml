@@ -1,4 +1,4 @@
-profile_name:
+default:
   adapters:
     bigquery_adapter_name_here: # change this!
       type: bigquery

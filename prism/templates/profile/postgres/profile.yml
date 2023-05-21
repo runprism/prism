@@ -1,4 +1,4 @@
-profile_name:
+default:
   adapters:
     postgres_adapter_name_here: # change this!
       type: postgres

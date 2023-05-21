@@ -1,4 +1,4 @@
-profile_name:
+default:
   adapters:
     pyspark_adapter_name_here: # change this!
       type: pyspark
