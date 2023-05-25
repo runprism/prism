@@ -82,6 +82,28 @@ class AstParser:
         class_bases = [class_.bases for class_ in classes]
         return classes, class_bases
 
+    def get_num_prism_tasks(self,
+        bases: List[List[ast.expr]]
+    ) -> int:
+        """
+        Get number of PrismTasks from `bases`. For testing...
+
+        args:
+            bases: list of bases associated with classes in module
+        returns:
+            number of PrismTasks
+        """
+        prism_tasks = 0
+        for base_ in bases:
+            for obj in base_:
+                if isinstance(obj, ast.Name):
+                    if obj.id == "PrismTask":
+                        prism_tasks += 1
+                elif isinstance(obj, ast.Attribute):
+                    if obj.attr == "PrismTask":
+                        prism_tasks += 1
+        return prism_tasks
+
     def get_prism_task_node(self,
         classes: List[ast.ClassDef],
         bases: List[List[ast.expr]]

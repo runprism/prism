@@ -104,24 +104,13 @@ class TestModuleParsing(unittest.TestCase):
 
         # Number of prism tasks
         num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        self.assertEqual(2, num_prism_tasks)
 
         # Prism task name -- it should return the first one
-        first_prism_task_class = parser.get_prism_task_node(
-            parser.classes, parser.bases
-        )
-        first_prism_task_class_name = first_prism_task_class.name
-
-        # Run function
-        run_func = parser.get_run_func(first_prism_task_class)
-        run_func_args = parser.get_func_args(run_func)
-
-        self.assertEqual(2, num_prism_tasks)
-        self.assertEqual("FirstPrismTask", first_prism_task_class_name)
-        self.assertEqual(['self', 'tasks', 'hooks'], run_func_args)
-
-        # Calling `parse` should throw an error
-        with self.assertRaises(prism.exceptions.ParserException) as cm:
-            parser.parse()
+        with self.assertRaises(prism.exceptions.RuntimeException) as cm:
+            _ = parser.get_prism_task_node(
+                parser.classes, parser.bases
+            )
         expected_msg = f"too many PrismTasks in `{str(MULTIPLE_PRISM_TASKS)}`"
         self.assertEqual(expected_msg, str(cm.exception))
 
@@ -203,7 +192,7 @@ class TestModuleParsing(unittest.TestCase):
         self.assertEqual([Path('hello.py'), Path('world.py')], parser.parse())
 
         # Get target
-        targets = parser.get_targets(run_func)
+        targets = parser.get_targets(prism_task_class, run_func)
         expected_targets = "os.path.join(os.getcwd(), 'temp')"
         self.assertEqual(targets, expected_targets)
 
@@ -289,5 +278,5 @@ class TestModuleParsing(unittest.TestCase):
             if module == NO_RUN_FUNC:
                 expected_msg = f"no `run` function in PrismTask in `{str(module)}`"
             else:
-                expected_msg = f'invalid arguments in `run` function in PrismTask in {str(module)}; should only be "self", "tasks", and "hooks"'  # noqa: E501
+                expected_msg = f'invalid arguments in `run` function in PrismTask in {str(module)}; should only be `self`,`tasks`,`hooks`'  # noqa: E501
             self.assertEqual(expected_msg, str(cm.exception))
