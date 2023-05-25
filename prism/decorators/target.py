@@ -18,6 +18,7 @@ import prism.exceptions
 from prism.task import PrismTask
 import prism.infra.hooks
 import prism.infra.task_manager
+import inspect
 
 
 #####################
@@ -32,7 +33,7 @@ def target(*, type, loc, **kwargs):
 
     def decorator_target(func):
 
-        def wrapper_target(self,
+        def wrapper_target_dec(self,
             task_manager: prism.infra.task_manager.PrismTaskManager,
             hooks: prism.infra.hooks.PrismHooks
         ):
@@ -47,7 +48,7 @@ def target(*, type, loc, **kwargs):
             # decorators. Rather, we want each target declaration to apply to each
             # object returned. In this case, keep track of the target types, locs, and
             # kwargs.
-            if func.__name__ == "wrapper_target":
+            if func.__name__ == "wrapper_target_dec":
                 self.types.append(type)
                 self.locs.append(loc)
                 try:
@@ -58,7 +59,10 @@ def target(*, type, loc, **kwargs):
                 # Return the next wrapper_target function with the same arguments as
                 # this one. If a function has `n` targets, then this will happen n-1
                 # times until the `run` function is reached.
-                return func(self, task_manager, hooks)
+                if not inspect.ismethod(func):
+                    return func(self, task_manager, hooks)
+                else:
+                    return func(task_manager, hooks)
 
             # Now, we've hit the `run` function
             else:
@@ -71,7 +75,14 @@ def target(*, type, loc, **kwargs):
 
                 # If the task should be run in full, then call the run function
                 if self.bool_run:
-                    obj = func(self, task_manager, hooks)
+
+                    # When using `target` as a decorator, `run` is a function. When
+                    # using `target` as an argument to the `task()` decorator, `run` is
+                    # a bound method.
+                    if not inspect.ismethod(func):
+                        obj = func(self, task_manager, hooks)
+                    else:
+                        obj = func(task_manager, hooks)
                     self.types.append(type)
                     self.locs.append(loc)
                     try:
@@ -87,7 +98,7 @@ def target(*, type, loc, **kwargs):
                             temp_t = zipped[1]
                             temp_l = zipped[2]
                             temp_k = zipped[3]
-                            target = temp_t(temp_o, temp_l, hooks)
+                            target = temp_t(temp_o, temp_l, hooks)  # type: ignore
                             target.save(**temp_k)
 
                         # If a target is set, just assume that the user wants to
@@ -119,7 +130,8 @@ def target(*, type, loc, **kwargs):
                     # For single-target case, return single loc
                     else:
                         return loc
-        return wrapper_target
+
+        return wrapper_target_dec
 
     return decorator_target
 
@@ -150,7 +162,10 @@ def target_iterator(*, type, loc, **kwargs):
                 )
 
             if self.bool_run:
-                objs = func(self, task_manager, hooks)
+                if not inspect.ismethod(func):
+                    objs = func(self, task_manager, hooks)
+                else:
+                    objs = func(task_manager, hooks)
                 if not isinstance(objs, dict):
                     raise prism.exceptions.RuntimeException(
                         message="output of run function should be dict mapping name --> object to save"  # noqa: E501

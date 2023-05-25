@@ -82,32 +82,10 @@ class AstParser:
         class_bases = [class_.bases for class_ in classes]
         return classes, class_bases
 
-    def get_num_prism_tasks(self,
-        bases: List[List[ast.expr]]
-    ) -> int:
-        """
-        Get number of PrismTasks from `bases`
-
-        args:
-            bases: list of bases associated with classes in module
-        returns:
-            number of PrismTasks
-        """
-        prism_tasks = 0
-        for base_ in bases:
-            for obj in base_:
-                if isinstance(obj, ast.Name):
-                    if obj.id == "PrismTask":
-                        prism_tasks += 1
-                elif isinstance(obj, ast.Attribute):
-                    if obj.attr == "PrismTask":
-                        prism_tasks += 1
-        return prism_tasks
-
     def get_prism_task_node(self,
         classes: List[ast.ClassDef],
         bases: List[List[ast.expr]]
-    ) -> Optional[ast.ClassDef]:
+    ) -> Optional[Union[ast.FunctionDef, ast.ClassDef]]:
         """
         Get the node associated with the prism task from `module`
 
@@ -116,20 +94,96 @@ class AstParser:
         returns:
             node associated with prism task
         """
-        # If there are no bases, then there are no class definitions. Throw an error
-        if len(bases) == 0:
-            return None
+        udf_classes = []
         for class_, base_ in zip(classes, bases):
             for obj in base_:
                 if isinstance(obj, ast.Name):
                     if obj.id == "PrismTask":
-                        return class_
+                        udf_classes.append(class_)
                 elif isinstance(obj, ast.Attribute):
                     if obj.attr == "PrismTask":
-                        return class_
+                        udf_classes.append(class_)
+
+        # Throw an error if there is more than one class
+        if len(udf_classes) > 1:
+            raise prism.exceptions.RuntimeException(
+                f"too many PrismTasks in `{str(self.module_relative_path)}`"
+            )
+
+        # Check if any task is decorated with `@task`
+        udf_fn = self.get_task_decorated_function()
+
+        # Both cannot exist
+        if len(udf_classes) == 1 and udf_fn is not None:
+            raise prism.exceptions.RuntimeException(
+                f"cannot have both a PrismTask class and a function with the `@task` decorator in `{str(self.module_relative_path)}`"  # noqa: E501
+            )
+
+        # If the class exists return that. If it doesn't but the function exists, return
+        # that. If neither exist, return None. We'll throw an error later.
+        if len(udf_classes) == 1:
+            return udf_classes[0]
+        elif udf_fn:
+            return udf_fn
         return None
 
-    def get_all_funcs(self, prism_task: ast.ClassDef) -> List[ast.FunctionDef]:
+    def get_attribute_name(self, attribute):
+        """
+        Recursive function that gets the name associated with an ast.Attribute object
+        """
+        if isinstance(attribute.value, ast.Attribute):
+            return self.get_attribute_name(attribute.value) + '.' + attribute.attr
+        else:
+            return attribute.value.id + '.' + attribute.attr
+
+    def get_decorator_name(self, decorator):
+        """
+        Get the name of a decorator used on a function
+        """
+        if isinstance(decorator, ast.Name):
+            return decorator.id
+        elif isinstance(decorator, ast.Attribute):
+            return self.get_attribute_name(decorator)
+        elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name):
+            return decorator.func.id
+        elif isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Attribute):  # noqa: E501
+            return self.get_attribute_name(decorator.func)
+        else:
+            return None
+
+    def get_task_decorated_function(self) -> Optional[ast.FunctionDef]:
+        """
+        Get the function decorated with the `task` decorator (if any)
+
+        args:
+            module: ast Module object
+        returns:
+            function name
+        """
+        tasks = []
+        for node in ast.walk(self.ast_module):
+            if isinstance(node, ast.FunctionDef):
+                decorators = [
+                    self.get_decorator_name(d) for d in node.decorator_list
+                ]
+                if (
+                    "task" in decorators
+                    or "prism.decorators.task" in decorators  # noqa: W503
+                ):
+                    tasks.append(node)
+
+        # There should only be one function with the `task` decorator
+        if len(tasks) == 0:
+            return None
+        if len(tasks) > 1:
+            raise prism.exceptions.RuntimeException(
+                f"too many functions decorated with `@task` in {str(self.module_relative_path)}"  # noqa: E501
+            )
+        return tasks[0]
+
+    def get_all_funcs(self,
+        prism_task: Union[ast.FunctionDef, ast.ClassDef]
+    ) -> List[ast.FunctionDef]:
         """
         Get all functions from PrismTask class
 
@@ -138,9 +192,23 @@ class AstParser:
         returns:
             run function as an ast.FunctionDef
         """
-        return [f for f in prism_task.body if isinstance(f, ast.FunctionDef)]
+        if isinstance(prism_task, ast.ClassDef):
+            return [f for f in prism_task.body if isinstance(f, ast.FunctionDef)]
 
-    def get_run_func(self, prism_task: ast.ClassDef) -> Optional[ast.FunctionDef]:
+        # If the task is a decorated function, then go through all of the other
+        # functions in the module.
+        elif isinstance(prism_task, ast.FunctionDef):
+            return [f for f in self.ast_module.body if isinstance(f, ast.FunctionDef)]
+
+        # This should never happen
+        else:
+            raise prism.exceptions.ParserException(
+                f"unrecognized task type {prism_task.__class__.__name__}!"
+            )
+
+    def get_run_func(self,
+        prism_task: Union[ast.FunctionDef, ast.ClassDef],
+    ) -> Optional[ast.FunctionDef]:
         """
         Get `run` function from PrismTask class
 
@@ -149,6 +217,11 @@ class AstParser:
         returns:
             run function as an ast.FunctionDef
         """
+        # If the prism task is a function, then the user used a decorator
+        if isinstance(prism_task, ast.FunctionDef):
+            return prism_task
+
+        # Otherwise, check the classes within the user-defined class
         functions = [f for f in prism_task.body if isinstance(f, ast.FunctionDef)]
         for func in functions:
             if func.name == "run":
@@ -252,18 +325,42 @@ class AstParser:
                     return True
         return False
 
-    def get_targets(self, run_func: ast.FunctionDef) -> Union[str, List[str]]:
+    def get_keyword_value(self, kw: ast.keyword):
         """
-        Get targets as strings
+        Get the argument value from a keyword argument
+
+        args:
+            kw: keyword argument
+        returns:
+            argument value
+        """
+        # Python introduced ast.unparse in version 3.9, which reverses
+        # ast.parse and converts a node back into string. mypy thinks ast
+        #  doesn't have an unparse method, but this is fine.
+        python_greater_than_39 = prism.constants.PYTHON_VERSION.major == 3 and prism.constants.PYTHON_VERSION.minor >= 9  # noqa: E501
+        if prism.constants.PYTHON_VERSION.major > 3 or python_greater_than_39:
+            return ast.unparse(kw.value)  # type: ignore
+
+        # Otherwise, use the astor library. This is compatible with Python
+        # >=3.5
+        else:
+            return re.sub('\n$', '', astor.to_source(kw.value))
+
+    def get_targets_class_def(self,
+        run_func: ast.FunctionDef,
+    ) -> Union[str, List[str]]:
+        """
+        Get targets are strings when the task is a PrismTask class (not a decorated
+        function)
 
         args:
             run_function: run function as an ast FunctionDef object
         returns:
             targets as strings (or a list of strings)
         """
-
-        # Targets will always be decorators
+        # Targets will always be specified in decorators
         decs = run_func.decorator_list
+
         target_decs = []
         for call in decs:
             if not isinstance(call, ast.Call):
@@ -283,64 +380,128 @@ class AstParser:
             kws = targ_call.keywords
             for kw in kws:
                 if kw.arg == "loc":
-
-                    # Python introduced ast.unparse in version 3.9, which reverses
-                    # ast.parse and converts a node back into string. mypy thinks ast
-                    #  doesn't have an unparse method, but this is fine.
-                    python_greater_than_39 = prism.constants.PYTHON_VERSION.major == 3 and prism.constants.PYTHON_VERSION.minor >= 9  # noqa: E501
-                    if prism.constants.PYTHON_VERSION.major > 3 \
-                            or python_greater_than_39:
-                        locs.append(ast.unparse(kw.value))  # type: ignore
-
-                    # Otherwise, use the astor library. This is compatible with Python
-                    # >=3.5
-                    else:
-                        locs.append(re.sub('\n$', '', astor.to_source(kw.value)))
+                    locs.append(self.get_keyword_value(kw))
 
         if len(locs) == 1:
             return locs[0]
         else:
             return locs
 
+    def get_targets_function_def(self,
+        function: ast.FunctionDef
+    ) -> Union[str, List[str]]:
+        """
+        Get targets are strings when the task is a decorated function (not a PrismTask)
+
+        args:
+            function: decorated function that acts as a PrismTask
+        returns:
+            targets as strings (or a list of strings)
+        """
+        # Targets will always be specified as inputs in the decorator
+        task_decs = []
+        decorators = function.decorator_list
+        for dec in decorators:
+            if self.get_decorator_name(dec) in ["task", "prism.decorators.task"]:
+                task_decs.append(dec)
+
+        # If there are multiple task decorators on the function, throw an error
+        if len(task_decs) > 1:
+            raise prism.exceptions.RuntimeException(
+                f"can only be one `@task` decorator for a function...check `{str(self.module_relative_path)}`"  # noqa: E501
+            )
+        task_dec = task_decs[0]
+
+        # The `task` decorator doesn't accept positional arguments. mypy doesn't think
+        # the decorator has keywords...ignore.
+        keywords = task_dec.keywords  # type: ignore
+        for kw in keywords:
+            if kw.arg == "targets":
+                targets = kw.value
+                if not isinstance(targets, ast.List):
+                    raise prism.exceptions.ParserException(
+                        f'invalid `targets` in `@task` decorator {str(self.module_relative_path)}; must be a list!'  # noqa: E501
+                    )
+
+        # Iterate through the elements of the list
+        locs: List[str] = []
+        for elt in targets.elts:
+            if not isinstance(elt, ast.Call):
+                msg = "\n".join([
+                    f'invalid  element in `targets` list in `@task` decorator {str(self.module_relative_path)}',  # noqa: E501
+                    "should be something like `target(type=..., loc=...)`"
+                ])
+                raise prism.exceptions.ParserException(msg)
+
+            # The target function also only accepts keywords
+            keywords = elt.keywords
+            for kw in keywords:
+                if kw.arg == "loc":
+                    locs.append(self.get_keyword_value(kw))
+
+        if len(locs) == 1:
+            return locs[0]
+        else:
+            return locs
+
+    def get_targets(self,
+        prism_task_node: Union[ast.FunctionDef, ast.ClassDef],
+        run_func: ast.FunctionDef
+    ) -> Union[str, List[str]]:
+        """
+        Get targets as strings
+
+        args:
+            run_function: run function as an ast FunctionDef object
+        returns:
+            targets as strings (or a list of strings)
+        """
+        if isinstance(prism_task_node, ast.ClassDef):
+            return self.get_targets_class_def(run_func)
+        elif isinstance(prism_task_node, ast.FunctionDef):
+            return self.get_targets_function_def(run_func)
+
+        # This should never happen
+        else:
+            raise prism.exceptions.ParserException(
+                f"unrecognized task type {prism_task_node.__class__.__name__}!"
+            )
+
     def parse(self) -> Union[List[Path], Path]:
         """
         Parse module and return mod references
         """
-        # This will throw an error if the number of PrismTasks!=1
-        num_prism_task_classes = self.get_num_prism_tasks(self.bases)
-        if num_prism_task_classes == 0:
-            raise prism.exceptions.ParserException(
-                message=f"no PrismTask in `{str(self.module_relative_path)}`"
-            )
-        elif num_prism_task_classes > 1:
-            raise prism.exceptions.ParserException(
-                message=f"too many PrismTasks in `{str(self.module_relative_path)}`"
-            )
-
         # Get PrismTask, run function, and mod calls
-        prism_task_class_node = self.get_prism_task_node(self.classes, self.bases)
-        if prism_task_class_node is None:
+        prism_task_node = self.get_prism_task_node(self.classes, self.bases)
+        if prism_task_node is None:
             raise prism.exceptions.ParserException(
                 message=f"no PrismTask in `{str(self.module_relative_path)}`"
             )
 
-        # Confirm run function is properly structured
-        run_func = self.get_run_func(prism_task_class_node)
+        # Check if run function exists. If the user used a decorator, then the `run`
+        # function is just the decorated function.
+        run_func = self.get_run_func(prism_task_node)
         if run_func is None:
             raise prism.exceptions.ParserException(
                 message=f"no `run` function in PrismTask in `{str(self.module_relative_path)}`"  # noqa: E501
             )
+
+        # Check function arguments
         run_args = self.get_func_args(run_func)
-        if sorted(run_args) != sorted([prism_task_manager_alias, prism_hooks_alias, 'self']):  # noqa: E501
-            msg = f'invalid arguments in `run` function in PrismTask in {str(self.module_relative_path)}; should only be "self", "{prism_task_manager_alias}", and "{prism_hooks_alias}"'  # noqa: E501
+        if isinstance(prism_task_node, ast.ClassDef):
+            expected = ["self", prism_task_manager_alias, prism_hooks_alias]
+        elif isinstance(prism_task_node, ast.FunctionDef):
+            expected = [prism_task_manager_alias, prism_hooks_alias]
+        if sorted(run_args) != sorted(expected):
+            msg = f'invalid arguments in `run` function in PrismTask in {str(self.module_relative_path)}; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
             raise prism.exceptions.ParserException(message=msg)
 
         # Parse targets
-        target_locs = self.get_targets(run_func)
+        target_locs = self.get_targets(prism_task_node, run_func)
         self.module_manifest.add_target(self.module_relative_path, target_locs)
 
         # Iterate through all functions and get prism task.ref calls
-        all_funcs = self.get_all_funcs(prism_task_class_node)
+        all_funcs = self.get_all_funcs(prism_task_node)
         all_task_refs: List[Path] = []
         for func in all_funcs:
             all_task_refs += self.get_prism_mod_calls(func)

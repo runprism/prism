@@ -10,12 +10,16 @@ Table of Contents
 # Imports #
 ###########
 
-import prism.exceptions
+# Standard library imports
+from pathlib import Path
+from typing import Any, Callable, List, Optional, Union
 
-# Prism logging
+# Prism imports
+import prism.exceptions
 import prism.logging
 import prism.infra.hooks
 import prism.infra.task_manager
+import prism.target
 
 
 ####################
@@ -24,17 +28,25 @@ import prism.infra.task_manager
 
 class PrismTask:
 
-    def __init__(self, bool_run=True):
+    def __init__(self,
+        bool_run: bool = True,
+        func: Optional[Callable[..., Any]] = None
+    ):
         """
         Create an instance of the PrismTask. The class immediately calls the `run`
         function and assigns the result to the `output` attribute.
         """
         self.bool_run = bool_run
+        self.func = func
 
         # Tyeps, locs, and kwargs for target
-        self.types = []
-        self.locs = []
-        self.kwargs = []
+        self.types: List[prism.target.PrismTarget] = []
+        self.locs: List[Union[str, Path]] = []
+        self.kwargs: List[Any] = []
+
+        # Retries
+        self.RETRIES = 0
+        self.RETRY_DELAY_SECONDS = 0
 
     def set_task_manager(self, task_manager: prism.infra.task_manager.PrismTaskManager):
         self.task_manager = task_manager
@@ -73,13 +85,16 @@ class PrismTask:
 
     def run(self,
         tasks: prism.infra.task_manager.PrismTaskManager,
-        hooks: prism.infra.hooks.PrismHooks
+        hooks: prism.infra.hooks.PrismHooks,
     ):
         """
         Run the task. The user should override this function definition when creating
         their own tasks.
         """
-        raise prism.exceptions.RuntimeException("`run` method not implemented")
+        if self.func is not None:
+            return self.func(tasks, hooks)
+        else:
+            raise prism.exceptions.RuntimeException("`run` method not implemented")
 
     @prism.logging.deprecated('prism.task.PrismTask.target', 'prism.decorators.target')
     def target(type, loc, **kwargs):
