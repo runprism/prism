@@ -82,7 +82,7 @@ class AstParser:
         class_bases = [class_.bases for class_ in classes]
         return classes, class_bases
 
-    def get_num_prism_tasks(self,
+    def get_num_prism_task_classes(self,
         bases: List[List[ast.expr]]
     ) -> int:
         """
@@ -103,6 +103,25 @@ class AstParser:
                     if obj.attr == "PrismTask":
                         prism_tasks += 1
         return prism_tasks
+
+    def get_num_prism_task_functions(self) -> int:
+        """
+        Get number of functions decorated with `@task`. For testing...
+        """
+        tasks = []
+        for node in ast.walk(self.ast_module):
+            if isinstance(node, ast.FunctionDef):
+                decorators = [
+                    self.get_decorator_name(d) for d in node.decorator_list
+                ]
+                if (
+                    "task" in decorators
+                    or "prism.decorators.task" in decorators  # noqa: W503
+                ):
+                    tasks.append(node)
+
+        # There should only be one function with the `task` decorator
+        return len(tasks)
 
     def get_prism_task_node(self,
         classes: List[ast.ClassDef],
@@ -176,11 +195,6 @@ class AstParser:
     def get_task_decorated_function(self) -> Optional[ast.FunctionDef]:
         """
         Get the function decorated with the `task` decorator (if any)
-
-        args:
-            module: ast Module object
-        returns:
-            function name
         """
         tasks = []
         for node in ast.walk(self.ast_module):
@@ -436,6 +450,11 @@ class AstParser:
 
         # The `task` decorator doesn't accept positional arguments. mypy doesn't think
         # the decorator has keywords...ignore.
+        locs: List[str] = []
+        if isinstance(task_dec, ast.Name):
+            raise prism.exceptions.RuntimeException(
+                "`task` decorator not properly specified...try adding parentheses to it, e.g., `@task()`"  # noqa: E501
+            )
         keywords = task_dec.keywords  # type: ignore
         for kw in keywords:
             if kw.arg == "targets":
@@ -445,21 +464,20 @@ class AstParser:
                         f'invalid `targets` in `@task` decorator {str(self.module_relative_path)}; must be a list!'  # noqa: E501
                     )
 
-        # Iterate through the elements of the list
-        locs: List[str] = []
-        for elt in targets.elts:
-            if not isinstance(elt, ast.Call):
-                msg = "\n".join([
-                    f'invalid  element in `targets` list in `@task` decorator {str(self.module_relative_path)}',  # noqa: E501
-                    "should be something like `target(type=..., loc=...)`"
-                ])
-                raise prism.exceptions.ParserException(msg)
+                # Iterate through the elements of the list
+                for elt in targets.elts:
+                    if not isinstance(elt, ast.Call):
+                        msg = "\n".join([
+                            f'invalid  element in `targets` list in `@task` decorator {str(self.module_relative_path)}',  # noqa: E501
+                            "should be something like `target(type=..., loc=...)`"
+                        ])
+                        raise prism.exceptions.ParserException(msg)
 
-            # The target function also only accepts keywords
-            keywords = elt.keywords
-            for kw in keywords:
-                if kw.arg == "loc":
-                    locs.append(self.get_keyword_value(kw))
+                    # The target function also only accepts keywords
+                    keywords = elt.keywords
+                    for kw in keywords:
+                        if kw.arg == "loc":
+                            locs.append(self.get_keyword_value(kw))
 
         if len(locs) == 1:
             return locs[0]

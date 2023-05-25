@@ -1,5 +1,5 @@
 """
-Unit testing for functions for PythonModuleParser class.
+Unit testing for parsing modules with tasks created via the PrismTask class.
 
 Table of Contents:
 - Imports
@@ -48,7 +48,7 @@ NO_RUN_FUNC = Path('no_run_func.py')
 # Test case class definition #
 ##############################
 
-class TestModuleParsing(unittest.TestCase):
+class TestModuleClassParsing(unittest.TestCase):
 
     def test_one_prism_task(self):
         """
@@ -66,7 +66,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("NormalPrismTask", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -85,7 +85,7 @@ class TestModuleParsing(unittest.TestCase):
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertIsNone(prism_task_class)
         self.assertEqual(0, num_prism_tasks)
@@ -103,7 +103,7 @@ class TestModuleParsing(unittest.TestCase):
         parser = ast_parser.AstParser(MULTIPLE_PRISM_TASKS, MODULE_TEST_CASES)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
         self.assertEqual(2, num_prism_tasks)
 
         # Prism task name -- it should return the first one
@@ -131,7 +131,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("DiffImportStructure", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -157,7 +157,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("OnlyPrismTask", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -182,7 +182,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("TaskWithTarget", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -212,7 +212,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("TasksRefs", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
