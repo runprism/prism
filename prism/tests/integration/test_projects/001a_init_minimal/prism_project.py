@@ -35,7 +35,7 @@ THREADS = 1
 
 # Profile directory and name
 PROFILE_YML_PATH = Path(__file__).parent / 'profile.yml'
-PROFILE = None  # name of profile within `profiles.yml`
+PROFILE = "default"  # name of profile within `profiles.yml`
 
 
 # Logger

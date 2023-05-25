@@ -61,7 +61,7 @@ connect_task_invalid_expected_events = header_events + [
 
 # Snowflake profile as a dict
 expected_snowflake_dict = {
-    'profile_name': {
+    'default': {
         'adapters': {
             'snowflake_adapter_name_here': {
                 'type': 'snowflake',
@@ -79,7 +79,7 @@ expected_snowflake_dict = {
 
 # PySpark profile as a dict
 expected_pyspark_dict = {
-    'profile_name': {
+    'default': {
         'adapters': {
             'pyspark_adapter_name_here': {
                 'type': 'pyspark',
@@ -103,7 +103,7 @@ expected_pyspark_dict = {
 
 # Snowflake + PySpark profile
 expected_snowflake_pyspark_dict = {
-    'profile_name': {
+    'default': {
         'adapters': {
             'snowflake_adapter_name_here': {
                 'type': 'snowflake',
