@@ -448,6 +448,10 @@ class AstParser:
                 f"can only be one `@task` decorator for a function...check `{str(self.module_relative_path)}`"  # noqa: E501
             )
         task_dec = task_decs[0]
+        if not isinstance(task_dec, ast.Call):
+            raise prism.exceptions.RuntimeException(
+                "`task` decorator not properly specified...try adding parentheses to it, e.g., `@task()`"  # noqa: E501
+            )
         return task_dec
 
     def get_targets_function_def(self,
