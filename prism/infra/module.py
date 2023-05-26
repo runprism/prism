@@ -114,13 +114,20 @@ class CompiledModule:
             task_dec_call = self.ast_parser.get_task_decorator_call(prism_task_node)
             for kw in task_dec_call.keywords:
                 if kw.arg == "retries":
-                    if not isinstance(kw.value, ast.Constant):
+                    if not (
+                        isinstance(kw.value, ast.Constant)
+                        or isinstance(kw.value, ast.Num)  # noqa: W503
+                    ):
                         raise prism.exceptions.RuntimeException(
                             "invalid `retries` keyword...should be an integer"
                         )
                     retries = int(kw.value.value)
+
                 if kw.arg == "retry_delay_seconds":
-                    if not isinstance(kw.value, ast.Constant):
+                    if not (
+                        isinstance(kw.value, ast.Constant)
+                        or isinstance(kw.value, ast.Num)  # noqa: W503
+                    ):
                         raise prism.exceptions.RuntimeException(
                             "invalid `retries` keyword...should be an integer"
                         )
