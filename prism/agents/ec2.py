@@ -141,7 +141,6 @@ class Ec2(
             "requirements": str,
         }
         optional_keys = {
-            "user": str,
             "env": dict
         }
 

@@ -63,3 +63,22 @@ class MatplotlibPNG(PrismTarget):
 
     def save(self, **kwargs):
         self.obj.savefig(self.loc, **kwargs)
+
+
+class JSON(PrismTarget):
+
+    def save(self, **kwargs):
+
+        # Imports
+        import json
+
+        # Check object type
+        if not isinstance(self.obj, dict):
+            raise ValueError(
+                "object must be a dictionary!"
+            )
+        json_object = json.dumps(self.obj, **kwargs)
+
+        # Write
+        with open(self.loc, "w") as f:
+            f.write(json_object)

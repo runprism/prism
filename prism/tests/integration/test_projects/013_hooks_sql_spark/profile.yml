@@ -1,4 +1,4 @@
-profile_name:
+default:
   adapters:
     snowflake_base:
       type: snowflake

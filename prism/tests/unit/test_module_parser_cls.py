@@ -1,5 +1,5 @@
 """
-Unit testing for functions for PythonModuleParser class.
+Unit testing for parsing modules with tasks created via the PrismTask class.
 
 Table of Contents:
 - Imports
@@ -48,7 +48,7 @@ NO_RUN_FUNC = Path('no_run_func.py')
 # Test case class definition #
 ##############################
 
-class TestModuleParsing(unittest.TestCase):
+class TestModuleClassParsing(unittest.TestCase):
 
     def test_one_prism_task(self):
         """
@@ -66,7 +66,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("NormalPrismTask", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -85,7 +85,7 @@ class TestModuleParsing(unittest.TestCase):
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertIsNone(prism_task_class)
         self.assertEqual(0, num_prism_tasks)
@@ -103,25 +103,14 @@ class TestModuleParsing(unittest.TestCase):
         parser = ast_parser.AstParser(MULTIPLE_PRISM_TASKS, MODULE_TEST_CASES)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
+        self.assertEqual(2, num_prism_tasks)
 
         # Prism task name -- it should return the first one
-        first_prism_task_class = parser.get_prism_task_node(
-            parser.classes, parser.bases
-        )
-        first_prism_task_class_name = first_prism_task_class.name
-
-        # Run function
-        run_func = parser.get_run_func(first_prism_task_class)
-        run_func_args = parser.get_func_args(run_func)
-
-        self.assertEqual(2, num_prism_tasks)
-        self.assertEqual("FirstPrismTask", first_prism_task_class_name)
-        self.assertEqual(['self', 'tasks', 'hooks'], run_func_args)
-
-        # Calling `parse` should throw an error
-        with self.assertRaises(prism.exceptions.ParserException) as cm:
-            parser.parse()
+        with self.assertRaises(prism.exceptions.RuntimeException) as cm:
+            _ = parser.get_prism_task_node(
+                parser.classes, parser.bases
+            )
         expected_msg = f"too many PrismTasks in `{str(MULTIPLE_PRISM_TASKS)}`"
         self.assertEqual(expected_msg, str(cm.exception))
 
@@ -142,7 +131,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("DiffImportStructure", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -168,7 +157,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("OnlyPrismTask", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -193,7 +182,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("TaskWithTarget", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -203,7 +192,7 @@ class TestModuleParsing(unittest.TestCase):
         self.assertEqual([Path('hello.py'), Path('world.py')], parser.parse())
 
         # Get target
-        targets = parser.get_targets(run_func)
+        targets = parser.get_targets(prism_task_class, run_func)
         expected_targets = "os.path.join(os.getcwd(), 'temp')"
         self.assertEqual(targets, expected_targets)
 
@@ -223,7 +212,7 @@ class TestModuleParsing(unittest.TestCase):
         run_func_args = parser.get_func_args(run_func)
 
         # Number of prism tasks
-        num_prism_tasks = parser.get_num_prism_tasks(parser.bases)
+        num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
 
         self.assertEqual("TasksRefs", prism_task_name)
         self.assertEqual(1, num_prism_tasks)
@@ -289,5 +278,5 @@ class TestModuleParsing(unittest.TestCase):
             if module == NO_RUN_FUNC:
                 expected_msg = f"no `run` function in PrismTask in `{str(module)}`"
             else:
-                expected_msg = f'invalid arguments in `run` function in PrismTask in {str(module)}; should only be "self", "tasks", and "hooks"'  # noqa: E501
+                expected_msg = f'invalid arguments in `run` function in PrismTask in {str(module)}; should only be `self`,`tasks`,`hooks`'  # noqa: E501
             self.assertEqual(expected_msg, str(cm.exception))

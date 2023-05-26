@@ -11,9 +11,9 @@ Table of Contents
 ###########
 
 # Standard library imports
+import ast
 from pathlib import Path
 from typing import Any, Dict
-from types import ModuleType
 
 # Prism-specific imports
 import prism.exceptions
@@ -37,7 +37,7 @@ def get_task_var_name(module_path: Path) -> str:
         variable name
     """
     task_var_name = str(module_path).replace('/', '_').replace('.py', '')
-    return task_var_name
+    return f"__PRISM_{task_var_name.upper()}__"
 
 
 ####################
@@ -90,12 +90,58 @@ class CompiledModule:
             1. How many retries to undertake
             2. The delay between retries
         """
-        retries = self.ast_parser.get_variable_assignments(
-            self.ast_parser.ast_module, 'RETRIES'
+        prism_task_node = self.ast_parser.get_prism_task_node(
+            self.ast_parser.classes, self.ast_parser.bases
         )
-        retry_delay_seconds = self.ast_parser.get_variable_assignments(
-            self.ast_parser.ast_module, 'RETRY_DELAY_SECONDS'
-        )
+
+        # Instantiate retries / retry_delay_seconds
+        retries = None
+        retry_delay_seconds = None
+
+        # If the task is a class, the variables will be stored in class attributes
+        if isinstance(prism_task_node, ast.ClassDef):
+            retries = self.ast_parser.get_variable_assignments(
+                self.ast_parser.ast_module, 'RETRIES'
+            )
+            retry_delay_seconds = self.ast_parser.get_variable_assignments(
+                self.ast_parser.ast_module, 'RETRY_DELAY_SECONDS'
+            )
+
+        # If the task is a decorated function, the variables will be stored as keyword
+        # arguments.
+        elif isinstance(prism_task_node, ast.FunctionDef):
+
+            task_dec_call = self.ast_parser.get_task_decorator_call(prism_task_node)
+            for kw in task_dec_call.keywords:
+                if kw.arg == "retries":
+                    if not (
+                        isinstance(kw.value, ast.Constant)
+                        or isinstance(kw.value, ast.Num)  # noqa: W503
+                    ):
+                        raise prism.exceptions.RuntimeException(
+                            "invalid `retries` keyword...should be an integer"
+                        )
+
+                    if hasattr(kw.value, "value"):
+                        retries = int(kw.value.value)
+                    else:
+                        retries = kw.value.n
+
+                if kw.arg == "retry_delay_seconds":
+                    if not (
+                        isinstance(kw.value, ast.Constant)
+                        or isinstance(kw.value, ast.Num)  # noqa: W503
+                    ):
+                        raise prism.exceptions.RuntimeException(
+                            "invalid `retries` keyword...should be an integer"
+                        )
+
+                    if hasattr(kw.value, "value"):
+                        retry_delay_seconds = int(kw.value.value)
+                    else:
+                        retry_delay_seconds = kw.value.n
+
+        # If nothing was found, default to 0
         if retries is None:
             retries = 0
         if retry_delay_seconds is None:
@@ -124,47 +170,43 @@ class CompiledModule:
         prism_task_class = self.ast_parser.get_prism_task_node(
             self.ast_parser.classes, self.ast_parser.bases
         )
+
+        # Both cannot be null
         if prism_task_class is None:
             raise prism.exceptions.ParserException(
                 message=f"no PrismTask in `{str(self.module_relative_path)}`"
             )
-        prism_task_class_name = prism_task_class.name
-
-        # Variable name should just be the name of the module itself. A project
-        # shouldn't contain duplicate modules.
-        task_var_name = get_task_var_name(self.module_relative_path)
-
-        # If a user context is specified, we need to make sure that the prism_project
-        # variables are overridden by whatever the user provides. We need to ensure that
-        # these variables are changed GLOBALLY, i.e., in all functions that utilize
-        # prism_project variables and all files that import the prism_project. The
-        # easiest way to do this is to to import the prism_project.py file before
-        # executing the module string and make the necessary adjustments.
-        if user_context != {}:
-
-            # By importing the prism_project, we take advantage of Python's import
-            # caching. That is, if we execute a module that imports prism_project,
-            # Python will see that prism_project has already been imported and will not
-            # re-import it and overwrite the user context.
-            exec("import prism_project", run_context)
-
-            # Get Prism project and update internal vars
-            prism_project_alias = ""
-            for k, v in run_context.items():
-                if isinstance(v, ModuleType):
-                    if v.__name__ == "prism_project":
-                        prism_project_alias = k
-            if prism_project_alias != "":
-                for user_k, user_v in user_context.items():
-                    setattr(run_context[prism_project_alias], user_k, user_v)
 
         # Execute class definition and create task
         exec(self.module_str, run_context)
-        run_context[task_var_name] = run_context[prism_task_class_name](explicit_run)
 
-        # Set task manager and hooks
-        run_context[task_var_name].set_task_manager(task_manager)
-        run_context[task_var_name].set_hooks(hooks)
+        # Variable name should just be the name of the module itself (with a bit of
+        # styling to prevent accidently exposing variables to users).
+        task_var_name = get_task_var_name(self.module_relative_path)
+
+        # If the user specified a task, great!
+        if isinstance(prism_task_class, ast.ClassDef):
+            prism_task_class_name = prism_task_class.name
+
+            # Execute class definition and create task
+            run_context[task_var_name] = run_context[prism_task_class_name](explicit_run)  # noqa: E501
+
+            # Set task manager and hooks
+            run_context[task_var_name].set_task_manager(task_manager)
+            run_context[task_var_name].set_hooks(hooks)
+
+        # If the user used a decorator, then executing the function will produce the
+        # task we want.
+        else:
+            fn = run_context[prism_task_class.name]
+            if fn.__name__ != "wrapper_task":
+                raise prism.exceptions.RuntimeException(
+                    "`task` decorator not properly specified...try adding parentheses to it, e.g., `@task()`"  # noqa: E501
+                )
+            task = fn(task_manager, hooks)
+            task.bool_run = explicit_run
+
+            run_context[task_var_name] = task
 
         # Return name of variable used to store task instantiation
         return task_var_name

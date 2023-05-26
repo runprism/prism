@@ -102,7 +102,7 @@ class TestJinjaFunctions(unittest.TestCase):
         """
         yml = self._load_profile_yml(ENV_EXISTS)
         expected_user = "/bin/bash"
-        actual_user = yml['profile_name']['adapters']['snowflake_adapter_name_here']['user']  # noqa: E501
+        actual_user = yml['default']['adapters']['snowflake_adapter_name_here']['user']  # noqa: E501
         self.assertEqual(expected_user, actual_user)
 
     def test_env_doesnt_exist(self):
@@ -128,7 +128,7 @@ class TestJinjaFunctions(unittest.TestCase):
         """
         yml = self._load_profile_yml(PARENT)
         expected_profiles_dir = PARENT.parent.parent
-        actual_profiles_dir = yml['profile_name']['adapters']['dbt']['profiles_dir']
+        actual_profiles_dir = yml['default']['adapters']['dbt']['profiles_dir']
         self.assertEqual(str(expected_profiles_dir), actual_profiles_dir)
 
     def test_wkdir(self):
@@ -137,7 +137,7 @@ class TestJinjaFunctions(unittest.TestCase):
         """
         yml = self._load_profile_yml(WKDIR)
         expected_profiles_dir = WKDIR.parent
-        actual_profiles_dir = yml['profile_name']['adapters']['dbt']['profiles_dir']
+        actual_profiles_dir = yml['default']['adapters']['dbt']['profiles_dir']
         self.assertEqual(str(expected_profiles_dir), actual_profiles_dir)
 
     def test_path(self):
@@ -148,7 +148,7 @@ class TestJinjaFunctions(unittest.TestCase):
         yml = self._load_profile_yml(PATH_STUFF)
         expected_project_dir = PATH_STUFF
         expected_profiles_dir = PATH_STUFF.parent
-        actual_project_dir = yml['profile_name']['adapters']['dbt']['project_dir']
-        actual_profiles_dir = yml['profile_name']['adapters']['dbt']['profiles_dir']
+        actual_project_dir = yml['default']['adapters']['dbt']['project_dir']
+        actual_profiles_dir = yml['default']['adapters']['dbt']['profiles_dir']
         self.assertEqual(str(expected_project_dir), str(actual_project_dir))
         self.assertEqual(str(expected_profiles_dir), str(actual_profiles_dir))

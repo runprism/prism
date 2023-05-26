@@ -191,7 +191,7 @@ class ConnectMixin():
         with open(template_path, 'r') as f:
             template_yml = yaml.safe_load(f)
         f.close()
-        new_connection = template_yml['profile_name']
+        new_connection = template_yml['default']
 
         if profile_type in prism.constants.VALID_ADAPTERS:
             new_connection = new_connection['adapters']

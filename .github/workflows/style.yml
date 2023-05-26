@@ -19,8 +19,8 @@ jobs:
         pip install -r style_requirements.txt     
     - name: mypy
       run: |
-        mypy   prism/agents/ prism/cli/ prism/client/ prism/event_managers/ prism/infra/ prism/mixins/ prism/parsers/ prism/profiles/ prism/spark/ prism/constants.py prism/decorators.py prism/exceptions.py prism/logging.py prism/main.py prism/target.py prism/task.py prism/ui.py
-        flake8 prism/agents/ prism/cli/ prism/client/ prism/event_managers/ prism/infra/ prism/mixins/ prism/parsers/ prism/profiles/ prism/spark/ prism/constants.py prism/decorators.py prism/exceptions.py prism/logging.py prism/main.py prism/target.py prism/task.py prism/ui.py
+        mypy   prism/agents/ prism/cli/ prism/client/ prism/event_managers/ prism/infra/ prism/mixins/ prism/parsers/ prism/profiles/ prism/spark/ prism/constants.py prism/decorators/ prism/exceptions.py prism/logging.py prism/main.py prism/target.py prism/task.py prism/ui.py
+        flake8 prism/agents/ prism/cli/ prism/client/ prism/event_managers/ prism/infra/ prism/mixins/ prism/parsers/ prism/profiles/ prism/spark/ prism/constants.py prism/decorators/ prism/exceptions.py prism/logging.py prism/main.py prism/target.py prism/task.py prism/ui.py
 
 
 # EOF

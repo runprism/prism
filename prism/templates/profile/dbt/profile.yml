@@ -1,4 +1,4 @@
-profile_name:
+default:
   adapters:
     dbt_adapter_name_here: # change this!
       type: dbt

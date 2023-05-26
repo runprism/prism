@@ -1,4 +1,4 @@
-profile_name:
+default:
   adapters:
     snowflake_adapter_name_here: # change this!
       type: snowflake
