@@ -168,6 +168,10 @@ class DagExecutor:
         num_expected_runs = retries + 1
         outputs = 0
         name = module.name
+
+        # For testing, keep track of all events
+        all_events = []
+
         while num_runs != num_expected_runs and outputs == 0:
             num_runs += 1
             if num_runs > 1:
@@ -197,8 +201,15 @@ class DagExecutor:
                 explicit_run=relative_path not in self.nodes_not_explicitly_run,
                 user_context=user_context
             )
+
+            # All events
+            all_events += script_event_manager_result.event_list
+
+            # Set output
             outputs = script_event_manager_result.outputs
 
+        # Now, update the event list of the output
+        script_event_manager_result.event_list = all_events
         return script_event_manager_result
 
     def _cancel_connections(self, pool):

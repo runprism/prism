@@ -363,12 +363,13 @@ class AstParser:
 
     def get_keyword_value(self, kw: ast.keyword):
         """
-        Get the argument value from a keyword argument
+        Get the argument value from a keyword argument as a string. This is used to
+        parse targets.
 
         args:
             kw: keyword argument
         returns:
-            argument value
+            argument value (as a string)
         """
         # Python introduced ast.unparse in version 3.9, which reverses
         # ast.parse and converts a node back into string. mypy thinks ast
@@ -423,16 +424,16 @@ class AstParser:
         else:
             return locs
 
-    def get_targets_function_def(self,
+    def get_task_decorator_call(self,
         function: ast.FunctionDef
-    ) -> Union[str, List[str]]:
+    ) -> ast.Call:
         """
-        Get targets are strings when the task is a decorated function (not a PrismTask)
+        Get the `@task` decorator Call object
 
         args:
-            function: decorated function that acts as a PrismTask
+            function: original function decorated with `@task`
         returns:
-            targets as strings (or a list of strings)
+            `@task` decorator as a Call object
         """
         # Targets will always be specified as inputs in the decorator
         task_decs = []
@@ -447,14 +448,29 @@ class AstParser:
                 f"can only be one `@task` decorator for a function...check `{str(self.module_relative_path)}`"  # noqa: E501
             )
         task_dec = task_decs[0]
+        return task_dec
+
+    def get_targets_function_def(self,
+        function: ast.FunctionDef
+    ) -> Union[str, List[str]]:
+        """
+        Get targets are strings when the task is a decorated function (not a PrismTask)
+
+        args:
+            function: decorated function that acts as a PrismTask
+        returns:
+            targets as strings (or a list of strings)
+        """
+        task_dec = self.get_task_decorator_call(function)
 
         # The `task` decorator doesn't accept positional arguments. mypy doesn't think
         # the decorator has keywords...ignore.
         locs: List[str] = []
-        if isinstance(task_dec, ast.Name):
+        if not isinstance(task_dec, ast.Call):
             raise prism.exceptions.RuntimeException(
                 "`task` decorator not properly specified...try adding parentheses to it, e.g., `@task()`"  # noqa: E501
             )
+
         keywords = task_dec.keywords  # type: ignore
         for kw in keywords:
             if kw.arg == "targets":

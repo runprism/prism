@@ -13,6 +13,7 @@ Table of Contents:
 ###########
 
 # Standard library imports
+import json
 import pandas as pd
 import os
 from pathlib import Path
@@ -851,4 +852,147 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_compiled_dir(wkdir)
 
         # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
+    def test_decorator_tasks_with_targets(self):
+        """
+        `prism run` on a project where all the tasks are functions decorated with
+        `@task`
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '019_dec_targets'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run
+        args = ['run']
+        runtask_run = self._run_prism(args)
+        runtask_run_results = runtask_run.get_results()
+        expected_events = self._check_trigger_events(
+            {
+                'extract.py': 'DONE',
+                'load.py': 'DONE'
+            },
+        ) + _run_task_end_events('TaskSuccessfulEndEvent')
+        self.assertEqual(' | '.join(expected_events), runtask_run_results)
+
+        # Check output of 'extract' task
+        self.assertTrue(Path(wkdir / 'output' / 'astros.json').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'second_target.txt').is_file())
+
+        # Astros JSON file
+        with open(Path(wkdir / 'output' / 'astros.json'), 'r') as f:
+            astros_str = f.read()
+        astros_dict = json.loads(astros_str)
+        self.assertEqual(astros_dict["message"], "success")
+
+        # Dummy second target text file
+        with open(Path(wkdir / 'output' / 'second_target.txt'), 'r') as f:
+            second_target = f.read()
+        self.assertEqual(second_target, "second target")
+
+        # Check output of 'load' task
+        names = [
+            "Andrey Fedyaev",
+            "Deng Qingming",
+            "Dmitry Petelin",
+            "Fei Junlong",
+            "Frank Rubio",
+            "Sergey Prokopyev",
+            "Stephen Bowen",
+            "Sultan Alneyadi",
+            "Warren Hoburg",
+            "Zhang Lu",
+        ]
+        for n in names:
+            formatted_name = n.lower().replace(" ", "_")
+            self.assertTrue(Path(wkdir / 'output' / f'{formatted_name}.txt').is_file())
+            with open(Path(wkdir / 'output' / f'{formatted_name}.txt'), 'r') as f:
+                contents = f.read()
+            self.assertEqual(contents, n)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Set up the working directory
+        self._set_up_wkdir()
+
+    def test_decorator_tasks_with_retries(self):
+        """
+        `prism run` on a project where all the tasks are functions decorated with
+        `@task` and the user wants to retry a task
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '020_dec_retries'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Run
+        args = ['run']
+        runtask_run = self._run_prism(args)
+        runtask_run_results = runtask_run.get_results()
+        expected_events = run_success_starting_events + \
+            ['TasksHeaderEvent'] + \
+            _execution_events_modules(
+                {
+                    'extract.py': 'DONE',
+                    'load.py': 'ERROR'
+                },
+            ) + \
+            ['DelayEvent'] + \
+            _execution_events_modules(
+                {'load.py (RETRY 1)': 'ERROR'}
+            ) + \
+            [
+                "EmptyLineEvent",
+                "ExecutionErrorEvent",
+                "TriggersHeaderEvent",
+                "ExecutionEvent - test_trigger_function - RUN",
+                "ExecutionEvent - test_trigger_function - DONE",
+                "SeparatorEvent"
+            ]
+        self.assertEqual(' | '.join(expected_events), runtask_run_results)
+
+        # Check output of 'extract' task
+        self.assertTrue(Path(wkdir / 'output' / 'astros.json').is_file())
+        with open(Path(wkdir / 'output' / 'astros.json'), 'r') as f:
+            astros_str = f.read()
+        astros_dict = json.loads(astros_str)
+        self.assertEqual(astros_dict["message"], "success")
+
+        # Output of 'load' task was not created
+        names = [
+            "Andrey Fedyaev",
+            "Deng Qingming",
+            "Dmitry Petelin",
+            "Fei Junlong",
+            "Frank Rubio",
+            "Sergey Prokopyev",
+            "Stephen Bowen",
+            "Sultan Alneyadi",
+            "Warren Hoburg",
+            "Zhang Lu",
+        ]
+        for n in names:
+            formatted_name = n.lower().replace(" ", "_")
+            self.assertFalse(Path(wkdir / 'output' / f'{formatted_name}.txt').is_file())
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Set up the working directory
         self._set_up_wkdir()

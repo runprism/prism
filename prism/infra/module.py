@@ -90,12 +90,43 @@ class CompiledModule:
             1. How many retries to undertake
             2. The delay between retries
         """
-        retries = self.ast_parser.get_variable_assignments(
-            self.ast_parser.ast_module, 'RETRIES'
+        prism_task_node = self.ast_parser.get_prism_task_node(
+            self.ast_parser.classes, self.ast_parser.bases
         )
-        retry_delay_seconds = self.ast_parser.get_variable_assignments(
-            self.ast_parser.ast_module, 'RETRY_DELAY_SECONDS'
-        )
+
+        # Instantiate retries / retry_delay_seconds
+        retries = None
+        retry_delay_seconds = None
+
+        # If the task is a class, the variables will be stored in class attributes
+        if isinstance(prism_task_node, ast.ClassDef):
+            retries = self.ast_parser.get_variable_assignments(
+                self.ast_parser.ast_module, 'RETRIES'
+            )
+            retry_delay_seconds = self.ast_parser.get_variable_assignments(
+                self.ast_parser.ast_module, 'RETRY_DELAY_SECONDS'
+            )
+
+        # If the task is a decorated function, the variables will be stored as keyword
+        # arguments.
+        elif isinstance(prism_task_node, ast.FunctionDef):
+
+            task_dec_call = self.ast_parser.get_task_decorator_call(prism_task_node)
+            for kw in task_dec_call.keywords:
+                if kw.arg == "retries":
+                    if not isinstance(kw.value, ast.Constant):
+                        raise prism.exceptions.RuntimeException(
+                            "invalid `retries` keyword...should be an integer"
+                        )
+                    retries = int(kw.value.value)
+                if kw.arg == "retry_delay_seconds":
+                    if not isinstance(kw.value, ast.Constant):
+                        raise prism.exceptions.RuntimeException(
+                            "invalid `retries` keyword...should be an integer"
+                        )
+                    retry_delay_seconds = int(kw.value.value)
+
+        # If nothing was found, default to 0
         if retries is None:
             retries = 0
         if retry_delay_seconds is None:
