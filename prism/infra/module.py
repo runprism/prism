@@ -121,7 +121,11 @@ class CompiledModule:
                         raise prism.exceptions.RuntimeException(
                             "invalid `retries` keyword...should be an integer"
                         )
-                    retries = int(kw.value.value)
+
+                    if hasattr(kw.value, "value"):
+                        retries = int(kw.value.value)
+                    else:
+                        retries = kw.value.n
 
                 if kw.arg == "retry_delay_seconds":
                     if not (
@@ -131,7 +135,11 @@ class CompiledModule:
                         raise prism.exceptions.RuntimeException(
                             "invalid `retries` keyword...should be an integer"
                         )
-                    retry_delay_seconds = int(kw.value.value)
+
+                    if hasattr(kw.value, "value"):
+                        retry_delay_seconds = int(kw.value.value)
+                    else:
+                        retry_delay_seconds = kw.value.n
 
         # If nothing was found, default to 0
         if retries is None:
