@@ -17,7 +17,7 @@ import prism_project
 # Task definition #
 ###################
 
-class {{ task_cls_name }}(prism.task.PrismTask):
+class {{ task_name }}(prism.task.PrismTask):
 
     # Run
     def run(self, tasks, hooks):

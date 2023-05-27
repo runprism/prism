@@ -306,3 +306,29 @@ class AwsException(PrismException):
 
     def __str__(self):
         return self.message
+
+
+class UnsupportedTaskTypeException(PrismException):
+    """
+    Exception raised when an unsupported task is requested
+    """
+
+    def __init__(self, task_type):
+        self.message = f"{task_type} tasks aren't currently supported by Prism...be patient, we're working on it! :)"  # noqa: E501
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class InvalidTaskNameException(PrismException):
+    """
+    Exception raised when an unsupported task is requested
+    """
+
+    def __init__(self, task_name):
+        self.message = f"invalid task name `{task_name}`...task names should only have lowercase letters and underscores"  # noqa: E501
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
