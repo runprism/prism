@@ -76,7 +76,7 @@ class CreateTaskTask(
             )
         else:
             template_module = importlib.import_module(
-                name=f"prism.templates.tasks.{task_type}"
+                name=f"prism.templates.tasks.{task_type}_cls"
             )
         template = template_module.TEMPLATE
         task_template = Environment(loader=BaseLoader).from_string(template)  # type: ignore # noqa: E501
