@@ -149,3 +149,56 @@ class TestCreate(integration_test_class.IntegrationTestCase):
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
+
+    def test_create_decorated_task(self):
+        """
+        Created a task using the --decorated flag. This will create a class that has
+        a decorated function rather than a class.
+        """
+        # Change directory to 005_simple_project_with_profile
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null'
+        os.chdir(wkdir)
+
+        # First, check that `dummy_task.py` does not exist in the project
+        self.assertFalse(Path(wkdir / 'modules' / 'dummy_task.py').is_file())
+
+        # ------------------------------------------------------------------------------
+        # Run
+        args = [
+            'create', 'task', '--type', 'python', '--name', 'dummy_task', '--decorated'
+        ]
+        create_task_run = self._run_prism(args)
+
+        # `triggers.yml` file was found
+        self.assertTrue(Path(wkdir / 'modules' / 'dummy_task.py').is_file())
+
+        # Expected events
+        expected_events = SUCCESS_EXPECTED_CREATE_START_EVENTS \
+            + SUCCESS_EXPECTED_CREATE_TASK_EVENTS \
+            + SUCCESS_EXPECTED_CREATE_END_EVENTS
+        self.assertEqual(' | '.join(expected_events), create_task_run.get_results())
+
+        # Get the class name
+        with open(Path(wkdir / 'modules' / 'dummy_task.py'), 'r') as f:
+            dummy_task_py = f.read()
+        self.assertTrue("class DummyTask(prism.task.PrismTask):" not in dummy_task_py)
+        decorated_string = "\n".join([
+            "@task(",
+            "    retries=0,",
+            "    retry_delay_seconds=0,",
+            "    targets=[",
+            "        target(...)",
+            "    ]",
+            ")"
+        ])
+        self.assertTrue(decorated_string in dummy_task_py)
+        self.assertTrue("def dummy_task(tasks, hooks):" in dummy_task_py)
+
+        # Remove task
+        os.unlink(Path(wkdir / 'modules' / 'dummy_task.py'))
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()

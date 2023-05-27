@@ -24,6 +24,7 @@ import prism.logging
 
 # Other imports
 from jinja2 import Template
+import re
 
 
 ####################
@@ -35,9 +36,21 @@ class CreateTaskMixins:
     Mixin for CreateTask task
     """
 
-    def user_task_name_to_classname(self,
+    def is_valid_user_task_name(self,
+        user_task_name: str
+    ):
+        """
+        Check if the user task name is valid. A user's task name should only have
+        letters and underscores.
+        """
+        if not bool(re.match(r'^[a-z\_]$', user_task_name)):
+            raise prism.exceptions.InvalidTaskNameException(user_task_name)
+        return True
+
+    def process_user_task_name(self,
         task_type: str,
         user_task_name: str,
+        decorated: bool = False
     ):
         f"""
         The user-inputted `task_name` corresponds to the file name for the new task. We
@@ -47,23 +60,29 @@ class CreateTaskMixins:
         args:
             task_type: one of {','.join(prism.constants.VALID_TASK_TYPES)}
             user_task_name: user-inputted `task_name` argument
+            decorated: True if the task is a decorated function, False otherwise.
+                Defaults to False
         returns:
             class name
         """
         if task_type == "sql":
-            return ""
+            raise prism.exceptions.UnsupportedTaskTypeException(task_type)
 
         else:
-            # Convert to proper case
-            delim = "_"
-            new_sections = []
-            for name_section in user_task_name.split(delim):
-                new_sections.append(name_section[0].upper() + name_section[1:])
-            name_proper_case = delim.join(new_sections)
+            # If the user wishes to create a class task, then convert the inputted task
+            # name to proper case and remove the underscores.
+            if not decorated:
+                delim = "_"
+                new_sections = []
+                for name_section in user_task_name.split(delim):
+                    new_sections.append(name_section[0].upper() + name_section[1:])
+                name_proper_case = delim.join(new_sections)
 
-            # Remove "_"
-            class_name = name_proper_case.replace("_", "")
-            return class_name
+                # Remove "_"
+                class_name = name_proper_case.replace("_", "")
+                return class_name
+            else:
+                return user_task_name
 
     def create_task_module(self,
         task_type: str,
@@ -115,6 +134,7 @@ class CreateTaskMixins:
         user_task_name: str,
         task_template: Template,
         task_dir: Path,
+        decorated: bool = False
     ):
         f"""
         Create new tasks
@@ -125,14 +145,16 @@ class CreateTaskMixins:
             user_task_name: user-inputted task name
             task_template: unrendered Jinja2 template
             task_dir: directory to place new tasks in
+            decorated: True if the task is a decorated function, False otherwise.
+                Defaults to False
         returns:
             None
         """
         # Only one task is requested
         if task_number == 1:
             template_args = {
-                "task_cls_name": self.user_task_name_to_classname(
-                    task_type, user_task_name
+                "task_name": self.process_user_task_name(
+                    task_type, user_task_name, decorated
                 )
             }
             self.create_task_module(
@@ -148,10 +170,12 @@ class CreateTaskMixins:
             for i in range(1, task_number + 1):
 
                 # Add the task number to the class name and the user task name
-                cls_name = self.user_task_name_to_classname(task_type, user_task_name)
+                cls_name = self.process_user_task_name(
+                    task_type, user_task_name, decorated
+                )
                 cls_name += str(i)
                 template_args = {
-                    "task_cls_name": cls_name
+                    "task_name": cls_name
                 }
                 new_user_task_name = user_task_name + f"_{i}"
 

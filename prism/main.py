@@ -351,6 +351,15 @@ def build_create_subparser(sub):
         """
     )
 
+    # Add argument for whether the task should be a decorated function or a full class.
+    subcommand_options.add_argument(
+        '--decorated',
+        action='store_true',
+        help="""
+        If specified, the task will be a decorated function.
+        """
+    )
+
     # Add argument for number of tasks to create
     subcommand_options.add_argument(
         '-n',

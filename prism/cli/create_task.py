@@ -57,6 +57,7 @@ class CreateTaskTask(
         # Define task type, task number, and task name
 
         task_type = self.args.type
+        decorated = self.args.decorated
 
         # If adapter type is None, throw an error
         if task_type is None:
@@ -69,9 +70,14 @@ class CreateTaskTask(
             return prism.cli.base.TaskRunReturnResult(event_list)
 
         # Grab the template
-        template_module = importlib.import_module(
-            name=f"prism.templates.tasks.{task_type}"
-        )
+        if decorated:
+            template_module = importlib.import_module(
+                name=f"prism.templates.tasks.{task_type}_dec"
+            )
+        else:
+            template_module = importlib.import_module(
+                name=f"prism.templates.tasks.{task_type}_cls"
+            )
         template = template_module.TEMPLATE
         task_template = Environment(loader=BaseLoader).from_string(template)  # type: ignore # noqa: E501
 
@@ -112,7 +118,8 @@ class CreateTaskTask(
             task_type=task_type,
             user_task_name=user_task_name,
             task_template=task_template,
-            task_dir=task_dir
+            task_dir=task_dir,
+            decorated=decorated,
         )
         output = task_manager_output.outputs
         event_to_fire = task_manager_output.event_to_fire
