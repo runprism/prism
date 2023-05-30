@@ -16,12 +16,8 @@ Table of Contents:
 import os
 from pathlib import Path
 import shutil
-import unittest
 
 # Prism imports
-import prism.cli.base
-from prism.main import main
-import prism.logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
@@ -34,18 +30,17 @@ TEST_CASE_WKDIR = os.path.dirname(__file__)
 TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 
 
-################################
-## Test case class definition ##
-################################
+##############################
+# Test case class definition #
+##############################
 
 class TestInitIntegration(integration_test_class.IntegrationTestCase):
-
 
     def test_init(self):
         """
         `prism init`
         """
-        
+
         # Set working directory
         os.chdir(TEST_PROJECTS)
 
@@ -58,8 +53,9 @@ class TestInitIntegration(integration_test_class.IntegrationTestCase):
         args = ['init', '--project-name', '001_init']
         init_run = self._run_prism(args)
         init_run_results = init_run.get_results()
-        
-        # Since project has not been created, the events should align with a successful task creation
+
+        # Since project has not been created, the events should align with a successful
+        # task creation
         expected_events = ' | '.join([
             'SeparatorEvent',
             'TaskRunEvent',
@@ -73,7 +69,8 @@ class TestInitIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(init_path.is_dir())
         self._is_valid_project(init_path)
 
-        # Try creating the project again. This time, we should see a `ProjectAlreadyExistsEvent`
+        # Try creating the project again. This time, we should see a
+        # `ProjectAlreadyExistsEvent`
         os.chdir(TEST_PROJECTS)
         init_run_already_exists = self._run_prism(args)
         init_run_already_exists_results = init_run_already_exists.get_results()
@@ -84,12 +81,13 @@ class TestInitIntegration(integration_test_class.IntegrationTestCase):
             'ProjectAlreadyExistsEvent',
             'SeparatorEvent',
         ])
-        self.assertEqual(expected_events_already_exists, init_run_already_exists_results)
-        
+        self.assertEqual(
+            expected_events_already_exists, init_run_already_exists_results
+        )
+
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
-    
     def test_init_minimal(self):
         """
         `prism init --minimal`
@@ -106,8 +104,9 @@ class TestInitIntegration(integration_test_class.IntegrationTestCase):
         args = ['init', '--project-name', '001a_init_minimal', '--minimal']
         init_run = self._run_prism(args)
         init_run_results = init_run.get_results()
-        
-        # Since project has not been created, the events should align with a successful task creation
+
+        # Since project has not been created, the events should align with a successful
+        # task creation
         expected_events = ' | '.join([
             'SeparatorEvent',
             'TaskRunEvent',
@@ -126,7 +125,8 @@ class TestInitIntegration(integration_test_class.IntegrationTestCase):
         self.assertFalse(Path(init_path / 'output').is_dir())
         self.assertFalse(Path(init_path / 'functions.py').is_file())
 
-        # Try creating the project again. This time, we should see a `ProjectAlreadyExistsEvent`
+        # Try creating the project again. This time, we should see a
+        # `ProjectAlreadyExistsEvent`
         os.chdir(TEST_PROJECTS)
         init_run_already_exists = self._run_prism(args)
         init_run_already_exists_results = init_run_already_exists.get_results()
@@ -137,10 +137,9 @@ class TestInitIntegration(integration_test_class.IntegrationTestCase):
             'ProjectAlreadyExistsEvent',
             'SeparatorEvent',
         ])
-        self.assertEqual(expected_events_already_exists, init_run_already_exists_results)
-        
+        self.assertEqual(
+            expected_events_already_exists, init_run_already_exists_results
+        )
+
         # Set up wkdir for the next test case
         self._set_up_wkdir()
-
-
-# EOF
