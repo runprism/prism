@@ -96,7 +96,9 @@ class PrismTask:
         else:
             raise prism.exceptions.RuntimeException("`run` method not implemented")
 
-    @prism.prism_logging.deprecated('prism.task.PrismTask.target', 'prism.decorators.target')
+    @prism.prism_logging.deprecated(
+        'prism.task.PrismTask.target', 'prism.decorators.target'
+    )
     def target(type, loc, **kwargs):
         """
         Decorator to use if task requires user to iterate through several different

@@ -178,8 +178,8 @@ class Profile:
             else:
                 if flag_missing_named_profile:
                     if fire_warnings:
-                        e3 = prism.prism_logging.ProfileNameExistsNamedProfileDoesNotExist()
-                        prism.prism_logging.fire_console_event(e3, [], 0, log_level='warn')
+                        e3 = prism.prism_logging.ProfileNameExistsNamedProfileDoesNotExist()  # noqa: E501
+                        prism.prism_logging.fire_console_event(e3, [], 0, log_level='warn')  # noqa: E501
                     return False
 
         # Nothing has been returned, return True
