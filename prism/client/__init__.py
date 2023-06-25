@@ -32,7 +32,7 @@ import prism.mixins.connect
 import prism.mixins.run
 import prism.mixins.sys_handler
 from prism.parsers import ast_parser
-import prism.logging
+import prism.prism_logging
 
 
 ####################
@@ -74,7 +74,7 @@ class PrismDAG(
         # Set up default logger
         args = argparse.Namespace()
         args.log_level = self.log_level
-        prism.logging.set_up_logger(args)
+        prism.prism_logging.set_up_logger(args)
 
     def _is_valid_project(self, user_project_dir: Path) -> bool:
         """

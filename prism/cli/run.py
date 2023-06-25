@@ -17,8 +17,8 @@ import prism.cli.compile
 import prism.mixins.run
 import prism.exceptions
 import prism.constants
-import prism.logging
-from prism.logging import fire_console_event, fire_empty_line_event
+import prism.prism_logging
+from prism.prism_logging import fire_console_event, fire_empty_line_event
 from prism.event_managers import base as base_event_manager
 from prism.infra import executor as prism_executor
 from prism.triggers import TriggerManager
@@ -38,8 +38,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
     """
 
     def fire_error_events(self,
-        event_list: List[prism.logging.Event],
-        error_event: Optional[prism.logging.Event],
+        event_list: List[prism.prism_logging.Event],
+        error_event: Optional[prism.prism_logging.Event],
         trigger_manager: TriggerManager
     ):
         """
@@ -180,7 +180,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
         event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
-            prism.logging.TasksHeaderEvent(msg=self.prism_project.slug),
+            prism.prism_logging.TasksHeaderEvent(msg=self.prism_project.slug),
             event_list
         )
 
@@ -254,7 +254,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
 
             # Task is successful
             event_list = fire_console_event(
-                prism.logging.TaskSuccessfulEndEvent(),
+                prism.prism_logging.TaskSuccessfulEndEvent(),
                 event_list,
                 0,
                 log_level='info'

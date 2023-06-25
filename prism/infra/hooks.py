@@ -18,7 +18,7 @@ from typing import Any, Optional
 from prism.infra import project as prism_project
 import prism.constants
 import prism.exceptions
-import prism.logging
+import prism.prism_logging
 
 
 ####################

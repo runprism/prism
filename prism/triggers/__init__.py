@@ -14,7 +14,7 @@ Table of Contents
 from prism.cli.base import TaskRunReturnResult
 from prism.event_managers.base import BaseEventManager
 import prism.exceptions
-import prism.logging
+import prism.prism_logging
 from prism.parsers import yml_parser
 from prism.infra.project import PrismProject
 from prism.constants import VALID_TRIGGER_TYPES
@@ -254,7 +254,7 @@ class TriggerManager:
         unexpected_keys = list(set(top_level_keys) - set(expected_keys))
         if len(unexpected_keys) > 0:
             warning_events.append(
-                prism.logging.UnexpectedTriggersYmlKeysEvent(unexpected_keys)
+                prism.prism_logging.UnexpectedTriggersYmlKeysEvent(unexpected_keys)
             )
 
         # We definitely need the triggers YML to have `triggers`. The `include` key is
@@ -442,7 +442,7 @@ class TriggerManager:
     def exec(self,
         trigger_type: str,
         full_tb: bool,
-        event_list: List[prism.logging.Event],
+        event_list: List[prism.prism_logging.Event],
         run_context: Dict[Any, Any]
     ):
         """
@@ -477,7 +477,7 @@ class TriggerManager:
         )
         event_list = setup_event_manager_output.event_list
         if setup_event_manager_output.outputs == 0:
-            event_list = prism.logging.fire_console_event(
+            event_list = prism.prism_logging.fire_console_event(
                 setup_event_manager_output.event_to_fire, event_list, log_level='error'
             )
             return TaskRunReturnResult(
@@ -490,22 +490,22 @@ class TriggerManager:
         # Trigger header events
         triggers_to_exec = getattr(self, f"{trigger_type}_triggers")
         if len(triggers_to_exec) > 0:
-            event_list = prism.logging.fire_console_event(
-                prism.logging.TriggersHeaderEvent(),
+            event_list = prism.prism_logging.fire_console_event(
+                prism.prism_logging.TriggersHeaderEvent(),
                 event_list,
             )
 
             # Warning to indicate we defaulted to project directory
             if self.defaulted_to_project_dir:
-                event_list = prism.logging.fire_console_event(
-                    prism.logging.TriggersPathNotDefined(),
+                event_list = prism.prism_logging.fire_console_event(
+                    prism.prism_logging.TriggersPathNotDefined(),
                     event_list,
                     log_level='warn'
                 )
 
             # Fire all other warnings encountered during setup
             for ev in warning_events:
-                event_list = prism.logging.fire_console_event(
+                event_list = prism.prism_logging.fire_console_event(
                     ev,
                     event_list,
                     log_level='warn'
@@ -532,8 +532,8 @@ class TriggerManager:
             # to execute all triggers.
             if cb_event_manager_output.outputs == 0:
                 cb_has_error = True
-                event_list = prism.logging.fire_empty_line_event(event_list)
-                event_list = prism.logging.fire_console_event(
+                event_list = prism.prism_logging.fire_empty_line_event(event_list)
+                event_list = prism.prism_logging.fire_console_event(
                     cb_event_manager_output.event_to_fire, event_list, log_level='error'
                 )
         return TaskRunReturnResult(

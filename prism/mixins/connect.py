@@ -22,7 +22,7 @@ import prism.cli.base
 import prism.cli.compile
 import prism.exceptions
 import prism.constants
-import prism.logging
+import prism.prism_logging
 from prism.templates.profile import PROFILES_TEMPLATE_DIR as profiles_template_dir
 
 

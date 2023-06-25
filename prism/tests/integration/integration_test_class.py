@@ -29,7 +29,7 @@ from typing import Any, Dict, List
 # Prism imports
 import prism.cli.base
 from prism.main import main
-import prism.logging
+import prism.prism_logging
 from prism.constants import ROOT_DIR
 
 # Ignore ResourceWarnings introduced by boto3

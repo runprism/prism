@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 # Prism-specific imports
 import prism.constants
 import prism.exceptions
-import prism.logging
+import prism.prism_logging
 import prism.parsers.ast_parser as ast_parser
 import prism.infra.module
 from prism.infra.manifest import Manifest, ModuleManifest

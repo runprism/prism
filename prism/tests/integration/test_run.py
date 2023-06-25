@@ -900,16 +900,16 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Check output of 'load' task
         names = [
-            "Andrey Fedyaev",
-            "Deng Qingming",
-            "Dmitry Petelin",
-            "Fei Junlong",
-            "Frank Rubio",
             "Sergey Prokopyev",
+            "Dmitry Petelin",
+            "Frank Rubio",
             "Stephen Bowen",
-            "Sultan Alneyadi",
             "Warren Hoburg",
-            "Zhang Lu",
+            "Sultan Alneyadi",
+            "Andrey Fedyaev",
+            "Jing Haiping",
+            "Gui Haichow",
+            "Zhu Yangzhu",
         ]
         for n in names:
             formatted_name = n.lower().replace(" ", "_")

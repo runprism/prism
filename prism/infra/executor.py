@@ -23,8 +23,8 @@ from prism.infra import module as prism_module
 from prism.infra import compiler as prism_compiler
 from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
-import prism.logging
-from prism.logging import Event, fire_console_event
+import prism.prism_logging
+from prism.prism_logging import Event, fire_console_event
 from prism.event_managers import base as base_event_manager
 from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAME
 
@@ -176,7 +176,7 @@ class DagExecutor:
             num_runs += 1
             if num_runs > 1:
                 event_list = fire_console_event(
-                    prism.logging.DelayEvent(name, retry_delay_seconds),
+                    prism.prism_logging.DelayEvent(name, retry_delay_seconds),
                     log_level='warn'
                 )
                 time.sleep(retry_delay_seconds)

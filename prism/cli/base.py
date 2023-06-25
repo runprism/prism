@@ -21,8 +21,8 @@ from typing import List, Tuple, Union
 # Prism-specific imports
 from prism.event_managers import base as base_event_manager
 import prism.exceptions
-import prism.logging
-from prism.logging import fire_console_event, fire_empty_line_event, Event
+import prism.prism_logging
+from prism.prism_logging import fire_console_event, fire_empty_line_event, Event
 from prism.mixins import base as base_mixins
 
 
@@ -95,7 +95,7 @@ class TaskRunReturnResult:
     """
 
     def __init__(self,
-        event_list: List[prism.logging.Event],
+        event_list: List[prism.prism_logging.Event],
         has_error: bool = False
     ):
         self.event_list = event_list
@@ -112,15 +112,15 @@ class BaseTask(base_mixins.BaseMixin):
 
     def __init__(self, args):
         self.args = args
-        prism.logging.set_up_logger(self.args)
+        prism.prism_logging.set_up_logger(self.args)
 
     @classmethod
     def task_from_args(cls, args):
         return cls(args)
 
     def fire_header_events(self,
-        event_list: List[prism.logging.Event] = []
-    ) -> Tuple[List[prism.logging.Event], Union[Path, None]]:
+        event_list: List[prism.prism_logging.Event] = []
+    ) -> Tuple[List[prism.prism_logging.Event], Union[Path, None]]:
         """
         Fire header events that should be displayed at the beginning of all tasks
         (except the init task)
@@ -130,10 +130,10 @@ class BaseTask(base_mixins.BaseMixin):
 
         # Fire header events
         event_list = fire_console_event(
-            prism.logging.SeparatorEvent(), base_event_list, 1, 'info'
+            prism.prism_logging.SeparatorEvent(), base_event_list, 1, 'info'
         )
         event_list = fire_console_event(
-            prism.logging.TaskRunEvent(version=prism.constants.VERSION),
+            prism.prism_logging.TaskRunEvent(version=prism.constants.VERSION),
             event_list,
             0,
             'info'
@@ -143,7 +143,7 @@ class BaseTask(base_mixins.BaseMixin):
         try:
             project_dir = get_project_dir()
             event_list = fire_console_event(
-                prism.logging.CurrentProjectDirEvent(project_dir),
+                prism.prism_logging.CurrentProjectDirEvent(project_dir),
                 event_list,
                 0,
                 'info'
@@ -153,21 +153,21 @@ class BaseTask(base_mixins.BaseMixin):
         # If project directory not found, fire an event
         except prism.exceptions.ProjectPyNotFoundException as err:
             event_list = fire_empty_line_event(event_list)
-            e = prism.logging.ProjectPyNotFoundEvent(err)
+            e = prism.prism_logging.ProjectPyNotFoundEvent(err)
             event_list = fire_console_event(e, event_list, log_level='error')
             event_list = self.fire_tail_event(event_list)
             return event_list, None
 
     def fire_tail_event(self,
-        event_list: List[prism.logging.Event] = []
-    ) -> List[prism.logging.Event]:
+        event_list: List[prism.prism_logging.Event] = []
+    ) -> List[prism.prism_logging.Event]:
         """
         Fire tail event
         """
         # Fire a separator event to indicate the end of a run. Note, this will
         # only fire if --quietly isn't invoked
-        event_list = prism.logging.fire_console_event(
-            prism.logging.SeparatorEvent(),
+        event_list = prism.prism_logging.fire_console_event(
+            prism.prism_logging.SeparatorEvent(),
             event_list,
             sleep=0,
             log_level='info'

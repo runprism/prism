@@ -18,8 +18,8 @@ import prism.mixins.create_task
 import prism.mixins.compile
 import prism.exceptions
 import prism.constants
-import prism.logging
-from prism.logging import fire_console_event, fire_empty_line_event
+import prism.prism_logging
+from prism.prism_logging import fire_console_event, fire_empty_line_event
 from prism.event_managers.base import BaseEventManager, EventManagerOutput
 
 # Other imports
@@ -61,7 +61,7 @@ class CreateTaskTask(
 
         # If adapter type is None, throw an error
         if task_type is None:
-            e = prism.logging.InvalidType(
+            e = prism.prism_logging.InvalidType(
                 "task",
                 prism.constants.VALID_TASK_TYPES
             )
@@ -96,7 +96,7 @@ class CreateTaskTask(
 
         # Fire events
         event_list = fire_console_event(
-            prism.logging.CreatingTasksEvent(),
+            prism.prism_logging.CreatingTasksEvent(),
             event_list,
             log_level='info'
         )
@@ -136,7 +136,7 @@ class CreateTaskTask(
         # Print output message if successfully executed
         event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
-            prism.logging.TaskSuccessfulEndEvent(),
+            prism.prism_logging.TaskSuccessfulEndEvent(),
             event_list,
             0,
             log_level='info'

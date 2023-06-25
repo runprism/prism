@@ -19,7 +19,7 @@ from prism.infra import executor as prism_executor
 from prism.infra import task_manager, hooks
 import prism.constants
 import prism.exceptions
-import prism.logging
+import prism.prism_logging
 from prism.constants import INTERNAL_TASK_MANAGER_VARNAME, INTERNAL_HOOKS_VARNAME
 
 

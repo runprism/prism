@@ -34,7 +34,7 @@ from prism.profiles import (  # noqa: F401
     pyspark as prism_pyspark
 )
 import prism.profiles.profile as pr
-import prism.logging
+import prism.prism_logging
 
 
 #################################
@@ -97,7 +97,7 @@ class LoggingArgs:
     log_level: str = 'info'
 
 
-prism.logging.set_up_logger(LoggingArgs())
+prism.prism_logging.set_up_logger(LoggingArgs())
 
 
 def _remove_logs():

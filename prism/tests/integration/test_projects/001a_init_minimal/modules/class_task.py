@@ -19,7 +19,7 @@ import prism_project
 # Task definition #
 ###################
 
-class Module01(prism.task.PrismTask):
+class ExampleTask(prism.task.PrismTask):
 
     # Run
     @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'hello_world.txt')

@@ -22,7 +22,7 @@ import shutil
 
 # Prism imports
 import prism.cli.base
-import prism.logging
+import prism.prism_logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
@@ -118,7 +118,7 @@ class TestDbtIntegration(integration_test_class.IntegrationTestCase):
 
         # Last event in run_results (before separator event) should be an error event
         error_event = run_results.event_list[-2]
-        self.assertTrue(isinstance(error_event, prism.logging.PrismExceptionErrorEvent))
+        self.assertTrue(isinstance(error_event, prism.prism_logging.PrismExceptionErrorEvent))
         self.assertEqual('adapter `dbt_prsdfofile` not defined', error_event.err.message)
 
         # Remove the 'target' -- it contains dbt artifacts

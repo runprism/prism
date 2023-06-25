@@ -26,7 +26,7 @@ import yaml
 # Prism imports
 import prism.cli.base
 from prism.main import main
-import prism.logging
+import prism.prism_logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 

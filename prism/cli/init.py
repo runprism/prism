@@ -23,8 +23,8 @@ from typing import List
 import prism.cli.base
 import prism.exceptions
 import prism.constants
-import prism.logging
-from prism.logging import Event, fire_console_event, fire_empty_line_event
+import prism.prism_logging
+from prism.prism_logging import Event, fire_console_event, fire_empty_line_event
 from prism.templates.starter_project import STARTER_PROJECT_TEMPLATE_DIR
 from prism.templates.minimal_project import MINIMAL_PROJECT_TEMPLATE_DIR
 
@@ -114,13 +114,13 @@ class InitTask(prism.cli.base.BaseTask):
 
         # Header events
         event_list = fire_console_event(
-            prism.logging.SeparatorEvent(),
+            prism.prism_logging.SeparatorEvent(),
             event_list,
             0,
             log_level='info'
         )
         event_list = fire_console_event(
-            prism.logging.TaskRunEvent(prism.constants.VERSION),
+            prism.prism_logging.TaskRunEvent(prism.constants.VERSION),
             event_list,
             log_level='info'
         )
@@ -136,10 +136,10 @@ class InitTask(prism.cli.base.BaseTask):
         wkdir = Path.cwd()
         project_dir = wkdir / project_name
         if project_dir.is_dir():
-            e = prism.logging.ProjectAlreadyExistsEvent(str(project_dir))
+            e = prism.prism_logging.ProjectAlreadyExistsEvent(str(project_dir))
             event_list = fire_console_event(e, event_list, 0, log_level='error')
             event_list = fire_console_event(
-                prism.logging.SeparatorEvent(),
+                prism.prism_logging.SeparatorEvent(),
                 event_list,
                 0,
                 log_level='info'
@@ -154,7 +154,7 @@ class InitTask(prism.cli.base.BaseTask):
 
         # Copy starter project into project directory
         event_list = fire_console_event(
-            prism.logging.CreatingProjectDirEvent(),
+            prism.prism_logging.CreatingProjectDirEvent(),
             event_list,
             log_level='info'
         )
@@ -167,7 +167,7 @@ class InitTask(prism.cli.base.BaseTask):
         # Init task successful
         event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
-            prism.logging.InitSuccessfulEvent(
+            prism.prism_logging.InitSuccessfulEvent(
                 msg=TASK_COMPLETE_MSG.format(
                     project_name=project_name,
                     docs_url='docs.runprism.com'
@@ -178,7 +178,7 @@ class InitTask(prism.cli.base.BaseTask):
             log_level='agent'
         )
         event_list = fire_console_event(
-            prism.logging.SeparatorEvent(),
+            prism.prism_logging.SeparatorEvent(),
             event_list,
             0,
             log_level='info'

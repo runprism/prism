@@ -23,8 +23,8 @@ import sys
 # Prism-specific imports
 import prism.cli.base
 import prism.cli.compile
-import prism.logging
-from prism.logging import Event, fire_empty_line_event, fire_console_event
+import prism.prism_logging
+from prism.prism_logging import Event, fire_empty_line_event, fire_console_event
 import prism.mixins.graph
 import prism.event_managers.base as base_event_manager
 
@@ -118,7 +118,7 @@ class GraphTask(prism.cli.compile.CompileTask, prism.mixins.graph.GraphMixin):
             if res == "y":
                 event_list = fire_empty_line_event(event_list)
                 event_list = fire_console_event(
-                    prism.logging.TaskSuccessfulEndEvent(),
+                    prism.prism_logging.TaskSuccessfulEndEvent(),
                     event_list,
                     0,
                     log_level='info'
@@ -138,11 +138,11 @@ class GraphTask(prism.cli.compile.CompileTask, prism.mixins.graph.GraphMixin):
 
         event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
-            prism.logging.ServingDocsEvent(address=address, port=port),
+            prism.prism_logging.ServingDocsEvent(address=address, port=port),
             log_level='info'
         )
         event_list = fire_console_event(
-            prism.logging.ServingDocsExitInfo(),
+            prism.prism_logging.ServingDocsExitInfo(),
             log_level='info'
         )
         event_list = fire_empty_line_event(event_list)

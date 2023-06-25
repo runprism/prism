@@ -16,9 +16,9 @@ import prism.cli.base
 import prism.mixins.create_trigger
 import prism.exceptions
 import prism.constants
-import prism.logging
+import prism.prism_logging
 from prism.event_managers.base import BaseEventManager
-from prism.logging import fire_console_event, fire_empty_line_event
+from prism.prism_logging import fire_console_event, fire_empty_line_event
 
 
 ####################
@@ -55,7 +55,7 @@ class CreateTriggerTask(
 
         # If adapter type is None, throw an error
         if trigger_type is None:
-            e = prism.logging.InvalidType(
+            e = prism.prism_logging.InvalidType(
                 "trigger",
                 prism.constants.VALID_TRIGGER_TYPES
             )
@@ -65,7 +65,7 @@ class CreateTriggerTask(
 
         # If adapter type isn't valid, then throw an error
         elif trigger_type not in prism.constants.VALID_TRIGGER_TYPES:
-            e = prism.logging.InvalidType(
+            e = prism.prism_logging.InvalidType(
                 "trigger",
                 prism.constants.VALID_TRIGGER_TYPES,
                 trigger_type
@@ -76,7 +76,7 @@ class CreateTriggerTask(
 
         # Fire events
         event_list = fire_console_event(
-            prism.logging.CreatingTriggersEvent(),
+            prism.prism_logging.CreatingTriggersEvent(),
             event_list,
             log_level='info'
         )
@@ -122,7 +122,7 @@ class CreateTriggerTask(
         # Fire footer events
         event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
-            prism.logging.TaskSuccessfulEndEvent(),
+            prism.prism_logging.TaskSuccessfulEndEvent(),
             event_list,
             0,
             log_level='info'

@@ -22,8 +22,8 @@ import prism.cli.base
 import prism.mixins.compile
 import prism.exceptions
 import prism.constants
-import prism.logging
-from prism.logging import fire_console_event, fire_empty_line_event
+import prism.prism_logging
+from prism.prism_logging import fire_console_event, fire_empty_line_event
 from prism.event_managers.base import BaseEventManager, EventManagerOutput
 from prism.infra.project import PrismProject
 
@@ -60,7 +60,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         try:
             modules_dir = self.get_modules_dir(project_dir)
         except prism.exceptions.CompileException as err:
-            e = prism.logging.PrismExceptionErrorEvent(
+            e = prism.prism_logging.PrismExceptionErrorEvent(
                 err,
                 'accessing modules directory'
             )
@@ -105,7 +105,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         # Print output message if successfully executed
         event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
-            prism.logging.TaskSuccessfulEndEvent(),
+            prism.prism_logging.TaskSuccessfulEndEvent(),
             event_list,
             0,
             log_level='info'
@@ -118,7 +118,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
     def run_for_subclass(self,
         args: argparse.Namespace,
         project_dir: Path,
-        event_list: List[prism.logging.Event],
+        event_list: List[prism.prism_logging.Event],
         project: Optional[PrismProject] = None,
         fire_exec_events: bool = True
     ) -> Union[prism.cli.base.TaskRunReturnResult, EventManagerOutput]:
@@ -140,7 +140,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         try:
             modules_dir = self.get_modules_dir(project_dir)
         except prism.exceptions.CompileException as err:
-            e = prism.logging.PrismExceptionErrorEvent(
+            e = prism.prism_logging.PrismExceptionErrorEvent(
                 err,
                 'accessing modules directory'
             )
