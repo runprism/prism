@@ -310,10 +310,10 @@ class AstParser:
                             )
 
                         # Check the argument format. Convert it to a `.py` format.
-                        tmp_path = args[0].s
+                        tmp_path = args[0].s  # type: ignore
                         if len(re.findall(r'^(?i)[a-z0-9\_\-]+(?:\.py)?$', tmp_path)) == 0:  # noqa: E501
                             raise prism.exceptions.ParserException(
-                                f'invalid module name `{args[0].s}`...can only contain letters, numbers, and underscores or dashes'  # noqa: E501
+                                f'invalid module name `{tmp_path}`...can only contain letters, numbers, and underscores or dashes'  # noqa: E501
                             )
                         if len(re.findall(r'\.py$', tmp_path)) == 0:
                             tmp_path = f'{tmp_path.split(".")[0]}.py'
