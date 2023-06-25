@@ -11,6 +11,7 @@ Table of Contents
 ###########
 
 # Standard library imports
+import re
 from typing import Any, Dict
 
 
@@ -30,4 +31,6 @@ class PrismTaskManager:
         self.upstream = upstream
 
     def ref(self, module: str):
+        if len(re.findall(r'\.py$', module)) == 0:
+            module = f'{module}.py'
         return self.upstream[module].get_output()

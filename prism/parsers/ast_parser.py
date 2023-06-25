@@ -308,12 +308,22 @@ class AstParser:
                             raise prism.exceptions.ParserException(
                                 'too many arguments in `tasks.ref()` call'
                             )
-                        if Path(args[0].s) not in mod_calls:                 # type: ignore # noqa: E501
-                            if args[0].s == str(self.module_relative_path):  # type: ignore # noqa: E501
+
+                        # Check the argument format. Convert it to a `.py` format.
+                        tmp_path = args[0].s
+                        if len(re.findall(r'^(?i)[a-z0-9\_\-]+(?:\.py)?$', tmp_path)) == 0:  # noqa: E501
+                            raise prism.exceptions.ParserException(
+                                f'invalid module name `{args[0].s}`...can only contain letters, numbers, and underscores or dashes'  # noqa: E501
+                            )
+                        if len(re.findall(r'\.py$', tmp_path)) == 0:
+                            tmp_path = f'{tmp_path.split(".")[0]}.py'
+
+                        if tmp_path not in mod_calls:  # type: ignore # noqa: E501
+                            if tmp_path == str(self.module_relative_path):  # type: ignore # noqa: E501
                                 raise prism.exceptions.ParserException(
                                     message=f'self-references found in `{str(self.module_relative_path)}`'  # noqa: E501
                                 )
-                            mod_calls.append(Path(args[0].s))  # type: ignore
+                            mod_calls.append(Path(tmp_path))  # type: ignore
 
                 # If we encounter an Attribute error, then the call object producing the
                 # error is not of interest to us. Skip.
