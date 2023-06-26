@@ -13,7 +13,7 @@ Table of Contents:
 ###########
 
 # Standard library imports
-from prism.main2 import invoke
+from prism.main import invoke
 import io
 import boto3
 import ast
