@@ -157,14 +157,14 @@ class CompileMixin():
                     # Check if path is a directory
                     elif Path(modules_dir / m).is_dir():
                         raise prism.exceptions.CompileException(
-                            message=f'invalid --modules argument `{m}`'
+                            message=f'invalid --module argument `{m}`'
                         )
 
                     # Check if path is a file
                     elif Path(modules_dir / m).is_file():
                         if len(re.findall(r'\.py$', Path(modules_dir / m).name)) == 0:
                             raise prism.exceptions.CompileException(
-                                f'invalid --modules argument `{m}`'
+                                f'invalid --module argument `{m}`'
                             )
                         else:
                             processed_modules.extend([Path(m)])
@@ -174,7 +174,7 @@ class CompileMixin():
                             f'invalid object `{str(m)}` in `{str(modules_dir)}`'
                         )
 
-        # If --modules argument not specified, then get all modules
+        # If --module argument not specified, then get all modules
         except AttributeError:
             processed_modules = self.get_modules(modules_dir)
 

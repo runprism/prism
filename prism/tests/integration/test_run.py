@@ -213,7 +213,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Expecatation: module 1 is the first module in the DAG. Therefore, we should
         # not encounter any errors with this command.
-        args = ['run', '--modules', 'module01.py']
+        args = ['run', '--module', 'module01.py']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
@@ -251,7 +251,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # errors with this command.
 
         # Execute command
-        args = ['run', '--modules', 'module02.py', '--full-tb']
+        args = ['run', '--module', 'module02.py', '--full-tb']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
@@ -279,7 +279,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # -------------------------------------
         # Execute command without `all-upstream`
-        args = ['run', '--modules', 'module04.py']
+        args = ['run', '--module', 'module04.py']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
@@ -292,7 +292,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute command with `all-upstream`
         self._remove_compiled_dir(wkdir)
         self._remove_files_in_output(wkdir)
-        args = ['run', '--modules', 'module04.py', '--all-upstream']
+        args = ['run', '--module', 'module04.py', '--all-upstream']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         self.assertEqual(
@@ -354,7 +354,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute all modules in extract folder using '*' syntax #
         # ****************************************************** #
 
-        args = ['run', '--modules', 'extract/*']
+        args = ['run', '--module', 'extract/*']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
@@ -391,9 +391,11 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         args = [
             'run',
-            '--modules',
+            '--module',
             'extract/module01.py',
+            '--module',
             'extract/module02.py',
+            '--module',
             'load/module03.py'
         ]
         run = self._run_prism(args)
@@ -544,7 +546,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # New output path
         output_path = str(wkdir.parent)
         self.assertFalse((Path(output_path) / 'module01.txt').is_file())
-        args = ['run', '--modules', 'module01.py', '--vars', f'OUTPUT={output_path}']
+        args = ['run', '--module', 'module01.py', '--vars', f'OUTPUT={output_path}']
         self._run_prism(args)
 
         # Get output
@@ -579,7 +581,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['run', '--modules', 'module01.py', '--all-downstream']
+        args = ['run', '--module', 'module01.py', '--all-downstream']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
@@ -670,7 +672,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['run', '--modules', 'module01.py']
+        args = ['run', '--module', 'module01.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
@@ -703,7 +705,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['run', '--modules', 'module02.py']
+        args = ['run', '--module', 'module02.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
@@ -737,7 +739,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['run', '--modules', 'module01.py']
+        args = ['run', '--module', 'module01.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(

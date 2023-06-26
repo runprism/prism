@@ -13,8 +13,7 @@ Table of Contents:
 ###########
 
 # Standard library imports
-from click.testing import CliRunner
-from prism.main2 import main as main2
+from prism.main2 import invoke
 import io
 import boto3
 import ast
@@ -104,9 +103,7 @@ class IntegrationTestCase(unittest.TestCase):
         """
         Run prism using `args`
         """
-        runner = CliRunner()
-        result = runner.invoke(main2, args)
-        return result.output
+        return invoke(args, bool_return=True)
 
     def _ignore_warnings(test_func):
         """

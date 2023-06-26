@@ -60,7 +60,7 @@ class TestDbtIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Execute command.
-        args = ['run', '--modules', 'filter_customers.py']
+        args = ['run', '--module', 'filter_customers.py']
         run_results = self._run_prism(args)
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
@@ -110,7 +110,7 @@ class TestDbtIntegration(integration_test_class.IntegrationTestCase):
         self.assertFalse(Path(wkdir / 'output' / 'bad_adapter.csv').is_file())
 
         # Execute command.
-        args = ['run', '--modules', 'bad_adapter.py']
+        args = ['run', '--module', 'bad_adapter.py']
         run_results = self._run_prism(args)
 
         # Nothing should be produced
