@@ -16,7 +16,7 @@ import argparse
 import re
 import json
 import sys
-from typing import Optional, List
+from typing import Any, Optional, List
 
 # Prism imports
 import prism.constants
@@ -289,9 +289,7 @@ def run(
     - prism run --context '{"hi": 1}'
     """
     # Convert tuple of modules to list
-    modules_list = [m for m in module]
-    if len(modules_list) == 0:
-        modules_list = None
+    modules_list: Optional[List[Any]] = [m for m in module] if len(module) > 0 else None
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -717,9 +715,7 @@ def agent_run(
     ns = argparse.Namespace()
 
     # Convert tuple of modules to list
-    modules_list = [m for m in module]
-    if len(modules_list) == 0:
-        modules_list = None
+    modules_list: Optional[List[Any]] = [m for m in module] if len(module) > 0 else None
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -813,9 +809,7 @@ def agent_build(
     ns = argparse.Namespace()
 
     # Convert tuple of modules to list
-    modules_list = [m for m in module]
-    if len(modules_list) == 0:
-        modules_list = None
+    modules_list: Optional[List[Any]] = [m for m in module] if len(module) > 0 else None
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -949,9 +943,7 @@ def spark_submit(
     - prism spark-submit --context '{"hi": 1}'
     """
     # Convert tuple of modules to list
-    modules_list = [m for m in module]
-    if len(modules_list) == 0:
-        modules_list = None
+    modules_list: Optional[List[Any]] = [m for m in module] if len(module) > 0 else None
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
