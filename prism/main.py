@@ -58,6 +58,30 @@ def _check_context(inputted_vars, inputted_context):
         )
 
 
+def _process_modules(inputted_modules) -> Optional[List[Any]]:
+    processed_modules = []
+    for m in list(inputted_modules):
+        processed = m
+
+        # If the user adds modules/ at the beginning of their modules (for auto-fill
+        # purposes), then just remove that prefix.
+        if len(re.findall(r'^modules\/', processed)) > 0:
+            processed = re.sub(r'^modules\/', '', processed)
+
+        # If the user wants to run a specific module but doesn't put .py at the end,
+        # then add it in.
+        if (
+            len(re.findall(r'\.py$', processed)) == 0
+            and len(re.findall(r'\/\*$', processed)) == 0  # noqa: W503
+        ):
+            processed = f'{processed}.py'
+        processed_modules.append(processed)
+
+    if len(processed_modules) > 0:
+        return processed_modules
+    return None
+
+
 ##############
 # Arg parser #
 ##############
@@ -289,7 +313,7 @@ def run(
     - prism run --context '{"hi": 1}'
     """
     # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = [m for m in module] if len(module) > 0 else None
+    modules_list: Optional[List[Any]] = _process_modules(module)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -715,7 +739,7 @@ def agent_run(
     ns = argparse.Namespace()
 
     # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = [m for m in module] if len(module) > 0 else None
+    modules_list: Optional[List[Any]] = _process_modules(module)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -809,7 +833,7 @@ def agent_build(
     ns = argparse.Namespace()
 
     # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = [m for m in module] if len(module) > 0 else None
+    modules_list: Optional[List[Any]] = _process_modules(module)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -943,7 +967,7 @@ def spark_submit(
     - prism spark-submit --context '{"hi": 1}'
     """
     # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = [m for m in module] if len(module) > 0 else None
+    modules_list: Optional[List[Any]] = _process_modules(module)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)

@@ -998,3 +998,52 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Set up the working directory
         self._set_up_wkdir()
+
+    def test_simple_project_no_py_in_ref(self):
+        """
+        `prism run` on simple project where `.py` is excluded from the task.ref(...)
+        calls
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '021_no_py_in_ref'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Execute command. Remove the `.py` from the command as well.
+        args = [
+            'run',
+            '--module', 'modules/module01',
+            '--module', 'modules/module02',
+            '--module', 'modules/module03',
+            '--module', 'modules/module04',
+        ]
+        runtask_run = self._run_prism(args)
+        runtask_run_results = runtask_run.get_results()
+        self.assertEqual(
+            ' | '.join(simple_project_no_null_all_modules_expected_events),
+            runtask_run_results
+        )
+        self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
+
+        # Check contents
+        module01_txt = self._file_as_str(Path(wkdir / 'output' / 'module01.txt'))
+        module02_txt = self._file_as_str(Path(wkdir / 'output' / 'module02.txt'))
+        self.assertEqual('Hello from module 1!', module01_txt)
+        self.assertEqual(
+            'Hello from module 1!' + '\n' + 'Hello from module 2!',
+            module02_txt
+        )
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
