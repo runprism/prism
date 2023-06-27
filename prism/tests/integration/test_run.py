@@ -13,6 +13,7 @@ Table of Contents:
 ###########
 
 # Standard library imports
+import pytest
 import json
 import pandas as pd
 import os
@@ -1019,10 +1020,10 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute command. Remove the `.py` from the command as well.
         args = [
             'run',
-            '--module', 'modules/module01',
-            '--module', 'modules/module02',
-            '--module', 'modules/module03',
-            '--module', 'modules/module04',
+            '--module', 'module01',
+            '--module', 'module02',
+            '--module', 'module03',
+            '--module', 'module04',
         ]
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
@@ -1044,6 +1045,38 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
+    def test_simple_project_modules_prefix_in_arg(self):
+        """
+        `prism run` on simple project where `modules/` is included in the `--module`
+        CLI argument
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '021_no_py_in_ref'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Execute command. Remove the `.py` from the command as well.
+        args = [
+            'run',
+            '--module', 'modules/module01',
+            '--module', 'modules/module02',
+            '--module', 'modules/module03',
+            '--module', 'modules/module04',
+        ]
+        with pytest.raises(SystemExit) as cm:
+            self._run_prism(args)
+        self.assertEqual(cm.value.code, 1)
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()

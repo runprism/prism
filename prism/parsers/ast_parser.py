@@ -21,6 +21,7 @@ from typing import List, Optional, Tuple, Union
 # Prism imports
 import prism.constants
 import prism.exceptions
+import prism.prism_logging
 from prism.infra.manifest import ModuleManifest
 
 
@@ -313,10 +314,16 @@ class AstParser:
                         tmp_path = args[0].s  # type: ignore
                         if len(re.findall(r'(?i)^[a-z0-9\_\-\/\*]+(?:\.py)?$', tmp_path)) == 0:  # noqa: E501
                             raise prism.exceptions.ParserException(
-                                f'invalid module name `{tmp_path}`...can only contain letters, numbers, and underscores or dashes'  # noqa: E501
+                                f'invalid module name `{tmp_path}`...can only contain letters, numbers, underscores or dashes'  # noqa: E501
+                            )
+                        if len(re.findall(r'\.py$', tmp_path)) > 0:
+                            prism.prism_logging.fire_console_event(
+                                prism.prism_logging.PyWarningEvent(str(self.module_relative_path)),  # noqa: E501
+                                event_list=[],
+                                log_level='warn'
                             )
                         if len(re.findall(r'\.py$', tmp_path)) == 0:
-                            tmp_path = f'{tmp_path.split(".")[0]}.py'
+                            tmp_path = f'{tmp_path}.py'
 
                         if tmp_path not in mod_calls:  # type: ignore # noqa: E501
                             if tmp_path == str(self.module_relative_path):  # type: ignore # noqa: E501

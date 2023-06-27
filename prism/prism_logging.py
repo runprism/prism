@@ -578,6 +578,14 @@ class ThreadsWarningEvent(Event):
 
 
 @dataclass
+class PyWarningEvent(Event):
+    module_name: str
+
+    def message(self):
+        return f'{YELLOW}Found `.py` in a tasks.ref(...) argument in `{self.module_name}`...This will be an error in a future version of Prism.{RESET}'  # noqa: E501
+
+
+@dataclass
 class DelayEvent(Event):
     name: str
     delay_seconds: int

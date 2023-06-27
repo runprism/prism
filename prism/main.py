@@ -31,6 +31,11 @@ import prism.cli.graph
 import prism.cli.agent
 import prism.cli.spark_submit
 import prism.exceptions
+from prism.ui import (
+    RED,
+    YELLOW,
+    RESET
+)
 
 
 ##################
@@ -66,7 +71,17 @@ def _process_modules(inputted_modules) -> Optional[List[Any]]:
         # If the user adds modules/ at the beginning of their modules (for auto-fill
         # purposes), then just remove that prefix.
         if len(re.findall(r'^modules\/', processed)) > 0:
-            processed = re.sub(r'^modules\/', '', processed)
+            click.echo(
+                f"{RED}ArgumentError: remove `modules/` from your --module argument `{m}`{RESET}"  # noqa: E501
+            )
+            sys.exit(1)
+
+        # If the user wants to run a specific module and puts .py at the end, fire a
+        # warning.
+        if len(re.findall(r'\.py$', processed)) > 0:
+            click.echo(
+                f'{YELLOW}ArgumentWarning: `.py` in --module arguments will be an error in a future version of Prism.{RESET}'  # noqa: E501
+            )
 
         # If the user wants to run a specific module but doesn't put .py at the end,
         # then add it in.
