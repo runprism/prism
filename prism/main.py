@@ -308,7 +308,7 @@ def run(
     <br>Examples:
     - prism run
     - prism run -m module01.py -m module02.py
-    - prism run -m module01.py --all-downstream
+    - prism run -m module01 --all-downstream
     - prism run -v VAR1=VALUE1 -v VAR2=VALUE2
     - prism run --context '{"hi": 1}'
     """
@@ -733,6 +733,7 @@ def agent_run(
 
     <br>Examples:
     - prism agent run -f ./ec2.yml --module module01.py --module module02.py
+    - prism agent run -f ./docker.yml --m module01
     - prism agent run -f /Users/docker.yml --vars VAR1=VALUE1
     """
     # Namespace
@@ -962,7 +963,7 @@ def spark_submit(
     <br>Examples:
     - prism spark-submit
     - prism spark-submit -m module01.py -m module02.py
-    - prism spark-submit -m module01.py --all-downstream
+    - prism spark-submit -m module01 --all-downstream
     - prism spark-submit -v VAR1=VALUE1 -v VAR2=VALUE2
     - prism spark-submit --context '{"hi": 1}'
     """
