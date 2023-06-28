@@ -16,7 +16,7 @@ from typing import Any, Callable, List, Optional, Union
 
 # Prism imports
 import prism.exceptions
-import prism.logging
+import prism.prism_logging
 import prism.infra.hooks
 import prism.infra.task_manager
 import prism.target
@@ -96,7 +96,9 @@ class PrismTask:
         else:
             raise prism.exceptions.RuntimeException("`run` method not implemented")
 
-    @prism.logging.deprecated('prism.task.PrismTask.target', 'prism.decorators.target')
+    @prism.prism_logging.deprecated(
+        'prism.task.PrismTask.target', 'prism.decorators.target'
+    )
     def target(type, loc, **kwargs):
         """
         Decorator to use if task requires user to iterate through several different

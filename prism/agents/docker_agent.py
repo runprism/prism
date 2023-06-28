@@ -13,7 +13,7 @@ import prism.constants
 import prism.event_managers.base
 import prism.exceptions
 from prism.infra.project import PrismProject
-import prism.logging
+import prism.prism_logging
 from prism.triggers import TriggerManager
 import prism.ui
 
@@ -73,17 +73,17 @@ class Docker(Agent):
                 # "unix://var/run/docker.sock"
                 if server_url == "" or server_url is None:
                     if self.args.which in ["agent-apply", "agent-build"]:
-                        prism.logging.fire_console_event(
-                            prism.logging.DefaultServerURLEvent()
+                        prism.prism_logging.fire_console_event(
+                            prism.prism_logging.DefaultServerURLEvent()
                         )
-                        prism.logging.fire_empty_line_event()
+                        prism.prism_logging.fire_empty_line_event()
                     server_url = prism.constants.DEFAULT_SERVER_URL
             else:
                 if self.args.which in ["agent-apply", "agent-build"]:
-                    prism.logging.fire_console_event(
-                        prism.logging.DefaultServerURLEvent()
+                    prism.prism_logging.fire_console_event(
+                        prism.prism_logging.DefaultServerURLEvent()
                     )
-                    prism.logging.fire_empty_line_event()
+                    prism.prism_logging.fire_empty_line_event()
                 server_url = prism.constants.DEFAULT_SERVER_URL
 
             # In addition, create a low-level API client. We need this to capture the
@@ -129,8 +129,8 @@ class Docker(Agent):
                         message=f"could not find image associated with `{latest_version_str}`"  # noqa: E501
                     )
 
-                prism.logging.fire_console_event(
-                    prism.logging.MultipleAgentsFound(
+                prism.prism_logging.fire_console_event(
+                    prism.prism_logging.MultipleAgentsFound(
                         self.image_name, latest_version_str
                     ),
                     log_level='warn'
@@ -462,7 +462,7 @@ class Docker(Agent):
                         )["stream"]
                         if len(re.findall(r'^\s*$', log)) > 0:
                             continue
-                        prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                        prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                             f"{prism.ui.AGENT_EVENT}{self.image_name}:{new_img_version}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET} | {log}"  # noqa: E501
                         )
 
@@ -496,7 +496,7 @@ class Docker(Agent):
             log_str = log.decode('utf-8')
             no_newline = log_str.replace("\n", "")
             if not re.findall(r"^[\-]+$", no_newline):
-                prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                     f"{prism.ui.AGENT_EVENT}{self.image_name}:{self.image_version}{prism.ui.AGENT_WHICH_RUN}[run]{prism.ui.RESET} | {no_newline}"  # noqa: E501
                 )
         return
@@ -506,7 +506,7 @@ class Docker(Agent):
         Delete the Docker agent
         """
         # Fire an empty line event... it just looks nicer
-        prism.logging.fire_empty_line_event()
+        prism.prism_logging.fire_empty_line_event()
         log_prefix = f"{prism.ui.AGENT_EVENT}{self.image_name}:{self.image_version}{prism.ui.RED}[delete]{prism.ui.RESET}"  # noqa: E501
 
         # Remove all images with the label "stage=intermediate"
@@ -514,7 +514,7 @@ class Docker(Agent):
             filters={"label": "stage=intermediate"}
         )
         for img in images:
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Deleting image {prism.ui.MAGENTA}{img.tags[0]}{prism.ui.RESET}"  # noqa: E501
             )
             client.images.remove(

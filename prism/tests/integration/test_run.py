@@ -13,6 +13,7 @@ Table of Contents:
 ###########
 
 # Standard library imports
+import pytest
 import json
 import pandas as pd
 import os
@@ -213,7 +214,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Expecatation: module 1 is the first module in the DAG. Therefore, we should
         # not encounter any errors with this command.
-        args = ['run', '--modules', 'module01.py']
+        args = ['run', '--module', 'module01.py']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
@@ -251,7 +252,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # errors with this command.
 
         # Execute command
-        args = ['run', '--modules', 'module02.py', '--full-tb']
+        args = ['run', '--module', 'module02.py', '--full-tb']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
@@ -279,7 +280,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # -------------------------------------
         # Execute command without `all-upstream`
-        args = ['run', '--modules', 'module04.py']
+        args = ['run', '--module', 'module04.py']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
@@ -292,7 +293,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute command with `all-upstream`
         self._remove_compiled_dir(wkdir)
         self._remove_files_in_output(wkdir)
-        args = ['run', '--modules', 'module04.py', '--all-upstream']
+        args = ['run', '--module', 'module04.py', '--all-upstream']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         self.assertEqual(
@@ -354,7 +355,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute all modules in extract folder using '*' syntax #
         # ****************************************************** #
 
-        args = ['run', '--modules', 'extract/*']
+        args = ['run', '--module', 'extract/*']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
@@ -391,9 +392,11 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         args = [
             'run',
-            '--modules',
+            '--module',
             'extract/module01.py',
+            '--module',
             'extract/module02.py',
+            '--module',
             'load/module03.py'
         ]
         run = self._run_prism(args)
@@ -544,7 +547,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # New output path
         output_path = str(wkdir.parent)
         self.assertFalse((Path(output_path) / 'module01.txt').is_file())
-        args = ['run', '--modules', 'module01.py', '--vars', f'OUTPUT={output_path}']
+        args = ['run', '--module', 'module01.py', '--vars', f'OUTPUT={output_path}']
         self._run_prism(args)
 
         # Get output
@@ -579,7 +582,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['run', '--modules', 'module01.py', '--all-downstream']
+        args = ['run', '--module', 'module01.py', '--all-downstream']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
@@ -670,7 +673,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['run', '--modules', 'module01.py']
+        args = ['run', '--module', 'module01.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
@@ -703,7 +706,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['run', '--modules', 'module02.py']
+        args = ['run', '--module', 'module02.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
@@ -737,7 +740,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['run', '--modules', 'module01.py']
+        args = ['run', '--module', 'module01.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
@@ -900,16 +903,16 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Check output of 'load' task
         names = [
-            "Andrey Fedyaev",
-            "Deng Qingming",
-            "Dmitry Petelin",
-            "Fei Junlong",
-            "Frank Rubio",
             "Sergey Prokopyev",
+            "Dmitry Petelin",
+            "Frank Rubio",
             "Stephen Bowen",
-            "Sultan Alneyadi",
             "Warren Hoburg",
-            "Zhang Lu",
+            "Sultan Alneyadi",
+            "Andrey Fedyaev",
+            "Jing Haiping",
+            "Gui Haichow",
+            "Zhu Yangzhu",
         ]
         for n in names:
             formatted_name = n.lower().replace(" ", "_")
@@ -995,4 +998,85 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_compiled_dir(wkdir)
 
         # Set up the working directory
+        self._set_up_wkdir()
+
+    def test_simple_project_no_py_in_ref(self):
+        """
+        `prism run` on simple project where `.py` is excluded from the task.ref(...)
+        calls
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '021_no_py_in_ref'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Execute command. Remove the `.py` from the command as well.
+        args = [
+            'run',
+            '--module', 'module01',
+            '--module', 'module02',
+            '--module', 'module03',
+            '--module', 'module04',
+        ]
+        runtask_run = self._run_prism(args)
+        runtask_run_results = runtask_run.get_results()
+        self.assertEqual(
+            ' | '.join(simple_project_no_null_all_modules_expected_events),
+            runtask_run_results
+        )
+        self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
+
+        # Check contents
+        module01_txt = self._file_as_str(Path(wkdir / 'output' / 'module01.txt'))
+        module02_txt = self._file_as_str(Path(wkdir / 'output' / 'module02.txt'))
+        self.assertEqual('Hello from module 1!', module01_txt)
+        self.assertEqual(
+            'Hello from module 1!' + '\n' + 'Hello from module 2!',
+            module02_txt
+        )
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()
+
+    def test_simple_project_modules_prefix_in_arg(self):
+        """
+        `prism run` on simple project where `modules/` is included in the `--module`
+        CLI argument
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '021_no_py_in_ref'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Execute command. Remove the `.py` from the command as well.
+        args = [
+            'run',
+            '--module', 'modules/module01',
+            '--module', 'modules/module02',
+            '--module', 'modules/module03',
+            '--module', 'modules/module04',
+        ]
+        with pytest.raises(SystemExit) as cm:
+            self._run_prism(args)
+        self.assertEqual(cm.value.code, 1)
+
+        # Set up wkdir for the next test case
         self._set_up_wkdir()

@@ -21,8 +21,8 @@ from typing import Any, Dict, List, Optional
 
 # Prism-specific importss
 import prism.exceptions
-from prism.logging import fire_console_event
-import prism.logging
+from prism.prism_logging import fire_console_event
+import prism.prism_logging
 from prism.parsers import yml_parser
 from prism.profiles import profile
 from prism.infra.sys_path import SysPathEngine
@@ -140,7 +140,7 @@ class PrismProject():
         if self.which == "connect":
             if self.profile_yml_path is None:
                 fire_console_event(
-                    prism.logging.ProfileYmlWarningEvent(),
+                    prism.prism_logging.ProfileYmlWarningEvent(),
                     [],
                     0.01,
                     'warn'
@@ -163,7 +163,7 @@ class PrismProject():
             # profile name is non-empty.
             if self.profile_name != "" and self.profile_yml_path is None:
                 fire_console_event(
-                    prism.logging.ProfileYmlWarningEvent(),
+                    prism.prism_logging.ProfileYmlWarningEvent(),
                     [],
                     0.01,
                     'warn'
@@ -330,7 +330,7 @@ class PrismProject():
             sys_path_config = None
         if sys_path_config is None:
             fire_console_event(
-                prism.logging.SysPathConfigWarningEvent(),
+                prism.prism_logging.SysPathConfigWarningEvent(),
                 [],
                 0.01,
                 'warn'
@@ -344,8 +344,8 @@ class PrismProject():
         # If the project directory is not in the sys.path config, throw a warning and
         # add it.
         if str(self.project_dir) not in [str(s) for s in sys_path_config]:
-            prism.logging.fire_console_event(
-                prism.logging.ProjectDirNotInSysPath(), [], log_level='warn'
+            prism.prism_logging.fire_console_event(
+                prism.prism_logging.ProjectDirNotInSysPath(), [], log_level='warn'
             )
             sys_path_config.insert(0, self.project_dir)
         return [Path(s) for s in sys_path_config]
@@ -368,7 +368,7 @@ class PrismProject():
             thread_count = None
         if thread_count is None:
             fire_console_event(
-                prism.logging.ThreadsWarningEvent(),
+                prism.prism_logging.ThreadsWarningEvent(),
                 [],
                 0.01,
                 'warn'

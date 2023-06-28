@@ -20,7 +20,7 @@ import prism.cli.base
 import prism.cli.compile
 import prism.exceptions
 import prism.constants
-import prism.logging
+import prism.prism_logging
 from prism.templates.agents import AGENTS_TEMPLATE_DIR as agents_template_dir
 
 

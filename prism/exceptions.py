@@ -11,6 +11,18 @@ class PrismException(Exception):
     pass
 
 
+class ArgumentException(PrismException):
+    """
+    Exception raised if the user passes a bad argument
+    """
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
 class InvalidProjectException(PrismException):
     """
     Exception raised if project is not valid

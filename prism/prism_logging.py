@@ -578,6 +578,14 @@ class ThreadsWarningEvent(Event):
 
 
 @dataclass
+class PyWarningEvent(Event):
+    module_name: str
+
+    def message(self):
+        return f'{YELLOW}Found `.py` in a tasks.ref(...) argument in `{self.module_name}`...This will be an error in a future version of Prism.{RESET}'  # noqa: E501
+
+
+@dataclass
 class DelayEvent(Event):
     name: str
     delay_seconds: int
@@ -759,15 +767,15 @@ def fire_console_event(
     """
     if event is not None:
         if log_level == "info":
-            DEFAULT_LOGGER.info(event.message())  # type: ignore
+            DEFAULT_LOGGER.info(event.message())  # type: ignore # noqa: F821
         elif log_level == "warn":
-            DEFAULT_LOGGER.warning(event.message())  # type: ignore
+            DEFAULT_LOGGER.warning(event.message())  # type: ignore # noqa: F821
         elif log_level == "error":
-            DEFAULT_LOGGER.error(event.message())  # type: ignore
+            DEFAULT_LOGGER.error(event.message())  # type: ignore # noqa: F821
         elif log_level == "debug":
-            DEFAULT_LOGGER.debug(event.message())  # type: ignore
+            DEFAULT_LOGGER.debug(event.message())  # type: ignore # noqa: F821
         elif log_level == "agent":
-            DEFAULT_LOGGER.agent(event.message())  # type: ignore
+            DEFAULT_LOGGER.agent(event.message())  # type: ignore # noqa: F821
 
     # Sleep
     time.sleep(sleep)
@@ -785,6 +793,6 @@ def fire_empty_line_event(event_list: List[Event] = []):
     """
     e = EmptyLineEvent()
     msg = e.message()
-    DEFAULT_LOGGER.info(msg)  # type: ignore
+    DEFAULT_LOGGER.info(msg)  # type: ignore # noqa: F821
     event_list.append(e)
     return event_list

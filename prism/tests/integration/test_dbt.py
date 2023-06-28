@@ -22,7 +22,7 @@ import shutil
 
 # Prism imports
 import prism.cli.base
-import prism.logging
+import prism.prism_logging
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
@@ -60,7 +60,7 @@ class TestDbtIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Execute command.
-        args = ['run', '--modules', 'filter_customers.py']
+        args = ['run', '--module', 'filter_customers.py']
         run_results = self._run_prism(args)
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
@@ -110,7 +110,7 @@ class TestDbtIntegration(integration_test_class.IntegrationTestCase):
         self.assertFalse(Path(wkdir / 'output' / 'bad_adapter.csv').is_file())
 
         # Execute command.
-        args = ['run', '--modules', 'bad_adapter.py']
+        args = ['run', '--module', 'bad_adapter.py']
         run_results = self._run_prism(args)
 
         # Nothing should be produced
@@ -118,7 +118,7 @@ class TestDbtIntegration(integration_test_class.IntegrationTestCase):
 
         # Last event in run_results (before separator event) should be an error event
         error_event = run_results.event_list[-2]
-        self.assertTrue(isinstance(error_event, prism.logging.PrismExceptionErrorEvent))
+        self.assertTrue(isinstance(error_event, prism.prism_logging.PrismExceptionErrorEvent))
         self.assertEqual('adapter `dbt_prsdfofile` not defined', error_event.err.message)
 
         # Remove the 'target' -- it contains dbt artifacts

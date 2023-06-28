@@ -15,8 +15,10 @@ Table of Contents:
 # Standard library imports
 import os
 from pathlib import Path
+import click.exceptions
 
 # Prism imports
+import prism.constants
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
@@ -286,21 +288,21 @@ class TestConnectIntegration(integration_test_class.IntegrationTestCase):
 
         # Execute command with a non-null, invalid type
         args = ['connect', '--type', 'dummy']
-        connect_run = self._run_prism(args)
-        connect_run_results = connect_run.get_results()
-        self.assertEqual(
-            ' | '.join(connect_task_invalid_expected_events),
-            connect_run_results
-        )
+        with self.assertRaises(click.exceptions.ClickException) as cm:
+            self._run_prism(args)
+        expected_msg = "'dummy' is not one of " + ", ".join([
+            "'" + t + "'" for t in prism.constants.VALID_ADAPTERS
+        ])
+        self.assertTrue(expected_msg, str(cm.exception))
 
         # Execute command with a Null
         args = ['connect', '--type', '']
-        connect_run = self._run_prism(args)
-        connect_run_results = connect_run.get_results()
-        self.assertEqual(
-            ' | '.join(connect_task_invalid_expected_events),
-            connect_run_results
-        )
+        with self.assertRaises(click.exceptions.ClickException) as cm:
+            self._run_prism(args)
+        expected_msg = "'' is not one of " + ", ".join([
+            "'" + t + "'" for t in prism.constants.VALID_ADAPTERS
+        ])
+        self.assertTrue(expected_msg, str(cm.exception))
 
         # Set up wkdir for next test case
         self._set_up_wkdir()

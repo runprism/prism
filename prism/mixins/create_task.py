@@ -20,7 +20,7 @@ import prism.cli.base
 import prism.cli.compile
 import prism.exceptions
 import prism.constants
-import prism.logging
+import prism.prism_logging
 
 # Other imports
 from jinja2 import Template

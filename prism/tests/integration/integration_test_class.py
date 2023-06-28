@@ -13,6 +13,7 @@ Table of Contents:
 ###########
 
 # Standard library imports
+from prism.main import invoke
 import io
 import boto3
 import ast
@@ -28,9 +29,8 @@ from typing import Any, Dict, List
 
 # Prism imports
 import prism.cli.base
-from prism.main import main
-import prism.logging
-from prism.constants import ROOT_DIR
+# from prism.main import main
+import prism.prism_logging
 
 # Ignore ResourceWarnings introduced by boto3
 import warnings
@@ -44,24 +44,23 @@ TEST_CASE_WKDIR = os.path.dirname(__file__)
 TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 
 
-################################
-## Test case class definition ##
-################################
+##############################
+# Test case class definition #
+##############################
 
 class IntegrationTestCase(unittest.TestCase):
-
 
     def _set_up_wkdir(self):
         # Remove logs.log from project
         if Path(Path.cwd() / 'logs.log').is_file():
             os.unlink(Path.cwd() / 'logs.log')
-        
+
         os.chdir(TEST_PROJECTS)
-        
 
     def _is_valid_project(self, path):
         """
-        Determine if `path` is a valid project (i.e., that is has a `prism_project.py` file and a `modules` folder)
+        Determine if `path` is a valid project (i.e., that is has a `prism_project.py`
+        file and a `modules` folder)
 
         args:
             path: project path
@@ -70,9 +69,8 @@ class IntegrationTestCase(unittest.TestCase):
         """
         os.chdir(path)
         project_dir = prism.cli.base.get_project_dir()
-        self.assertTrue(project_dir==path)
+        self.assertTrue(project_dir == path)
         self.assertTrue(Path(project_dir / 'modules').is_dir())
-    
 
     def _load_manifest(self, path: Path) -> dict:
         """
@@ -83,39 +81,40 @@ class IntegrationTestCase(unittest.TestCase):
         f.close()
         return manifest
 
-    
-    def _load_module_refs(self, module_name: str, manifest: Dict[str, Any]) -> List[str]:
+    def _load_module_refs(
+        self,
+        module_name: str,
+        manifest: Dict[str, Any]
+    ) -> List[str]:
         """
         Load refs associated with module
         """
         module_refs = []
         all_refs = manifest["refs"]
         for ref_obj in all_refs:
-            if ref_obj["target"]==module_name:
+            if ref_obj["target"] == module_name:
                 module_refs.append(ref_obj["source"])
-        if len(module_refs)==1:
+        if len(module_refs) == 1:
             return module_refs[0]
         else:
             return module_refs
-
 
     def _run_prism(self, args: list):
         """
         Run prism using `args`
         """
-        return main(args, bool_return=True)
+        return invoke(args, bool_return=True)
 
-        
     def _ignore_warnings(test_func):
         """
-        Decorator to ignore ResourceWarnings during unittest functions. These arise due to some weird behavior by boto3.
+        Decorator to ignore ResourceWarnings during unittest functions. These arise due
+        to some weird behavior by boto3.
         """
         def do_test(self, *args, **kwargs):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", ResourceWarning)
                 return test_func(self, *args, **kwargs)
         return do_test
-
 
     def _get_profile_name(self, wkdir):
         """
@@ -126,7 +125,6 @@ class IntegrationTestCase(unittest.TestCase):
         f.close()
         return list(yml_dict.keys())[0]
 
-    
     def _delete_obj_from_s3(self, profile, bucket, path):
         """
         Delete an object from S3
@@ -140,12 +138,10 @@ class IntegrationTestCase(unittest.TestCase):
         """
         session = boto3.session.Session(profile_name=profile)
         client = session.client('s3')
-        s3 = session.resource('s3')
         objects_dict = client.list_objects_v2(Bucket=bucket, Prefix=path)
         s3_keys = [item['Key'] for item in objects_dict['Contents']]
         for key in s3_keys:
             client.delete_object(Bucket=bucket, Key=key)
-
 
     def _download_s3_file(self, s3, bucket, key):
         """
@@ -162,7 +158,6 @@ class IntegrationTestCase(unittest.TestCase):
         s3.Object(bucket, key).download_fileobj(buffer)
         return buffer
 
-    
     def _get_csv_file_in_s3_as_pd(self, profile, bucket, path, **kwargs):
         """
         Get parquet file in an S3 bucket as a pandas DataFrame
@@ -176,10 +171,8 @@ class IntegrationTestCase(unittest.TestCase):
         """
         session = boto3.session.Session(profile_name=profile)
         client = session.client('s3')
-        s3 = session.resource('s3')
         response = client.get_object(Bucket=bucket, Key=path)
         return pd.read_csv(response.get("Body"), **kwargs)
-
 
     def _remove_compiled_dir(self, wkdir):
         """
@@ -187,16 +180,14 @@ class IntegrationTestCase(unittest.TestCase):
         """
         if Path(wkdir / '.compiled').is_dir():
             shutil.rmtree(Path(wkdir / '.compiled'))
-    
 
     def _remove_files_in_output(self, wkdir):
         """
         Remove file outputs from `output` folder of project
         """
         for file in Path(wkdir / 'output').iterdir():
-            if Path(wkdir / 'output' / file).is_file() and file.name!=".exists":
+            if Path(wkdir / 'output' / file).is_file() and file.name != ".exists":
                 os.unlink(file)
-    
 
     def _remove_dirs_in_output(self, wkdir):
         """
@@ -211,11 +202,13 @@ class IntegrationTestCase(unittest.TestCase):
         Remove parquet files in directory
         """
         for filename in Path(dir).iterdir():
-            if str(filename).split('.')[-1]=="parquet":
+            if str(filename).split('.')[-1] == "parquet":
                 os.unlink(filename)
-            elif str(filename).split('.')[-1]=="crc" and str(filename).split('.')[-2]=="parquet":
+            elif (
+                str(filename).split('.')[-1] == "crc"
+                and str(filename).split('.')[-2] == "parquet"  # noqa: W503
+            ):
                 os.unlink(filename)
-
 
     def _file_as_str(self, path):
         """
@@ -226,7 +219,6 @@ class IntegrationTestCase(unittest.TestCase):
         f.close()
         return compiled_module_str
 
-
     def _compiled_module_if_name_main(self, path):
         """
         Get `if __name__ == "__main__"` body from `path
@@ -235,7 +227,6 @@ class IntegrationTestCase(unittest.TestCase):
         if_name_main_body = self._get_if_name_main_body(compiled_module_str)
         return if_name_main_body
 
-    
     def _get_if_name_main_body(self, module_str: str) -> str:
         """
         Get the body of `if __name__ == "__main__"` and return it as a string
@@ -251,14 +242,12 @@ class IntegrationTestCase(unittest.TestCase):
         self.assertTrue(isinstance(if_name_main_block, ast.If))
         return astor.to_source(if_name_main_block)
 
-    
     def _remove_profile_yml(self, wkdir):
         """
         Remove the profile YML file, if it exists
         """
         if Path(wkdir / 'profile.yml').is_file():
             os.unlink(Path(wkdir / 'profile.yml'))
-    
 
     def _profile_yml_as_dict(self, wkdir):
         """
@@ -268,6 +257,3 @@ class IntegrationTestCase(unittest.TestCase):
             yml_dict = yaml.safe_load(f)
         f.close()
         return yml_dict
-
-
-# EOF

@@ -19,7 +19,7 @@ from .meta import MetaAdapter
 from .adapter import Adapter
 import prism.exceptions
 import prism.constants
-import prism.logging
+import prism.prism_logging
 from prism.profiles import meta, adapter  # noqa: F401
 
 
@@ -158,8 +158,8 @@ class Profile:
         if flag_missing_profile_yml:
             if not flag_missing_profile_name:
                 if fire_warnings:
-                    e2 = prism.logging.ProfileNameExistsYamlDoesNotExist()
-                    prism.logging.fire_console_event(e2, [], 0, log_level='warn')
+                    e2 = prism.prism_logging.ProfileNameExistsYamlDoesNotExist()
+                    prism.prism_logging.fire_console_event(e2, [], 0, log_level='warn')
             return False
 
         # Handle cases where the profile YML is non-empty
@@ -169,8 +169,8 @@ class Profile:
             # {}. Throw a warning and return False
             if flag_missing_profile_name:
                 if fire_warnings:
-                    e1 = prism.logging.ProfileNameDoesNotExistYamlExists()
-                    prism.logging.fire_console_event(e1, [], 0, log_level='warn')
+                    e1 = prism.prism_logging.ProfileNameDoesNotExistYamlExists()
+                    prism.prism_logging.fire_console_event(e1, [], 0, log_level='warn')
                 return False
 
             # If the profile name is not missing, check if the named profile is empty.
@@ -178,8 +178,8 @@ class Profile:
             else:
                 if flag_missing_named_profile:
                     if fire_warnings:
-                        e3 = prism.logging.ProfileNameExistsNamedProfileDoesNotExist()
-                        prism.logging.fire_console_event(e3, [], 0, log_level='warn')
+                        e3 = prism.prism_logging.ProfileNameExistsNamedProfileDoesNotExist()  # noqa: E501
+                        prism.prism_logging.fire_console_event(e3, [], 0, log_level='warn')  # noqa: E501
                     return False
 
         # Nothing has been returned, return True

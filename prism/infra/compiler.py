@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Tuple
 # Prism-specific imports
 import prism.constants
 import prism.exceptions
-import prism.logging
+import prism.prism_logging
 import prism.parsers.ast_parser as ast_parser
 import prism.infra.module
 from prism.infra.manifest import Manifest, ModuleManifest
@@ -84,7 +84,7 @@ class DagCompiler:
 
         # Modules can only be executed if their predecessors are explicitly run or have
         # targets. For example, if our DAG is A --> B --> C and we call `prism run
-        # --modules C`, then Prism will parse the execution order, instantiate but NOT
+        # --module C`, then Prism will parse the execution order, instantiate but NOT
         # execute tasks A and B, and then run task C. In other words, A and B will
         # always be instantiated; the --all-upstream argument controls whether A and B
         # are executed.

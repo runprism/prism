@@ -16,9 +16,9 @@ import prism.cli.base
 import prism.mixins.connect
 import prism.exceptions
 import prism.constants
-import prism.logging
+import prism.prism_logging
 from prism.event_managers.base import BaseEventManager
-from prism.logging import fire_console_event, fire_empty_line_event
+from prism.prism_logging import fire_console_event, fire_empty_line_event
 
 
 ####################
@@ -53,7 +53,9 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # If adapter type is None, throw an error
         if adapter_type is None:
             self.prism_project.cleanup(self.prism_project.run_context)
-            e = prism.logging.InvalidType("adapter", prism.constants.VALID_ADAPTERS)
+            e = prism.prism_logging.InvalidType(
+                "adapter", prism.constants.VALID_ADAPTERS
+            )
             event_list = fire_console_event(e, event_list, 0, log_level='error')
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
@@ -61,7 +63,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # If adapter type isn't valid, then throw an error
         elif adapter_type not in prism.constants.VALID_ADAPTERS:
             self.prism_project.cleanup(self.prism_project.run_context)
-            e = prism.logging.InvalidType(
+            e = prism.prism_logging.InvalidType(
                 "adapter",
                 prism.constants.VALID_ADAPTERS,
                 adapter_type
@@ -72,7 +74,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
 
         # Fire events
         event_list = fire_console_event(
-            prism.logging.SettingUpProfileEvent(),
+            prism.prism_logging.SettingUpProfileEvent(),
             event_list,
             log_level='info'
         )
@@ -119,7 +121,7 @@ class ConnectTask(prism.cli.base.BaseTask, prism.mixins.connect.ConnectMixin):
         # Fire footer events
         event_list = fire_empty_line_event(event_list)
         event_list = fire_console_event(
-            prism.logging.TaskSuccessfulEndEvent(),
+            prism.prism_logging.TaskSuccessfulEndEvent(),
             event_list,
             0,
             log_level='info'

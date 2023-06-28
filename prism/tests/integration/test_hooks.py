@@ -53,7 +53,7 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         # ------------------------------------------------------------------------------
         # Run snowflake.py and spark.py
 
-        args = ['spark-submit', '--modules', 'snowflake.py', 'spark.py']
+        args = ['spark-submit', '--module', 'snowflake.py', '--module', 'spark.py']
         self._run_prism(args)
 
         # Get module 1 and 2 outputs
@@ -116,7 +116,7 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         # ------------------------------------------------------------------------------
         # Run bad_adapter.py
 
-        args = ['spark-submit', '--modules', 'bad_adapter.py']
+        args = ['spark-submit', '--module', 'bad_adapter.py']
         _ = self._run_prism(args)
 
         # We can't check the error events directly; for now, let's just check that the
@@ -151,7 +151,7 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         self.assertFalse(expected_output.is_file())
 
         # Run project
-        args = ['spark-submit', '--modules', 'postgres.py']
+        args = ['spark-submit', '--module', 'postgres.py']
         self._run_prism(args)
 
         # Check output

@@ -131,7 +131,7 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # Expecatation: module 1 is the first module in the DAG. Therefore, we should
         # not encounter any errors with this command.
-        args = ['spark-submit', '--modules', 'module01.py']
+        args = ['spark-submit', '--module', 'module01.py']
         self._run_prism(args)
 
         # Check manifest
@@ -163,7 +163,7 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         # 1, and the output of module 1 is stored in a target, we do not need to re-run
         # module 1 in order to run module 2. Therefore, we should not encounter any
         # errors with this command.
-        args = ['spark-submit', '--modules', 'module02.py']
+        args = ['spark-submit', '--module', 'module02.py']
         self._run_prism(args)
 
         # Check the results of the output directory
@@ -187,13 +187,13 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # -------------------------------------
         # Execute command without `all-upstream`
-        args = ['spark-submit', '--modules', 'module04.py']
+        args = ['spark-submit', '--module', 'module04.py']
         self._run_prism(args)
         self.assertFalse(Path(wkdir / 'output' / 'module04').is_dir())
 
         # -----------------------------------
         # Execute command with `all-upstream`
-        args = ['spark-submit', '--modules', 'module04.py', '--all-upstream']
+        args = ['spark-submit', '--module', 'module04.py', '--all-upstream']
         self._run_prism(args)
         self.assertTrue(Path(wkdir / 'output' / 'module04').is_dir())
         module04_df = pd.read_parquet(Path(wkdir / 'output' / 'module04'))
@@ -232,7 +232,7 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         self._remove_dirs_in_output(wkdir)
 
         # Run all modules downstream of module01.py
-        args = ['spark-submit', '--modules', 'module01.py', '--all-downstream']
+        args = ['spark-submit', '--module', 'module01.py', '--all-downstream']
         self._run_prism(args)
 
         # Check manifest

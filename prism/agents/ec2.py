@@ -13,7 +13,7 @@ import prism.constants
 import prism.event_managers.base
 import prism.exceptions
 from prism.infra.project import PrismProject
-import prism.logging
+import prism.prism_logging
 from prism.triggers import TriggerManager
 import prism.ui
 from prism.mixins.aws import AwsMixin
@@ -521,7 +521,7 @@ class Ec2(
                 key_name=instance_name,
             )
             log_instance_name = f"{prism.ui.MAGENTA}{instance_name}{prism.ui.RESET}"
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Created key pair {log_instance_name}"
             )
         else:
@@ -536,7 +536,7 @@ class Ec2(
             # Log
             log_instance_name = f"{prism.ui.MAGENTA}{instance_name}{prism.ui.RESET}"  # noqa: E501
             log_instance_path = f"{prism.ui.MAGENTA}{str(pem_key_path)}{prism.ui.RESET}"  # noqa: E501
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Using existing key-pair {log_instance_name} at {log_instance_path}"  # noqa: E501
             )
 
@@ -550,7 +550,7 @@ class Ec2(
             # Log
             log_security_group_id = f"{prism.ui.MAGENTA}{security_group_id}{prism.ui.RESET}"  # noqa: E501
             log_vpc_id = f"{prism.ui.MAGENTA}{vpc_id}{prism.ui.RESET}"  # noqa: E501
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Created security group with ID {log_security_group_id} in VPC {log_vpc_id}"  # noqa: E501
             )
         else:
@@ -561,7 +561,7 @@ class Ec2(
             security_group_id = self.security_group_id
             self.check_ingress_ip(ec2_client, security_group_id)
             log_security_group_id = f"{prism.ui.MAGENTA}{security_group_id}{prism.ui.RESET}"  # noqa: E501
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Using existing security group {log_security_group_id}"
             )
 
@@ -594,7 +594,7 @@ class Ec2(
             instance_id = instance[0].id
 
             # Log
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Created EC2 instance with ID {log_instance_id_template.format(instance_id=instance_id)}"  # noqa: E501
             )
             time.sleep(1)
@@ -604,7 +604,7 @@ class Ec2(
             instance_id = self.instance_id
 
             # Log
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Using existing EC2 instance with ID {log_instance_id_template.format(instance_id=instance_id)}"  # noqa: E501
             )
 
@@ -625,7 +625,7 @@ class Ec2(
 
                 # Log
                 log_pending_status = f"{prism.ui.YELLOW}pending{prism.ui.RESET}"
-                prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                     f"{log_prefix} | Instance {log_instance_id_template.format(instance_id=instance_id)} is `{log_pending_status}`... checking again in 5 seconds"  # noqa: E501
                 )
                 resp = self.check_instance_data(
@@ -820,12 +820,12 @@ class Ec2(
         if output:
             if isinstance(output, str):
                 if not re.findall(r"^[\-]+$", output.rstrip()):
-                    prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                         f"{prism.ui.AGENT_EVENT}{self.instance_name}{color}[{which}]{prism.ui.RESET} | {output.rstrip()}"  # noqa: E501
                     )
             else:
                 if not re.findall(r"^[\-]+$", output.decode().rstrip()):
-                    prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                         f"{prism.ui.AGENT_EVENT}{self.instance_name}{color}[{which}]{prism.ui.RESET} | {output.decode().rstrip()}"  # noqa: E501
                     )
 
@@ -873,7 +873,7 @@ class Ec2(
         Create the EC2 instance image
         """
         # Fire an empty line -- it just looks a little nicer
-        prism.logging.fire_console_event(prism.logging.EmptyLineEvent())
+        prism.prism_logging.fire_console_event(prism.prism_logging.EmptyLineEvent())
 
         # Instance type
         instance_type = self.parse_instance_type(self.agent_conf)
@@ -929,7 +929,7 @@ class Ec2(
 
         # Logging styling
         if self.instance_name is None or self.instance_id is None:
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 "Agent data not found! Use `prism agent apply` to create your agent"
             )
             return
@@ -951,7 +951,7 @@ class Ec2(
 
         # Log anything from stdout that was printed in the project
         for line in out.readlines():
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_RUN}[run]{prism.ui.RESET} | {line.rstrip()}"  # noqa: E501
             )
 
@@ -965,11 +965,11 @@ class Ec2(
         In addition, remove the PEM key from our local files
         """
         # Fire an empty line -- it just looks a little nicer
-        prism.logging.fire_console_event(prism.logging.EmptyLineEvent())
+        prism.prism_logging.fire_console_event(prism.prism_logging.EmptyLineEvent())
 
         # Logging styling
         if self.instance_name is None:
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 "Agent data not found! Did you manually delete the ~/.prism/ec2.json file?"  # noqa: E501
             )
             return
@@ -979,13 +979,13 @@ class Ec2(
 
         # Key pair
         if self.key_name is None:
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | No agent data found!"
             )
         else:
             log_key_pair = f"{prism.ui.MAGENTA}{self.key_name}{prism.ui.RESET}"
             log_key_path = f"{prism.ui.MAGENTA}{str(self.pem_key_path)}{prism.ui.RESET}"
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Deleting key-pair {log_key_pair} at {log_key_path}"
             )
             self.ec2_client.delete_key_pair(
@@ -995,12 +995,12 @@ class Ec2(
 
         # Instance
         if self.instance_id is None:
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | No instance found!"
             )
         else:
             log_instance_id = f"{prism.ui.MAGENTA}{self.instance_id}{prism.ui.RESET}"
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | Deleting instance {log_instance_id}"
             )
             _ = self.ec2_client.terminate_instances(
@@ -1009,7 +1009,7 @@ class Ec2(
 
         # Security group
         if self.security_group_id is None:
-            prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{log_prefix} | No security group found! If this is a mistake, then you may need to reset your resource data"  # noqa: E501
             )
         else:
@@ -1019,13 +1019,13 @@ class Ec2(
                     self.ec2_client.delete_security_group(
                         GroupId=self.security_group_id
                     )
-                    prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                         f"{log_prefix} | Deleting security group {log_security_group_id}"  # noqa: E501
                     )
                     break
                 except botocore.exceptions.ClientError as e:
                     if "DependencyViolation" in str(e):
-                        prism.logging.DEFAULT_LOGGER.agent(  # type: ignore
+                        prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                             f"{log_prefix} | Encountered `DependencyViolation` when deleting security group {log_security_group_id}...waiting 5 seconds and trying again"  # noqa: E501
                         )
                         time.sleep(5)

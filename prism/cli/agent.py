@@ -21,8 +21,8 @@ import prism.mixins.run
 import prism.exceptions
 import prism.constants
 from prism.infra.project import PrismProject
-import prism.logging
-from prism.logging import fire_console_event, fire_empty_line_event, Event
+import prism.prism_logging
+from prism.prism_logging import fire_console_event, fire_empty_line_event, Event
 from prism.agents.meta import MetaAgent
 from prism.agents import meta  # noqa: F401
 
@@ -134,7 +134,7 @@ class AgentTask(
 
         # Separator event
         event_list = fire_console_event(
-            prism.logging.SeparatorEvent(),
+            prism.prism_logging.SeparatorEvent(),
             event_list
         )
 
@@ -193,7 +193,7 @@ class AgentTask(
         # return
         if self.args.which == "agent-delete":
             event_list = fire_console_event(
-                prism.logging.DeletingAgentEvent(),
+                prism.prism_logging.DeletingAgentEvent(),
                 event_list
             )
 
@@ -204,7 +204,7 @@ class AgentTask(
         # `agent-apply` and `agent-build`).
         elif self.args.which in ["agent-apply", "agent-build"]:
             event_list = fire_console_event(
-                prism.logging.CreatingAgentEvent(),
+                prism.prism_logging.CreatingAgentEvent(),
                 event_list
             )
 
@@ -250,7 +250,7 @@ class AgentTask(
         # Only execute the agent with `agent-run` or `agent-build`
         if self.args.which in ["agent-run", "agent-build"]:
             event_list = fire_console_event(
-                prism.logging.StreamingLogsStartEvent(),
+                prism.prism_logging.StreamingLogsStartEvent(),
                 event_list
             )
             event_list = fire_empty_line_event(event_list)
@@ -284,13 +284,13 @@ class AgentTask(
             # Now, we're done streaming logs
             event_list = fire_empty_line_event()
             event_list = fire_console_event(
-                prism.logging.StreamingLogsEndEvent(),
+                prism.prism_logging.StreamingLogsEndEvent(),
                 event_list
             )
 
         # Tail events
         event_list = fire_console_event(
-            prism.logging.SeparatorEvent(),
+            prism.prism_logging.SeparatorEvent(),
             event_list
         )
 
