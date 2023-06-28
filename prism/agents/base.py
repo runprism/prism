@@ -186,7 +186,7 @@ class Agent(metaclass=MetaAgent):
         ])
         context_cmd = "" if context == '{}' else f"--context '{context}'"
         modules_cmd = "" if modules is None else " " .join([
-            f"--module {m}" for m in modules
+            f"--module {m.replace('.py', '')}" for m in modules
         ])
         all_upstream_cmd = "" if not all_upstream else "--all-upstream"
         all_downstream_cmd = "" if not all_downstream else "--all-downstream"
