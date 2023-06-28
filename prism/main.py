@@ -861,7 +861,7 @@ def agent_build(
 
     <br>Examples:
     - prism agent build -f ./ec2.yml
-    - prism graph build -f /Users/docker.yml --context '{"HI": 1}'
+    - prism agent build -f /Users/docker.yml --context '{"HI": 1}'
     """
     # Namespace
     ns = argparse.Namespace()
