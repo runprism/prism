@@ -246,7 +246,9 @@ def connect(
 
     <br>Examples:
     - prism connect --type snowflake
-    """
+    - prism connect --type snowflake -v PROFILE_YML_PATH=/Users/.prism/profile.yml
+    - prism connect --type snowflake --context '{"PROFILE_YML_PATH", "/Users/.prism/profile.yml"}'
+    """  # noqa
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
     _check_context(vars, context)
@@ -537,16 +539,34 @@ def create_task(
     type=bool,
     help="Show the full traceback when an error occurs"
 )
+@click.option(
+    '--vars', '-v',
+    help="Variables as key value pairs. These overwrite variables in prism_project.py. All values are intepreted as strings.",  # noqa: E501
+    multiple=True
+)
+@click.option(
+    '--context',
+    type=str,
+    help="Context as a dictionary. Must be a valid JSON. These overwrite variables in prism_project.py",  # noqa: E501
+    default='{}'
+)
 def create_trigger(
     type,
     log_level,
-    full_tb
+    full_tb,
+    vars,
+    context
 ):
     """Create a triggers YML file at the TRIGGERS_YML_PATH in `prism_project.py`.
 
     <br>Examples:
     - prism create trigger
-    """
+    - prism create trigger -v TRIGGERS_YML_PATH=/Users/.prism/triggers.yml
+    - prism create trigger --context '{"TRIGGERS_YML_PATH": "/Users/.prism/triggers.yml"}'
+    """  # noqa
+    # Check `vars` and `context`
+    vars_dict = _check_vars_format(vars)
+    _check_context(vars, context)
 
     # Namespace
     ns = argparse.Namespace()
@@ -554,10 +574,8 @@ def create_trigger(
     ns.log_level = log_level
     ns.full_tb = full_tb
     ns.which = 'trigger'
-
-    # Need these for the base task to run
-    ns.vars = None
-    ns.context = '{}'
+    ns.vars = vars_dict
+    ns.context = context
 
     # Instantiate and run task
     task = prism.cli.create_trigger.CreateTriggerTask(ns)
@@ -901,8 +919,8 @@ def agent_delete(
     """Delete your agent.
 
     <br>Examples:
-    - prism agent apply -f ./ec2.yml
-    - prism graph apply -f /Users/agents.yml
+    - prism agent delete -f ./ec2.yml
+    - prism graph delete -f /Users/agents.yml
     """
     # Namespace
     ns = argparse.Namespace()
