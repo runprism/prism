@@ -60,6 +60,7 @@ echo "Updating remote project and file paths"
 # Copy project directory and other copy paths into the EC2 instance
 ssh -i ${pem_path} ${user}@${public_dns_name} "sudo mkdir -p .${project_dir}; sudo chmod 777 -R .${project_dir}"
 scp -r -i ${pem_path} ${project_dir} ${user}@${public_dns_name}:.${project_dir}
+echo "Copied project directory into instance"
 
 IFS=',' read -ra array <<< "${copy_paths}"
 for path in "${array[@]}"; do
@@ -68,6 +69,7 @@ for path in "${array[@]}"; do
 
 	# Copy
 	scp -r -i ${pem_path} ${path} ${user}@${public_dns_name}:.${path%/*} 2> scp.log
+	echo "Copied path ${path} into instance"
 done
 
 # Environment variables. Environment variable are passed a comma-separated list of
@@ -85,6 +87,7 @@ for keyvalue in "${env_array[@]}"; do
     else
         ssh -i ${pem_path} ${user}@${public_dns_name} "echo 'export ${key}=${value}' >> ~/.bashrc"
     fi
+	echo "Updated environment variable ${key}=${value}"
 done
 
 # Reload .bashrc to update environment variables
@@ -92,5 +95,4 @@ ssh -i ${pem_path} ${user}@${public_dns_name} "source ~/.bashrc"
 
 # Move all folders into the root folder
 ssh -i ${pem_path} ${user}@${public_dns_name} 'cd ~ && for dir in */; do sudo mv $dir ../../$dir ; done'
-
 echo "Done updating remote project and file paths"

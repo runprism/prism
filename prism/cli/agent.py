@@ -110,20 +110,19 @@ class AgentTask(
 
         elif args.which == "agent-delete":
             agent.delete()
+            return agent
 
         # Otherwise, we either want to build the agent (`prism agent apply`) or build &
         # run the agent (`prism agent build`). We run the agent in a separate function,
         # so focus on just building it for now.
         else:
-            agent.apply()
-            return agent
+            return agent.apply()
 
     def run_agent(self, agent: Agent):
         """
         Thin wrapper around the agent `run` function.
         """
-        agent.run()
-        return
+        return agent.run()
 
     def run(self) -> prism.cli.base.TaskRunReturnResult:
         """
@@ -231,7 +230,7 @@ class AgentTask(
         build_event_to_fire = build_manager_output.event_to_fire
         event_list = build_manager_output.event_list
 
-        # Log an error if one occurs
+        # Log any Python error that we encounter
         if agent == 0:
             event_list = fire_console_event(
                 build_event_to_fire,
@@ -239,6 +238,14 @@ class AgentTask(
                 log_level='error'
             )
             event_list = self.fire_tail_event(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
+
+        # If the `apply` script exits with a non-zero return code, then exit
+        if isinstance(agent, dict) and agent["return_code"] != 0:
+            event_list = fire_console_event(
+                prism.prism_logging.SeparatorEvent(),
+                event_list
+            )
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # ------------------------------------------------------------------------------
@@ -271,7 +278,7 @@ class AgentTask(
             agent_event_to_fire = agent_event_manager_output.event_to_fire
             event_list = agent_event_manager_output.event_list
 
-            # Log an error if one occurs
+            # Log any Python error that we encounter
             if agent_output == 0:
                 event_list = fire_console_event(
                     agent_event_to_fire,
@@ -279,6 +286,14 @@ class AgentTask(
                     log_level='error'
                 )
                 event_list = self.fire_tail_event(event_list)
+                return prism.cli.base.TaskRunReturnResult(event_list, True)
+
+            # If the `run` script exits with a non-zero return code, then return
+            if isinstance(agent_output, dict) and agent_output["return_code"] != 0:
+                event_list = fire_console_event(
+                    prism.prism_logging.SeparatorEvent(),
+                    event_list
+                )
                 return prism.cli.base.TaskRunReturnResult(event_list, True)
 
             # Now, we're done streaming logs
