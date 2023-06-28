@@ -171,7 +171,7 @@ class CompileMixin():
 
                     else:
                         raise prism.exceptions.CompileException(
-                            f'invalid object `{str(m)}` in `{str(modules_dir)}`'
+                            f'could not find module `{str(m)}` in `{str(modules_dir.name)}/`'  # noqa: E501
                         )
 
         # If --module argument not specified, then get all modules

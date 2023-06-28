@@ -69,7 +69,31 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
         # Get modules to compile
-        user_arg_modules = self.user_arg_modules(self.args, modules_dir)
+        user_arg_module_em = BaseEventManager(
+            idx=None,
+            total=None,
+            name='grabbing user-specified modules',
+            full_tb=self.args.full_tb,
+            func=self.user_arg_modules
+        )
+        user_arg_module_em_output = user_arg_module_em.manage_events_during_run(
+            fire_exec_events=False,
+            event_list=event_list,
+            args=self.args,
+            modules_dir=modules_dir
+        )
+        user_arg_modules = user_arg_module_em_output.outputs
+        event_to_fire = user_arg_module_em_output.event_to_fire
+        event_list = user_arg_module_em_output.event_list
+        if user_arg_modules == 0:
+            event_list = fire_console_event(
+                event_to_fire,
+                event_list,
+                log_level='error'
+            )
+            event_list = self.fire_tail_event(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
+
         all_modules = self.get_modules(modules_dir)
         event_list = fire_empty_line_event(event_list)
 
@@ -148,8 +172,32 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
 
-        # Modules to compile
-        user_arg_modules = self.user_arg_modules(self.args, modules_dir)
+        # Get modules to compile
+        user_arg_module_em = BaseEventManager(
+            idx=None,
+            total=None,
+            name='grabbing user-specified modules',
+            full_tb=self.args.full_tb,
+            func=self.user_arg_modules
+        )
+        user_arg_module_em_output = user_arg_module_em.manage_events_during_run(
+            fire_exec_events=False,
+            event_list=event_list,
+            args=self.args,
+            modules_dir=modules_dir
+        )
+        user_arg_modules = user_arg_module_em_output.outputs
+        event_to_fire = user_arg_module_em_output.event_to_fire
+        event_list = user_arg_module_em_output.event_list
+        if user_arg_modules == 0:
+            event_list = fire_console_event(
+                event_to_fire,
+                event_list,
+                log_level='error'
+            )
+            event_list = self.fire_tail_event(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
+
         all_modules = self.get_modules(modules_dir)
 
         # All downstream
