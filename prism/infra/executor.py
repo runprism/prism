@@ -167,7 +167,7 @@ class DagExecutor:
         num_runs = 0
         num_expected_runs = retries + 1
         outputs = 0
-        name = module.name
+        name = f"{module.name.replace('.py', '')}.{module.prism_task_name}"
 
         # For testing, keep track of all events
         all_events = []

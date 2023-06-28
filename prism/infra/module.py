@@ -23,23 +23,6 @@ from prism.infra.manifest import ModuleManifest
 from prism.parsers.ast_parser import AstParser
 
 
-#####################
-# Functions / utils #
-#####################
-
-def get_task_var_name(module_path: Path) -> str:
-    """
-    Retrieve the variable used to store the PrismTask in `module_path` in our namespace
-
-    args:
-        module_path: path to module, relative to `modules/`
-    returns:
-        variable name
-    """
-    task_var_name = str(module_path).replace('/', '_').replace('.py', '')
-    return f"__PRISM_{task_var_name.upper()}__"
-
-
 ####################
 # Class definition #
 ####################
@@ -70,6 +53,15 @@ class CompiledModule:
         # Set manifest
         self.module_manifest = module_manifest
         self.refs = self._check_manifest(self.module_manifest)
+
+        # Get Prism task node
+        self.prism_task_node = self.ast_parser.get_prism_task_node(
+            self.ast_parser.classes, self.ast_parser.bases
+        )
+        self.prism_task_name = self.prism_task_node.name
+
+        # Task var name
+        self.task_var_name = f"{self.name.replace('.py', '')}.{self.prism_task_name}"
 
     def _check_manifest(self, module_manifest: ModuleManifest):
         """
@@ -180,20 +172,16 @@ class CompiledModule:
         # Execute class definition and create task
         exec(self.module_str, run_context)
 
-        # Variable name should just be the name of the module itself (with a bit of
-        # styling to prevent accidently exposing variables to users).
-        task_var_name = get_task_var_name(self.module_relative_path)
-
         # If the user specified a task, great!
         if isinstance(prism_task_class, ast.ClassDef):
             prism_task_class_name = prism_task_class.name
 
             # Execute class definition and create task
-            run_context[task_var_name] = run_context[prism_task_class_name](explicit_run)  # noqa: E501
+            run_context[self.task_var_name] = run_context[prism_task_class_name](explicit_run)  # noqa: E501
 
             # Set task manager and hooks
-            run_context[task_var_name].set_task_manager(task_manager)
-            run_context[task_var_name].set_hooks(hooks)
+            run_context[self.task_var_name].set_task_manager(task_manager)
+            run_context[self.task_var_name].set_hooks(hooks)
 
         # If the user used a decorator, then executing the function will produce the
         # task we want.
@@ -206,10 +194,10 @@ class CompiledModule:
             task = fn(task_manager, hooks)
             task.bool_run = explicit_run
 
-            run_context[task_var_name] = task
+            run_context[self.task_var_name] = task
 
         # Return name of variable used to store task instantiation
-        return task_var_name
+        return self.task_var_name
 
     def exec(self,
         run_context: Dict[Any, Any],
