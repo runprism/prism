@@ -52,40 +52,40 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         os.chdir(project_dir)
 
         # ------------------------------------------------------------------------------
-        # Define directories and get modules to compile
+        # Define directories and get models to compile
 
         compiled_dir = self.create_compiled_dir(project_dir)
 
-        # Modules directory
+        # Models directory
         try:
-            modules_dir = self.get_modules_dir(project_dir)
+            models_dir = self.get_models_dir(project_dir)
         except prism.exceptions.CompileException as err:
             e = prism.prism_logging.PrismExceptionErrorEvent(
                 err,
-                'accessing modules directory'
+                'accessing models directory'
             )
             event_list = fire_console_event(e, event_list, 0, 'error')
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
-        # Get modules to compile
-        user_arg_module_em = BaseEventManager(
+        # Get models to compile
+        user_arg_model_em = BaseEventManager(
             idx=None,
             total=None,
-            name='grabbing user-specified modules',
+            name='grabbing user-specified models',
             full_tb=self.args.full_tb,
-            func=self.user_arg_modules
+            func=self.user_arg_models
         )
-        user_arg_module_em_output = user_arg_module_em.manage_events_during_run(
+        user_arg_model_em_output = user_arg_model_em.manage_events_during_run(
             fire_exec_events=False,
             event_list=event_list,
             args=self.args,
-            modules_dir=modules_dir
+            models_dir=models_dir
         )
-        user_arg_modules = user_arg_module_em_output.outputs
-        event_to_fire = user_arg_module_em_output.event_to_fire
-        event_list = user_arg_module_em_output.event_list
-        if user_arg_modules == 0:
+        user_arg_models = user_arg_model_em_output.outputs
+        event_to_fire = user_arg_model_em_output.event_to_fire
+        event_list = user_arg_model_em_output.event_list
+        if user_arg_models == 0:
             event_list = fire_console_event(
                 event_to_fire,
                 event_list,
@@ -94,16 +94,16 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
-        all_modules = self.get_modules(modules_dir)
+        all_models = self.get_models(models_dir)
         event_list = fire_empty_line_event(event_list)
 
         # ------------------------------------------------------------------------------
-        # Parse module references
+        # Parse model references
 
         compiler_manager = BaseEventManager(
             idx=None,
             total=None,
-            name='module DAG',
+            name='model DAG',
             full_tb=self.args.full_tb,
             func=self.compile_dag
         )
@@ -111,8 +111,8 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list=event_list,
             project_dir=project_dir,
             compiled_dir=compiled_dir,
-            all_modules=all_modules,
-            user_arg_modules=user_arg_modules
+            all_models=all_models,
+            user_arg_models=user_arg_models
         )
         compiled_dag = compiled_event_manager_output.outputs
         event_to_fire = compiled_event_manager_output.event_to_fire
@@ -157,39 +157,39 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list: list of events
             fire_exec_events: bool controlling whether to fire logging events
         returns:
-            dag: list of modules to run in sorted order
+            dag: list of models to run in sorted order
         """
 
-        # Modules directory
+        # Models directory
         try:
-            modules_dir = self.get_modules_dir(project_dir)
+            models_dir = self.get_models_dir(project_dir)
         except prism.exceptions.CompileException as err:
             e = prism.prism_logging.PrismExceptionErrorEvent(
                 err,
-                'accessing modules directory'
+                'accessing models directory'
             )
             event_list = fire_console_event(e, event_list, 0, log_level='error')
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
 
-        # Get modules to compile
-        user_arg_module_em = BaseEventManager(
+        # Get models to compile
+        user_arg_model_em = BaseEventManager(
             idx=None,
             total=None,
-            name='grabbing user-specified modules',
+            name='grabbing user-specified models',
             full_tb=self.args.full_tb,
-            func=self.user_arg_modules
+            func=self.user_arg_models
         )
-        user_arg_module_em_output = user_arg_module_em.manage_events_during_run(
+        user_arg_model_em_output = user_arg_model_em.manage_events_during_run(
             fire_exec_events=False,
             event_list=event_list,
             args=self.args,
-            modules_dir=modules_dir
+            models_dir=models_dir
         )
-        user_arg_modules = user_arg_module_em_output.outputs
-        event_to_fire = user_arg_module_em_output.event_to_fire
-        event_list = user_arg_module_em_output.event_list
-        if user_arg_modules == 0:
+        user_arg_models = user_arg_model_em_output.outputs
+        event_to_fire = user_arg_model_em_output.event_to_fire
+        event_list = user_arg_model_em_output.event_list
+        if user_arg_models == 0:
             event_list = fire_console_event(
                 event_to_fire,
                 event_list,
@@ -198,7 +198,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
-        all_modules = self.get_modules(modules_dir)
+        all_models = self.get_models(models_dir)
 
         # All downstream
         all_downstream = args.all_downstream
@@ -206,11 +206,11 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         # Create compiled directory
         compiled_dir = self.create_compiled_dir(project_dir)
 
-        # Parse module references
+        # Parse model references
         compiler_manager = BaseEventManager(
             idx=None,
             total=None,
-            name='module DAG',
+            name='model DAG',
             full_tb=args.full_tb,
             func=self.compile_dag
         )
@@ -219,8 +219,8 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             fire_exec_events=fire_exec_events,
             project_dir=project_dir,
             compiled_dir=compiled_dir,
-            all_modules=all_modules,
-            user_arg_modules=user_arg_modules,
+            all_models=all_models,
+            user_arg_models=user_arg_models,
             user_arg_all_downstream=all_downstream,
             project=project
         )

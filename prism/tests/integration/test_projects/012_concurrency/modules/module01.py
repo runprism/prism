@@ -19,10 +19,10 @@ import pandas as pd
 ## Class definition ##
 ######################
 
-class Module01(prism.task.PrismTask):
+class Model01(prism.task.PrismTask):
 
     ## Run
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'module01.csv', index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'model01.csv', index=False)
     def run(self, tasks, hooks):
         """
         Execute task.

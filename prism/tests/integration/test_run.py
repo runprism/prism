@@ -38,17 +38,17 @@ TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 # Expected events #
 ###################
 
-def _execution_events_modules(module_names_statuses: dict) -> list:
+def _execution_events_models(model_names_statuses: dict) -> list:
     """
     Create list for execution events
 
     args:
-        module_names_statuses: dict mapping event_name --> event_status
+        model_names_statuses: dict mapping event_name --> event_status
     returns:
         list of execution events
     """
     results = []
-    for k, v in module_names_statuses.items():
+    for k, v in model_names_statuses.items():
         results.append(f'ExecutionEvent - {k} - RUN')
         results.append(f'ExecutionEvent - {k} - {v}')
     return results
@@ -80,26 +80,26 @@ run_success_starting_events = [
     'EmptyLineEvent',
     'ExecutionEvent - parsing prism_project.py - RUN',
     'ExecutionEvent - parsing prism_project.py - DONE',
-    'ExecutionEvent - module DAG - RUN',
-    'ExecutionEvent - module DAG - DONE',
+    'ExecutionEvent - model DAG - RUN',
+    'ExecutionEvent - model DAG - DONE',
     'ExecutionEvent - creating pipeline, DAG executor - RUN',
     'ExecutionEvent - creating pipeline, DAG executor - DONE',
     'EmptyLineEvent'
 ]
 
 
-simple_project_all_modules_expected_events = run_success_starting_events + \
+simple_project_all_models_expected_events = run_success_starting_events + \
     ['TasksHeaderEvent'] + \
-    _execution_events_modules({'module03.py': 'ERROR'}) + \
+    _execution_events_models({'model03.py': 'ERROR'}) + \
     _run_task_end_events('PrismExceptionErrorEvent')
 
-simple_project_no_null_all_modules_expected_events = run_success_starting_events + \
+simple_project_no_null_all_models_expected_events = run_success_starting_events + \
     ['TasksHeaderEvent'] + \
-    _execution_events_modules({
-        'module01.py': 'DONE',
-        'module02.py': 'DONE',
-        'module03.py': 'DONE',
-        'module04.py': 'DONE',
+    _execution_events_models({
+        'model01.py': 'DONE',
+        'model02.py': 'DONE',
+        'model03.py': 'DONE',
+        'model04.py': 'DONE',
     }) + _run_task_end_events('TaskSuccessfulEndEvent')
 
 
@@ -109,7 +109,7 @@ simple_project_no_null_all_modules_expected_events = run_success_starting_events
 
 class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
-    def test_simple_project_all_modules(self):
+    def test_simple_project_all_models(self):
         """
         `prism run` on simple project with a null task output
         """
@@ -131,18 +131,18 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Check events
         self.assertEqual(
-            ' | '.join(simple_project_all_modules_expected_events),
+            ' | '.join(simple_project_all_models_expected_events),
             runtask_run_results
         )
 
         # Check manifest.json
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        module01_refs = self._load_module_refs("module01.py", manifest)
-        module02_refs = self._load_module_refs("module02.py", manifest)
-        module03_refs = self._load_module_refs("module03.py", manifest)
-        self.assertEqual([], module01_refs)
-        self.assertEqual('module01.py', module02_refs)
-        self.assertEqual([], module03_refs)
+        model01_refs = self._load_model_refs("model01.py", manifest)
+        model02_refs = self._load_model_refs("model02.py", manifest)
+        model03_refs = self._load_model_refs("model03.py", manifest)
+        self.assertEqual([], model01_refs)
+        self.assertEqual('model01.py', model02_refs)
+        self.assertEqual([], model03_refs)
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
@@ -150,7 +150,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
-    def test_simple_project_no_null_all_modules(self):
+    def test_simple_project_no_null_all_models(self):
         """
         `prism run` on simple project with no null task outputs
         """
@@ -171,19 +171,19 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         self.assertEqual(
-            ' | '.join(simple_project_no_null_all_modules_expected_events),
+            ' | '.join(simple_project_no_null_all_models_expected_events),
             runtask_run_results
         )
-        self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'model01.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'model02.txt').is_file())
 
         # Check contents
-        module01_txt = self._file_as_str(Path(wkdir / 'output' / 'module01.txt'))
-        module02_txt = self._file_as_str(Path(wkdir / 'output' / 'module02.txt'))
-        self.assertEqual('Hello from module 1!', module01_txt)
+        model01_txt = self._file_as_str(Path(wkdir / 'output' / 'model01.txt'))
+        model02_txt = self._file_as_str(Path(wkdir / 'output' / 'model02.txt'))
+        self.assertEqual('Hello from model 1!', model01_txt)
         self.assertEqual(
-            'Hello from module 1!' + '\n' + 'Hello from module 2!',
-            module02_txt
+            'Hello from model 1!' + '\n' + 'Hello from model 2!',
+            model02_txt
         )
 
         # Remove the .compiled directory, if it exists
@@ -209,83 +209,83 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # ***************** #
-        # Run only module 1 #
+        # Run only model 1 #
         # ***************** #
 
-        # Expecatation: module 1 is the first module in the DAG. Therefore, we should
+        # Expecatation: model 1 is the first model in the DAG. Therefore, we should
         # not encounter any errors with this command.
-        args = ['run', '--module', 'module01.py']
+        args = ['run', '--model', 'model01.py']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules({'module01.py': 'DONE'}) + \
+            _execution_events_models({'model01.py': 'DONE'}) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), runtask_run_results)
 
         # Check the results of the output directory
-        self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
-        self.assertFalse(Path(wkdir / 'output' / 'module02.txt').is_file())
-        module01_txt = self._file_as_str(Path(wkdir / 'output' / 'module01.txt'))
-        self.assertEqual('Hello from module 1!', module01_txt)
+        self.assertTrue(Path(wkdir / 'output' / 'model01.txt').is_file())
+        self.assertFalse(Path(wkdir / 'output' / 'model02.txt').is_file())
+        model01_txt = self._file_as_str(Path(wkdir / 'output' / 'model01.txt'))
+        self.assertEqual('Hello from model 1!', model01_txt)
 
         # Check manifest
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        module01_refs = self._load_module_refs("module01.py", manifest)
-        module02_refs = self._load_module_refs("module02.py", manifest)
-        module03_refs = self._load_module_refs("module03.py", manifest)
-        module04_refs = self._load_module_refs("module04.py", manifest)
-        self.assertEqual([], module01_refs)
-        self.assertEqual('module01.py', module02_refs)
-        self.assertEqual('module02.py', module03_refs)
-        self.assertEqual('module03.py', module04_refs)
+        model01_refs = self._load_model_refs("model01.py", manifest)
+        model02_refs = self._load_model_refs("model02.py", manifest)
+        model03_refs = self._load_model_refs("model03.py", manifest)
+        model04_refs = self._load_model_refs("model04.py", manifest)
+        self.assertEqual([], model01_refs)
+        self.assertEqual('model01.py', model02_refs)
+        self.assertEqual('model02.py', model03_refs)
+        self.assertEqual('model03.py', model04_refs)
 
         # **************** #
-        # Execute module 2 #
+        # Execute model 2 #
         # **************** #
 
-        # Expecatation: module 2 depends on module 1. However, since we just ran module
-        # 1, and the output of module 1 is stored in a target, we do not need to re-run
-        # module 1 in order to run module 2. Therefore, we should not encounter any
+        # Expecatation: model 2 depends on model 1. However, since we just ran model
+        # 1, and the output of model 1 is stored in a target, we do not need to re-run
+        # model 1 in order to run model 2. Therefore, we should not encounter any
         # errors with this command.
 
         # Execute command
-        args = ['run', '--module', 'module02.py', '--full-tb']
+        args = ['run', '--model', 'model02.py', '--full-tb']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules({'module02.py': 'DONE'}) + \
+            _execution_events_models({'model02.py': 'DONE'}) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), runtask_run_results)
 
         # Check the results of the output directory
-        self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
-        with open(Path(wkdir / 'output' / 'module02.txt'), 'r') as f:
-            module02_txt = f.read()
+        self.assertTrue(Path(wkdir / 'output' / 'model02.txt').is_file())
+        with open(Path(wkdir / 'output' / 'model02.txt'), 'r') as f:
+            model02_txt = f.read()
         f.close()
         self.assertEqual(
-            'Hello from module 1!' + '\n' + 'Hello from module 2!', module02_txt
+            'Hello from model 1!' + '\n' + 'Hello from model 2!', model02_txt
         )
 
         # ************************************************* #
-        # Execute module 4 (with and without `all-upstream` #
+        # Execute model 4 (with and without `all-upstream` #
         # ************************************************* #
 
-        # Expectation: module 4 depends on module 3. However, the output of module 3 is
-        # not stored in a target. Therefore, running module 4 without including
+        # Expectation: model 4 depends on model 3. However, the output of model 3 is
+        # not stored in a target. Therefore, running model 4 without including
         # 'all-upstream' should cause an error.
 
         # -------------------------------------
         # Execute command without `all-upstream`
-        args = ['run', '--module', 'module04.py']
+        args = ['run', '--model', 'model04.py']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules({'module04.py': 'ERROR'}) + \
+            _execution_events_models({'model04.py': 'ERROR'}) + \
             _run_task_end_events('PrismExceptionErrorEvent')
         self.assertEqual(' | '.join(expected_events), runtask_run_results)
 
@@ -293,20 +293,20 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute command with `all-upstream`
         self._remove_compiled_dir(wkdir)
         self._remove_files_in_output(wkdir)
-        args = ['run', '--module', 'module04.py', '--all-upstream']
+        args = ['run', '--model', 'model04.py', '--all-upstream']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         self.assertEqual(
-            ' | '.join(simple_project_no_null_all_modules_expected_events),
+            ' | '.join(simple_project_no_null_all_models_expected_events),
             runtask_run_results
         )
 
         # Check the results of the output directory
-        self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
-        module02_txt = self._file_as_str(Path(wkdir / 'output' / 'module02.txt'))
+        self.assertTrue(Path(wkdir / 'output' / 'model01.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'model02.txt').is_file())
+        model02_txt = self._file_as_str(Path(wkdir / 'output' / 'model02.txt'))
         self.assertEqual(
-            'Hello from module 1!' + '\n' + 'Hello from module 2!', module02_txt
+            'Hello from model 1!' + '\n' + 'Hello from model 2!', model02_txt
         )
 
         # Remove the .compiled directory, if it exists
@@ -315,13 +315,13 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
-    def test_project_nested_module_dirs(self):
+    def test_project_nested_model_dirs(self):
         """
-        `prism run` in a project with directories in the modules folder
+        `prism run` in a project with directories in the models folder
         """
 
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '010_project_nested_module_dirs'
+        wkdir = Path(TEST_PROJECTS) / '010_project_nested_model_dirs'
         os.chdir(wkdir)
 
         # Remove the .compiled directory, if it exists
@@ -331,9 +331,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._remove_files_in_output(wkdir)
 
         # Helper function
-        def check_modules_1_2_results():
+        def check_models_1_2_results():
             """
-            Helper function to check the results of running modules 1 and 2. We will use
+            Helper function to check the results of running models 1 and 2. We will use
             this a couple of times.
             """
             # Check that .compiled directory is formed
@@ -341,86 +341,86 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
             # Check that outputs are created
-            self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
-            self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
-            with open(Path(wkdir / 'output' / 'module02.txt'), 'r') as f:
-                module02_txt = f.read()
+            self.assertTrue(Path(wkdir / 'output' / 'model01.txt').is_file())
+            self.assertTrue(Path(wkdir / 'output' / 'model02.txt').is_file())
+            with open(Path(wkdir / 'output' / 'model02.txt'), 'r') as f:
+                model02_txt = f.read()
             f.close()
             self.assertEqual(
-                'Hello from module 1!' + '\n' + 'Hello from module 2!',
-                module02_txt
+                'Hello from model 1!' + '\n' + 'Hello from model 2!',
+                model02_txt
             )
 
         # ****************************************************** #
-        # Execute all modules in extract folder using '*' syntax #
+        # Execute all models in extract folder using '*' syntax #
         # ****************************************************** #
 
-        args = ['run', '--module', 'extract/*']
+        args = ['run', '--model', 'extract/*']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules(
+            _execution_events_models(
                 {
-                    'extract/module01.py': 'DONE',
-                    'extract/module02.py': 'DONE'
+                    'extract/model01.py': 'DONE',
+                    'extract/model02.py': 'DONE'
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
 
         # Check manifest
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        extract_module01_refs = self._load_module_refs("extract/module01.py", manifest)
-        extract_module02_refs = self._load_module_refs("extract/module02.py", manifest)
-        load_module03_refs = self._load_module_refs("load/module03.py", manifest)
-        module04_refs = self._load_module_refs("module04.py", manifest)
-        self.assertEqual([], extract_module01_refs)
-        self.assertEqual("extract/module01.py", extract_module02_refs)
-        self.assertEqual("extract/module02.py", load_module03_refs)
-        self.assertEqual("load/module03.py", module04_refs)
+        extract_model01_refs = self._load_model_refs("extract/model01.py", manifest)
+        extract_model02_refs = self._load_model_refs("extract/model02.py", manifest)
+        load_model03_refs = self._load_model_refs("load/model03.py", manifest)
+        model04_refs = self._load_model_refs("model04.py", manifest)
+        self.assertEqual([], extract_model01_refs)
+        self.assertEqual("extract/model01.py", extract_model02_refs)
+        self.assertEqual("extract/model02.py", load_model03_refs)
+        self.assertEqual("load/model03.py", model04_refs)
 
         # Check results
-        check_modules_1_2_results()
+        check_models_1_2_results()
 
         # Remove all files in the compiled and output directory
         self._remove_compiled_dir(wkdir)
         self._remove_files_in_output(wkdir)
 
         # ***************************************************************** #
-        # Execute all modules in extract /load folder using explicit syntax #
+        # Execute all models in extract /load folder using explicit syntax #
         # ***************************************************************** #
 
         args = [
             'run',
-            '--module',
-            'extract/module01.py',
-            '--module',
-            'extract/module02.py',
-            '--module',
-            'load/module03.py'
+            '--model',
+            'extract/model01.py',
+            '--model',
+            'extract/model02.py',
+            '--model',
+            'load/model03.py'
         ]
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules(
+            _execution_events_models(
                 {
-                    'extract/module01.py': 'DONE',
-                    'extract/module02.py': 'DONE',
-                    'load/module03.py': 'DONE',
+                    'extract/model01.py': 'DONE',
+                    'extract/model02.py': 'DONE',
+                    'load/model03.py': 'DONE',
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
 
         # Check results
-        check_modules_1_2_results()
+        check_models_1_2_results()
 
         # Remove all files in the compiled and output directory
         self._remove_compiled_dir(wkdir)
         self._remove_files_in_output(wkdir)
 
         # ******************* #
-        # Execute all modules #
+        # Execute all models #
         # ******************* #
 
         args = ['run']
@@ -428,18 +428,18 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules(
+            _execution_events_models(
                 {
-                    'extract/module01.py': 'DONE',
-                    'extract/module02.py': 'DONE',
-                    'load/module03.py': 'DONE',
-                    'module04.py': 'DONE'
+                    'extract/model01.py': 'DONE',
+                    'extract/model02.py': 'DONE',
+                    'load/model03.py': 'DONE',
+                    'model04.py': 'DONE'
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
 
-        # Check output of modules 1 and 2
-        check_modules_1_2_results()
+        # Check output of models 1 and 2
+        check_models_1_2_results()
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
@@ -470,8 +470,8 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             'EmptyLineEvent',
             'ExecutionEvent - parsing prism_project.py - RUN',
             'ExecutionEvent - parsing prism_project.py - DONE',
-            'ExecutionEvent - module DAG - RUN',
-            'ExecutionEvent - module DAG - ERROR',
+            'ExecutionEvent - model DAG - RUN',
+            'ExecutionEvent - model DAG - ERROR',
         ] + _run_task_end_events('PrismExceptionErrorEvent')
         self.assertEqual(' | '.join(expected_events), run_run_results)
 
@@ -504,19 +504,19 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self._run_prism(args)
 
         # Get times
-        module2_times = pd.read_csv(wkdir / 'output' / 'module02.csv')
-        module1_times = pd.read_csv(wkdir / 'output' / 'module01.csv')
+        model2_times = pd.read_csv(wkdir / 'output' / 'model02.csv')
+        model1_times = pd.read_csv(wkdir / 'output' / 'model01.csv')
 
-        # Module 1 and 2 should start at the same time
-        module2_start_time = int(module2_times['start_time'][0])
-        module1_start_time = int(module1_times['start_time'][0])
-        self.assertTrue(abs(module2_start_time - module1_start_time) <= 1)
+        # Model 1 and 2 should start at the same time
+        model2_start_time = int(model2_times['start_time'][0])
+        model1_start_time = int(model1_times['start_time'][0])
+        self.assertTrue(abs(model2_start_time - model1_start_time) <= 1)
 
-        # Module 2 should finish before module 1
-        module2_end_time = int(module2_times['end_time'][0])
-        module1_end_time = int(module1_times['end_time'][0])
-        self.assertTrue(module2_end_time < module1_end_time)
-        self.assertTrue(abs(10 - (module1_end_time - module2_end_time)) <= 1)
+        # Model 2 should finish before model 1
+        model2_end_time = int(model2_times['end_time'][0])
+        model1_end_time = int(model1_times['end_time'][0])
+        self.assertTrue(model2_end_time < model1_end_time)
+        self.assertTrue(abs(10 - (model1_end_time - model2_end_time)) <= 1)
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
@@ -546,15 +546,15 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # New output path
         output_path = str(wkdir.parent)
-        self.assertFalse((Path(output_path) / 'module01.txt').is_file())
-        args = ['run', '--module', 'module01.py', '--vars', f'OUTPUT={output_path}']
+        self.assertFalse((Path(output_path) / 'model01.txt').is_file())
+        args = ['run', '--model', 'model01.py', '--vars', f'OUTPUT={output_path}']
         self._run_prism(args)
 
         # Get output
-        self.assertTrue((Path(output_path) / 'module01.txt').is_file())
-        module01_txt = self._file_as_str(Path(output_path) / 'module01.txt')
-        self.assertEqual('Hello from module 1!', module01_txt)
-        os.unlink(Path(output_path) / 'module01.txt')
+        self.assertTrue((Path(output_path) / 'model01.txt').is_file())
+        model01_txt = self._file_as_str(Path(output_path) / 'model01.txt')
+        self.assertEqual('Hello from model 1!', model01_txt)
+        os.unlink(Path(output_path) / 'model01.txt')
 
         # Re-run to place output in normal directory
         args = ['run']
@@ -581,18 +581,18 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all modules downstream of module01.py
-        args = ['run', '--module', 'module01.py', '--all-downstream']
+        # Run all models downstream of model01.py
+        args = ['run', '--model', 'model01.py', '--all-downstream']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules(
+            _execution_events_models(
                 {
-                    'module01.py': 'DONE',
-                    'module02.py': 'DONE',
-                    'module03.py': 'DONE',
-                    'module04.py': 'DONE',
+                    'model01.py': 'DONE',
+                    'model02.py': 'DONE',
+                    'model03.py': 'DONE',
+                    'model04.py': 'DONE',
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -601,24 +601,24 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        module01_refs = self._load_module_refs("module01.py", manifest)
-        module02_refs = self._load_module_refs("module02.py", manifest)
-        module03_refs = self._load_module_refs("module03.py", manifest)
-        module04_refs = self._load_module_refs("module04.py", manifest)
-        self.assertEqual([], module01_refs)
-        self.assertEqual("module01.py", module02_refs)
-        self.assertEqual("module02.py", module03_refs)
-        self.assertEqual("module03.py", module04_refs)
+        model01_refs = self._load_model_refs("model01.py", manifest)
+        model02_refs = self._load_model_refs("model02.py", manifest)
+        model03_refs = self._load_model_refs("model03.py", manifest)
+        model04_refs = self._load_model_refs("model04.py", manifest)
+        self.assertEqual([], model01_refs)
+        self.assertEqual("model01.py", model02_refs)
+        self.assertEqual("model02.py", model03_refs)
+        self.assertEqual("model03.py", model04_refs)
 
         # Check that outputs are created
-        self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
-        with open(Path(wkdir / 'output' / 'module02.txt'), 'r') as f:
-            module02_txt = f.read()
+        self.assertTrue(Path(wkdir / 'output' / 'model01.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'model02.txt').is_file())
+        with open(Path(wkdir / 'output' / 'model02.txt'), 'r') as f:
+            model02_txt = f.read()
         f.close()
         self.assertEqual(
-            'Hello from module 1!' + '\n' + 'Hello from module 2!',
-            module02_txt
+            'Hello from model 1!' + '\n' + 'Hello from model 2!',
+            model02_txt
         )
 
         # Remove all files in the compiled directory
@@ -648,7 +648,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         """
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules(execution_event_dict) + \
+            _execution_events_models(execution_event_dict) + \
             ["EmptyLineEvent"] + \
             circa_trigger_header_event + \
             [
@@ -672,12 +672,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all modules downstream of module01.py
-        args = ['run', '--module', 'module01.py']
+        # Run all models downstream of model01.py
+        args = ['run', '--model', 'model01.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'module01.py': 'DONE'}
+            {'model01.py': 'DONE'}
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
 
@@ -705,12 +705,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all modules downstream of module01.py
-        args = ['run', '--module', 'module02.py']
+        # Run all models downstream of model01.py
+        args = ['run', '--model', 'model02.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'module02.py': 'ERROR'},
+            {'model02.py': 'ERROR'},
             ["ExecutionErrorEvent", "TriggersHeaderEvent"]
         ) + ["SeparatorEvent"]
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -739,12 +739,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all modules downstream of module01.py
-        args = ['run', '--module', 'module01.py']
+        # Run all models downstream of model01.py
+        args = ['run', '--model', 'model01.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'module01.py': 'DONE'},
+            {'model01.py': 'DONE'},
             ["TriggersHeaderEvent", "TriggersPathNotDefined"]
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -773,12 +773,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all modules downstream of module01.py
+        # Run all models downstream of model01.py
         args = ['run']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'module01.py': 'DONE'},
+            {'model01.py': 'DONE'},
             ["TriggersHeaderEvent"],
             'ERROR'
         ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']
@@ -805,12 +805,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all modules downstream of module01.py
+        # Run all models downstream of model01.py
         args = ['run']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'module01.py': 'DONE'},
+            {'model01.py': 'DONE'},
             ["TriggersHeaderEvent", "UnexpectedTriggersYmlKeysEvent"]
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -826,7 +826,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
     def test_triggers_no_include(self):
         """
-        A trigger function in an external module/package without an accompanying
+        A trigger function in an external model/package without an accompanying
         `include` path will throw an error.
         """
 
@@ -840,12 +840,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all modules downstream of module01.py
+        # Run all models downstream of model01.py
         args = ['run']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'module01.py': 'DONE'},
+            {'model01.py': 'DONE'},
             ["TriggersHeaderEvent"],
             'ERROR'
         ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']
@@ -950,14 +950,14 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_modules(
+            _execution_events_models(
                 {
                     'extract.py': 'DONE',
                     'load.py': 'ERROR'
                 },
             ) + \
             ['DelayEvent'] + \
-            _execution_events_modules(
+            _execution_events_models(
                 {'load.py (RETRY 1)': 'ERROR'}
             ) + \
             [
@@ -1020,27 +1020,27 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute command. Remove the `.py` from the command as well.
         args = [
             'run',
-            '--module', 'module01',
-            '--module', 'module02',
-            '--module', 'module03',
-            '--module', 'module04',
+            '--model', 'model01',
+            '--model', 'model02',
+            '--model', 'model03',
+            '--model', 'model04',
         ]
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         self.assertEqual(
-            ' | '.join(simple_project_no_null_all_modules_expected_events),
+            ' | '.join(simple_project_no_null_all_models_expected_events),
             runtask_run_results
         )
-        self.assertTrue(Path(wkdir / 'output' / 'module01.txt').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'module02.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'model01.txt').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'model02.txt').is_file())
 
         # Check contents
-        module01_txt = self._file_as_str(Path(wkdir / 'output' / 'module01.txt'))
-        module02_txt = self._file_as_str(Path(wkdir / 'output' / 'module02.txt'))
-        self.assertEqual('Hello from module 1!', module01_txt)
+        model01_txt = self._file_as_str(Path(wkdir / 'output' / 'model01.txt'))
+        model02_txt = self._file_as_str(Path(wkdir / 'output' / 'model02.txt'))
+        self.assertEqual('Hello from model 1!', model01_txt)
         self.assertEqual(
-            'Hello from module 1!' + '\n' + 'Hello from module 2!',
-            module02_txt
+            'Hello from model 1!' + '\n' + 'Hello from model 2!',
+            model02_txt
         )
 
         # Remove the .compiled directory, if it exists
@@ -1049,9 +1049,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         self._set_up_wkdir()
 
-    def test_simple_project_modules_prefix_in_arg(self):
+    def test_simple_project_models_prefix_in_arg(self):
         """
-        `prism run` on simple project where `modules/` is included in the `--module`
+        `prism run` on simple project where `models/` is included in the `--model`
         CLI argument
         """
         self.maxDiff = None
@@ -1069,10 +1069,10 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute command. Remove the `.py` from the command as well.
         args = [
             'run',
-            '--module', 'modules/module01',
-            '--module', 'modules/module02',
-            '--module', 'modules/module03',
-            '--module', 'modules/module04',
+            '--model', 'models/model01',
+            '--model', 'models/model02',
+            '--model', 'models/model03',
+            '--model', 'models/model04',
         ]
         with pytest.raises(SystemExit) as cm:
             self._run_prism(args)

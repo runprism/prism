@@ -20,16 +20,16 @@ from typing import Any, Dict, List, Union
 # Class definition #
 ####################
 
-class ModuleManifest:
+class ModelManifest:
     """
-    Class used to store metadata on a parsed module
+    Class used to store metadata on a parsed model
     """
 
     def __init__(self):
-        self.manifest_dict: Dict[str, Any] = {"targets": [], "modules": [], "refs": []}
+        self.manifest_dict: Dict[str, Any] = {"targets": [], "models": [], "refs": []}
 
-    def add_module(self, module_name: Path):
-        self.manifest_dict["modules"].append(str(module_name))
+    def add_model(self, model_name: Path):
+        self.manifest_dict["models"].append(str(model_name))
 
     def add_ref(self, target: Path, source: Path):
         obj = {
@@ -38,9 +38,9 @@ class ModuleManifest:
         }
         self.manifest_dict["refs"].append(obj)
 
-    def add_target(self, module_name: Path, loc: Union[str, List[str]]):
+    def add_target(self, model_name: Path, loc: Union[str, List[str]]):
         obj = {
-            "module_name": str(module_name),
+            "model_name": str(model_name),
             "target_locs": loc
         }
         self.manifest_dict["targets"].append(obj)
@@ -51,27 +51,27 @@ class Manifest:
     Class used to store metadata on compiled prism project
     """
 
-    def __init__(self, module_manifests: List[ModuleManifest] = []):
+    def __init__(self, model_manifests: List[ModelManifest] = []):
         self.manifest_dict: Dict[str, Any] = {
-            "targets": [], "prism_project": "", "modules": [], "refs": []
+            "targets": [], "prism_project": "", "models": [], "refs": []
         }
-        self.module_manifests = module_manifests
+        self.model_manifests = model_manifests
 
-        # Iterate through module manifests and add to manifest
-        for mm in self.module_manifests:
+        # Iterate through model manifests and add to manifest
+        for mm in self.model_manifests:
             self.manifest_dict["targets"].extend(mm.manifest_dict["targets"])
-            self.manifest_dict["modules"].extend(mm.manifest_dict["modules"])
+            self.manifest_dict["models"].extend(mm.manifest_dict["models"])
             self.manifest_dict["refs"].extend(mm.manifest_dict["refs"])
 
     def add_prism_project(self, prism_project_data: str):
         self.manifest_dict["prism_project"] = prism_project_data
 
-    def add_module(self, module_name: Path, module_data: str):
+    def add_model(self, model_name: Path, model_data: str):
         obj = {
-            "module_name": str(module_name),
-            "module_data": module_data
+            "model_name": str(model_name),
+            "model_data": model_data
         }
-        self.manifest_dict["modules"].append(obj)
+        self.manifest_dict["models"].append(obj)
 
     def add_ref(self, target: Path, source: Path):
         obj = {
@@ -80,9 +80,9 @@ class Manifest:
         }
         self.manifest_dict["refs"].append(obj)
 
-    def add_target(self, module_name: Path, loc: Union[str, List[str]]):
+    def add_target(self, model_name: Path, loc: Union[str, List[str]]):
         obj = {
-            "module_name": str(module_name),
+            "model_name": str(model_name),
             "target_locs": loc
         }
         self.manifest_dict["targets"].append(obj)

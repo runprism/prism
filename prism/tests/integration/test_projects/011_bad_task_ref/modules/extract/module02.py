@@ -15,10 +15,10 @@ import prism_project
 ## Class definition ##
 ######################
 
-class Module02(prism.task.PrismTask):
+class Model02(prism.task.PrismTask):
     
     ## Run
-    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'module02.txt')
+    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'model02.txt')
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -35,7 +35,7 @@ class Module02(prism.task.PrismTask):
         with open(tasks.ref('extract/this_is_an_error.py'), 'r') as f:
             lines = f.read()
         f.close()
-        return lines + "\n" + "Hello from module 2!"
+        return lines + "\n" + "Hello from model 2!"
 
 
 # EOF

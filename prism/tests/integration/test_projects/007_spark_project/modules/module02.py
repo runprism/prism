@@ -18,10 +18,10 @@ import pyspark.sql.functions as F
 ## Class definition ##
 ######################
 
-class Module02(prism.task.PrismTask):
+class Model02(prism.task.PrismTask):
 
     ## Run
-    @prism.decorators.target(type=prism.target.PySparkParquet, loc=str(prism_project.OUTPUT / 'module02'), mode='overwrite')
+    @prism.decorators.target(type=prism.target.PySparkParquet, loc=str(prism_project.OUTPUT / 'model02'), mode='overwrite')
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -35,7 +35,7 @@ class Module02(prism.task.PrismTask):
         returns:
             task output
         """
-        df = hooks.spark.read.parquet(tasks.ref('module01.py'))
+        df = hooks.spark.read.parquet(tasks.ref('model01.py'))
         df_new = df.filter(F.col('col1')>=F.lit('col1_value2'))
         return df_new
 

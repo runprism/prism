@@ -21,8 +21,8 @@ import prism.constants
 import prism.exceptions
 import prism.prism_logging
 import prism.parsers.ast_parser as ast_parser
-import prism.infra.module
-from prism.infra.manifest import Manifest, ModuleManifest
+import prism.infra.model
+from prism.infra.manifest import Manifest, ModelManifest
 from prism.infra.project import PrismProject
 
 
@@ -35,29 +35,29 @@ class CompiledDag:
     Compiled DAG
     """
     def __init__(self,
-        modules_dir: Path,
+        models_dir: Path,
         nxdag: nx.DiGraph,
         topological_sort: List[Path],
-        user_arg_modules: List[Path],
-        module_manifests: Dict[Path, ModuleManifest]
+        user_arg_models: List[Path],
+        model_manifests: Dict[Path, ModelManifest]
     ):
-        self.modules_dir = modules_dir
+        self.models_dir = models_dir
         self.nxdag = nxdag
         self.topological_sort = topological_sort
-        self.user_arg_modules = user_arg_modules
-        self.module_manifests = module_manifests
+        self.user_arg_models = user_arg_models
+        self.model_manifests = model_manifests
 
         # Store full paths in attribute
         self.topological_sort_full_path = [
-            self.modules_dir / module for module in self.topological_sort
+            self.models_dir / model for model in self.topological_sort
         ]
 
-        # Create module objects
-        self.compiled_modules = []
+        # Create model objects
+        self.compiled_models = []
         for relative, full in zip(self.topological_sort, self.topological_sort_full_path):  # noqa: E501
-            self.compiled_modules.append(
-                prism.infra.module.CompiledModule(
-                    relative, full, self.module_manifests[relative]
+            self.compiled_models.append(
+                prism.infra.model.CompiledModel(
+                    relative, full, self.model_manifests[relative]
                 )
             )
 
@@ -70,21 +70,21 @@ class DagCompiler:
     def __init__(self,
         project_dir: Path,
         compiled_dir: Path,
-        all_modules: List[Path],
-        user_arg_modules: List[Path],
+        all_models: List[Path],
+        user_arg_models: List[Path],
         user_arg_all_downstream: bool,
         project: Optional[PrismProject] = None
     ):
         self.project_dir = project_dir
         self.compiled_dir = compiled_dir
-        self.all_modules = all_modules
-        self.user_arg_modules = user_arg_modules
+        self.all_models = all_models
+        self.user_arg_models = user_arg_models
         self.project = project
         os.chdir(project_dir)
 
-        # Modules can only be executed if their predecessors are explicitly run or have
+        # Models can only be executed if their predecessors are explicitly run or have
         # targets. For example, if our DAG is A --> B --> C and we call `prism run
-        # --module C`, then Prism will parse the execution order, instantiate but NOT
+        # --model C`, then Prism will parse the execution order, instantiate but NOT
         # execute tasks A and B, and then run task C. In other words, A and B will
         # always be instantiated; the --all-upstream argument controls whether A and B
         # are executed.
@@ -95,14 +95,14 @@ class DagCompiler:
         # instantiated at all.
         self.user_arg_all_downstream = user_arg_all_downstream
 
-        # Path of modules
-        self.modules_dir = self.project_dir / 'modules'
+        # Path of models
+        self.models_dir = self.project_dir / 'models'
 
-        # Module manifests
-        self.module_manifests: Dict[Path, ModuleManifest] = {}
+        # Model manifests
+        self.model_manifests: Dict[Path, ModelManifest] = {}
 
     def parse_task_refs(self,
-        modules: List[Path],
+        models: List[Path],
         parent_path: Path
     ) -> Dict[Path, Any]:
         """
@@ -110,16 +110,16 @@ class DagCompiler:
         node_dict does not exist in any script, throw an error.
 
         args:
-            modules: modules to compile
-            parent_path: parent path of modules
+            models: models to compile
+            parent_path: parent path of models
         returns:
-            module references as a dictionary
+            model references as a dictionary
         """
 
-        # This is only ever called on the output of `get_all_modules`, which sorts the
-        # modules alphabetically. Therefore, all mod refs will be sorted.
+        # This is only ever called on the output of `get_all_models`, which sorts the
+        # models alphabetically. Therefore, all mod refs will be sorted.
         task_refs_dict: Dict[Path, Any] = {}
-        for m in modules:
+        for m in models:
             parser = ast_parser.AstParser(m, parent_path)
             task_refs = parser.parse()
             if task_refs is None or task_refs == '' or task_refs == []:
@@ -127,8 +127,8 @@ class DagCompiler:
             else:
                 task_refs_dict[m] = task_refs
 
-            # Keep track of module manifest
-            self.module_manifests[m] = parser.module_manifest
+            # Keep track of model manifest
+            self.model_manifests[m] = parser.model_manifest
 
         return task_refs_dict
 
@@ -170,25 +170,25 @@ class DagCompiler:
         return self.add_graph_elem(elem, master)
 
     def create_nodes_edges(self,
-        module_references: Dict[Path, Any]
+        model_references: Dict[Path, Any]
     ) -> Tuple[List[Path], List[Tuple[Path, Path]]]:
         """
-        Create nodes / edges from module connections
+        Create nodes / edges from model connections
 
         args:
-            module_references: connections defined via {{ mod(...) }} in modules
+            model_references: connections defined via {{ mod(...) }} in models
         outputs:
-            nodes: list of nodes (modules)
-            edges: list of edges (tuple of nodes, i.e. modules)
+            nodes: list of nodes (models)
+            edges: list of edges (tuple of nodes, i.e. models)
         """
 
         # Create edges and nodes
         edges: List[Tuple[Path, Path]] = []
         nodes: List[Path] = []
 
-        # Iterate through module references. Keys represent distinct modules in the DAG,
-        # and values represent the modules that feed into the key.
-        for mod, ref in module_references.items():
+        # Iterate through model references. Keys represent distinct models in the DAG,
+        # and values represent the models that feed into the key.
+        for mod, ref in model_references.items():
             nodes = self.add_graph_node(mod, nodes)
             if ref is None:
                 pass
@@ -209,9 +209,9 @@ class DagCompiler:
         Create DAG from edges
 
         args:
-            user_arg_modules: modules passed in user arguments
-            nodes: list of nodes (modules)
-            edges: list of edges (tuple of nodes, i.e. modules)
+            user_arg_models: models passed in user arguments
+            nodes: list of nodes (models)
+            edges: list of edges (tuple of nodes, i.e. models)
         outputs:
             topological sort of edges
         """
@@ -292,65 +292,65 @@ class DagCompiler:
         return unique_successors
 
     def create_topsort(self,
-        all_modules: List[Path],
-        user_arg_modules: List[Path],
+        all_models: List[Path],
+        user_arg_models: List[Path],
         parent_path: Path
     ) -> Any:
         """
         Parse mod refs, create the DAG, and create a topological sort of the DAG
 
         args:
-            all_modules: list of all modules
-            user_arg_modules: modules passed in user arguments
-            parent_path: path containing the modules
+            all_models: list of all models
+            user_arg_models: models passed in user arguments
+            parent_path: path containing the models
             compiler_dict: globals dictionary for compiler
         returns:
             topological sorted DAG as a list
         """
 
-        # Create a DAG using all the modules. We use `all_modules` instead of
-        # `user_arg_modules`, because using `user_arg_modules` will only compile/run the
-        # modules referenced in the modules themselves. For example, if we have a dag A
+        # Create a DAG using all the models. We use `all_models` instead of
+        # `user_arg_models`, because using `user_arg_models` will only compile/run the
+        # models referenced in the models themselves. For example, if we have a dag A
         # --> B --> C and wish to to only compile/run script C, then our code will only
         # run script B. This will throw an error, because script B relies on script A,
         # and we will need to instantiate the script A task for the script B task to
         # execute fully.
-        task_refs = self.parse_task_refs(all_modules, parent_path)
+        task_refs = self.parse_task_refs(all_models, parent_path)
         nodes, edges = self.create_nodes_edges(task_refs)
         dag = self.create_dag(nodes, edges)
 
-        # If `user_arg_modules` is equivalent to `all_modules`, then create a
+        # If `user_arg_models` is equivalent to `all_models`, then create a
         # topological sorting of the full DAG. From the NetworkX documentation: A
         # topological sort is a nonunique permutation of the nodes of a directed graph
         # such that an edge from u to v implies that u appears before v in the
         # topological sort order. This ordering is valid only if the graph has no
         # directed cycles.
-        if len(user_arg_modules) == len(all_modules):
+        if len(user_arg_models) == len(all_models):
             all_topological_sorts = nx.algorithms.dag.all_topological_sorts(dag)
             all_topological_sorts_list = next(all_topological_sorts)
 
-        # Otherwise, the user has selected to run a subset of the modules. Identify all
-        # modules upstream (and potentially downstream) of `user_arg_modules`.
+        # Otherwise, the user has selected to run a subset of the models. Identify all
+        # models upstream (and potentially downstream) of `user_arg_models`.
         else:
 
             # Keep only the dependencies, and create a topological sort.
-            all_nodes = self.get_node_dependencies(dag, user_arg_modules)
+            all_nodes = self.get_node_dependencies(dag, user_arg_models)
 
             # Add successors if the user wants them
             if self.user_arg_all_downstream:
-                all_nodes.extend(self.get_node_successors(dag, user_arg_modules))
+                all_nodes.extend(self.get_node_successors(dag, user_arg_models))
 
             subgraph = dag.subgraph(list(set(all_nodes)))
             all_topological_sorts = nx.algorithms.dag.all_topological_sorts(subgraph)  # noqa: E501
             all_topological_sorts_list = next(all_topological_sorts)
 
-        # Add each module to manifest
+        # Add each model to manifest
         for elem in all_topological_sorts_list:
 
             # Raise error if node not in project
-            if elem not in all_modules:
+            if elem not in all_models:
                 raise prism.exceptions.CompileException(
-                    message=f'module `{str(elem)}` not found in project'
+                    message=f'model `{str(elem)}` not found in project'
                 )
 
         return dag, all_topological_sorts_list
@@ -360,11 +360,11 @@ class DagCompiler:
         Compile the DAG
         """
         nxdag, all_topological_sorts_list = self.create_topsort(
-            self.all_modules, self.user_arg_modules, self.modules_dir
+            self.all_models, self.user_arg_models, self.models_dir
         )
 
         # Dump manifest
-        manifest = Manifest(list(self.module_manifests.values()))
+        manifest = Manifest(list(self.model_manifests.values()))
 
         # Add the prism project to the Manifest
         if self.project is not None:
@@ -382,10 +382,10 @@ class DagCompiler:
 
         # Return dag
         dag = CompiledDag(
-            self.modules_dir,
+            self.models_dir,
             nxdag,
             all_topological_sorts_list,
-            self.user_arg_modules,
-            self.module_manifests
+            self.user_arg_models,
+            self.model_manifests
         )
         return dag

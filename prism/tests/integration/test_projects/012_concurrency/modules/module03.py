@@ -18,7 +18,7 @@ import pandas as pd
 ## Class definition ##
 ######################
 
-class Module03(prism.task.PrismTask):
+class Model03(prism.task.PrismTask):
 
     def get_txt_output(self, path):
         with open(path) as f:
@@ -40,9 +40,9 @@ class Module03(prism.task.PrismTask):
         returns:
             task output
         """
-        module1_times = pd.read_csv(tasks.ref('module01.py'))
-        module2_times = pd.read_csv(tasks.ref('module02.py'))
-        return 'Hello from module 3!'
+        model1_times = pd.read_csv(tasks.ref('model01.py'))
+        model2_times = pd.read_csv(tasks.ref('model02.py'))
+        return 'Hello from model 3!'
 
 
 # EOF

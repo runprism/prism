@@ -18,7 +18,7 @@ import pyspark.sql.functions as F
 ## Class definition ##
 ######################
 
-class Module03(prism.task.PrismTask):
+class Model03(prism.task.PrismTask):
 
     ## Run
     def run(self, tasks, hooks):
@@ -34,7 +34,7 @@ class Module03(prism.task.PrismTask):
         returns:
             task output
         """
-        df = hooks.spark.read.parquet(tasks.ref('module02.py'))
+        df = hooks.spark.read.parquet(tasks.ref('model02.py'))
         df_new = df.filter(F.col('col1')>=F.lit('col1_value3'))
         return df_new
 

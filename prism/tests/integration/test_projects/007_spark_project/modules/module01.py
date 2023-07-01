@@ -18,10 +18,10 @@ from pyspark.sql.types import StructType, StructField, StringType
 ## Class definition ##
 ######################
 
-class Module01(prism.task.PrismTask):
+class Model01(prism.task.PrismTask):
 
     ## Run
-    @prism.decorators.target(type=prism.target.PySparkParquet, loc=str(prism_project.OUTPUT / 'module01'), mode='overwrite')
+    @prism.decorators.target(type=prism.target.PySparkParquet, loc=str(prism_project.OUTPUT / 'model01'), mode='overwrite')
     def run(self, tasks, hooks):
         """
         Execute task.

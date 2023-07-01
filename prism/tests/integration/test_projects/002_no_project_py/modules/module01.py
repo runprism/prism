@@ -12,7 +12,7 @@ import prism.decorators
 ## Class definition ##
 ######################
 
-class Module01(prism.task.PrismTask):
+class Model01(prism.task.PrismTask):
 
     ## Run
     def run(self, tasks, hooks):

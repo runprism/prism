@@ -15,7 +15,7 @@ import prism_project
 ## Class definition ##
 ######################
 
-class Module03(prism.task.PrismTask):
+class Model03(prism.task.PrismTask):
     
     ## Run
     def run(self, tasks, hooks):
@@ -31,9 +31,9 @@ class Module03(prism.task.PrismTask):
         returns:
             task output
         """
-        with open(tasks.ref('extract/module02.py')) as f:
+        with open(tasks.ref('extract/model02.py')) as f:
             lines = f.read()
-        return lines + '\n' + 'Hello from module 3!'
+        return lines + '\n' + 'Hello from model 3!'
 
 
 # EOF

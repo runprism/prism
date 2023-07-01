@@ -63,37 +63,37 @@ def _check_context(inputted_vars, inputted_context):
         )
 
 
-def _process_modules(inputted_modules) -> Optional[List[Any]]:
-    processed_modules = []
-    for m in list(inputted_modules):
+def _process_models(inputted_models) -> Optional[List[Any]]:
+    processed_models = []
+    for m in list(inputted_models):
         processed = m
 
-        # If the user adds modules/ at the beginning of their modules (for auto-fill
+        # If the user adds models/ at the beginning of their models (for auto-fill
         # purposes), then just remove that prefix.
-        if len(re.findall(r'^modules\/', processed)) > 0:
+        if len(re.findall(r'^models\/', processed)) > 0:
             click.echo(
-                f"{RED}ArgumentError: remove `modules/` from your --module argument `{m}`{RESET}"  # noqa: E501
+                f"{RED}ArgumentError: remove `models/` from your --model argument `{m}`{RESET}"  # noqa: E501
             )
             sys.exit(1)
 
-        # If the user wants to run a specific module and puts .py at the end, fire a
+        # If the user wants to run a specific model and puts .py at the end, fire a
         # warning.
         if len(re.findall(r'\.py$', processed)) > 0:
             click.echo(
-                f'{YELLOW}ArgumentWarning: `.py` in --module arguments will be an error in a future version of Prism.{RESET}'  # noqa: E501
+                f'{YELLOW}ArgumentWarning: `.py` in --model arguments will be an error in a future version of Prism.{RESET}'  # noqa: E501
             )
 
-        # If the user wants to run a specific module but doesn't put .py at the end,
+        # If the user wants to run a specific model but doesn't put .py at the end,
         # then add it in.
         if (
             len(re.findall(r'\.py$', processed)) == 0
             and len(re.findall(r'\/\*$', processed)) == 0  # noqa: W503
         ):
             processed = f'{processed}.py'
-        processed_modules.append(processed)
+        processed_models.append(processed)
 
-    if len(processed_modules) > 0:
-        return processed_modules
+    if len(processed_models) > 0:
+        return processed_models
     return None
 
 
@@ -141,7 +141,7 @@ def invoke(args: Optional[List[str]] = None, bool_return: bool = False):
 @click.option(
     "--minimal",
     is_flag=True,
-    help="""Create minimal project (just `prism_project.py` and `modules`)""",
+    help="""Create minimal project (just `prism_project.py` and `models`)""",
     default=False,
     required=False
 )
@@ -270,22 +270,22 @@ def connect(
 
 @cli.command()
 @click.option(
-    '--module', '-m',
+    '--model', '-m',
     type=str,
-    help="Modules to execute. You can specify multiple modules with as follows: `-m <your_first_module> -m <your_second_module>`.",  # noqa: E501
+    help="Models to execute. You can specify multiple models with as follows: `-m <your_first_model> -m <your_second_model>`.",  # noqa: E501
     multiple=True,
     default=[]
 )
 @click.option(
     '--all-downstream',
     is_flag=True,
-    help="Execute all tasks downstream of modules specified with `--module`"
+    help="Execute all tasks downstream of models specified with `--model`"
 )
 @click.option(
     '--all-upstream',
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of modules specified with `--module`"
+    help="Execute all tasks upstream of models specified with `--model`"
 )
 @click.option(
     '--log-level', '-l',
@@ -312,7 +312,7 @@ def connect(
     default='{}'
 )
 def run(
-    module,
+    model,
     all_downstream,
     all_upstream,
     log_level,
@@ -324,13 +324,13 @@ def run(
 
     <br>Examples:
     - prism run
-    - prism run -m module01.py -m module02.py
-    - prism run -m module01 --all-downstream
+    - prism run -m model01.py -m model02.py
+    - prism run -m model01 --all-downstream
     - prism run -v VAR1=VALUE1 -v VAR2=VALUE2
     - prism run --context '{"hi": 1}'
     """
-    # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = _process_modules(module)
+    # Convert tuple of models to list
+    models_list: Optional[List[Any]] = _process_models(model)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -338,7 +338,7 @@ def run(
 
     # Namespace
     ns = argparse.Namespace()
-    ns.modules = modules_list
+    ns.models = models_list
     ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
     ns.full_tb = full_tb
@@ -449,7 +449,7 @@ def create_agent(
     Task name. If only a single task is requested, then the task will be named
     `<task_name>.py`. If multiple tasks are requested, then the tasks will be named
     `<task_name>_<number>.py`. Tasks should have short, all-lowercase names. Underscores
-    can be used in the module name if it improves readability.
+    can be used in the model name if it improves readability.
     """
 )
 @click.option(
@@ -458,8 +458,8 @@ def create_agent(
     required=False,
     default="",
     help="""
-    Folder within the `modules` directory in which the new tasks should live. If not
-        specified, then new tasks will be dumpted into `modules/`
+    Folder within the `models` directory in which the new tasks should live. If not
+        specified, then new tasks will be dumpted into `models/`
     """
 )
 @click.option(
@@ -711,22 +711,22 @@ def agent_apply(
     help="Path to agent configuration YML"
 )
 @click.option(
-    '--module', '-m',
+    '--model', '-m',
     type=str,
-    help="Modules to execute. You can specify multiple modules with as follows: `-m <your_first_module> -m <your_second_module>`.",  # noqa: E501
+    help="Models to execute. You can specify multiple models with as follows: `-m <your_first_model> -m <your_second_model>`.",  # noqa: E501
     multiple=True,
     default=[]
 )
 @click.option(
     '--all-downstream',
     is_flag=True,
-    help="Execute all tasks downstream of modules specified with `--module`"
+    help="Execute all tasks downstream of models specified with `--model`"
 )
 @click.option(
     '--all-upstream',
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of modules specified with `--module`"
+    help="Execute all tasks upstream of models specified with `--model`"
 )
 @click.option(
     '--log-level', '-l',
@@ -754,7 +754,7 @@ def agent_apply(
 )
 def agent_run(
     file,
-    module,
+    model,
     all_downstream,
     all_upstream,
     log_level,
@@ -765,15 +765,15 @@ def agent_run(
     """Run your project using an agent.
 
     <br>Examples:
-    - prism agent run -f ./ec2.yml --module module01.py --module module02.py
-    - prism agent run -f ./docker.yml --m module01
+    - prism agent run -f ./ec2.yml --model model01.py --model model02.py
+    - prism agent run -f ./docker.yml --m model01
     - prism agent run -f /Users/docker.yml --vars VAR1=VALUE1
     """
     # Namespace
     ns = argparse.Namespace()
 
-    # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = _process_modules(module)
+    # Convert tuple of models to list
+    models_list: Optional[List[Any]] = _process_models(model)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -782,7 +782,7 @@ def agent_run(
     # Namespace
     ns = argparse.Namespace()
     ns.file = file
-    ns.modules = modules_list
+    ns.models = models_list
     ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
     ns.full_tb = full_tb
@@ -805,22 +805,22 @@ def agent_run(
     help="Path to agent configuration YML"
 )
 @click.option(
-    '--module', '-m',
+    '--model', '-m',
     type=str,
-    help="Modules to execute. You can specify multiple modules with as follows: `-m <your_first_module> -m <your_second_module>`.",  # noqa: E501
+    help="Models to execute. You can specify multiple models with as follows: `-m <your_first_model> -m <your_second_model>`.",  # noqa: E501
     multiple=True,
     default=[]
 )
 @click.option(
     '--all-downstream',
     is_flag=True,
-    help="Execute all tasks downstream of modules specified with `--module`"
+    help="Execute all tasks downstream of models specified with `--model`"
 )
 @click.option(
     '--all-upstream',
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of modules specified with `--module`"
+    help="Execute all tasks upstream of models specified with `--model`"
 )
 @click.option(
     '--log-level', '-l',
@@ -848,7 +848,7 @@ def agent_run(
 )
 def agent_build(
     file,
-    module,
+    model,
     all_downstream,
     all_upstream,
     log_level,
@@ -866,8 +866,8 @@ def agent_build(
     # Namespace
     ns = argparse.Namespace()
 
-    # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = _process_modules(module)
+    # Convert tuple of models to list
+    models_list: Optional[List[Any]] = _process_models(model)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -876,7 +876,7 @@ def agent_build(
     # Namespace
     ns = argparse.Namespace()
     ns.file = file
-    ns.modules = modules_list
+    ns.models = models_list
     ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
     ns.full_tb = full_tb
@@ -941,22 +941,22 @@ def agent_delete(
 
 @cli.command('spark-submit')
 @click.option(
-    '--module', '-m',
+    '--model', '-m',
     type=str,
-    help="Modules to execute. You can specify multiple modules with as follows: `-m <your_first_module> -m <your_second_module>`.",  # noqa: E501
+    help="Models to execute. You can specify multiple models with as follows: `-m <your_first_model> -m <your_second_model>`.",  # noqa: E501
     multiple=True,
     default=[]
 )
 @click.option(
     '--all-downstream',
     is_flag=True,
-    help="Execute all tasks downstream of modules specified with `--module`."
+    help="Execute all tasks downstream of models specified with `--model`."
 )
 @click.option(
     '--all-upstream',
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of modules specified with `--module`."
+    help="Execute all tasks upstream of models specified with `--model`."
 )
 @click.option(
     '--log-level', '-l',
@@ -983,7 +983,7 @@ def agent_delete(
     default='{}'
 )
 def spark_submit(
-    module,
+    model,
     all_downstream,
     all_upstream,
     log_level,
@@ -995,13 +995,13 @@ def spark_submit(
 
     <br>Examples:
     - prism spark-submit
-    - prism spark-submit -m module01.py -m module02.py
-    - prism spark-submit -m module01 --all-downstream
+    - prism spark-submit -m model01.py -m model02.py
+    - prism spark-submit -m model01 --all-downstream
     - prism spark-submit -v VAR1=VALUE1 -v VAR2=VALUE2
     - prism spark-submit --context '{"hi": 1}'
     """
-    # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = _process_modules(module)
+    # Convert tuple of models to list
+    models_list: Optional[List[Any]] = _process_models(model)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -1009,7 +1009,7 @@ def spark_submit(
 
     # Namespace
     ns = argparse.Namespace()
-    ns.modules = modules_list
+    ns.models = models_list
     ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
     ns.full_tb = full_tb

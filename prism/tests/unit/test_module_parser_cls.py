@@ -1,5 +1,5 @@
 """
-Unit testing for parsing modules with tasks created via the PrismTask class.
+Unit testing for parsing models with tasks created via the PrismTask class.
 
 Table of Contents:
 - Imports
@@ -27,7 +27,7 @@ import prism.parsers.ast_parser as ast_parser
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
-MODULE_TEST_CASES = Path(TEST_CASE_WKDIR) / 'test_modules'
+MODEL_TEST_CASES = Path(TEST_CASE_WKDIR) / 'test_models'
 
 # Test cases related to imports
 ONE_PRISM_TASK = Path('one_prism_task.py')
@@ -48,14 +48,14 @@ NO_RUN_FUNC = Path('no_run_func.py')
 # Test case class definition #
 ##############################
 
-class TestModuleClassParsing(unittest.TestCase):
+class TestModelClassParsing(unittest.TestCase):
 
     def test_one_prism_task(self):
         """
         Test behavior of parser with just one Prism task
         """
         # Prism task
-        parser = ast_parser.AstParser(ONE_PRISM_TASK, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(ONE_PRISM_TASK, MODEL_TEST_CASES)
 
         # Prism task name
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
@@ -77,9 +77,9 @@ class TestModuleClassParsing(unittest.TestCase):
 
     def test_no_prism_task(self):
         """
-        Test behavior of parser when module has no Prism task
+        Test behavior of parser when model has no Prism task
         """
-        parser = ast_parser.AstParser(NO_PRISM_TASK, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(NO_PRISM_TASK, MODEL_TEST_CASES)
 
         # Prism task name
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
@@ -98,9 +98,9 @@ class TestModuleClassParsing(unittest.TestCase):
 
     def test_multiple_prism_task(self):
         """
-        Test behavior of parser when module has multiple Prism tasks
+        Test behavior of parser when model has multiple Prism tasks
         """
-        parser = ast_parser.AstParser(MULTIPLE_PRISM_TASKS, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(MULTIPLE_PRISM_TASKS, MODEL_TEST_CASES)
 
         # Number of prism tasks
         num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
@@ -120,7 +120,7 @@ class TestModuleClassParsing(unittest.TestCase):
         not affect the behavior of the parser
         """
         # Prism task
-        parser = ast_parser.AstParser(DIFF_IMPORT_STRUCTURE, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(DIFF_IMPORT_STRUCTURE, MODEL_TEST_CASES)
 
         # Prism task name
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
@@ -146,7 +146,7 @@ class TestModuleClassParsing(unittest.TestCase):
         parser
         """
         # Prism task
-        parser = ast_parser.AstParser(OTHER_CLASSES, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(OTHER_CLASSES, MODEL_TEST_CASES)
 
         # Prism task name
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
@@ -171,7 +171,7 @@ class TestModuleClassParsing(unittest.TestCase):
         Presence of target does not affect parser behavior
         """
         # Prism task
-        parser = ast_parser.AstParser(TASK_WITH_TARGET, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(TASK_WITH_TARGET, MODEL_TEST_CASES)
 
         # Prism task name
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
@@ -201,7 +201,7 @@ class TestModuleClassParsing(unittest.TestCase):
         Test behavior of parse when there are mod references
         """
         # Prism task
-        parser = ast_parser.AstParser(TASKS_REFS, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(TASKS_REFS, MODEL_TEST_CASES)
 
         # Prism task name
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
@@ -229,10 +229,10 @@ class TestModuleClassParsing(unittest.TestCase):
 
     def test_if_name_main(self):
         """
-        If a module contains `if __name__ == '__main__'`, throw an error
+        If a model contains `if __name__ == '__main__'`, throw an error
         """
         with self.assertRaises(prism.exceptions.ParserException) as cm:
-            _ = ast_parser.AstParser(IF_NAME_MAIN, MODULE_TEST_CASES)
+            _ = ast_parser.AstParser(IF_NAME_MAIN, MODEL_TEST_CASES)
         expected_msg = f'found `if __name__ == "__main__"` in `{str(IF_NAME_MAIN)}`; all task-specific code should be placed in `run` method'  # noqa: E501
         self.assertEqual(expected_msg, str(cm.exception))
 
@@ -242,8 +242,8 @@ class TestModuleClassParsing(unittest.TestCase):
         function does not exist
         """
 
-        def _get_args(module):
-            parser = ast_parser.AstParser(module, MODULE_TEST_CASES)
+        def _get_args(model):
+            parser = ast_parser.AstParser(model, MODEL_TEST_CASES)
             prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
             run_func = parser.get_run_func(prism_task_class)
             run_func_args = parser.get_func_args(run_func)
@@ -264,19 +264,19 @@ class TestModuleClassParsing(unittest.TestCase):
         self.assertEqual(sorted(['self', 'hooks', 'other_arg']), sorted(run_func_args))
 
         # No run function
-        parser = ast_parser.AstParser(NO_RUN_FUNC, MODULE_TEST_CASES)
+        parser = ast_parser.AstParser(NO_RUN_FUNC, MODEL_TEST_CASES)
         prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
         run_func = parser.get_run_func(prism_task_class)
         self.assertIsNone(run_func)
 
-        for module in [
+        for model in [
             BAD_RUN_EXTRA_ARG, BAD_RUN_MISSING_ARG, BAD_RUN_NO_TASKS, NO_RUN_FUNC
         ]:
             with self.assertRaises(prism.exceptions.ParserException) as cm:
-                parser = ast_parser.AstParser(module, MODULE_TEST_CASES)
+                parser = ast_parser.AstParser(model, MODEL_TEST_CASES)
                 parser.parse()
-            if module == NO_RUN_FUNC:
-                expected_msg = f"no `run` function in PrismTask in `{str(module)}`"
+            if model == NO_RUN_FUNC:
+                expected_msg = f"no `run` function in PrismTask in `{str(model)}`"
             else:
-                expected_msg = f'invalid arguments in `run` function in PrismTask in {str(module)}; should only be `self`,`tasks`,`hooks`'  # noqa: E501
+                expected_msg = f'invalid arguments in `run` function in PrismTask in {str(model)}; should only be `self`,`tasks`,`hooks`'  # noqa: E501
             self.assertEqual(expected_msg, str(cm.exception))

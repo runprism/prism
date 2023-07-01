@@ -55,57 +55,57 @@ class CompileMixin():
             message=f'`{script}` is not valid name; script must start with [a-zA-Z] to be compiled correctly'  # noqa: E501
         )
 
-    def get_modules_dir(self,
+    def get_models_dir(self,
         project_dir: Path
     ) -> Path:
         """
-        Get directory containing modules
+        Get directory containing models
 
         args:
             project_dir: project directory
         returns:
-            modules directory
+            models directory
         """
-        modules_dir = project_dir / 'modules'
-        if not modules_dir.is_dir():
+        models_dir = project_dir / 'models'
+        if not models_dir.is_dir():
             raise prism.exceptions.CompileException(
-                message=f'`modules` directory not found in `{str(project_dir)}`'
+                message=f'`models` directory not found in `{str(project_dir)}`'
             )
-        return modules_dir
+        return models_dir
 
-    def get_modules(self,
-        modules_dir: Path,
+    def get_models(self,
+        models_dir: Path,
         prefix: Path = Path('')
     ) -> List[Path]:
         """
-        Get all Python modules from `modules_dir`
+        Get all Python models from `models_dir`
 
         args:
-            modules_dir: modules directory
-            prefix: prefix to use for directories in modules directory
+            models_dir: models directory
+            prefix: prefix to use for directories in models directory
         returns:
-            list of modules in directory (as pathlib Path objects)
+            list of models in directory (as pathlib Path objects)
         """
-        modules = []
-        for path in modules_dir.iterdir():
+        models = []
+        for path in models_dir.iterdir():
 
             # If object is a directory...
             if path.is_dir():
 
-                # If parent directory is the modules folder, set the prefix to the name
-                # of the directory. For example, if the modules folder has a directory
-                # called "extraction", then the modules within "extraction" should be
+                # If parent directory is the models folder, set the prefix to the name
+                # of the directory. For example, if the models folder has a directory
+                # called "extraction", then the models within "extraction" should be
                 # stored as "extraction/..."
                 if str(prefix) == '.':
-                    modules.extend(self.get_modules(path, prefix=Path(path.name)))
+                    models.extend(self.get_models(path, prefix=Path(path.name)))
 
-                # If parent directory is not the modules folder, set the prefix to the
+                # If parent directory is not the models folder, set the prefix to the
                 # parent prefix + the name of the directory. Using the above example, if
                 # the "extraction" folder has a directory called "step1", then the
-                # modules within "step1" should be stored as "extraction/step1/..."
+                # models within "step1" should be stored as "extraction/step1/..."
                 else:
-                    modules.extend(
-                        self.get_modules(path, prefix=Path(prefix) / path.name)
+                    models.extend(
+                        self.get_models(path, prefix=Path(prefix) / path.name)
                     )
 
             # If object is a file
@@ -114,82 +114,82 @@ class CompileMixin():
                 # If file is a python file...
                 if len(re.findall(r'\.py$', path.name)) > 0:
 
-                    # If parent directory is the modules folder, then just add the
+                    # If parent directory is the models folder, then just add the
                     # python file name
                     if str(prefix) == '.':
-                        modules += [Path(path.name)]
+                        models += [Path(path.name)]
 
-                    # If parent directory is not the modules folder, then add prefix to
+                    # If parent directory is not the models folder, then add prefix to
                     # python file name
                     else:
-                        modules += [Path(prefix) / Path(path.name)]
-        return modules
+                        models += [Path(prefix) / Path(path.name)]
+        return models
 
-    def user_arg_modules(self,
+    def user_arg_models(self,
         args: argparse.Namespace,
-        modules_dir: Path
+        models_dir: Path
     ) -> List[Path]:
         """
-        Process user arg modules
+        Process user arg models
 
         args:
             args: user arguments
-            modules_dir: modules directory
+            models_dir: models directory
         returns:
-            list of processed user arg modules
+            list of processed user arg models
         """
         try:
-            raw_modules = args.modules
-            if raw_modules is None:
-                processed_modules = self.get_modules(modules_dir)
+            raw_models = args.models
+            if raw_models is None:
+                processed_models = self.get_models(models_dir)
             else:
-                processed_modules = []
-                for m in raw_modules:
+                processed_models = []
+                for m in raw_models:
 
                     # Check if * is used
                     m_split = m.split('/')
                     if m_split[-1] == '*':
                         parent = '/'.join([m_comp for m_comp in m_split[:-1]])
-                        processed_modules.extend(
-                            self.get_modules(Path(modules_dir / parent), Path(parent))
+                        processed_models.extend(
+                            self.get_models(Path(models_dir / parent), Path(parent))
                         )
 
                     # Check if path is a directory
-                    elif Path(modules_dir / m).is_dir():
+                    elif Path(models_dir / m).is_dir():
                         raise prism.exceptions.CompileException(
-                            message=f'invalid --module argument `{m}`'
+                            message=f'invalid --model argument `{m}`'
                         )
 
                     # Check if path is a file
-                    elif Path(modules_dir / m).is_file():
-                        if len(re.findall(r'\.py$', Path(modules_dir / m).name)) == 0:
+                    elif Path(models_dir / m).is_file():
+                        if len(re.findall(r'\.py$', Path(models_dir / m).name)) == 0:
                             raise prism.exceptions.CompileException(
-                                f'invalid --module argument `{m}`'
+                                f'invalid --model argument `{m}`'
                             )
                         else:
-                            processed_modules.extend([Path(m)])
+                            processed_models.extend([Path(m)])
 
                     else:
                         raise prism.exceptions.CompileException(
-                            f'could not find module `{str(m)}` in `{str(modules_dir.name)}/`'  # noqa: E501
+                            f'could not find model `{str(m)}` in `{str(models_dir.name)}/`'  # noqa: E501
                         )
 
-        # If --module argument not specified, then get all modules
+        # If --model argument not specified, then get all models
         except AttributeError:
-            processed_modules = self.get_modules(modules_dir)
+            processed_models = self.get_models(models_dir)
 
-        return processed_modules
+        return processed_models
 
     def get_compiled_dir(self,
         project_dir: Path
     ) -> Path:
         """
-        Get directory containing compiled modules
+        Get directory containing compiled models
 
         args:
             project_dir: project directory
         returns:
-            compiled_dir: directory with compiled modules
+            compiled_dir: directory with compiled models
         """
         compiled_dir = project_dir / '.compiled'
         return compiled_dir
@@ -198,26 +198,26 @@ class CompileMixin():
         project_dir: Path
     ):
         """
-        Create folder for compiled modules in project directory
+        Create folder for compiled models in project directory
 
         args:
             project_dir: project directory
-            modules: list of modules to compile
+            models: list of models to compile
         returns:
             None
         """
 
         # Create compiled directory
-        compiled_modules_path = self.get_compiled_dir(project_dir)
-        if not compiled_modules_path.is_dir():
-            compiled_modules_path.mkdir(parents=True, exist_ok=True)
-        return compiled_modules_path
+        compiled_models_path = self.get_compiled_dir(project_dir)
+        if not compiled_models_path.is_dir():
+            compiled_models_path.mkdir(parents=True, exist_ok=True)
+        return compiled_models_path
 
     def compile_dag(self,
         project_dir: Path,
         compiled_dir: Path,
-        all_modules: List[Path],
-        user_arg_modules: List[Path],
+        all_models: List[Path],
+        user_arg_models: List[Path],
         user_arg_all_downstream: bool = True,
         project: Optional[PrismProject] = None
     ) -> compiler.CompiledDag:
@@ -226,10 +226,10 @@ class CompileMixin():
 
         args:
             project_dir: project directory
-            all_modules: all modules in project
-            user_arg_modules: modules passed in user argument
+            all_models: all models in project
+            user_arg_models: models passed in user argument
             user_arg_all_downstream: boolean indicating whether the user wants to run
-                all modules downstream of inputted args
+                all models downstream of inputted args
             compiler_globals: globals() dictionary
         returns:
             CompiledDag object
@@ -237,18 +237,18 @@ class CompileMixin():
         dag_compiler = compiler.DagCompiler(
             project_dir,
             compiled_dir,
-            all_modules,
-            user_arg_modules,
+            all_models,
+            user_arg_models,
             user_arg_all_downstream,
             project
         )
         compiled_dag = dag_compiler.compile()
 
-        # Check that all modules in topological sort are in project
+        # Check that all models in topological sort are in project
         for m in compiled_dag.topological_sort:
-            if m not in all_modules:
+            if m not in all_models:
                 raise prism.exceptions.CompileException(
-                    message=f'module `{m}` not found in project'
+                    message=f'model `{m}` not found in project'
                 )
 
         # Otherwise, return

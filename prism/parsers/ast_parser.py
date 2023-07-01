@@ -22,7 +22,7 @@ from typing import List, Optional, Tuple, Union
 import prism.constants
 import prism.exceptions
 import prism.prism_logging
-from prism.infra.manifest import ModuleManifest
+from prism.infra.manifest import ModelManifest
 
 
 ####################
@@ -36,50 +36,50 @@ prism_hooks_alias = 'hooks'
 
 class AstParser:
     """
-    Class for converting module into AST and parsing the resulting tree
+    Class for converting model into AST and parsing the resulting tree
     """
 
     def __init__(self,
-        module_relative_path: Path,
+        model_relative_path: Path,
         parent_path: Path
     ):
-        self.module_relative_path = module_relative_path
+        self.model_relative_path = model_relative_path
         self.parent_path = parent_path
 
-        # Create a module manifest
-        self.module_manifest = ModuleManifest()
+        # Create a model manifest
+        self.model_manifest = ModelManifest()
 
-        # Extract module as a string and parse
-        self.module_path = Path(self.parent_path / self.module_relative_path)
-        with open(self.module_path, 'r') as f:
-            self.module_str = f.read()
+        # Extract model as a string and parse
+        self.model_path = Path(self.parent_path / self.model_relative_path)
+        with open(self.model_path, 'r') as f:
+            self.model_str = f.read()
         f.close()
-        self.ast_module = ast.parse(self.module_str)
+        self.ast_model = ast.parse(self.model_str)
 
-        # Add module source code to manifest
-        self.module_manifest.add_module(self.module_relative_path)
+        # Add model source code to manifest
+        self.model_manifest.add_model(self.model_relative_path)
 
         # Check existence of if-name-main
-        bool_if_name_main = self.check_if_name_main(self.ast_module)
+        bool_if_name_main = self.check_if_name_main(self.ast_model)
         if bool_if_name_main:
-            msg = f'found `if __name__ == "__main__"` in `{str(self.module_relative_path)}`; all task-specific code should be placed in `run` method'  # noqa: E501
+            msg = f'found `if __name__ == "__main__"` in `{str(self.model_relative_path)}`; all task-specific code should be placed in `run` method'  # noqa: E501
             raise prism.exceptions.ParserException(message=msg)
 
         # Get classes and bases
-        self.classes, self.bases = self.get_classes_bases(self.ast_module)
+        self.classes, self.bases = self.get_classes_bases(self.ast_model)
 
     def get_classes_bases(self,
-        module: ast.Module
+        model: ast.Module
     ) -> Tuple[List[ast.ClassDef], List[List[ast.expr]]]:
         """
         Get the classes ans associated bases
 
         args:
-            module: module represented as an AST node
+            model: model represented as an AST node
         returns:
             list of classes and associated bases
         """
-        classes = [n for n in module.body if isinstance(n, ast.ClassDef)]
+        classes = [n for n in model.body if isinstance(n, ast.ClassDef)]
         class_bases = [class_.bases for class_ in classes]
         return classes, class_bases
 
@@ -90,7 +90,7 @@ class AstParser:
         Get number of PrismTasks from `bases`. For testing...
 
         args:
-            bases: list of bases associated with classes in module
+            bases: list of bases associated with classes in model
         returns:
             number of PrismTasks
         """
@@ -110,7 +110,7 @@ class AstParser:
         Get number of functions decorated with `@task`. For testing...
         """
         tasks = []
-        for node in ast.walk(self.ast_module):
+        for node in ast.walk(self.ast_model):
             if isinstance(node, ast.FunctionDef):
                 decorators = [
                     self.get_decorator_name(d) for d in node.decorator_list
@@ -129,10 +129,10 @@ class AstParser:
         bases: List[List[ast.expr]]
     ) -> Optional[Union[ast.FunctionDef, ast.ClassDef]]:
         """
-        Get the node associated with the prism task from `module`
+        Get the node associated with the prism task from `model`
 
         args:
-            module: module represented as an AST node
+            model: model represented as an AST node
         returns:
             node associated with prism task
         """
@@ -149,7 +149,7 @@ class AstParser:
         # Throw an error if there is more than one class
         if len(udf_classes) > 1:
             raise prism.exceptions.RuntimeException(
-                f"too many PrismTasks in `{str(self.module_relative_path)}`"
+                f"too many PrismTasks in `{str(self.model_relative_path)}`"
             )
 
         # Check if any task is decorated with `@task`
@@ -158,7 +158,7 @@ class AstParser:
         # Both cannot exist
         if len(udf_classes) == 1 and udf_fn is not None:
             raise prism.exceptions.RuntimeException(
-                f"cannot have both a PrismTask class and a function with the `@task` decorator in `{str(self.module_relative_path)}`"  # noqa: E501
+                f"cannot have both a PrismTask class and a function with the `@task` decorator in `{str(self.model_relative_path)}`"  # noqa: E501
             )
 
         # If the class exists return that. If it doesn't but the function exists, return
@@ -198,7 +198,7 @@ class AstParser:
         Get the function decorated with the `task` decorator (if any)
         """
         tasks = []
-        for node in ast.walk(self.ast_module):
+        for node in ast.walk(self.ast_model):
             if isinstance(node, ast.FunctionDef):
                 decorators = [
                     self.get_decorator_name(d) for d in node.decorator_list
@@ -214,7 +214,7 @@ class AstParser:
             return None
         if len(tasks) > 1:
             raise prism.exceptions.RuntimeException(
-                f"too many functions decorated with `@task` in {str(self.module_relative_path)}"  # noqa: E501
+                f"too many functions decorated with `@task` in {str(self.model_relative_path)}"  # noqa: E501
             )
         return tasks[0]
 
@@ -233,9 +233,9 @@ class AstParser:
             return [f for f in prism_task.body if isinstance(f, ast.FunctionDef)]
 
         # If the task is a decorated function, then go through all of the other
-        # functions in the module.
+        # functions in the model.
         elif isinstance(prism_task, ast.FunctionDef):
-            return [f for f in self.ast_module.body if isinstance(f, ast.FunctionDef)]
+            return [f for f in self.ast_model.body if isinstance(f, ast.FunctionDef)]
 
         # This should never happen
         else:
@@ -314,11 +314,11 @@ class AstParser:
                         tmp_path = args[0].s  # type: ignore
                         if len(re.findall(r'(?i)^[a-z0-9\_\-\/\*]+(?:\.py)?$', tmp_path)) == 0:  # noqa: E501
                             raise prism.exceptions.ParserException(
-                                f'invalid module name `{tmp_path}`...can only contain letters, numbers, underscores or dashes'  # noqa: E501
+                                f'invalid model name `{tmp_path}`...can only contain letters, numbers, underscores or dashes'  # noqa: E501
                             )
                         if len(re.findall(r'\.py$', tmp_path)) > 0:
                             prism.prism_logging.fire_console_event(
-                                prism.prism_logging.PyWarningEvent(str(self.module_relative_path)),  # noqa: E501
+                                prism.prism_logging.PyWarningEvent(str(self.model_relative_path)),  # noqa: E501
                                 event_list=[],
                                 log_level='warn'
                             )
@@ -326,9 +326,9 @@ class AstParser:
                             tmp_path = f'{tmp_path}.py'
 
                         if tmp_path not in mod_calls:  # type: ignore # noqa: E501
-                            if tmp_path == str(self.module_relative_path):  # type: ignore # noqa: E501
+                            if tmp_path == str(self.model_relative_path):  # type: ignore # noqa: E501
                                 raise prism.exceptions.ParserException(
-                                    message=f'self-references found in `{str(self.module_relative_path)}`'  # noqa: E501
+                                    message=f'self-references found in `{str(self.model_relative_path)}`'  # noqa: E501
                                 )
                             mod_calls.append(Path(tmp_path))  # type: ignore
 
@@ -340,20 +340,20 @@ class AstParser:
         return mod_calls
 
     def check_if_name_main(self,
-        ast_module: ast.Module
+        ast_model: ast.Module
     ) -> bool:
         """
-        Check if `ast_module` has an if __name__ == "__main__" block.
+        Check if `ast_model` has an if __name__ == "__main__" block.
 
         args:
-            ast_module: module represented as an AST
+            ast_model: model represented as an AST
         returns:
-            boolean indicating if `ast_module` has an if __name__ == "__main__" block
+            boolean indicating if `ast_model` has an if __name__ == "__main__" block
         """
         # TODO: optimize function by removing duplicate DFS searches via ast.walk
 
         # If-name-main block needs to appear in main body
-        if_name_main_blocks = [c for c in ast_module.body if isinstance(c, ast.If)]
+        if_name_main_blocks = [c for c in ast_model.body if isinstance(c, ast.If)]
         for node in if_name_main_blocks:
             compares = []
             for nested_node in ast.walk(node):
@@ -465,7 +465,7 @@ class AstParser:
         # If there are multiple task decorators on the function, throw an error
         if len(task_decs) > 1:
             raise prism.exceptions.RuntimeException(
-                f"can only be one `@task` decorator for a function...check `{str(self.module_relative_path)}`"  # noqa: E501
+                f"can only be one `@task` decorator for a function...check `{str(self.model_relative_path)}`"  # noqa: E501
             )
         task_dec = task_decs[0]
         if not isinstance(task_dec, ast.Call):
@@ -501,14 +501,14 @@ class AstParser:
                 targets = kw.value
                 if not isinstance(targets, ast.List):
                     raise prism.exceptions.ParserException(
-                        f'invalid `targets` in `@task` decorator {str(self.module_relative_path)}; must be a list!'  # noqa: E501
+                        f'invalid `targets` in `@task` decorator {str(self.model_relative_path)}; must be a list!'  # noqa: E501
                     )
 
                 # Iterate through the elements of the list
                 for elt in targets.elts:
                     if not isinstance(elt, ast.Call):
                         msg = "\n".join([
-                            f'invalid  element in `targets` list in `@task` decorator {str(self.module_relative_path)}',  # noqa: E501
+                            f'invalid  element in `targets` list in `@task` decorator {str(self.model_relative_path)}',  # noqa: E501
                             "should be something like `target(type=..., loc=...)`"
                         ])
                         raise prism.exceptions.ParserException(msg)
@@ -549,13 +549,13 @@ class AstParser:
 
     def parse(self) -> Union[List[Path], Path]:
         """
-        Parse module and return mod references
+        Parse model and return mod references
         """
         # Get PrismTask, run function, and mod calls
         prism_task_node = self.get_prism_task_node(self.classes, self.bases)
         if prism_task_node is None:
             raise prism.exceptions.ParserException(
-                message=f"no PrismTask in `{str(self.module_relative_path)}`"
+                message=f"no PrismTask in `{str(self.model_relative_path)}`"
             )
 
         # Check if run function exists. If the user used a decorator, then the `run`
@@ -563,7 +563,7 @@ class AstParser:
         run_func = self.get_run_func(prism_task_node)
         if run_func is None:
             raise prism.exceptions.ParserException(
-                message=f"no `run` function in PrismTask in `{str(self.module_relative_path)}`"  # noqa: E501
+                message=f"no `run` function in PrismTask in `{str(self.model_relative_path)}`"  # noqa: E501
             )
 
         # Check function arguments
@@ -573,12 +573,12 @@ class AstParser:
         elif isinstance(prism_task_node, ast.FunctionDef):
             expected = [prism_task_manager_alias, prism_hooks_alias]
         if sorted(run_args) != sorted(expected):
-            msg = f'invalid arguments in `run` function in PrismTask in {str(self.module_relative_path)}; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
+            msg = f'invalid arguments in `run` function in PrismTask in {str(self.model_relative_path)}; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
             raise prism.exceptions.ParserException(message=msg)
 
         # Parse targets
         target_locs = self.get_targets(prism_task_node, run_func)
-        self.module_manifest.add_target(self.module_relative_path, target_locs)
+        self.model_manifest.add_target(self.model_relative_path, target_locs)
 
         # Iterate through all functions and get prism task.ref calls
         all_funcs = self.get_all_funcs(prism_task_node)
@@ -586,14 +586,14 @@ class AstParser:
         for func in all_funcs:
             all_task_refs += self.get_prism_mod_calls(func)
         if len(all_task_refs) == 1:
-            self.module_manifest.add_ref(
-                target=self.module_relative_path, source=all_task_refs[0]
+            self.model_manifest.add_ref(
+                target=self.model_relative_path, source=all_task_refs[0]
             )
             return all_task_refs[0]
         else:
             for mr in all_task_refs:
-                self.module_manifest.add_ref(
-                    target=self.module_relative_path, source=mr
+                self.model_manifest.add_ref(
+                    target=self.model_relative_path, source=mr
                 )
             return all_task_refs
 

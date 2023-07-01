@@ -20,7 +20,7 @@ RUN_ID = generate_run_id()
 SLUG = generate_run_slug()
 
 
-# sys.path config. This gives your tasks access to local modules / packages that exist
+# sys.path config. This gives your tasks access to local models / packages that exist
 # outside of your project structure.
 SYS_PATH_CONF = [
     Path(__file__).parent,

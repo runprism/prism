@@ -30,7 +30,7 @@ class PrismTaskManager:
     def __init__(self, upstream: Dict[str, Any]):
         self.upstream = upstream
 
-    def ref(self, module: str):
-        if len(re.findall(r'\.py$', module)) == 0:
-            module = f'{module}.py'
-        return self.upstream[module].get_output()
+    def ref(self, model: str):
+        if len(re.findall(r'\.py$', model)) == 0:
+            model = f'{model}.py'
+        return self.upstream[model].get_output()

@@ -18,7 +18,7 @@ import pandas as pd
 ## Class definition ##
 ######################
 
-class Module03(prism.task.PrismTask):
+class Model03(prism.task.PrismTask):
 
     ## Run    
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'target_csv.csv', index=False)

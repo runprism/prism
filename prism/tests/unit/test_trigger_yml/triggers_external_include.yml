@@ -1,5 +1,5 @@
 include:
-  - "{{ Path(__file__).parent.parent / 'dummy_modules' }}"
+  - "{{ Path(__file__).parent.parent / 'dummy_models' }}"
 
 triggers:
   test_trigger_good_structure:

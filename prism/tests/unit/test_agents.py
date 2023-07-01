@@ -31,7 +31,7 @@ import prism.exceptions
 
 # Skip these tests if we're running in Windows.
 if sys.platform.startswith("win"):
-    pytest.skip("Skipping agent tests on Windows", allow_module_level=True)
+    pytest.skip("Skipping agent tests on Windows", allow_model_level=True)
 
 
 #################################

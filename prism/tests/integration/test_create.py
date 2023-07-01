@@ -115,7 +115,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         os.chdir(wkdir)
 
         # First, check that `dummy_task.py` does not exist in the project
-        self.assertFalse(Path(wkdir / 'modules' / 'dummy_task.py').is_file())
+        self.assertFalse(Path(wkdir / 'models' / 'dummy_task.py').is_file())
 
         # ------------------------------------------------------------------------------
         # Run
@@ -123,7 +123,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         create_task_run = self._run_prism(args)
 
         # `triggers.yml` file was found
-        self.assertTrue(Path(wkdir / 'modules' / 'dummy_task.py').is_file())
+        self.assertTrue(Path(wkdir / 'models' / 'dummy_task.py').is_file())
 
         # Expected events
         expected_events = SUCCESS_EXPECTED_CREATE_START_EVENTS \
@@ -132,7 +132,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         self.assertEqual(' | '.join(expected_events), create_task_run.get_results())
 
         # Get the class name
-        with open(Path(wkdir / 'modules' / 'dummy_task.py'), 'r') as f:
+        with open(Path(wkdir / 'models' / 'dummy_task.py'), 'r') as f:
             dummy_task_py = f.read()
         self.assertTrue("class DummyTask(prism.task.PrismTask):" in dummy_task_py)
 
@@ -145,7 +145,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         self.assertEqual(' | '.join(expected_events), run_twice.get_results())
 
         # Remove task
-        os.unlink(Path(wkdir / 'modules' / 'dummy_task.py'))
+        os.unlink(Path(wkdir / 'models' / 'dummy_task.py'))
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
@@ -163,7 +163,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         os.chdir(wkdir)
 
         # First, check that `dummy_task.py` does not exist in the project
-        self.assertFalse(Path(wkdir / 'modules' / 'dummy_task.py').is_file())
+        self.assertFalse(Path(wkdir / 'models' / 'dummy_task.py').is_file())
 
         # ------------------------------------------------------------------------------
         # Run
@@ -173,7 +173,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         create_task_run = self._run_prism(args)
 
         # `triggers.yml` file was found
-        self.assertTrue(Path(wkdir / 'modules' / 'dummy_task.py').is_file())
+        self.assertTrue(Path(wkdir / 'models' / 'dummy_task.py').is_file())
 
         # Expected events
         expected_events = SUCCESS_EXPECTED_CREATE_START_EVENTS \
@@ -182,7 +182,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         self.assertEqual(' | '.join(expected_events), create_task_run.get_results())
 
         # Get the class name
-        with open(Path(wkdir / 'modules' / 'dummy_task.py'), 'r') as f:
+        with open(Path(wkdir / 'models' / 'dummy_task.py'), 'r') as f:
             dummy_task_py = f.read()
         self.assertTrue("class DummyTask(prism.task.PrismTask):" not in dummy_task_py)
         decorated_string = "\n".join([
@@ -198,7 +198,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         self.assertTrue("def dummy_task(tasks, hooks):" in dummy_task_py)
 
         # Remove task
-        os.unlink(Path(wkdir / 'modules' / 'dummy_task.py'))
+        os.unlink(Path(wkdir / 'models' / 'dummy_task.py'))
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()

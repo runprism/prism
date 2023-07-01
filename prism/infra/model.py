@@ -1,5 +1,5 @@
 """
-Prism Module class
+Prism Model class
 
 Table of Contents
 - Imports
@@ -19,7 +19,7 @@ from typing import Any, Dict
 import prism.exceptions
 from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
-from prism.infra.manifest import ModuleManifest
+from prism.infra.manifest import ModelManifest
 from prism.parsers.ast_parser import AstParser
 
 
@@ -27,32 +27,32 @@ from prism.parsers.ast_parser import AstParser
 # Class definition #
 ####################
 
-class CompiledModule:
+class CompiledModel:
     """
-    Class for defining and executing a single compiled module
+    Class for defining and executing a single compiled model
     """
 
     def __init__(self,
-        module_relative_path: Path,
-        module_full_path: Path,
-        module_manifest: ModuleManifest
+        model_relative_path: Path,
+        model_full_path: Path,
+        model_manifest: ModelManifest
     ):
-        self.module_relative_path = module_relative_path
-        self.module_full_path = module_full_path
-        with open(self.module_full_path, 'r') as f:
-            self.module_str = f.read()
+        self.model_relative_path = model_relative_path
+        self.model_full_path = model_full_path
+        with open(self.model_full_path, 'r') as f:
+            self.model_str = f.read()
         f.close()
 
-        # Module as an AST
-        parent_path = Path(str(module_full_path).replace(str(module_relative_path), ''))
-        self.ast_parser = AstParser(self.module_relative_path, parent_path)
+        # Model as an AST
+        parent_path = Path(str(model_full_path).replace(str(model_relative_path), ''))
+        self.ast_parser = AstParser(self.model_relative_path, parent_path)
 
-        # Module name
-        self.name = str(self.module_relative_path)
+        # Model name
+        self.name = str(self.model_relative_path)
 
         # Set manifest
-        self.module_manifest = module_manifest
-        self.refs = self._check_manifest(self.module_manifest)
+        self.model_manifest = model_manifest
+        self.refs = self._check_manifest(self.model_manifest)
 
         # Get Prism task node
         self.prism_task_node = self.ast_parser.get_prism_task_node(
@@ -63,13 +63,13 @@ class CompiledModule:
         # Task var name
         self.task_var_name = f"{self.name.replace('.py', '')}.{self.prism_task_name}"
 
-    def _check_manifest(self, module_manifest: ModuleManifest):
+    def _check_manifest(self, model_manifest: ModelManifest):
         """
         Check manifest and return list of refs associated with compiled
-        module
+        model
         """
         refs = []
-        manifest_refs = module_manifest.manifest_dict["refs"]
+        manifest_refs = model_manifest.manifest_dict["refs"]
         for ref_obj in manifest_refs:
             refs.append(ref_obj["source"])
         if len(refs) == 1:
@@ -93,10 +93,10 @@ class CompiledModule:
         # If the task is a class, the variables will be stored in class attributes
         if isinstance(prism_task_node, ast.ClassDef):
             retries = self.ast_parser.get_variable_assignments(
-                self.ast_parser.ast_module, 'RETRIES'
+                self.ast_parser.ast_model, 'RETRIES'
             )
             retry_delay_seconds = self.ast_parser.get_variable_assignments(
-                self.ast_parser.ast_module, 'RETRY_DELAY_SECONDS'
+                self.ast_parser.ast_model, 'RETRY_DELAY_SECONDS'
             )
 
         # If the task is a decorated function, the variables will be stored as keyword
@@ -140,7 +140,7 @@ class CompiledModule:
             retry_delay_seconds = 0
         return retries, retry_delay_seconds
 
-    def instantiate_module_class(self,
+    def instantiate_model_class(self,
         run_context: Dict[Any, Any],
         task_manager: PrismTaskManager,
         hooks: PrismHooks,
@@ -148,7 +148,7 @@ class CompiledModule:
         user_context: Dict[Any, Any] = {}
     ):
         """
-        Instantiate PrismTask child from module
+        Instantiate PrismTask child from model
 
         args:
             run_context: globals dictionary
@@ -158,7 +158,7 @@ class CompiledModule:
         returns:
             variable used to store task instantiation
         """
-        # Get prism class from module
+        # Get prism class from model
         prism_task_class = self.ast_parser.get_prism_task_node(
             self.ast_parser.classes, self.ast_parser.bases
         )
@@ -166,11 +166,11 @@ class CompiledModule:
         # Both cannot be null
         if prism_task_class is None:
             raise prism.exceptions.ParserException(
-                message=f"no PrismTask in `{str(self.module_relative_path)}`"
+                message=f"no PrismTask in `{str(self.model_relative_path)}`"
             )
 
         # Execute class definition and create task
-        exec(self.module_str, run_context)
+        exec(self.model_str, run_context)
 
         # If the user specified a task, great!
         if isinstance(prism_task_class, ast.ClassDef):
@@ -207,9 +207,9 @@ class CompiledModule:
         user_context: Dict[Any, Any] = {}
     ) -> PrismTaskManager:
         """
-        Execute module
+        Execute model
         """
-        task_var_name = self.instantiate_module_class(
+        task_var_name = self.instantiate_model_class(
             run_context, task_manager, hooks, explicit_run, user_context
         )
 

@@ -49,23 +49,23 @@ project_with_error_expected_events = [
     'TaskRunEvent',
     'CurrentProjectDirEvent',
     'EmptyLineEvent',
-    'ExecutionEvent - module DAG - RUN',
-    'ExecutionEvent - module DAG - ERROR',
+    'ExecutionEvent - model DAG - RUN',
+    'ExecutionEvent - model DAG - ERROR',
     'EmptyLineEvent',
     'PrismExceptionErrorEvent',
     'SeparatorEvent'
 ]
 
 # Expected events for `compile` task when called on a simple project. Not that the
-# `compile` task does not fire events for each module that is compiled, so the different
+# `compile` task does not fire events for each model that is compiled, so the different
 # compile  CLI arguments below should produce the same events.
 simple_project_expected_events = [
     'SeparatorEvent',
     'TaskRunEvent',
     'CurrentProjectDirEvent',
     'EmptyLineEvent',
-    'ExecutionEvent - module DAG - RUN',
-    'ExecutionEvent - module DAG - DONE',
+    'ExecutionEvent - model DAG - RUN',
+    'ExecutionEvent - model DAG - DONE',
     'EmptyLineEvent',
     'TaskSuccessfulEndEvent',
     'SeparatorEvent'
@@ -93,7 +93,7 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         compile_run_results = compile_run.get_results()
         self.assertEqual(' | '.join(no_project_py_expected_events), compile_run_results)
 
-        # Check that none of the modules are compiled
+        # Check that none of the models are compiled
         self.assertFalse(Path(wkdir / '.compiled').is_dir())
         self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
@@ -121,7 +121,7 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
             compile_run_results
         )
 
-        # Check that none of the modules are compiled
+        # Check that none of the models are compiled
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
@@ -129,9 +129,9 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
 
-    def test_simple_project_all_modules(self):
+    def test_simple_project_all_models(self):
         """
-        `prism compile` using all modules
+        `prism compile` using all models
         """
 
         # Set working directory
@@ -156,24 +156,24 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
         # Check elements of manifest
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        module01_refs = self._load_module_refs("module01.py", manifest)
-        module02_refs = self._load_module_refs("module02.py", manifest)
-        module03_refs = self._load_module_refs("module03.py", manifest)
-        self.assertEqual([], module01_refs)
-        self.assertEqual('module01.py', module02_refs)
-        self.assertEqual([], module03_refs)
+        model01_refs = self._load_model_refs("model01.py", manifest)
+        model02_refs = self._load_model_refs("model02.py", manifest)
+        model03_refs = self._load_model_refs("model03.py", manifest)
+        self.assertEqual([], model01_refs)
+        self.assertEqual('model01.py', model02_refs)
+        self.assertEqual([], model03_refs)
 
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
 
-    def test_project_nested_module_dirs(self):
+    def test_project_nested_model_dirs(self):
         """
-        `prism compile` in a project with directories in the modules folder
+        `prism compile` in a project with directories in the models folder
         """
 
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '010_project_nested_module_dirs'
+        wkdir = Path(TEST_PROJECTS) / '010_project_nested_model_dirs'
         os.chdir(wkdir)
 
         # Remove the .compiled directory, if it exists
@@ -194,14 +194,14 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
 
         # Check elements of manifest
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        extract_module01_refs = self._load_module_refs("extract/module01.py", manifest)
-        extract_module02_refs = self._load_module_refs("extract/module02.py", manifest)
-        load_module03_refs = self._load_module_refs("load/module03.py", manifest)
-        module04_refs = self._load_module_refs("module04.py", manifest)
-        self.assertEqual([], extract_module01_refs)
-        self.assertEqual("extract/module01.py", extract_module02_refs)
-        self.assertEqual("extract/module02.py", load_module03_refs)
-        self.assertEqual("load/module03.py", module04_refs)
+        extract_model01_refs = self._load_model_refs("extract/model01.py", manifest)
+        extract_model02_refs = self._load_model_refs("extract/model02.py", manifest)
+        load_model03_refs = self._load_model_refs("load/model03.py", manifest)
+        model04_refs = self._load_model_refs("model04.py", manifest)
+        self.assertEqual([], extract_model01_refs)
+        self.assertEqual("extract/model01.py", extract_model02_refs)
+        self.assertEqual("extract/model02.py", load_model03_refs)
+        self.assertEqual("load/model03.py", model04_refs)
 
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))

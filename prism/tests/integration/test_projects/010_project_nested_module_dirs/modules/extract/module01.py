@@ -15,10 +15,10 @@ import prism_project
 ## Class definition ##
 ######################
 
-class Module01(prism.task.PrismTask):
+class Model01(prism.task.PrismTask):
 
     ## Run
-    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'module01.txt')
+    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'model01.txt')
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -32,7 +32,7 @@ class Module01(prism.task.PrismTask):
         returns:
             task output
         """
-        return "Hello from module 1!"
+        return "Hello from model 1!"
 
 
 # EOF

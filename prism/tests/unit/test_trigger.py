@@ -200,13 +200,13 @@ class TestTrigger(unittest.TestCase):
         Paths in `include` are added to the Prism project's sys.path.config
         """
         # Path of interest
-        DUMMY_MODULES = Path(TEST_CASE_WKDIR) / 'dummy_modules'
+        DUMMY_MODELS = Path(TEST_CASE_WKDIR) / 'dummy_models'
         print(prism_project.run_context['sys'].path)
 
         # In `prism_project.py`, we have `Path(__file__).parent` in `SYS_PATH_CONFIG`.
         # Therefore, `test_trigger_yml` should be in the project's sys.path.
         self.assertTrue(str(TEST_TRIGGER_YML) in prism_project.run_context['sys'].path)
-        self.assertFalse(str(DUMMY_MODULES) in prism_project.run_context['sys'].path)
+        self.assertFalse(str(DUMMY_MODELS) in prism_project.run_context['sys'].path)
 
         # Create the TriggerManager
         manager = TriggerManager(
@@ -214,11 +214,11 @@ class TestTrigger(unittest.TestCase):
             prism_project=prism_project
         )
         manager.check_trigger_components(prism_project.run_context)
-        self.assertTrue(str(DUMMY_MODULES) in prism_project.run_context['sys'].path)
+        self.assertTrue(str(DUMMY_MODELS) in prism_project.run_context['sys'].path)
 
         # Cleanup
         prism_project.cleanup(prism_project.run_context)
-        self.assertFalse(str(DUMMY_MODULES) in prism_project.run_context['sys'].path)
+        self.assertFalse(str(DUMMY_MODELS) in prism_project.run_context['sys'].path)
 
         # The original project directory was also removed
         self.assertFalse(str(TEST_TRIGGER_YML) in prism_project.run_context['sys'].path)

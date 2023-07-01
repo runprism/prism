@@ -742,7 +742,7 @@ class Ec2(
     ):
         """
         Prism projects often rely on more than just their own directory. They can import
-        functions / modules or reference configuration files from other directories. We
+        functions / models or reference configuration files from other directories. We
         need to copy all relevant directories into our agent, and we need to ensure that
         these paths have the same relative location to the project directory.
 

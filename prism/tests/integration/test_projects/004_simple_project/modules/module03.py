@@ -15,7 +15,7 @@ import prism_project
 ## Class definition ##
 ######################
 
-class Module03(prism.task.PrismTask):
+class Model03(prism.task.PrismTask):
     
     ## Run
     def run(self, tasks, hooks):

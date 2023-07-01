@@ -1,2 +1,2 @@
-Hello from module 1!
-Hello from module 2!
+Hello from model 1!
+Hello from model 2!

@@ -75,9 +75,9 @@ class ProjectPyNotFoundException(PrismException):
         return self.message
 
 
-class ModulesDirNotFoundException(PrismException):
+class ModelsDirNotFoundException(PrismException):
     """
-    Exception raised if modules dir isn't not found
+    Exception raised if models dir isn't not found
     """
 
     def __init__(self, message):

@@ -66,7 +66,7 @@ class GraphTask(prism.cli.compile.CompileTask, prism.mixins.graph.GraphMixin):
         compiled_dag_error_event = result.event_to_fire
         event_list = result.event_list
 
-        # If no modules in DAG, return
+        # If no models in DAG, return
         if compiled_dag == 0 and compiled_dag_error_event is not None:
             event_list = fire_empty_line_event(event_list)
             event_list = fire_console_event(

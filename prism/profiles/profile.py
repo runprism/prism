@@ -233,7 +233,7 @@ class Profile:
                         )
 
                     # Import
-                    adapter_import = importlib.import_module(
+                    adapter_import = importlib.import_model(
                         f'prism.profiles.{adapter_type}'
                     )
                     globals()[adapter_type] = adapter_import

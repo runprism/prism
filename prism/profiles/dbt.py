@@ -207,7 +207,7 @@ class Dbt(Adapter):
         profiles_dir: str
     ):
         """
-        Initializes the flags module from dbt. This module ensures that the dbt compile
+        Initializes the flags model from dbt. This model ensures that the dbt compile
         task does not throw an error.
 
         args:
@@ -230,7 +230,7 @@ class Dbt(Adapter):
     ):
         """
         Initialize the compile task and call _runtime_initialize(). This must be done
-        after the flags module has been initialized.
+        after the flags model has been initialized.
 
         args:
             profiles_dir: directory of dbt profiles

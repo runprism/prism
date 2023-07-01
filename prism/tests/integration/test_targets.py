@@ -45,7 +45,7 @@ class TestTargetIntegration(integration_test_class.IntegrationTestCase):
         wkdir = Path(TEST_PROJECTS) / '008_targets'
         os.chdir(wkdir)
 
-        # Remove all compiled modules
+        # Remove all compiled models
         self._remove_compiled_dir(wkdir)
 
         # Remove all folders / files in the output directory
@@ -58,8 +58,8 @@ class TestTargetIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        for module in ['parquet.py', 'txt.py', 'csv.py', 'csv_mult.py']:
-            refs = self._load_module_refs(module, manifest)
+        for model in ['parquet.py', 'txt.py', 'csv.py', 'csv_mult.py']:
+            refs = self._load_model_refs(model, manifest)
             self.assertEqual([], refs)
 
         # Check contents of output
@@ -132,7 +132,7 @@ class TestTargetIntegration(integration_test_class.IntegrationTestCase):
         # re-commit to Github)
         self._remove_parquet_files_in_dir(Path(wkdir / 'output' / 'target_parquet'))
 
-        # Remove all compiled modules
+        # Remove all compiled models
         self._remove_compiled_dir(wkdir)
 
         # Set up wkdir for next test

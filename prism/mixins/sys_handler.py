@@ -23,7 +23,7 @@ from pathlib import Path
 
 class SysHandlerMixin:
     """
-    Class for managing sys.path and sys.modules
+    Class for managing sys.path and sys.models
     """
 
     def add_paths_to_sys_path(self,
@@ -96,13 +96,13 @@ class SysHandlerMixin:
         globals_dict['sys'].path.remove(str(project_dir))
         return globals_dict
 
-    def remove_project_modules(self,
+    def remove_project_models(self,
         paths: List[Path],
         globals_dict: Dict[Any, Any]
     ):
         """
-        Remove paths and dependent modules in `paths` from the sys.paths and
-        sys.modules. Make sure to only remove them if they were not part of the base
+        Remove paths and dependent models in `paths` from the sys.paths and
+        sys.models. Make sure to only remove them if they were not part of the base
         configuration. This usually isn't necessary, because prism projects run in their
         own Python session. However, there may be cases where the user runs multiple
         prism projects during the same session (e.g., during integration tests).
@@ -110,7 +110,7 @@ class SysHandlerMixin:
         This is definitely not best practice; need to find a better way of doing this.
 
         args:
-            base_sys_modules: base sys.modules
+            base_sys_models: base sys.models
             paths: custom paths (`SYS_PATH_CONF` in prism_project.py)
             globals_dict: globals dictionary
         returns:
@@ -119,10 +119,10 @@ class SysHandlerMixin:
         if 'sys' not in globals_dict.keys():
             return globals_dict
 
-        # Iterate through all modules. Only delete modules that (1) originate from a
-        # path in `paths`, and (2) did not exist in the `base_sys_modules``
+        # Iterate through all models. Only delete models that (1) originate from a
+        # path in `paths`, and (2) did not exist in the `base_sys_models``
         mods_to_del = []
-        for mod_name, mod_obj in globals_dict['sys'].modules.items():
+        for mod_name, mod_obj in globals_dict['sys'].models.items():
             try:
                 if mod_obj.__file__ is None:
                     continue
@@ -131,7 +131,7 @@ class SysHandlerMixin:
             except AttributeError:
                 continue
 
-        # Delete modules
+        # Delete models
         for mod in mods_to_del:
-            del globals_dict['sys'].modules[mod]
+            del globals_dict['sys'].models[mod]
         return globals_dict

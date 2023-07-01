@@ -127,7 +127,7 @@ class Agent(metaclass=MetaAgent):
     def prepare_paths_for_copy(self, project: PrismProject, tmpdir: str):
         """
         Prism projects often rely on more than just their own directory. They can import
-        functions / modules or reference configuration files from other directories. We
+        functions / models or reference configuration files from other directories. We
         need to copy all relevant directories into our agent, and we need to ensure that
         these paths have the same relative location to the project directory.
 
@@ -174,7 +174,7 @@ class Agent(metaclass=MetaAgent):
         log_level = self.args.log_level
         vars = self.args.vars
         context = self.args.context
-        modules = self.args.modules
+        models = self.args.models
         all_upstream = self.args.all_upstream
         all_downstream = self.args.all_downstream
 
@@ -185,14 +185,14 @@ class Agent(metaclass=MetaAgent):
             f"{k}={v}" for k, v in vars.items()
         ])
         context_cmd = "" if context == '{}' else f"--context '{context}'"
-        modules_cmd = "" if modules is None else " " .join([
-            f"--module {m.replace('.py', '')}" for m in modules
+        models_cmd = "" if models is None else " " .join([
+            f"--model {m.replace('.py', '')}" for m in models
         ])
         all_upstream_cmd = "" if not all_upstream else "--all-upstream"
         all_downstream_cmd = "" if not all_downstream else "--all-downstream"
 
         # Full command
-        full_cmd = f"prism run {full_tb_cmd} {log_level_cmd} {vars_cmd} {context_cmd} {modules_cmd} {all_upstream_cmd} {all_downstream_cmd}"  # noqa: E501
+        full_cmd = f"prism run {full_tb_cmd} {log_level_cmd} {vars_cmd} {context_cmd} {models_cmd} {all_upstream_cmd} {all_downstream_cmd}"  # noqa: E501
         return full_cmd
 
     def parse_environment_variables(self, agent_conf: Dict[str, Any]) -> Dict[str, str]:

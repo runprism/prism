@@ -1,5 +1,5 @@
 """
-Prism Module class
+Prism Model class
 
 Table of Contents
 - Imports

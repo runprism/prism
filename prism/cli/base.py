@@ -51,13 +51,13 @@ def get_project_dir():
     while cwd != root_path:
         project_file = cwd / 'prism_project.py'
         if project_file.is_file():
-            if not Path(cwd / 'modules').is_dir():
-                modules_dir_not_found_msg = ' '.join([
-                    'modules directory not found in project directory or any',
+            if not Path(cwd / 'models').is_dir():
+                models_dir_not_found_msg = ' '.join([
+                    'models directory not found in project directory or any',
                     'of its parents',
                 ])
-                raise prism.exceptions.ModulesDirNotFoundException(
-                    modules_dir_not_found_msg
+                raise prism.exceptions.ModelsDirNotFoundException(
+                    models_dir_not_found_msg
                 )
             return cwd
         else:
