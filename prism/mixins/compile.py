@@ -67,7 +67,18 @@ class CompileMixin():
             models directory
         """
         models_dir = project_dir / 'models'
+        modules_dir = project_dir / 'modules'
         if not models_dir.is_dir():
+
+            # If the `modules` directory is found, then raise a warning
+            if modules_dir.is_dir():
+                prism.prism_logging.fire_console_event(
+                    prism.prism_logging.ModulesFolderDeprecated(),
+                    log_level='warn'
+                )
+                return modules_dir
+
+            # Otherwise, raise a warning
             raise prism.exceptions.CompileException(
                 message=f'`models` directory not found in `{str(project_dir)}`'
             )
@@ -215,6 +226,7 @@ class CompileMixin():
 
     def compile_dag(self,
         project_dir: Path,
+        models_dir: Path,
         compiled_dir: Path,
         all_models: List[Path],
         user_arg_models: List[Path],
@@ -236,6 +248,7 @@ class CompileMixin():
         """
         dag_compiler = compiler.DagCompiler(
             project_dir,
+            models_dir,
             compiled_dir,
             all_models,
             user_arg_models,

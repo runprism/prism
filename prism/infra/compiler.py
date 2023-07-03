@@ -69,6 +69,7 @@ class DagCompiler:
 
     def __init__(self,
         project_dir: Path,
+        models_dir: Path,
         compiled_dir: Path,
         all_models: List[Path],
         user_arg_models: List[Path],
@@ -96,7 +97,7 @@ class DagCompiler:
         self.user_arg_all_downstream = user_arg_all_downstream
 
         # Path of models
-        self.models_dir = self.project_dir / 'models'
+        self.models_dir = models_dir
 
         # Model manifests
         self.model_manifests: Dict[Path, ModelManifest] = {}

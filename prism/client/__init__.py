@@ -96,9 +96,19 @@ class PrismDAG(
 
         # Models folder is not found
         if not Path(user_project_dir / 'models').is_dir():
-            raise prism.exceptions.InvalidProjectException(
-                message=f'`models` directory not found in `{str(user_project_dir)}`'
-            )
+
+            # If the `modules` directory is found, then raise a warning
+            if Path(user_project_dir / 'modules').is_dir():
+                prism.prism_logging.fire_console_event(
+                    prism.prism_logging.ModulesFolderDeprecated(),
+                    log_level='warn'
+                )
+
+            # Otherwise, raise an error
+            else:
+                raise prism.exceptions.InvalidProjectException(
+                    message=f'`models` directory not found in `{str(user_project_dir)}`'
+                )
 
         return True
 

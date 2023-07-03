@@ -110,6 +110,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
         compiled_event_manager_output = compiler_manager.manage_events_during_run(
             event_list=event_list,
             project_dir=project_dir,
+            models_dir=models_dir,
             compiled_dir=compiled_dir,
             all_models=all_models,
             user_arg_models=user_arg_models
@@ -218,6 +219,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list=event_list,
             fire_exec_events=fire_exec_events,
             project_dir=project_dir,
+            models_dir=models_dir,
             compiled_dir=compiled_dir,
             all_models=all_models,
             user_arg_models=user_arg_models,

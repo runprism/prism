@@ -405,6 +405,13 @@ class ModelsFolderNotFoundEvent(Event):
 
 
 @dataclass
+class ModulesFolderDeprecated(Event):
+
+    def message(self):
+        return f'{YELLOW}`modules` should be renamed to `models`...this will be an error in a future version of Prism{RESET}'  # noqa: E501
+
+
+@dataclass
 class SeparatorEvent(Event):
 
     def message(self):

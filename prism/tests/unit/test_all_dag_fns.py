@@ -43,7 +43,7 @@ DAG_CYCLE_LIST = [Path(p) for p in DAG_CYCLE_LIST]
 ###########################################
 
 # Task
-dag_compiler = compiler.DagCompiler(TASK_REF_TEST_CASES, None, None, None, False)
+dag_compiler = compiler.DagCompiler(TASK_REF_TEST_CASES, None, None, None, None, False)
 
 # Constants
 TASK_REF_3NODES_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_3nodes'
