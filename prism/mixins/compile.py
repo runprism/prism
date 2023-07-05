@@ -23,6 +23,7 @@ import prism.exceptions
 import prism.constants
 from prism.infra import compiler
 from prism.infra.project import PrismProject
+from prism.parsers.ast_parser import AstParser
 
 
 ####################
@@ -84,12 +85,12 @@ class CompileMixin():
             )
         return models_dir
 
-    def get_models(self,
+    def get_modules(self,
         models_dir: Path,
         prefix: Path = Path('')
     ) -> List[Path]:
         """
-        Get all Python models from `models_dir`
+        Get all Python modules from `models_dir`
 
         args:
             models_dir: models directory
@@ -97,7 +98,7 @@ class CompileMixin():
         returns:
             list of models in directory (as pathlib Path objects)
         """
-        models = []
+        modules = []
         for path in models_dir.iterdir():
 
             # If object is a directory...
@@ -108,15 +109,15 @@ class CompileMixin():
                 # called "extraction", then the models within "extraction" should be
                 # stored as "extraction/..."
                 if str(prefix) == '.':
-                    models.extend(self.get_models(path, prefix=Path(path.name)))
+                    modules.extend(self.get_modules(path, prefix=Path(path.name)))
 
                 # If parent directory is not the models folder, set the prefix to the
                 # parent prefix + the name of the directory. Using the above example, if
                 # the "extraction" folder has a directory called "step1", then the
                 # models within "step1" should be stored as "extraction/step1/..."
                 else:
-                    models.extend(
-                        self.get_models(path, prefix=Path(prefix) / path.name)
+                    modules.extend(
+                        self.get_modules(path, prefix=Path(prefix) / path.name)
                     )
 
             # If object is a file
@@ -128,17 +129,49 @@ class CompileMixin():
                     # If parent directory is the models folder, then just add the
                     # python file name
                     if str(prefix) == '.':
-                        models += [Path(path.name)]
+                        modules += [Path(path.name)]
 
                     # If parent directory is not the models folder, then add prefix to
                     # python file name
                     else:
-                        models += [Path(prefix) / Path(path.name)]
-        return models
+                        modules += [Path(prefix) / Path(path.name)]
+
+        return modules
+
+    def parse_all_models(self,
+        all_modules: List[Path],
+        models_dir: Path,
+    ) -> List[AstParser]:
+        """
+        Parse all the models in `models_dir`
+
+        args:
+            models_dir: directory containing all models
+        returns:
+            list of AstParsers
+        """
+        parser_list = []
+        for _m in all_modules:
+            parser = AstParser(Path(_m), models_dir)
+            parser_list.append(parser)
+
+        return parser_list
+
+    def get_model_names(self,
+        parsed_models: List[AstParser]
+    ):
+        all_model_names = []
+        for _p in parsed_models:
+            module_name_no_py = re.sub(r'\.py$', '', str(_p.model_relative_path))
+            all_model_names += [
+                f"{module_name_no_py}.{_n.name}" for _n in _p.prism_task_nodes
+            ]
+        return all_model_names
 
     def user_arg_models(self,
         args: argparse.Namespace,
-        models_dir: Path
+        models_dir: Path,
+        all_parsed_models: List[AstParser],
     ) -> List[Path]:
         """
         Process user arg models
@@ -149,47 +182,75 @@ class CompileMixin():
         returns:
             list of processed user arg models
         """
+        # Get the models argument
         try:
             raw_models = args.models
+
+            # If the user didn't specify any models, return all of the models
             if raw_models is None:
-                processed_models = self.get_models(models_dir)
+                return self.get_model_names(all_parsed_models)
+
+            # Otherwise, iterate through the user arguments
             else:
-                processed_models = []
+                processed_models: Optional[List[str]] = None
                 for m in raw_models:
 
-                    # Check if * is used
+                    # Check if * is used. If so, get the models contained with all
+                    # modules in the parent path (i.e., if `extract/*` is used, get the
+                    # models for all modules in `extract/`).
                     m_split = m.split('/')
                     if m_split[-1] == '*':
                         parent = '/'.join([m_comp for m_comp in m_split[:-1]])
-                        processed_models.extend(
-                            self.get_models(Path(models_dir / parent), Path(parent))
-                        )
+
+                        # Parsed subset
+                        parsed_subset = [
+                            _p for _p in all_parsed_models if _p.model_relative_path.parent == Path(parent)  # noqa: E501
+                        ]
+                        processed_models = self.get_model_names(parsed_subset)
 
                     # Check if path is a directory
                     elif Path(models_dir / m).is_dir():
                         raise prism.exceptions.CompileException(
-                            message=f'invalid --model argument `{m}`'
+                            message=f'invalid --model argument `{m}`...--module must either by `<module_name>` or `<module_name>.<model_name>`'  # noqa: E501
                         )
 
-                    # Check if path is a file
-                    elif Path(models_dir / m).is_file():
-                        if len(re.findall(r'\.py$', Path(models_dir / m).name)) == 0:
-                            raise prism.exceptions.CompileException(
-                                f'invalid --model argument `{m}`'
-                            )
-                        else:
-                            processed_models.extend([Path(m)])
-
+                    # Otherwise, the model must be either a module or a module.model
                     else:
-                        raise prism.exceptions.CompileException(
-                            f'could not find model `{str(m)}` in `{str(models_dir.name)}/`'  # noqa: E501
-                        )
+                        if len(re.findall(r'(?i)^[a-z0-9\_\-\/\*\.]+(?:\.py)?$', m)) == 0:  # noqa: E501
+                            raise prism.exceptions.ParserException(
+                                f'invalid --model argument `{m}`...--module must either by `<module_name>` or `<module_name>.<model_name>`'  # noqa: E501
+                            )
+
+                        # If the model contains `.py` at the end, remove it. We already
+                        # throw a warning with click.
+                        if len(re.findall(r'\.py$', m)) > 0:
+                            m = re.sub(r'\.py$', '', m)
+
+                        # Check format of the model argument
+                        m_split = m.split(".")
+                        if not Path(models_dir / f'{m_split[0]}.py').is_file():
+                            raise prism.exceptions.CompileException(
+                                f'could not find module `{m_split[0]}` in `{models_dir.name}/`, so could not parse the corresponding models'  # noqa: E501
+                            )
+
+                        # Otherwise, get the parsed model and model names
+                        parsed_subset = [
+                            _p for _p in all_parsed_models if _p.model_relative_path == Path(f"{m_split[0]}.py")  # noqa: E501
+                        ]
+                        processed_models = self.get_model_names(parsed_subset)
+
+                        # If the user wants a specific model within the module, then
+                        # update `processed_models`
+                        if len(m_split) > 1:
+                            processed_models = [
+                                p for p in processed_models if p.split(".")[1] == m_split[1]  # noqa: E501
+                            ]
+
+            return processed_models
 
         # If --model argument not specified, then get all models
         except AttributeError:
-            processed_models = self.get_models(models_dir)
-
-        return processed_models
+            return self.get_model_names(all_parsed_models)
 
     def get_compiled_dir(self,
         project_dir: Path
@@ -228,8 +289,8 @@ class CompileMixin():
         project_dir: Path,
         models_dir: Path,
         compiled_dir: Path,
-        all_models: List[Path],
-        user_arg_models: List[Path],
+        all_parsed_models: List[AstParser],
+        user_arg_models: List[str],
         user_arg_all_downstream: bool = True,
         project: Optional[PrismProject] = None
     ) -> compiler.CompiledDag:
@@ -238,19 +299,25 @@ class CompileMixin():
 
         args:
             project_dir: project directory
-            all_models: all models in project
+            models_dir: directory containing all models
+            compiled_dir: directory in which to place manifest
+            all_parsed_models: parsed models in `models_dir`
             user_arg_models: models passed in user argument
             user_arg_all_downstream: boolean indicating whether the user wants to run
                 all models downstream of inputted args
-            compiler_globals: globals() dictionary
+            project: PrismProject
         returns:
             CompiledDag object
         """
+        # All models
+        all_models = self.get_model_names(all_parsed_models)
+
         dag_compiler = compiler.DagCompiler(
             project_dir,
             models_dir,
             compiled_dir,
             all_models,
+            all_parsed_models,
             user_arg_models,
             user_arg_all_downstream,
             project

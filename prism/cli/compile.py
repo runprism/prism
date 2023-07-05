@@ -68,7 +68,38 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
+        # ------------------------------------------------------------------------------
+        # Parse all the models
+
+        all_modules = self.get_modules(models_dir)
+        parse_all_models_em = BaseEventManager(
+            idx=None,
+            total=None,
+            name='parsing all models',
+            full_tb=self.args.full_tb,
+            func=self.parse_all_models
+        )
+        parse_all_models_em_output = parse_all_models_em.manage_events_during_run(
+            fire_exec_events=False,
+            event_list=event_list,
+            all_modules=all_modules,
+            models_dir=models_dir
+        )
+        parsed_models = parse_all_models_em_output.outputs
+        event_to_fire = parse_all_models_em_output.event_to_fire
+        event_list = parse_all_models_em_output.event_list
+        if parsed_models == 0:
+            event_list = fire_console_event(
+                event_to_fire,
+                event_list,
+                log_level='error'
+            )
+            event_list = self.fire_tail_event(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
+
+        # ------------------------------------------------------------------------------
         # Get models to compile
+
         user_arg_model_em = BaseEventManager(
             idx=None,
             total=None,
@@ -80,7 +111,8 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             fire_exec_events=False,
             event_list=event_list,
             args=self.args,
-            models_dir=models_dir
+            models_dir=models_dir,
+            all_parsed_models=parsed_models,
         )
         user_arg_models = user_arg_model_em_output.outputs
         event_to_fire = user_arg_model_em_output.event_to_fire
@@ -94,7 +126,6 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
-        all_models = self.get_models(models_dir)
         event_list = fire_empty_line_event(event_list)
 
         # ------------------------------------------------------------------------------
@@ -112,7 +143,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             project_dir=project_dir,
             models_dir=models_dir,
             compiled_dir=compiled_dir,
-            all_models=all_models,
+            all_parsed_models=parsed_models,
             user_arg_models=user_arg_models
         )
         compiled_dag = compiled_event_manager_output.outputs
@@ -173,6 +204,36 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list)
 
+        # ------------------------------------------------------------------------------
+        # Parse all the models
+
+        all_modules = self.get_modules(models_dir)
+        parse_all_models_em = BaseEventManager(
+            idx=None,
+            total=None,
+            name='parsing all models',
+            full_tb=self.args.full_tb,
+            func=self.parse_all_models
+        )
+        parse_all_models_em_output = parse_all_models_em.manage_events_during_run(
+            fire_exec_events=False,
+            event_list=event_list,
+            all_modules=all_modules,
+            models_dir=models_dir
+        )
+        parsed_models = parse_all_models_em_output.outputs
+        event_to_fire = parse_all_models_em_output.event_to_fire
+        event_list = parse_all_models_em_output.event_list
+        if parsed_models == 0:
+            event_list = fire_console_event(
+                event_to_fire,
+                event_list,
+                log_level='error'
+            )
+            event_list = self.fire_tail_event(event_list)
+            return prism.cli.base.TaskRunReturnResult(event_list, True)
+
+        # ------------------------------------------------------------------------------
         # Get models to compile
         user_arg_model_em = BaseEventManager(
             idx=None,
@@ -199,8 +260,6 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             event_list = self.fire_tail_event(event_list)
             return prism.cli.base.TaskRunReturnResult(event_list, True)
 
-        all_models = self.get_models(models_dir)
-
         # All downstream
         all_downstream = args.all_downstream
 
@@ -221,7 +280,7 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             project_dir=project_dir,
             models_dir=models_dir,
             compiled_dir=compiled_dir,
-            all_models=all_models,
+            all_parsed_models=parsed_models,
             user_arg_models=user_arg_models,
             user_arg_all_downstream=all_downstream,
             project=project

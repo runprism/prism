@@ -57,7 +57,7 @@ class TestModelDecParsing(unittest.TestCase):
         parser = ast_parser.AstParser(DEC_ONE_PRISM_TASK, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_fn = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_fn.name
         prism_task_fn_args = parser.get_func_args(prism_task_fn)
 
@@ -78,7 +78,7 @@ class TestModelDecParsing(unittest.TestCase):
         parser = ast_parser.AstParser(DEC_NO_PRISM_TASK, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_fn = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
 
         # Number of prism tasks
         num_prism_tasks = parser.get_num_prism_task_functions()
@@ -104,7 +104,7 @@ class TestModelDecParsing(unittest.TestCase):
 
         # Prism task name -- it should return the first one
         with self.assertRaises(prism.exceptions.RuntimeException) as cm:
-            _ = parser.get_prism_task_node(
+            _ = parser.get_prism_task_nodes(
                 parser.classes, parser.bases
             )
         expected_msg = f"too many functions decorated with `@task` in {DEC_MULTIPLE_PRISM_TASKS}"  # noqa: E501
@@ -119,7 +119,7 @@ class TestModelDecParsing(unittest.TestCase):
         parser = ast_parser.AstParser(DEC_DIFF_DECORATOR_STRUCTURE, MODEL_TEST_CASES)
 
         # Prism task function
-        prism_task_fn = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_fn_name = prism_task_fn.name
         run_func_args = parser.get_func_args(prism_task_fn)
 
@@ -142,7 +142,7 @@ class TestModelDecParsing(unittest.TestCase):
         parser = ast_parser.AstParser(DEC_OTHER_FUNCTIONS, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_fn = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_fn.name
         run_func_args = parser.get_func_args(prism_task_fn)
 
@@ -164,7 +164,7 @@ class TestModelDecParsing(unittest.TestCase):
         parser = ast_parser.AstParser(DEC_TASK_WITH_TARGET, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_fn = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_fn.name
         run_func_args = parser.get_func_args(prism_task_fn)
 
@@ -191,7 +191,7 @@ class TestModelDecParsing(unittest.TestCase):
         parser = ast_parser.AstParser(DEC_TASKS_REFS, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_fn = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_fn.name
         run_func_args = parser.get_func_args(prism_task_fn)
 
@@ -220,7 +220,7 @@ class TestModelDecParsing(unittest.TestCase):
 
         def _get_args(model):
             parser = ast_parser.AstParser(model, MODEL_TEST_CASES)
-            prism_task_fn = parser.get_prism_task_node(parser.classes, parser.bases)
+            prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
             run_func_args = parser.get_func_args(prism_task_fn)
             return run_func_args
 

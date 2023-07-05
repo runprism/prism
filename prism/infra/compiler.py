@@ -39,7 +39,8 @@ class CompiledDag:
         nxdag: nx.DiGraph,
         topological_sort: List[Path],
         user_arg_models: List[Path],
-        model_manifests: Dict[Path, ModelManifest]
+        model_manifests: Dict[Path, ModelManifest],
+        parsed_models: List[ast_parser.AstParser],
     ):
         self.models_dir = models_dir
         self.nxdag = nxdag
@@ -48,16 +49,34 @@ class CompiledDag:
         self.model_manifests = model_manifests
 
         # Store full paths in attribute
-        self.topological_sort_full_path = [
-            self.models_dir / model for model in self.topological_sort
-        ]
+        self.topological_sort_full_path = []
 
         # Create model objects
         self.compiled_models = []
-        for relative, full in zip(self.topological_sort, self.topological_sort_full_path):  # noqa: E501
+        for _model in self.topological_sort:
+            # Model name
+            model_name = _model.split('.')[1]
+
+            # Relative path and full path
+            relative_path = Path(f'{_model.split(".")[0]}.py')
+            full_path = models_dir / relative_path
+
+            # Current parser
+            model_ast_parser = [
+                _p for _p in parsed_models if _p.model_relative_path == relative_path
+            ][0]
+
+            # Update attribute
+            self.topological_sort_full_path.append(full_path)
+
+            # Compiled model
             self.compiled_models.append(
                 prism.infra.model.CompiledModel(
-                    relative, full, self.model_manifests[relative]
+                    model_name,
+                    relative_path,
+                    full_path,
+                    self.model_manifests[_model],
+                    model_ast_parser,
                 )
             )
 
@@ -71,8 +90,9 @@ class DagCompiler:
         project_dir: Path,
         models_dir: Path,
         compiled_dir: Path,
-        all_models: List[Path],
-        user_arg_models: List[Path],
+        all_models: List[str],
+        parsed_models: List[ast_parser.AstParser],
+        user_arg_models: List[str],
         user_arg_all_downstream: bool,
         project: Optional[PrismProject] = None
     ):
@@ -82,6 +102,9 @@ class DagCompiler:
         self.user_arg_models = user_arg_models
         self.project = project
         os.chdir(project_dir)
+
+        # Parsed models
+        self.parsed_models = parsed_models
 
         # Models can only be executed if their predecessors are explicitly run or have
         # targets. For example, if our DAG is A --> B --> C and we call `prism run
@@ -103,8 +126,8 @@ class DagCompiler:
         self.model_manifests: Dict[Path, ModelManifest] = {}
 
     def parse_task_refs(self,
-        models: List[Path],
-        parent_path: Path
+        models: List[str],
+        parsed_models: List[ast_parser.AstParser],
     ) -> Dict[Path, Any]:
         """
         Parse node dictionary listed at the beginning of each python script. If
@@ -120,16 +143,32 @@ class DagCompiler:
         # This is only ever called on the output of `get_all_models`, which sorts the
         # models alphabetically. Therefore, all mod refs will be sorted.
         task_refs_dict: Dict[Path, Any] = {}
-        for m in models:
-            parser = ast_parser.AstParser(m, parent_path)
-            task_refs = parser.parse()
-            if task_refs is None or task_refs == '' or task_refs == []:
-                task_refs_dict[m] = None
+
+        # Iterate through all of the models
+        for _mod in models:
+            # Current module / model
+            current_module = Path(f"{_mod.split('.')[0]}.py")
+            curr_model = _mod.split('.')[1]
+
+            # Current parser
+            curr_parser = [
+                _p for _p in parsed_models if _p.model_relative_path == current_module
+            ][0]
+
+            # Other parsers
+            other_parsers = [
+                _p for _p in parsed_models if _p.model_relative_path != current_module
+            ]
+
+            # Get task refs
+            task_refs = curr_parser.parse(curr_model, other_parsers)
+            if task_refs is None or task_refs == '' or task_refs == {}:
+                task_refs_dict[_mod] = None
             else:
-                task_refs_dict[m] = task_refs
+                task_refs_dict[_mod] = task_refs
 
             # Keep track of model manifest
-            self.model_manifests[m] = parser.model_manifest
+            self.model_manifests[_mod] = curr_parser.model_manifest
 
         return task_refs_dict
 
@@ -293,9 +332,9 @@ class DagCompiler:
         return unique_successors
 
     def create_topsort(self,
-        all_models: List[Path],
-        user_arg_models: List[Path],
-        parent_path: Path
+        all_models: List[str],
+        user_arg_models: List[str],
+        parsed_models: List[ast_parser.AstParser],
     ) -> Any:
         """
         Parse mod refs, create the DAG, and create a topological sort of the DAG
@@ -316,7 +355,10 @@ class DagCompiler:
         # run script B. This will throw an error, because script B relies on script A,
         # and we will need to instantiate the script A task for the script B task to
         # execute fully.
-        task_refs = self.parse_task_refs(all_models, parent_path)
+        task_refs = self.parse_task_refs(
+            all_models,
+            parsed_models,
+        )
         nodes, edges = self.create_nodes_edges(task_refs)
         dag = self.create_dag(nodes, edges)
 
@@ -361,7 +403,7 @@ class DagCompiler:
         Compile the DAG
         """
         nxdag, all_topological_sorts_list = self.create_topsort(
-            self.all_models, self.user_arg_models, self.models_dir
+            self.all_models, self.user_arg_models, self.parsed_models
         )
 
         # Dump manifest
@@ -387,6 +429,7 @@ class DagCompiler:
             nxdag,
             all_topological_sorts_list,
             self.user_arg_models,
-            self.model_manifests
+            self.model_manifests,
+            self.parsed_models,
         )
         return dag

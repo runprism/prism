@@ -13,7 +13,11 @@ Table of Contents
 # Standard library imports
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
+import re
+
+# Prism imports
+import prism.exceptions
 
 
 ####################
@@ -26,24 +30,46 @@ class ModelManifest:
     """
 
     def __init__(self):
-        self.manifest_dict: Dict[str, Any] = {"targets": [], "models": [], "refs": []}
+        self.manifest_dict: Dict[str, Any] = {"targets": {}, "models": [], "refs": {}}
 
     def add_model(self, model_name: Path):
         self.manifest_dict["models"].append(str(model_name))
 
-    def add_ref(self, target: Path, source: Path):
-        obj = {
-            "target": str(target),
-            "source": str(source)
-        }
-        self.manifest_dict["refs"].append(obj)
+    def add_refs(self,
+        target_module: Path,
+        target_model: str,
+        sources: List[str]
+    ):
+        target_module_no_py = re.sub(r'\.py$', '', str(target_module))
+        if target_module_no_py not in self.manifest_dict["refs"].keys():
+            self.manifest_dict["refs"][target_module_no_py] = {}
 
-    def add_target(self, model_name: Path, loc: Union[str, List[str]]):
-        obj = {
-            "model_name": str(model_name),
-            "target_locs": loc
-        }
-        self.manifest_dict["targets"].append(obj)
+        # If the model is already in the manifest, then raise an error, because we'd
+        # be double-adding the refs
+        if target_model in self.manifest_dict["refs"][target_module_no_py].keys():  # noqa: E501
+            raise prism.exceptions.ParserException(
+                message=f"manifest already contains refs for model `{target_module_no_py}.{target_model}`"  # noqa: E501
+            )
+        else:
+            self.manifest_dict["refs"][target_module_no_py][target_model] = sources
+
+    def add_targets(self,
+        module_relative_path: Path,
+        model_name: str,
+        locs: List[str]
+    ):
+        module_name_no_py = re.sub(r'\.py$', '', str(module_relative_path))
+        if module_name_no_py not in self.manifest_dict["targets"].keys():
+            self.manifest_dict["targets"][module_name_no_py] = {}
+
+        # If the model is already in the manifest, then raise an error, because we'd
+        # be double-adding the targets
+        if model_name in self.manifest_dict["targets"][module_name_no_py].keys():  # noqa: E501
+            raise prism.exceptions.ParserException(
+                message=f"manifest already contains targets for model `{module_name_no_py}.{model_name}`"  # noqa: E501
+            )
+        else:
+            self.manifest_dict["targets"][module_name_no_py][model_name] = locs
 
 
 class Manifest:
@@ -53,39 +79,18 @@ class Manifest:
 
     def __init__(self, model_manifests: List[ModelManifest] = []):
         self.manifest_dict: Dict[str, Any] = {
-            "targets": [], "prism_project": "", "models": [], "refs": []
+            "targets": {}, "prism_project": "", "models": [], "refs": {}
         }
         self.model_manifests = model_manifests
 
         # Iterate through model manifests and add to manifest
         for mm in self.model_manifests:
-            self.manifest_dict["targets"].extend(mm.manifest_dict["targets"])
+            self.manifest_dict["targets"].update(mm.manifest_dict["targets"])
             self.manifest_dict["models"].extend(mm.manifest_dict["models"])
-            self.manifest_dict["refs"].extend(mm.manifest_dict["refs"])
+            self.manifest_dict["refs"].update(mm.manifest_dict["refs"])
 
     def add_prism_project(self, prism_project_data: str):
         self.manifest_dict["prism_project"] = prism_project_data
-
-    def add_model(self, model_name: Path, model_data: str):
-        obj = {
-            "model_name": str(model_name),
-            "model_data": model_data
-        }
-        self.manifest_dict["models"].append(obj)
-
-    def add_ref(self, target: Path, source: Path):
-        obj = {
-            "target": str(target),
-            "source": str(source)
-        }
-        self.manifest_dict["refs"].append(obj)
-
-    def add_target(self, model_name: Path, loc: Union[str, List[str]]):
-        obj = {
-            "model_name": str(model_name),
-            "target_locs": loc
-        }
-        self.manifest_dict["targets"].append(obj)
 
     def json_dump(self, path: Path):
         with open(path / 'manifest.json', 'w') as f:

@@ -14,6 +14,7 @@ Table of Contents
 import ast
 from pathlib import Path
 from typing import Any, Dict
+import re
 
 # Prism-specific imports
 import prism.exceptions
@@ -33,48 +34,31 @@ class CompiledModel:
     """
 
     def __init__(self,
+        model_name: str,
         model_relative_path: Path,
         model_full_path: Path,
-        model_manifest: ModelManifest
+        model_manifest: ModelManifest,
+        model_ast_parser: AstParser,
     ):
+        self.model_name = model_name
         self.model_relative_path = model_relative_path
         self.model_full_path = model_full_path
         with open(self.model_full_path, 'r') as f:
             self.model_str = f.read()
         f.close()
 
-        # Model as an AST
-        parent_path = Path(str(model_full_path).replace(str(model_relative_path), ''))
-        self.ast_parser = AstParser(self.model_relative_path, parent_path)
+        # # Model as an AST
+        self.ast_parser = model_ast_parser
 
         # Model name
-        self.name = str(self.model_relative_path)
+        self.name = re.sub(r'\.py$', '', str(self.model_relative_path))
 
         # Set manifest
         self.model_manifest = model_manifest
-        self.refs = self._check_manifest(self.model_manifest)
-
-        # Get Prism task node
-        self.prism_task_node = self.ast_parser.get_prism_task_node(
-            self.ast_parser.classes, self.ast_parser.bases
-        )
-        self.prism_task_name = self.prism_task_node.name
+        self.refs = self.model_manifest.manifest_dict["refs"][self.name][self.model_name]  # noqa: E501
 
         # Task var name
-        self.task_var_name = f"{self.name.replace('.py', '')}.{self.prism_task_name}"
-
-    def _check_manifest(self, model_manifest: ModelManifest):
-        """
-        Check manifest and return list of refs associated with compiled
-        model
-        """
-        refs = []
-        manifest_refs = model_manifest.manifest_dict["refs"]
-        for ref_obj in manifest_refs:
-            refs.append(ref_obj["source"])
-        if len(refs) == 1:
-            refs = refs[0]
-        return refs
+        self.task_var_name = f"{self.name}.{self.model_name}"
 
     def grab_retries_metadata(self):
         """
@@ -82,9 +66,9 @@ class CompiledModel:
             1. How many retries to undertake
             2. The delay between retries
         """
-        prism_task_node = self.ast_parser.get_prism_task_node(
-            self.ast_parser.classes, self.ast_parser.bases
-        )
+        prism_task_node = [
+            _n for _n in self.ast_parser.prism_task_nodes if _n.name == self.model_name
+        ][0]
 
         # Instantiate retries / retry_delay_seconds
         retries = None
@@ -159,25 +143,25 @@ class CompiledModel:
             variable used to store task instantiation
         """
         # Get prism class from model
-        prism_task_class = self.ast_parser.get_prism_task_node(
-            self.ast_parser.classes, self.ast_parser.bases
-        )
+        prism_task_node = [
+            _n for _n in self.ast_parser.prism_task_nodes if _n.name == self.model_name
+        ][0]
 
         # Both cannot be null
-        if prism_task_class is None:
+        if prism_task_node is None:
             raise prism.exceptions.ParserException(
-                message=f"no PrismTask in `{str(self.model_relative_path)}`"
+                message=f"could not find model `{self.model_name}` in `{str(self.model_relative_path)}`"  # noqa: E501
             )
 
         # Execute class definition and create task
         exec(self.model_str, run_context)
 
         # If the user specified a task, great!
-        if isinstance(prism_task_class, ast.ClassDef):
-            prism_task_class_name = prism_task_class.name
+        if isinstance(prism_task_node, ast.ClassDef):
+            prism_task_node_name = prism_task_node.name
 
             # Execute class definition and create task
-            run_context[self.task_var_name] = run_context[prism_task_class_name](explicit_run)  # noqa: E501
+            run_context[self.task_var_name] = run_context[prism_task_node_name](explicit_run)  # noqa: E501
 
             # Set task manager and hooks
             run_context[self.task_var_name].set_task_manager(task_manager)
@@ -186,7 +170,7 @@ class CompiledModel:
         # If the user used a decorator, then executing the function will produce the
         # task we want.
         else:
-            fn = run_context[prism_task_class.name]
+            fn = run_context[prism_task_node.name]
             if fn.__name__ != "wrapper_task":
                 raise prism.exceptions.RuntimeException(
                     "`task` decorator not properly specified...try adding parentheses to it, e.g., `@task()`"  # noqa: E501

@@ -66,7 +66,7 @@ class PrismDAG(
         self.models_dir = self.get_models_dir(self.project_dir)
 
         # All models in project
-        self.all_models = self.get_models(self.models_dir)
+        self.all_models = self.get_modules(self.models_dir)
 
         # Define run context
         self.run_context = prism.constants.CONTEXT.copy()
@@ -295,7 +295,7 @@ class PrismDAG(
             # If project is not run, then only targets can be retrieved
             else:
                 parsed_ast_model = ast_parser.AstParser(model_path, self.models_dir)
-                prism_task_cls = parsed_ast_model.get_prism_task_node(
+                prism_task_cls = parsed_ast_model.get_prism_task_nodes(
                     parsed_ast_model.classes, parsed_ast_model.bases
                 )
                 if prism_task_cls is None:

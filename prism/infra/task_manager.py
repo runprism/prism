@@ -11,8 +11,10 @@ Table of Contents
 ###########
 
 # Standard library imports
-import re
 from typing import Any, Dict
+
+# Prism
+import prism.exceptions
 
 
 ####################
@@ -30,7 +32,10 @@ class PrismTaskManager:
     def __init__(self, upstream: Dict[str, Any]):
         self.upstream = upstream
 
-    def ref(self, model: str):
-        if len(re.findall(r'\.py$', model)) == 0:
-            model = f'{model}.py'
-        return self.upstream[model].get_output()
+    def ref(self, model: str, local: bool = False):
+        try:
+            return self.upstream[model].get_output()
+        except KeyError:
+            raise prism.exceptions.RuntimeException(
+                f"could not find task `{model}`"
+            )

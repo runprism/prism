@@ -71,11 +71,11 @@ class CreateTaskTask(
 
         # Grab the template
         if decorated:
-            template_model = importlib.import_model(
+            template_model = importlib.import_module(
                 name=f"prism.templates.tasks.{task_type}_dec"
             )
         else:
-            template_model = importlib.import_model(
+            template_model = importlib.import_module(
                 name=f"prism.templates.tasks.{task_type}_cls"
             )
         template = template_model.TEMPLATE

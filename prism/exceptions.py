@@ -344,3 +344,16 @@ class InvalidTaskNameException(PrismException):
 
     def __str__(self):
         return self.message
+
+
+class ReferenceException(PrismException):
+    """
+    Exception raised with a bad `tasks.ref()` call
+    """
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message

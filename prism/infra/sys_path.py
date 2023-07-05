@@ -37,7 +37,7 @@ class SysPathEngine(SysHandlerMixin):
         exec('import sys', temp_context)
         self.base_sys_path = [p for p in temp_context['sys'].path]
         self.base_sys_models = {
-            k: v for k, v in temp_context['sys'].models.items()
+            k: v for k, v in temp_context['sys'].modules.items()
         }
 
     def modify_sys_path(self, sys_path_config):

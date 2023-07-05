@@ -58,7 +58,7 @@ class TestModelClassParsing(unittest.TestCase):
         parser = ast_parser.AstParser(ONE_PRISM_TASK, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_class = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_class.name
 
         # Run function
@@ -82,7 +82,7 @@ class TestModelClassParsing(unittest.TestCase):
         parser = ast_parser.AstParser(NO_PRISM_TASK, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_class = parser.get_prism_task_nodes(parser.classes, parser.bases)
 
         # Number of prism tasks
         num_prism_tasks = parser.get_num_prism_task_classes(parser.bases)
@@ -108,7 +108,7 @@ class TestModelClassParsing(unittest.TestCase):
 
         # Prism task name -- it should return the first one
         with self.assertRaises(prism.exceptions.RuntimeException) as cm:
-            _ = parser.get_prism_task_node(
+            _ = parser.get_prism_task_nodes(
                 parser.classes, parser.bases
             )
         expected_msg = f"too many PrismTasks in `{str(MULTIPLE_PRISM_TASKS)}`"
@@ -123,7 +123,7 @@ class TestModelClassParsing(unittest.TestCase):
         parser = ast_parser.AstParser(DIFF_IMPORT_STRUCTURE, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_class = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_class.name
 
         # Run function
@@ -149,7 +149,7 @@ class TestModelClassParsing(unittest.TestCase):
         parser = ast_parser.AstParser(OTHER_CLASSES, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_class = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_class.name
 
         # Run function
@@ -174,7 +174,7 @@ class TestModelClassParsing(unittest.TestCase):
         parser = ast_parser.AstParser(TASK_WITH_TARGET, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_class = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_class.name
 
         # Run function
@@ -204,7 +204,7 @@ class TestModelClassParsing(unittest.TestCase):
         parser = ast_parser.AstParser(TASKS_REFS, MODEL_TEST_CASES)
 
         # Prism task name
-        prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_class = parser.get_prism_task_nodes(parser.classes, parser.bases)
         prism_task_name = prism_task_class.name
 
         # Run function
@@ -244,7 +244,7 @@ class TestModelClassParsing(unittest.TestCase):
 
         def _get_args(model):
             parser = ast_parser.AstParser(model, MODEL_TEST_CASES)
-            prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
+            prism_task_class = parser.get_prism_task_nodes(parser.classes, parser.bases)
             run_func = parser.get_run_func(prism_task_class)
             run_func_args = parser.get_func_args(run_func)
             return run_func_args
@@ -265,7 +265,7 @@ class TestModelClassParsing(unittest.TestCase):
 
         # No run function
         parser = ast_parser.AstParser(NO_RUN_FUNC, MODEL_TEST_CASES)
-        prism_task_class = parser.get_prism_task_node(parser.classes, parser.bases)
+        prism_task_class = parser.get_prism_task_nodes(parser.classes, parser.bases)
         run_func = parser.get_run_func(prism_task_class)
         self.assertIsNone(run_func)
 

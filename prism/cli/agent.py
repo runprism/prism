@@ -87,12 +87,12 @@ class AgentTask(
         # Create agent instance
         agent_type = agent_conf["type"]
         if agent_type == "docker":
-            agent_import = importlib.import_model(
+            agent_import = importlib.import_module(
                 f'prism.agents.{agent_type}_agent'
             )
             globals()[f"{agent_type}_agent"] = agent_import
         else:
-            agent_import = importlib.import_model(
+            agent_import = importlib.import_module(
                 f'prism.agents.{agent_type}'
             )
             globals()[agent_type] = agent_import

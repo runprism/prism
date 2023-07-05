@@ -16,7 +16,7 @@ import re
 import ast
 import astor
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Prism imports
 import prism.constants
@@ -67,6 +67,18 @@ class AstParser:
 
         # Get classes and bases
         self.classes, self.bases = self.get_classes_bases(self.ast_model)
+
+        # Get the Prism task nodes
+        self.prism_task_nodes = self.get_prism_task_nodes(
+            self.classes, self.bases
+        )
+        self.prism_task_names = [n.name for n in self.prism_task_nodes]
+
+    def __eq__(self, other):
+        return (
+            self.model_relative_path == other.model_relative_path
+            and self.parent_path == other.parent_path  # noqa: W503
+        )
 
     def get_classes_bases(self,
         model: ast.Module
@@ -124,10 +136,10 @@ class AstParser:
         # There should only be one function with the `task` decorator
         return len(tasks)
 
-    def get_prism_task_node(self,
+    def get_prism_task_nodes(self,
         classes: List[ast.ClassDef],
         bases: List[List[ast.expr]]
-    ) -> Optional[Union[ast.FunctionDef, ast.ClassDef]]:
+    ) -> List[Any]:
         """
         Get the node associated with the prism task from `model`
 
@@ -146,28 +158,11 @@ class AstParser:
                     if obj.attr == "PrismTask":
                         udf_classes.append(class_)
 
-        # Throw an error if there is more than one class
-        if len(udf_classes) > 1:
-            raise prism.exceptions.RuntimeException(
-                f"too many PrismTasks in `{str(self.model_relative_path)}`"
-            )
-
         # Check if any task is decorated with `@task`
-        udf_fn = self.get_task_decorated_function()
+        udf_fns = self.get_task_decorated_function()
 
-        # Both cannot exist
-        if len(udf_classes) == 1 and udf_fn is not None:
-            raise prism.exceptions.RuntimeException(
-                f"cannot have both a PrismTask class and a function with the `@task` decorator in `{str(self.model_relative_path)}`"  # noqa: E501
-            )
-
-        # If the class exists return that. If it doesn't but the function exists, return
-        # that. If neither exist, return None. We'll throw an error later.
-        if len(udf_classes) == 1:
-            return udf_classes[0]
-        elif udf_fn:
-            return udf_fn
-        return None
+        # Return all classes and functions
+        return udf_classes + udf_fns
 
     def get_attribute_name(self, attribute):
         """
@@ -208,15 +203,7 @@ class AstParser:
                     or "prism.decorators.task" in decorators  # noqa: W503
                 ):
                     tasks.append(node)
-
-        # There should only be one function with the `task` decorator
-        if len(tasks) == 0:
-            return None
-        if len(tasks) > 1:
-            raise prism.exceptions.RuntimeException(
-                f"too many functions decorated with `@task` in {str(self.model_relative_path)}"  # noqa: E501
-            )
-        return tasks[0]
+        return tasks
 
     def get_all_funcs(self,
         prism_task: Union[ast.FunctionDef, ast.ClassDef]
@@ -232,10 +219,9 @@ class AstParser:
         if isinstance(prism_task, ast.ClassDef):
             return [f for f in prism_task.body if isinstance(f, ast.FunctionDef)]
 
-        # If the task is a decorated function, then go through all of the other
-        # functions in the model.
+        # If the task is a decorated function, then just return that function
         elif isinstance(prism_task, ast.FunctionDef):
-            return [f for f in self.ast_model.body if isinstance(f, ast.FunctionDef)]
+            return [prism_task]
 
         # This should never happen
         else:
@@ -280,7 +266,167 @@ class AstParser:
             results.append(a.arg)
         return results
 
-    def get_prism_mod_calls(self, func: ast.FunctionDef) -> List[Path]:
+    def get_ref_arg_values(self,
+        task_name: str,
+        ref_call: ast.Call
+    ) -> Tuple[str, bool]:
+        """
+        Parse the args and kwargs for `tasks.ref()` and get the argument values
+
+        args:
+            ref_call: `tasks.ref()` call as an ast.Call object
+        returns:
+            tuple of (model, local)
+        """
+        args = ref_call.args
+        kwargs = ref_call.keywords
+
+        if len(args) + len(kwargs) > 2:
+            raise prism.exceptions.ReferenceException(
+                message=f"too many args in `tasks.ref()` in `{task_name}` in `{self.model_relative_path}`"  # noqa: E501
+            )
+
+        # Instantiate the arguments
+        model_arg = None
+        local_arg = None
+
+        # Check args
+        for i in range(0, len(args)):
+            _a = args[i]
+            if hasattr(_a, "s"):
+                tmp_value = _a.s
+                if i == 0 and not isinstance(tmp_value, str):
+                    raise prism.exceptions.ReferenceException(
+                        message=f"{self.model_relative_path}.{task_name}: `model` argument in `tasks.ref()` must be a string"  # noqa: E501
+                    )
+
+                if i == 1 and isinstance(tmp_value, bool):
+                    raise prism.exceptions.ReferenceException(
+                        message=f"{self.model_relative_path}.{task_name}: `local` argument in `tasks.ref()` must be a bool"  # noqa: E501
+                    )
+
+                if i == 0:
+                    model_arg = tmp_value
+
+                elif i == 1:
+                    local_arg = tmp_value
+
+        # Check kwargs
+        for _kw in kwargs:
+            tmp_value = _kw.value.value
+            if _kw.arg == "model":
+                if not isinstance(tmp_value, str):
+                    raise prism.exceptions.ReferenceException(
+                        message=f"{self.model_relative_path}.{task_name}: `model` argument in `tasks.ref()` must be a string"  # noqa: E501
+                    )
+                model_arg = tmp_value
+            if _kw.arg == "local":
+                if not isinstance(tmp_value, bool):
+                    raise prism.exceptions.ReferenceException(
+                        message=f"{self.model_relative_path}.{task_name}: `local` argument in `tasks.ref()` must be a bool"  # noqa: E501
+                    )
+                local_arg = tmp_value
+
+        # If the user doesn't have a a model arg, throw an error
+        if model_arg is None:
+            raise prism.exceptions.ReferenceException(
+                message=f"{self.model_relative_path}.{task_name}: `model` argument in `tasks.ref()` must be non-Null"  # noqa: E501
+            )
+        if local_arg is None:
+            local_arg = False
+
+        # Return tuple
+        return model_arg, local_arg
+
+    def define_non_local_ref_model(self,
+        ref_model_arg: str,
+        refd_parser: Any
+    ) -> str:
+        """
+        If the user ref's a model from a different module, return their ref argument as
+        a processed model string.
+
+        args:
+            ref_model_arg: user's `tasks.ref()` model argument
+            refd_parser: AstParser associated with `ref_model_arg`
+        returns:
+            processed model string: <module_name>.<model_name>
+        """
+        # If the user only enters the module name, then that module should only contain
+        # one model.
+        ref_model_arg_split = ref_model_arg.split(".")
+        if len(ref_model_arg_split) == 1:
+
+            # If the ref'd module contains more than one module,
+            # then throw an error.
+            if len(refd_parser.prism_task_nodes) > 1:
+                raise prism.exceptions.ReferenceException(
+                    message=f"module `{ref_model_arg}` has multiple models...specify the model name and try again"  # noqa: E501
+                )
+
+            # Otherwise, grab the one model
+            else:
+                return f'{ref_model_arg}.{refd_parser.prism_task_names[0]}'
+
+        # Otherwise, see if the specific model exists
+        else:
+            _model = ref_model_arg_split[1]
+            flag_has_model = any([
+                n == _model for n in refd_parser.prism_task_names  # noqa: E501
+            ])
+            if not flag_has_model:
+                raise prism.exceptions.ReferenceException(
+                    message=f"could not find model `{_model}` in `{ref_model_arg_split[0]}.py"  # noqa: E501
+                )
+
+            # Otherwise, grab the model
+            else:
+                return ref_model_arg
+
+    def define_local_ref_model(self,
+        ref_model_arg: str,
+        curr_model_name: str,
+    ) -> str:
+        """
+        If the user ref's a model from the same module, return their ref argument as
+        a processed model string.
+
+        args:
+            ref_model_arg: user's `tasks.ref()` model argument
+        returns:
+            processed model string: <module_name>.<model_name>
+        """
+        # If the user only enters the module name, then that module should only contain
+        # one model.
+        ref_model_arg_split = ref_model_arg.split(".")
+        if len(ref_model_arg_split) > 1:
+            raise prism.exceptions.ReferenceException(
+                "format <module_name>.<model_name> incompatible with `local = True`, since `local` implies the model exists in the current module"  # noqa: E501
+            )
+
+        # Check for self-reference
+        if curr_model_name == ref_model_arg:
+            raise prism.exceptions.ReferenceException(
+                message=f'"{self.model_relative_path}.{curr_model_name}: self-references found'  # noqa: E501
+            )
+
+        # See if the model exists
+        flag_has_model = any([
+            n == ref_model_arg for n in self.prism_curr_model_names  # noqa: E501
+        ])
+        if not flag_has_model:
+            raise prism.exceptions.ReferenceException(
+                message=f"{self.model_relative_path}.{curr_model_name}: model `{ref_model_arg}` not found"  # noqa: E501
+            )
+
+        # Otherwise, return
+        return f'{str(self.module_relative_path).replace(".py", "")}.{ref_model_arg}'
+
+    def get_prism_mod_calls(self,
+        task_name: str,
+        func: ast.FunctionDef,
+        other_parsed_models: List[Any],
+    ) -> List[Path]:
         """
         Get calls to `tasks.ref` from `func`
 
@@ -304,38 +450,63 @@ class AstParser:
             else:
                 try:
                     if c.func.value.id == prism_task_manager_alias and c.func.attr == 'ref':  # type: ignore # noqa: E501
-                        args = c.args
-                        if len(args) > 1:
-                            raise prism.exceptions.ParserException(
-                                'too many arguments in `tasks.ref()` call'
-                            )
 
-                        # Check the argument format. Convert it to a `.py` format.
-                        tmp_path = args[0].s  # type: ignore
-                        if len(re.findall(r'(?i)^[a-z0-9\_\-\/\*]+(?:\.py)?$', tmp_path)) == 0:  # noqa: E501
+                        # Get the ref arg values
+                        ref_model_arg, ref_local_arg = self.get_ref_arg_values(
+                            task_name, c
+                        )
+
+                        # The model arg can be in one of two formats:
+                        #   1) <module name>
+                        #   2) <module name>.<task name>
+
+                        model_arg_regex = r'(?i)^[a-z0-9\_\-\/\*]+\.?(?:[a-z0-9\_\-\/\*]+|py)?$'  # noqa: E501
+                        if len(re.findall(model_arg_regex, ref_model_arg)) == 0:
                             raise prism.exceptions.ParserException(
-                                f'invalid model name `{tmp_path}`...can only contain letters, numbers, underscores or dashes'  # noqa: E501
+                                f'invalid model name `{ref_model_arg}`...must be in the format `<module_name>` or `<module_name>.<model_name>`'  # noqa: E501
                             )
-                        if len(re.findall(r'\.py$', tmp_path)) > 0:
+                        if len(re.findall(r'\.py$', ref_model_arg)) > 0:
                             prism.prism_logging.fire_console_event(
                                 prism.prism_logging.PyWarningEvent(str(self.model_relative_path)),  # noqa: E501
                                 event_list=[],
                                 log_level='warn'
                             )
-                        if len(re.findall(r'\.py$', tmp_path)) == 0:
-                            tmp_path = f'{tmp_path}.py'
+                            ref_model_arg = re.sub(r'\.py$', '', ref_model_arg)
 
-                        if tmp_path not in mod_calls:  # type: ignore # noqa: E501
-                            if tmp_path == str(self.model_relative_path):  # type: ignore # noqa: E501
-                                raise prism.exceptions.ParserException(
-                                    message=f'self-references found in `{str(self.model_relative_path)}`'  # noqa: E501
+                        # Let's start with the case where local = False. This means that
+                        # the user is referencing a model from a separate module.
+                        if not ref_local_arg:
+
+                            # Now, get the ref'd model. If the argument is in the format
+                            # `<module>`, then the ref'd module should only have one
+                            # model. Otherwise, the user wants a specific model within
+                            # the module.
+                            relative_path = Path(f'{ref_model_arg.split(".")[0]}.py')
+                            refd_parser_list = [
+                                _p for _p in other_parsed_models if _p.model_relative_path == relative_path  # noqa: E501
+                            ]
+                            if len(refd_parser_list) == 0:
+                                raise prism.exceptions.ReferenceException(
+                                    message=f"could not find module associated with `{ref_model_arg}`, so could not parse model"  # noqa: E501
                                 )
-                            mod_calls.append(Path(tmp_path))  # type: ignore
+                            refd_parser = refd_parser_list[0]
+                            processed_ref_model = self.define_non_local_ref_model(
+                                ref_model_arg,
+                                refd_parser
+                            )
+
+                        # Next, handle the case where we are grabbing a local model
+                        else:
+                            processed_ref_model = self.define_local_ref_model(
+                                ref_model_arg,
+                                task_name
+                            )
+                        mod_calls.append(processed_ref_model)
 
                 # If we encounter an Attribute error, then the call object producing the
                 # error is not of interest to us. Skip.
                 except AttributeError:
-                    pass
+                    continue
 
         return mod_calls
 
@@ -547,55 +718,76 @@ class AstParser:
                 f"unrecognized task type {prism_task_node.__class__.__name__}!"
             )
 
-    def parse(self) -> Union[List[Path], Path]:
+    def parse(
+        self,
+        model: str,
+        other_parsed_models: List[Any]
+    ) -> Dict[str, List[str]]:
         """
-        Parse model and return mod references
+        Parse task references in `model`
+
+        args:
+            model: model to parse
+            other_parsed_models: list of AstParser objects associated with other
+                modules/models
+        returns:
+            task references as a dictionary
         """
         # Get PrismTask, run function, and mod calls
-        prism_task_node = self.get_prism_task_node(self.classes, self.bases)
-        if prism_task_node is None:
+        if len(self.prism_task_nodes) == 0:
             raise prism.exceptions.ParserException(
                 message=f"no PrismTask in `{str(self.model_relative_path)}`"
             )
 
-        # Check if run function exists. If the user used a decorator, then the `run`
-        # function is just the decorated function.
-        run_func = self.get_run_func(prism_task_node)
-        if run_func is None:
-            raise prism.exceptions.ParserException(
-                message=f"no `run` function in PrismTask in `{str(self.model_relative_path)}`"  # noqa: E501
-            )
+        # Iterate through all of the Prism tasks
+        all_task_refs = {}
+        for _node in self.prism_task_nodes:
+            if _node.name != model:
+                continue
 
-        # Check function arguments
-        run_args = self.get_func_args(run_func)
-        if isinstance(prism_task_node, ast.ClassDef):
-            expected = ["self", prism_task_manager_alias, prism_hooks_alias]
-        elif isinstance(prism_task_node, ast.FunctionDef):
-            expected = [prism_task_manager_alias, prism_hooks_alias]
-        if sorted(run_args) != sorted(expected):
-            msg = f'invalid arguments in `run` function in PrismTask in {str(self.model_relative_path)}; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
-            raise prism.exceptions.ParserException(message=msg)
-
-        # Parse targets
-        target_locs = self.get_targets(prism_task_node, run_func)
-        self.model_manifest.add_target(self.model_relative_path, target_locs)
-
-        # Iterate through all functions and get prism task.ref calls
-        all_funcs = self.get_all_funcs(prism_task_node)
-        all_task_refs: List[Path] = []
-        for func in all_funcs:
-            all_task_refs += self.get_prism_mod_calls(func)
-        if len(all_task_refs) == 1:
-            self.model_manifest.add_ref(
-                target=self.model_relative_path, source=all_task_refs[0]
-            )
-            return all_task_refs[0]
-        else:
-            for mr in all_task_refs:
-                self.model_manifest.add_ref(
-                    target=self.model_relative_path, source=mr
+            # Check if run function exists. If the user used a decorator, then the `run`
+            # function is just the decorated function.
+            run_func = self.get_run_func(_node)
+            if run_func is None:
+                raise prism.exceptions.ParserException(
+                    message=f"no `run` function in PrismTask in `{str(self.model_relative_path)}`"  # noqa: E501
                 )
-            return all_task_refs
+
+            # Check function arguments
+            run_args = self.get_func_args(run_func)
+            if isinstance(_node, ast.ClassDef):
+                expected = ["self", prism_task_manager_alias, prism_hooks_alias]
+            elif isinstance(_node, ast.FunctionDef):
+                expected = [prism_task_manager_alias, prism_hooks_alias]
+            if sorted(run_args) != sorted(expected):
+                msg = f'invalid arguments in `run` function in PrismTask in {str(self.model_relative_path)}; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
+                raise prism.exceptions.ParserException(message=msg)
+
+            # Parse targets
+            target_locs = self.get_targets(_node, run_func)
+            self.model_manifest.add_targets(
+                self.model_relative_path,
+                _node.name,
+                target_locs
+            )
+
+            # Iterate through all functions and get prism task.ref calls
+            all_funcs = self.get_all_funcs(_node)
+            all_task_refs: List[Path] = []
+            for func in all_funcs:
+                all_task_refs += self.get_prism_mod_calls(
+                    _node.name,
+                    func,
+                    other_parsed_models
+                )
+
+            # Add refs to manifest
+            self.model_manifest.add_refs(
+                target_module=self.model_relative_path,
+                target_model=_node.name,
+                sources=all_task_refs
+            )
+        return all_task_refs
 
     def get_variable_assignments(self, node, var_name: str):
         """
