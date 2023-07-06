@@ -246,7 +246,8 @@ class CompileTask(prism.cli.base.BaseTask, prism.mixins.compile.CompileMixin):
             fire_exec_events=False,
             event_list=event_list,
             args=self.args,
-            models_dir=models_dir
+            models_dir=models_dir,
+            all_parsed_models=parsed_models,
         )
         user_arg_models = user_arg_model_em_output.outputs
         event_to_fire = user_arg_model_em_output.event_to_fire

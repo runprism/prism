@@ -122,7 +122,7 @@ class SysHandlerMixin:
         # Iterate through all models. Only delete models that (1) originate from a
         # path in `paths`, and (2) did not exist in the `base_sys_models``
         mods_to_del = []
-        for mod_name, mod_obj in globals_dict['sys'].models.items():
+        for mod_name, mod_obj in globals_dict['sys'].modules.items():
             try:
                 if mod_obj.__file__ is None:
                     continue
@@ -133,5 +133,5 @@ class SysHandlerMixin:
 
         # Delete models
         for mod in mods_to_del:
-            del globals_dict['sys'].models[mod]
+            del globals_dict['sys'].modules[mod]
         return globals_dict
