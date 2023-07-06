@@ -54,19 +54,19 @@ class AstParser:
         with open(self.task_path, 'r') as f:
             self.task_str = f.read()
         f.close()
-        self.ast_task = ast.parse(self.task_str)
+        self.ast_module = ast.parse(self.task_str)
 
         # Add task source code to manifest
         self.task_manifest.add_task(self.task_relative_path)
 
         # Check existence of if-name-main
-        bool_if_name_main = self.check_if_name_main(self.ast_task)
+        bool_if_name_main = self.check_if_name_main(self.ast_module)
         if bool_if_name_main:
             msg = f'found `if __name__ == "__main__"` in `{str(self.task_relative_path)}`; all task-specific code should be placed in `run` method'  # noqa: E501
             raise prism.exceptions.ParserException(message=msg)
 
         # Get classes and bases
-        self.classes, self.bases = self.get_classes_bases(self.ast_task)
+        self.classes, self.bases = self.get_classes_bases(self.ast_module)
 
         # Get the Prism task nodes
         self.prism_task_nodes = self.get_prism_task_nodes(
@@ -95,34 +95,12 @@ class AstParser:
         class_bases = [class_.bases for class_ in classes]
         return classes, class_bases
 
-    def get_num_prism_task_classes(self,
-        bases: List[List[ast.expr]]
-    ) -> int:
-        """
-        Get number of PrismTasks from `bases`. For testing...
-
-        args:
-            bases: list of bases associated with classes in task
-        returns:
-            number of PrismTasks
-        """
-        prism_tasks = 0
-        for base_ in bases:
-            for obj in base_:
-                if isinstance(obj, ast.Name):
-                    if obj.id == "PrismTask":
-                        prism_tasks += 1
-                elif isinstance(obj, ast.Attribute):
-                    if obj.attr == "PrismTask":
-                        prism_tasks += 1
-        return prism_tasks
-
     def get_num_prism_task_functions(self) -> int:
         """
         Get number of functions decorated with `@task`. For testing...
         """
         tasks = []
-        for node in ast.walk(self.ast_task):
+        for node in ast.walk(self.ast_module):
             if isinstance(node, ast.FunctionDef):
                 decorators = [
                     self.get_decorator_name(d) for d in node.decorator_list
@@ -193,7 +171,7 @@ class AstParser:
         Get the function decorated with the `task` decorator (if any)
         """
         tasks = []
-        for node in ast.walk(self.ast_task):
+        for node in ast.walk(self.ast_module):
             if isinstance(node, ast.FunctionDef):
                 decorators = [
                     self.get_decorator_name(d) for d in node.decorator_list
@@ -760,7 +738,7 @@ class AstParser:
             elif isinstance(_node, ast.FunctionDef):
                 expected = [prism_task_manager_alias, prism_hooks_alias]
             if sorted(run_args) != sorted(expected):
-                msg = f'invalid arguments in `run` function in PrismTask in {str(self.task_relative_path)}; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
+                msg = f'invalid arguments in `run` function in PrismTask in `{str(self.task_relative_path)}`; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
                 raise prism.exceptions.ParserException(message=msg)
 
             # Parse targets
