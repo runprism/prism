@@ -71,14 +71,14 @@ class CreateTaskTask(
 
         # Grab the template
         if decorated:
-            template_model = importlib.import_module(
+            template_task = importlib.import_module(
                 name=f"prism.templates.tasks.{task_type}_dec"
             )
         else:
-            template_model = importlib.import_module(
+            template_task = importlib.import_module(
                 name=f"prism.templates.tasks.{task_type}_cls"
             )
-        template = template_model.TEMPLATE
+        template = template_task.TEMPLATE
         task_template = Environment(loader=BaseLoader).from_string(template)  # type: ignore # noqa: E501
 
         # Get the number of tasks to create and the task name
@@ -86,13 +86,13 @@ class CreateTaskTask(
         user_task_name = self.args.name
 
         # Get directory. If it's blank, then new tasks should be dumped into the
-        # `models/` directory. Otherwise, add the inputted directory to the models
+        # `tasks/` directory. Otherwise, add the inputted directory to the tasks
         # directory.
-        models_dir = self.get_models_dir(self.prism_project.project_dir)
+        tasks_dir = self.get_tasks_dir(self.prism_project.project_dir)
         if self.args.dir == "":
-            task_dir = models_dir
+            task_dir = tasks_dir
         else:
-            task_dir = models_dir / self.args.dir
+            task_dir = tasks_dir / self.args.dir
 
         # Fire events
         event_list = fire_console_event(

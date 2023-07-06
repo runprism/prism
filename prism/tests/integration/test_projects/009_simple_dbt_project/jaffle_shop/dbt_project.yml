@@ -5,7 +5,7 @@ version: '0.1'
 
 profile: 'jaffle_shop'
 
-model-paths: ["models"]
+task-paths: ["tasks"]
 seed-paths: ["seeds"]
 test-paths: ["tests"]
 analysis-paths: ["analysis"]
@@ -14,12 +14,12 @@ macro-paths: ["macros"]
 target-path: "target"
 clean-targets:
     - "target"
-    - "dbt_models"
+    - "dbt_tasks"
     - "logs"
 
 require-dbt-version: [">=1.0.0", "<2.0.0"]
 
-models:
+tasks:
   jaffle_shop:
       materialized: table
       staging:

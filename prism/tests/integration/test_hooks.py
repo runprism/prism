@@ -53,10 +53,10 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         # ------------------------------------------------------------------------------
         # Run snowflake.py and spark.py
 
-        args = ['spark-submit', '--model', 'snowflake.py', '--model', 'spark.py']
+        args = ['spark-submit', '--task', 'snowflake.py', '--task', 'spark.py']
         self._run_prism(args)
 
-        # Get model 1 and 2 outputs
+        # Get task 1 and 2 outputs
         machinery_sample = pd.read_csv(wkdir / 'output' / 'machinery_sample.csv')
         household_sample = pd.read_csv(wkdir / 'output' / 'household_sample.csv')
         machinery_sample_filtered = pd.read_csv(
@@ -116,7 +116,7 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         # ------------------------------------------------------------------------------
         # Run bad_adapter.py
 
-        args = ['spark-submit', '--model', 'bad_adapter.py']
+        args = ['spark-submit', '--task', 'bad_adapter.py']
         _ = self._run_prism(args)
 
         # We can't check the error events directly; for now, let's just check that the
@@ -151,7 +151,7 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         self.assertFalse(expected_output.is_file())
 
         # Run project
-        args = ['spark-submit', '--model', 'postgres.py']
+        args = ['spark-submit', '--task', 'postgres.py']
         self._run_prism(args)
 
         # Check output

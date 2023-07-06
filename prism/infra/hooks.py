@@ -69,14 +69,14 @@ class PrismHooks:
         target_version: Optional[str] = None
     ) -> pd.DataFrame:
         """
-        Get dbt model as a Pandas DataFrame
+        Get dbt task as a Pandas DataFrame
 
         args:
             adapter_name: name of dbt adapter in profile YML
-            target_1: dbt model (or package)
-            target_2: dbt model (if `target_1` is a package); default is None
+            target_1: dbt task (or package)
+            target_2: dbt task (if `target_1` is a package); default is None
         returns:
-            dbt model as a Pandas DataFrame
+            dbt task as a Pandas DataFrame
         """
         try:
             dbt_project = self.project.adapters_object_dict[adapter_name]

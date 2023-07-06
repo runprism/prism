@@ -15,7 +15,7 @@ import prism_project
 ## Class definition ##
 ######################
 
-class Model02(prism.task.PrismTask):
+class Task02(prism.task.PrismTask):
 
     ## Run
     def run(self, tasks, hooks):
@@ -25,13 +25,13 @@ class Model02(prism.task.PrismTask):
         args:
             tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
-                - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
+                - hooks.dbt_ref --> for getting dbt tasks as a pandas DataFrame
                 - hooks.sql     --> for executing sql query using an adapter in profile YML
                 - hooks.spark   --> for accessing SparkSession (if pyspark specified in profile YML)
         returns:
             task output
         """
-        return tasks.ref('model03.py') + '\n' + 'Hello fro model 3!'
+        return tasks.ref('task03.py') + '\n' + 'Hello fro task 3!'
 
 
 # EOF

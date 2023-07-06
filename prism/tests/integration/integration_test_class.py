@@ -60,7 +60,7 @@ class IntegrationTestCase(unittest.TestCase):
     def _is_valid_project(self, path):
         """
         Determine if `path` is a valid project (i.e., that is has a `prism_project.py`
-        file and a `models` folder)
+        file and a `tasks` folder)
 
         args:
             path: project path
@@ -70,7 +70,7 @@ class IntegrationTestCase(unittest.TestCase):
         os.chdir(path)
         project_dir = prism.cli.base.get_project_dir()
         self.assertTrue(project_dir == path)
-        self.assertTrue(Path(project_dir / 'models').is_dir())
+        self.assertTrue(Path(project_dir / 'tasks').is_dir())
 
     def _load_manifest(self, path: Path) -> dict:
         """
@@ -81,23 +81,23 @@ class IntegrationTestCase(unittest.TestCase):
         f.close()
         return manifest
 
-    def _load_model_refs(
+    def _load_task_refs(
         self,
-        model_name: str,
+        task_name: str,
         manifest: Dict[str, Any]
     ) -> List[str]:
         """
-        Load refs associated with model
+        Load refs associated with task
         """
-        model_refs = []
+        task_refs = []
         all_refs = manifest["refs"]
         for ref_obj in all_refs:
-            if ref_obj["target"] == model_name:
-                model_refs.append(ref_obj["source"])
-        if len(model_refs) == 1:
-            return model_refs[0]
+            if ref_obj["target"] == task_name:
+                task_refs.append(ref_obj["source"])
+        if len(task_refs) == 1:
+            return task_refs[0]
         else:
-            return model_refs
+            return task_refs
 
     def _run_prism(self, args: list):
         """
@@ -215,30 +215,30 @@ class IntegrationTestCase(unittest.TestCase):
         Open file as string
         """
         with open(path, 'r') as f:
-            compiled_model_str = f.read()
+            compiled_task_str = f.read()
         f.close()
-        return compiled_model_str
+        return compiled_task_str
 
-    def _compiled_model_if_name_main(self, path):
+    def _compiled_task_if_name_main(self, path):
         """
         Get `if __name__ == "__main__"` body from `path
         """
-        compiled_model_str = self._file_as_str(path)
-        if_name_main_body = self._get_if_name_main_body(compiled_model_str)
+        compiled_task_str = self._file_as_str(path)
+        if_name_main_body = self._get_if_name_main_body(compiled_task_str)
         return if_name_main_body
 
-    def _get_if_name_main_body(self, model_str: str) -> str:
+    def _get_if_name_main_body(self, task_str: str) -> str:
         """
         Get the body of `if __name__ == "__main__"` and return it as a string
 
         args:
-            model_str: model with `if __name__ == "__main__"` as a string
+            task_str: task with `if __name__ == "__main__"` as a string
         returns:
             the body of `if __name__ == "__main__"`
         """
-        model_ast_tree = ast.parse(model_str)
-        self.assertTrue(isinstance(model_ast_tree, ast.Module))
-        if_name_main_block = model_ast_tree.body[-1]
+        task_ast_tree = ast.parse(task_str)
+        self.assertTrue(isinstance(task_ast_tree, ast.Module))
+        if_name_main_block = task_ast_tree.body[-1]
         self.assertTrue(isinstance(if_name_main_block, ast.If))
         return astor.to_source(if_name_main_block)
 

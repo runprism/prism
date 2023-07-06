@@ -1,5 +1,5 @@
 """
-Unit testing for functions used to parse {{ mod }} references in the models and
+Unit testing for functions used to parse {{ mod }} references in the tasks and
 construct the DAG.
 
 Table of Contents:
@@ -29,7 +29,7 @@ from prism.tests.unit.test_all_things_dag.task_ref_norefs import TASK_REF_NOREFS
 from prism.tests.unit.test_all_things_dag.task_ref_selfref import TASK_REF_SELFREF_LIST
 from prism.tests.unit.test_all_things_dag.dag_cycle import DAG_CYCLE_LIST
 
-# Make sure that list of models are actual PosixPath objects
+# Make sure that list of tasks are actual PosixPath objects
 TASK_REF_3NODES_LIST = [Path(p) for p in TASK_REF_3NODES_LIST]
 TASK_REF_5NODES_LIST = [Path(p) for p in TASK_REF_5NODES_LIST]
 TASK_REF_15NODES_LIST = [Path(p) for p in TASK_REF_15NODES_LIST]
@@ -108,46 +108,46 @@ class TestAllDagFunctions(unittest.TestCase):
         )
 
         # Expected mod refs. The order here is based on the order of the
-        # `TASK_REF_XNODES_LIST` and the order of {{ mod }} within the models
+        # `TASK_REF_XNODES_LIST` and the order of {{ mod }} within the tasks
         # themselves.
         expected_3nodes_modrefs = {
-            Path('model01.py'): None,
-            Path('model02.py'): Path('model01.py'),
-            Path('model03.py'): Path('model02.py')
+            Path('task01.py'): None,
+            Path('task02.py'): Path('task01.py'),
+            Path('task03.py'): Path('task02.py')
         }
 
         expected_5nodes_modrefs = {
-            Path('modelA.py'): None,
-            Path('modelB.py'): Path('modelA.py'),
-            Path('modelC.py'): Path('modelA.py'),
-            Path('modelD.py'): [
-                Path('modelB.py'),
-                Path('modelA.py'),
-                Path('modelC.py')
+            Path('taskA.py'): None,
+            Path('taskB.py'): Path('taskA.py'),
+            Path('taskC.py'): Path('taskA.py'),
+            Path('taskD.py'): [
+                Path('taskB.py'),
+                Path('taskA.py'),
+                Path('taskC.py')
             ],
-            Path('modelE.py'): [
-                Path('modelA.py'),
-                Path('modelC.py'),
-                Path('modelD.py')
+            Path('taskE.py'): [
+                Path('taskA.py'),
+                Path('taskC.py'),
+                Path('taskD.py')
             ],
         }
 
         expected_15nodes_modrefs = {
-            Path('model01.py'): None,
-            Path('model02.py'): Path('model01.py'),
-            Path('model03.py'): Path('model01.py'),
-            Path('model04.py'): [Path('model02.py'), Path('model03.py')],
-            Path('model05.py'): Path('model01.py'),
-            Path('model06.py'): Path('model05.py'),
-            Path('model07.py'): [Path('model04.py'), Path('model06.py')],
-            Path('model08.py'): Path('model01.py'),
-            Path('model09.py'): [Path('model05.py'), Path('model08.py')],
-            Path('model10.py'): Path('model01.py'),
-            Path('model11.py'): Path('model10.py'),
-            Path('model12.py'): Path('model10.py'),
-            Path('model13.py'): Path('model10.py'),
-            Path('model14.py'): Path('model11.py'),
-            Path('model15.py'): Path('model11.py')
+            Path('task01.py'): None,
+            Path('task02.py'): Path('task01.py'),
+            Path('task03.py'): Path('task01.py'),
+            Path('task04.py'): [Path('task02.py'), Path('task03.py')],
+            Path('task05.py'): Path('task01.py'),
+            Path('task06.py'): Path('task05.py'),
+            Path('task07.py'): [Path('task04.py'), Path('task06.py')],
+            Path('task08.py'): Path('task01.py'),
+            Path('task09.py'): [Path('task05.py'), Path('task08.py')],
+            Path('task10.py'): Path('task01.py'),
+            Path('task11.py'): Path('task10.py'),
+            Path('task12.py'): Path('task10.py'),
+            Path('task13.py'): Path('task10.py'),
+            Path('task14.py'): Path('task11.py'),
+            Path('task15.py'): Path('task11.py')
         }
 
         # Sort mod ref values to test equality
@@ -174,17 +174,17 @@ class TestAllDagFunctions(unittest.TestCase):
 
     def test_no_task_refs(self):
         """
-        Models without any mod refs will not throw an error
+        Tasks without any mod refs will not throw an error
         """
         task_ref_nomod_modrefs = dag_compiler.parse_task_refs(
             TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR
         )
         expected_nomod_modrefs = {
-            Path('modelA.py'): None,
-            Path('modelB.py'): None,
-            Path('modelC.py'): None,
-            Path('modelD.py'): None,
-            Path('modelE.py'): None
+            Path('taskA.py'): None,
+            Path('taskB.py'): None,
+            Path('taskC.py'): None,
+            Path('taskD.py'): None,
+            Path('taskE.py'): None
         }
 
         # Asserts
@@ -196,7 +196,7 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         with self.assertRaises(prism.exceptions.ParserException) as cm:
             dag_compiler.parse_task_refs(TASK_REF_SELFREF_LIST, TASK_REF_SELFREF_DIR)
-        expected_msg = "self-references found in `modelB.py`"
+        expected_msg = "self-references found in `taskB.py`"
         self.assertEqual(expected_msg, str(cm.exception))
 
     #######################
@@ -230,46 +230,46 @@ class TestAllDagFunctions(unittest.TestCase):
             task_ref_15nodes_modrefs
         )
 
-        # Nodes should just be the full list of models
+        # Nodes should just be the full list of tasks
         self.assertEqual(TASK_REF_3NODES_LIST, nodes_3nodes)
         self.assertEqual(TASK_REF_5NODES_LIST, nodes_5nodes)
         self.assertEqual(TASK_REF_15NODES_LIST, nodes_15nodes)
 
         # Expected edges
         expected_edges_3nodes = [
-            (Path('model01.py'), Path('model02.py')),
-            (Path('model02.py'), Path('model03.py'))
+            (Path('task01.py'), Path('task02.py')),
+            (Path('task02.py'), Path('task03.py'))
         ]
 
         expected_edges_5nodes = [
-            (Path('modelA.py'), Path('modelB.py')),
-            (Path('modelA.py'), Path('modelC.py')),
-            (Path('modelA.py'), Path('modelD.py')),
-            (Path('modelA.py'), Path('modelE.py')),
-            (Path('modelB.py'), Path('modelD.py')),
-            (Path('modelC.py'), Path('modelD.py')),
-            (Path('modelC.py'), Path('modelE.py')),
-            (Path('modelD.py'), Path('modelE.py'))
+            (Path('taskA.py'), Path('taskB.py')),
+            (Path('taskA.py'), Path('taskC.py')),
+            (Path('taskA.py'), Path('taskD.py')),
+            (Path('taskA.py'), Path('taskE.py')),
+            (Path('taskB.py'), Path('taskD.py')),
+            (Path('taskC.py'), Path('taskD.py')),
+            (Path('taskC.py'), Path('taskE.py')),
+            (Path('taskD.py'), Path('taskE.py'))
         ]
 
         expected_edges_15nodes = [
-            (Path('model01.py'), Path('model10.py')),
-            (Path('model01.py'), Path('model02.py')),
-            (Path('model01.py'), Path('model03.py')),
-            (Path('model01.py'), Path('model05.py')),
-            (Path('model01.py'), Path('model08.py')),
-            (Path('model10.py'), Path('model11.py')),
-            (Path('model10.py'), Path('model12.py')),
-            (Path('model10.py'), Path('model13.py')),
-            (Path('model02.py'), Path('model04.py')),
-            (Path('model03.py'), Path('model04.py')),
-            (Path('model05.py'), Path('model06.py')),
-            (Path('model05.py'), Path('model09.py')),
-            (Path('model08.py'), Path('model09.py')),
-            (Path('model11.py'), Path('model14.py')),
-            (Path('model11.py'), Path('model15.py')),
-            (Path('model04.py'), Path('model07.py')),
-            (Path('model06.py'), Path('model07.py'))
+            (Path('task01.py'), Path('task10.py')),
+            (Path('task01.py'), Path('task02.py')),
+            (Path('task01.py'), Path('task03.py')),
+            (Path('task01.py'), Path('task05.py')),
+            (Path('task01.py'), Path('task08.py')),
+            (Path('task10.py'), Path('task11.py')),
+            (Path('task10.py'), Path('task12.py')),
+            (Path('task10.py'), Path('task13.py')),
+            (Path('task02.py'), Path('task04.py')),
+            (Path('task03.py'), Path('task04.py')),
+            (Path('task05.py'), Path('task06.py')),
+            (Path('task05.py'), Path('task09.py')),
+            (Path('task08.py'), Path('task09.py')),
+            (Path('task11.py'), Path('task14.py')),
+            (Path('task11.py'), Path('task15.py')),
+            (Path('task04.py'), Path('task07.py')),
+            (Path('task06.py'), Path('task07.py'))
         ]
 
         # Asserts
@@ -350,18 +350,18 @@ class TestAllDagFunctions(unittest.TestCase):
         # Parse mod refs
         dag_cycle_modrefs = dag_compiler.parse_task_refs(DAG_CYCLE_LIST, DAG_CYCLE_DIR)
         expected_dag_cycle_modrefs = {
-            Path('modelA.py'): None,
-            Path('modelB.py'): [Path('modelA.py'), Path('modelE.py')],
-            Path('modelC.py'): Path('modelA.py'),
-            Path('modelD.py'): [
-                Path('modelB.py'),
-                Path('modelA.py'),
-                Path('modelC.py')
+            Path('taskA.py'): None,
+            Path('taskB.py'): [Path('taskA.py'), Path('taskE.py')],
+            Path('taskC.py'): Path('taskA.py'),
+            Path('taskD.py'): [
+                Path('taskB.py'),
+                Path('taskA.py'),
+                Path('taskC.py')
             ],
-            Path('modelE.py'): [
-                Path('modelA.py'),
-                Path('modelC.py'),
-                Path('modelD.py')
+            Path('taskE.py'): [
+                Path('taskA.py'),
+                Path('taskC.py'),
+                Path('taskD.py')
             ]
         }
 
@@ -375,15 +375,15 @@ class TestAllDagFunctions(unittest.TestCase):
             dag_cycle_modrefs
         )
         expected_edges_dag_cycle = [
-            (Path('modelA.py'), Path('modelB.py')),
-            (Path('modelA.py'), Path('modelC.py')),
-            (Path('modelA.py'), Path('modelD.py')),
-            (Path('modelA.py'), Path('modelE.py')),
-            (Path('modelB.py'), Path('modelD.py')),
-            (Path('modelC.py'), Path('modelD.py')),
-            (Path('modelC.py'), Path('modelE.py')),
-            (Path('modelD.py'), Path('modelE.py')),
-            (Path('modelE.py'), Path('modelB.py'))
+            (Path('taskA.py'), Path('taskB.py')),
+            (Path('taskA.py'), Path('taskC.py')),
+            (Path('taskA.py'), Path('taskD.py')),
+            (Path('taskA.py'), Path('taskE.py')),
+            (Path('taskB.py'), Path('taskD.py')),
+            (Path('taskC.py'), Path('taskD.py')),
+            (Path('taskC.py'), Path('taskE.py')),
+            (Path('taskD.py'), Path('taskE.py')),
+            (Path('taskE.py'), Path('taskB.py'))
         ]
         self.assertEqual(set(DAG_CYCLE_LIST), set(nodes_dag_cycle))
         self.assertEqual(set(expected_edges_dag_cycle), set(edges_dag_cycle))
@@ -392,8 +392,8 @@ class TestAllDagFunctions(unittest.TestCase):
         with self.assertRaises(prism.exceptions.DAGException) as cm:
             dag_compiler.create_dag(nodes_dag_cycle, edges_dag_cycle)
         self.assertTrue("invalid DAG, cycle found in " in str(cm.exception))
-        self.assertTrue("modelB.py" in str(cm.exception))
-        self.assertTrue("modelE.py" in str(cm.exception))
+        self.assertTrue("taskB.py" in str(cm.exception))
+        self.assertTrue("taskE.py" in str(cm.exception))
 
     #########################
     # Get node dependencies #
@@ -413,23 +413,23 @@ class TestAllDagFunctions(unittest.TestCase):
 
         # Node dependencies
         node_deps_1 = dag_compiler.get_node_dependencies(
-            dag_3nodes, [Path('model01.py')]
+            dag_3nodes, [Path('task01.py')]
         )
         node_deps_2 = dag_compiler.get_node_dependencies(
-            dag_3nodes, [Path('model02.py')]
+            dag_3nodes, [Path('task02.py')]
         )
         node_deps_3 = dag_compiler.get_node_dependencies(
-            dag_3nodes, [Path('model03.py')]
+            dag_3nodes, [Path('task03.py')]
         )
         node_deps_1_2 = dag_compiler.get_node_dependencies(
-            dag_3nodes, [Path('model01.py'), Path('model02.py')]
+            dag_3nodes, [Path('task01.py'), Path('task02.py')]
         )
 
         # Expected node dependencies
-        expected_node_deps_1 = [Path('model01.py')]
-        expected_node_deps_2 = [Path('model01.py'), Path('model02.py')]
-        expected_node_deps_3 = [Path('model01.py'), Path('model02.py'), Path('model03.py')]  # noqa: E501
-        expected_node_deps_1_2 = [Path('model01.py'), Path('model02.py')]
+        expected_node_deps_1 = [Path('task01.py')]
+        expected_node_deps_2 = [Path('task01.py'), Path('task02.py')]
+        expected_node_deps_3 = [Path('task01.py'), Path('task02.py'), Path('task03.py')]  # noqa: E501
+        expected_node_deps_1_2 = [Path('task01.py'), Path('task02.py')]
 
         # Asserts
         self.assertEqual(set(expected_node_deps_1), set(node_deps_1))
@@ -451,14 +451,14 @@ class TestAllDagFunctions(unittest.TestCase):
 
         # Node dependencies
         node_deps_e = dag_compiler.get_node_dependencies(
-            dag_5nodes, [Path('modelE.py')]
+            dag_5nodes, [Path('taskE.py')]
         )
         expected_node_deps_e = [
-            Path('modelA.py'),
-            Path('modelB.py'),
-            Path('modelC.py'),
-            Path('modelD.py'),
-            Path('modelE.py'),
+            Path('taskA.py'),
+            Path('taskB.py'),
+            Path('taskC.py'),
+            Path('taskD.py'),
+            Path('taskE.py'),
         ]
         self.assertEqual(set(expected_node_deps_e), set(node_deps_e))
 
@@ -476,46 +476,46 @@ class TestAllDagFunctions(unittest.TestCase):
 
         # Node dependencies
         node_deps_7 = dag_compiler.get_node_dependencies(
-            dag_15nodes, [Path('model07.py')]
+            dag_15nodes, [Path('task07.py')]
         )
         expected_node_deps_7 = [
-            Path('model07.py'),
-            Path('model04.py'),
-            Path('model06.py'),
-            Path('model02.py'),
-            Path('model03.py'),
-            Path('model05.py'),
-            Path('model01.py')
+            Path('task07.py'),
+            Path('task04.py'),
+            Path('task06.py'),
+            Path('task02.py'),
+            Path('task03.py'),
+            Path('task05.py'),
+            Path('task01.py')
         ]
         self.assertEqual(set(expected_node_deps_7), set(node_deps_7))
 
         node_deps_all = dag_compiler.get_node_dependencies(
             dag_15nodes,
             [
-                Path('model07.py'),
-                Path('model14.py'),
-                Path('model15.py'),
-                Path('model12.py'),
-                Path('model13.py'),
-                Path('model09.py')
+                Path('task07.py'),
+                Path('task14.py'),
+                Path('task15.py'),
+                Path('task12.py'),
+                Path('task13.py'),
+                Path('task09.py')
             ]
         )
         expected_node_deps_all = [
-            Path('model01.py'),
-            Path('model02.py'),
-            Path('model03.py'),
-            Path('model04.py'),
-            Path('model05.py'),
-            Path('model06.py'),
-            Path('model07.py'),
-            Path('model08.py'),
-            Path('model09.py'),
-            Path('model10.py'),
-            Path('model11.py'),
-            Path('model12.py'),
-            Path('model13.py'),
-            Path('model14.py'),
-            Path('model15.py')
+            Path('task01.py'),
+            Path('task02.py'),
+            Path('task03.py'),
+            Path('task04.py'),
+            Path('task05.py'),
+            Path('task06.py'),
+            Path('task07.py'),
+            Path('task08.py'),
+            Path('task09.py'),
+            Path('task10.py'),
+            Path('task11.py'),
+            Path('task12.py'),
+            Path('task13.py'),
+            Path('task14.py'),
+            Path('task15.py')
         ]
         self.assertEqual(set(expected_node_deps_all), set(node_deps_all))
 
@@ -546,9 +546,9 @@ class TestAllDagFunctions(unittest.TestCase):
         # of the list itself, we will confirm that parent nodes appear before their
         # children in the list.
         expected_dag_topsort_3nodes = [
-            Path('model01.py'),
-            Path('model02.py'),
-            Path('model03.py')
+            Path('task01.py'),
+            Path('task02.py'),
+            Path('task03.py')
         ]
         self.assertEqual(expected_dag_topsort_3nodes, dag_topsort_3nodes)
 
@@ -566,77 +566,77 @@ class TestAllDagFunctions(unittest.TestCase):
         # 5-node DAG
         parent_before_child(
             dag_topsort_5nodes,
-            Path('modelA.py'),
+            Path('taskA.py'),
             [
-                Path('modelB.py'),
-                Path('modelC.py'),
-                Path('modelD.py'),
-                Path('modelE.py')
+                Path('taskB.py'),
+                Path('taskC.py'),
+                Path('taskD.py'),
+                Path('taskE.py')
             ],
         )
         parent_before_child(
-            dag_topsort_5nodes, Path('modelB.py'), Path('modelD.py'),
+            dag_topsort_5nodes, Path('taskB.py'), Path('taskD.py'),
         )
         parent_before_child(
             dag_topsort_5nodes,
-            Path('modelC.py'),
-            [Path('modelD.py'), Path('modelE.py')],
+            Path('taskC.py'),
+            [Path('taskD.py'), Path('taskE.py')],
         )
         parent_before_child(
-            dag_topsort_5nodes, Path('modelD.py'), Path('modelE.py')
+            dag_topsort_5nodes, Path('taskD.py'), Path('taskE.py')
         )
 
         # 15-node DAG
         parent_before_child(
             dag_topsort_15nodes,
-            Path('model01.py'),
+            Path('task01.py'),
             [
-                Path('model10.py'),
-                Path('model02.py'),
-                Path('model03.py'),
-                Path('model05.py'),
-                Path('model08.py')
+                Path('task10.py'),
+                Path('task02.py'),
+                Path('task03.py'),
+                Path('task05.py'),
+                Path('task08.py')
             ],
         )
         parent_before_child(
             dag_topsort_15nodes,
-            Path('model10.py'),
-            [Path('model11.py'), Path('model12.py'), Path('model13.py')],
+            Path('task10.py'),
+            [Path('task11.py'), Path('task12.py'), Path('task13.py')],
         )
         parent_before_child(
-            dag_topsort_15nodes, Path('model02.py'), Path('model04.py')
+            dag_topsort_15nodes, Path('task02.py'), Path('task04.py')
         )
         parent_before_child(
-            dag_topsort_15nodes, Path('model03.py'), Path('model04.py')
-        )
-        parent_before_child(
-            dag_topsort_15nodes,
-            Path('model05.py'), [Path('model06.py'), Path('model09.py')]
-        )
-        parent_before_child(
-            dag_topsort_15nodes, Path('model08.py'), Path('model09.py')
+            dag_topsort_15nodes, Path('task03.py'), Path('task04.py')
         )
         parent_before_child(
             dag_topsort_15nodes,
-            Path('model11.py'), [Path('model14.py'), Path('model15.py')]
+            Path('task05.py'), [Path('task06.py'), Path('task09.py')]
         )
         parent_before_child(
-            dag_topsort_15nodes, Path('model04.py'), Path('model07.py')
+            dag_topsort_15nodes, Path('task08.py'), Path('task09.py')
         )
         parent_before_child(
-            dag_topsort_15nodes, Path('model06.py'), Path('model07.py')
+            dag_topsort_15nodes,
+            Path('task11.py'), [Path('task14.py'), Path('task15.py')]
+        )
+        parent_before_child(
+            dag_topsort_15nodes, Path('task04.py'), Path('task07.py')
+        )
+        parent_before_child(
+            dag_topsort_15nodes, Path('task06.py'), Path('task07.py')
         )
 
     def test_topsort_no_modrefs(self):
         """
-        DAGs with no dependencies should include all models (assuming a subset of
-        models is not explicitly specified).
+        DAGs with no dependencies should include all tasks (assuming a subset of
+        tasks is not explicitly specified).
         """
         _, dag_topsort_no_modrefs = dag_compiler.create_topsort(
             TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR
         )
 
-        # All models must be in DAG
+        # All tasks must be in DAG
         for mod in TASK_REF_NOREFS_LIST:
             self.assertTrue(mod in dag_topsort_no_modrefs)
 
@@ -645,42 +645,42 @@ class TestAllDagFunctions(unittest.TestCase):
         DAGs created with only a subset of nodes are created normally / without error
         """
         _, dag_topsort_15nodes_7 = dag_compiler.create_topsort(
-            TASK_REF_15NODES_LIST, [Path('model07.py')], TASK_REF_15NODES_DIR
+            TASK_REF_15NODES_LIST, [Path('task07.py')], TASK_REF_15NODES_DIR
         )
         _, dag_topsort_15nodes_all = dag_compiler.create_topsort(
             TASK_REF_15NODES_LIST,
             [
-                Path('model07.py'),
-                Path('model14.py'),
-                Path('model15.py'),
-                Path('model12.py'),
-                Path('model13.py'),
-                Path('model09.py')
+                Path('task07.py'),
+                Path('task14.py'),
+                Path('task15.py'),
+                Path('task12.py'),
+                Path('task13.py'),
+                Path('task09.py')
             ],
             TASK_REF_15NODES_DIR
         )
         _, dag_topsort_no_modrefs = dag_compiler.create_topsort(
             TASK_REF_NOREFS_LIST,
-            [Path('modelB.py'), Path('modelC.py')],
+            [Path('taskB.py'), Path('taskC.py')],
             TASK_REF_NOREFS_DIR
         )
 
         # In the DAG with 15 nodes, specify which nodes should be included in the DAG
-        # based on the models for compilation
+        # based on the tasks for compilation
         actual_topsort_15nodes_7 = [
-            Path('model01.py'),
-            Path('model02.py'),
-            Path('model03.py'),
-            Path('model04.py'),
-            Path('model05.py'),
-            Path('model06.py'),
-            Path('model07.py')
+            Path('task01.py'),
+            Path('task02.py'),
+            Path('task03.py'),
+            Path('task04.py'),
+            Path('task05.py'),
+            Path('task06.py'),
+            Path('task07.py')
         ]
         actual_topsort_15nodes_all = TASK_REF_15NODES_LIST
         self.assertEqual(set(actual_topsort_15nodes_7), set(dag_topsort_15nodes_7))
         self.assertEqual(set(actual_topsort_15nodes_all), set(dag_topsort_15nodes_all))
 
         # In the DAG without mod refs, there aren't any edges. The only nodes in the DAG
-        # will be modelB and modelC
-        actual_topsort_no_modrefs = [Path('modelB.py'), Path('modelC.py')]
+        # will be taskB and taskC
+        actual_topsort_no_modrefs = [Path('taskB.py'), Path('taskC.py')]
         self.assertEqual(set(actual_topsort_no_modrefs), set(dag_topsort_no_modrefs))

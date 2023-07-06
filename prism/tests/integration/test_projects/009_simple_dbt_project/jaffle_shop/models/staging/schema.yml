@@ -1,6 +1,6 @@
 version: 2
 
-models:
+tasks:
   - name: stg_customers
     columns:
       - name: customer_id

@@ -1,5 +1,5 @@
 """
-Unit testing for parsing models with tasks created via decorated functions.
+Unit testing for parsing tasks with tasks created via decorated functions.
 
 Table of Contents:
 - Imports
@@ -27,7 +27,7 @@ import prism.parsers.ast_parser as ast_parser
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
-MODEL_TEST_CASES = Path(TEST_CASE_WKDIR) / 'test_models'
+TASK_TEST_CASES = Path(TEST_CASE_WKDIR) / 'test_tasks'
 
 
 # Tasks with decorators
@@ -47,14 +47,14 @@ DEC_TASKS_REFS = Path('dec_tasks_refs.py')
 # Test case class definition #
 ##############################
 
-class TestModelDecParsing(unittest.TestCase):
+class TestTaskDecParsing(unittest.TestCase):
 
     def test_one_prism_task(self):
         """
         Test behavior of parser with just one Prism task
         """
         # Prism task
-        parser = ast_parser.AstParser(DEC_ONE_PRISM_TASK, MODEL_TEST_CASES)
+        parser = ast_parser.AstParser(DEC_ONE_PRISM_TASK, TASK_TEST_CASES)
 
         # Prism task name
         prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
@@ -73,9 +73,9 @@ class TestModelDecParsing(unittest.TestCase):
 
     def test_no_prism_task(self):
         """
-        Test behavior of parser when model has no Prism task
+        Test behavior of parser when task has no Prism task
         """
-        parser = ast_parser.AstParser(DEC_NO_PRISM_TASK, MODEL_TEST_CASES)
+        parser = ast_parser.AstParser(DEC_NO_PRISM_TASK, TASK_TEST_CASES)
 
         # Prism task name
         prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
@@ -94,9 +94,9 @@ class TestModelDecParsing(unittest.TestCase):
 
     def test_multiple_prism_task(self):
         """
-        Test behavior of parser when model has multiple Prism tasks
+        Test behavior of parser when task has multiple Prism tasks
         """
-        parser = ast_parser.AstParser(DEC_MULTIPLE_PRISM_TASKS, MODEL_TEST_CASES)
+        parser = ast_parser.AstParser(DEC_MULTIPLE_PRISM_TASKS, TASK_TEST_CASES)
 
         # Number of prism tasks
         num_prism_tasks = parser.get_num_prism_task_functions()
@@ -116,7 +116,7 @@ class TestModelDecParsing(unittest.TestCase):
         should not affect the behavior of the parser
         """
         # Prism task
-        parser = ast_parser.AstParser(DEC_DIFF_DECORATOR_STRUCTURE, MODEL_TEST_CASES)
+        parser = ast_parser.AstParser(DEC_DIFF_DECORATOR_STRUCTURE, TASK_TEST_CASES)
 
         # Prism task function
         prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
@@ -139,7 +139,7 @@ class TestModelDecParsing(unittest.TestCase):
         parser
         """
         # Prism task
-        parser = ast_parser.AstParser(DEC_OTHER_FUNCTIONS, MODEL_TEST_CASES)
+        parser = ast_parser.AstParser(DEC_OTHER_FUNCTIONS, TASK_TEST_CASES)
 
         # Prism task name
         prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
@@ -161,7 +161,7 @@ class TestModelDecParsing(unittest.TestCase):
         Presence of target does not affect parser behavior
         """
         # Prism task
-        parser = ast_parser.AstParser(DEC_TASK_WITH_TARGET, MODEL_TEST_CASES)
+        parser = ast_parser.AstParser(DEC_TASK_WITH_TARGET, TASK_TEST_CASES)
 
         # Prism task name
         prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
@@ -188,7 +188,7 @@ class TestModelDecParsing(unittest.TestCase):
         Test behavior of parse when there are mod references
         """
         # Prism task
-        parser = ast_parser.AstParser(DEC_TASKS_REFS, MODEL_TEST_CASES)
+        parser = ast_parser.AstParser(DEC_TASKS_REFS, TASK_TEST_CASES)
 
         # Prism task name
         prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
@@ -218,8 +218,8 @@ class TestModelDecParsing(unittest.TestCase):
             2. The @task decorator is not properly specified
         """
 
-        def _get_args(model):
-            parser = ast_parser.AstParser(model, MODEL_TEST_CASES)
+        def _get_args(task):
+            parser = ast_parser.AstParser(task, TASK_TEST_CASES)
             prism_task_fn = parser.get_prism_task_nodes(parser.classes, parser.bases)
             run_func_args = parser.get_func_args(prism_task_fn)
             return run_func_args
@@ -239,18 +239,18 @@ class TestModelDecParsing(unittest.TestCase):
         self.assertEqual(sorted(['tasks', 'hooks']), sorted(run_func_args))
 
         # Missing arguments raise a ParserException
-        for model in [
+        for task in [
             DEC_BAD_RUN_EXTRA_ARG, DEC_BAD_RUN_MISSING_ARG,
         ]:
             with self.assertRaises(prism.exceptions.ParserException) as cm:
-                parser = ast_parser.AstParser(model, MODEL_TEST_CASES)
+                parser = ast_parser.AstParser(task, TASK_TEST_CASES)
                 parser.parse()
-            expected_msg = f'invalid arguments in `run` function in PrismTask in {str(model)}; should only be `tasks`,`hooks`'  # noqa: E501
+            expected_msg = f'invalid arguments in `run` function in PrismTask in {str(task)}; should only be `tasks`,`hooks`'  # noqa: E501
             self.assertEqual(expected_msg, str(cm.exception))
 
         # An improper @task decorator raises a RuntimeException
         with self.assertRaises(prism.exceptions.RuntimeException) as cm:
-            parser = ast_parser.AstParser(DEC_BAD_DEC_NO_PARENTHESES, MODEL_TEST_CASES)
+            parser = ast_parser.AstParser(DEC_BAD_DEC_NO_PARENTHESES, TASK_TEST_CASES)
             parser.parse()
         expected_msg = "`task` decorator not properly specified...try adding parentheses to it, e.g., `@task()`"  # noqa: E501
         self.assertEqual(expected_msg, str(cm.exception))

@@ -15,7 +15,7 @@ import prism_project
 ## Class definition ##
 ######################
 
-class Model02(prism.task.PrismTask):
+class Task02(prism.task.PrismTask):
 
     ## Run    
     @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'target_txt.txt')

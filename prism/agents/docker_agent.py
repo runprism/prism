@@ -284,7 +284,7 @@ class Docker(Agent):
     ):
         """
         Prism projects often rely on more than just their own directory. They can import
-        functions / models or reference configuration files from other directories. We
+        functions / tasks or reference configuration files from other directories. We
         need to copy all relevant directories into our agent, and we need to ensure that
         these paths have the same relative location to the project directory.
 
@@ -366,7 +366,7 @@ class Docker(Agent):
             return agent_conf["image"]
 
         # If the user doesn't specify a base image, then use the default image specified
-        # in the Prism constants model.
+        # in the Prism constants task.
         else:
             return prism.constants.DEFAULT_DOCKER_IMAGE
 

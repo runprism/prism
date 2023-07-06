@@ -52,10 +52,10 @@ def get_project_dir():
         project_file = cwd / 'prism_project.py'
         if project_file.is_file():
 
-            # Check if `models` and/or `modules` directory exist
-            models_dir = Path(cwd) / 'models'
+            # Check if `tasks` and/or `modules` directory exist
+            tasks_dir = Path(cwd) / 'tasks'
             modules_dir = Path(cwd) / 'modules'
-            if not models_dir.is_dir():
+            if not tasks_dir.is_dir():
 
                 # If the `modules`` directory exists, then skip... we'll throw a warning
                 # later
@@ -64,12 +64,12 @@ def get_project_dir():
 
                 # Otherwise, throw an error
                 else:
-                    models_dir_not_found_msg = ' '.join([
-                        'models directory not found in project directory or any',
+                    tasks_dir_not_found_msg = ' '.join([
+                        'tasks directory not found in project directory or any',
                         'of its parents',
                     ])
-                    raise prism.exceptions.ModelsDirNotFoundException(
-                        models_dir_not_found_msg
+                    raise prism.exceptions.TasksDirNotFoundException(
+                        tasks_dir_not_found_msg
                     )
             return cwd
         else:

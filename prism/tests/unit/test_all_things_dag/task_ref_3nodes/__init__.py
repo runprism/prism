@@ -1,9 +1,9 @@
 
 from pathlib import Path
 TASK_REF_3NODES_LIST = [
-    Path('model01.py'),
-    Path('model02.py'),
-    Path('model03.py')
+    Path('task01.py'),
+    Path('task02.py'),
+    Path('task03.py')
 ]
 
 

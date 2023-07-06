@@ -19,10 +19,10 @@ import pandas as pd
 ## Class definition ##
 ######################
 
-class Model01(prism.task.PrismTask):
+class Task01(prism.task.PrismTask):
 
     ## Run
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'model01.csv', index=False)
+    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'task01.csv', index=False)
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -30,7 +30,7 @@ class Model01(prism.task.PrismTask):
         args:
             tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
-                - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
+                - hooks.dbt_ref --> for getting dbt tasks as a pandas DataFrame
                 - hooks.sql     --> for executing sql query using an adapter in profile YML
                 - hooks.spark   --> for accessing SparkSession (if pyspark specified in profile YML)
         returns:

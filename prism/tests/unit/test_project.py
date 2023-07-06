@@ -71,8 +71,8 @@ class TestPrismProject(unittest.TestCase):
 
     def test_non_null_profile(self):
         """
-        The run task uses the AST model to extract the profile variable from the
-        prism_project.py file without executing it. Confirm that this model extracts a
+        The run task uses the AST task to extract the profile variable from the
+        prism_project.py file without executing it. Confirm that this task extracts a
         non-null profile correctly.
         """
         prism_project = project.PrismProject(

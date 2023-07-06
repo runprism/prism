@@ -1,10 +1,10 @@
 from prism.task import PrismTask
 import prism.target as PrismTarget
 
-class Modele(PrismTask):
+class Taske(PrismTask):
 
     def run(self, tasks, hooks):
-        return tasks.ref('modelA.py') + tasks.ref('modelC.py') + tasks.ref('modelD.py') + " This is model E."
+        return tasks.ref('taskA.py') + tasks.ref('taskC.py') + tasks.ref('taskD.py') + " This is task E."
 
 
 # EOF

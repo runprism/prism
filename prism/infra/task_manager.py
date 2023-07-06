@@ -35,47 +35,48 @@ class PrismTaskManager:
 
     def __init__(self,
         upstream: Dict[str, Any],
-        parsed_models: List[ast_parser.AstParser]
+        parsed_tasks: List[ast_parser.AstParser]
     ):
         self.upstream = upstream
-        self.parsed_models = parsed_models
+        self.parsed_tasks = parsed_tasks
 
         # Keep track of the current modules
         self.curr_module: str
 
-    def ref(self, model: str, local: bool = False):
+    def ref(self, task: str, local: bool = False):
         # Remove the `.py`, if it exists
-        model = re.sub(r'\.py$', '', model)
+        task = re.sub(r'\.py$', '', task)
 
         try:
-            # If the model is only one word, then it is either:
+            # If the task is only one word, then it is either:
             #    1) a module name
-            #    2) a local model
-            model_split = model.split(".")
-            if len(model_split) == 1:
+            #    2) a local task
+            task_split = task.split(".")
+            if len(task_split) == 1:
 
-                # Handle the case where the model is local. In this case, the model will
+                # Handle the case where the task is local. In this case, the task will
                 # live in in current module.
                 if local:
-                    return self.upstream[f"{self.curr_module}.{model}"].get_output()
+                    return self.upstream[f"{self.curr_module}.{task}"].get_output()
 
-                # Otherwise, grab the model name from the referenced module. Note that
-                # this module will definitely only contain one model (we check this when
+                # Otherwise, grab the task name from the referenced module. Note that
+                # this module will definitely only contain one task (we check this when
                 # parsing the refs)
                 else:
-                    refd_parsed_model = [
-                        _p for _p in self.parsed_models if _p.model_relative_path == Path(f"{model}.py")  # noqa: E501
+                    refd_parsed_task = [
+                        _p for _p in self.parsed_tasks if _p.task_relative_path == Path(f"{task}.py")  # noqa: E501
                     ][0]
 
-                    # Just double-check that there is only one model
-                    if len(refd_parsed_model.prism_task_nodes) > 1:
+                    # Just double-check that there is only one task
+                    if len(refd_parsed_task.prism_task_nodes) > 1:
                         raise prism.exceptions.RuntimeException(
-                            message=f"module `{model}` has multiple models...specify the model name and try again"  # noqa: E501
+                            message=f"module `{task}` has multiple tasks...specify the task name and try again"  # noqa: E501
                         )
-                    return self.upstream[f"{model}.{refd_parsed_model.prism_task_names[0]}"].get_output()  # noqa: E501
+                    return self.upstream[f"{task}.{refd_parsed_task.prism_task_names[0]}"].get_output()  # noqa: E501
             else:
-                return self.upstream[model].get_output()
+                return self.upstream[task].get_output()
+
         except KeyError:
             raise prism.exceptions.RuntimeException(
-                f"could not find task `{model}`"
+                f"could not find task `{task}`"
             )

@@ -75,9 +75,9 @@ class ProjectPyNotFoundException(PrismException):
         return self.message
 
 
-class ModelsDirNotFoundException(PrismException):
+class TasksDirNotFoundException(PrismException):
     """
-    Exception raised if models dir isn't not found
+    Exception raised if tasks dir isn't not found
     """
 
     def __init__(self, message):

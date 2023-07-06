@@ -12,11 +12,11 @@ import prism.decorators
 # Class definition #
 ####################
 
-class Model01(prism.task.PrismTask):
+class Task01(prism.task.PrismTask):
 
     # Run
     def run(self, tasks, hooks):
         """
         Execute task.
         """
-        return "Hello from model 1!"
+        return "Hello from task 1!"

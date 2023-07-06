@@ -35,7 +35,7 @@ def example_task(tasks, hooks):
         hooks: hooks used to augment Prism functionality. These include:
             hooks.sql     --> for executing sql query using an adapter in profile YML
             hooks.spark   --> for accessing SparkSession (if pyspark specified in profile YML)
-            hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
+            hooks.dbt_ref --> for getting dbt tasks as a pandas DataFrame
     returns:
         task output
     """

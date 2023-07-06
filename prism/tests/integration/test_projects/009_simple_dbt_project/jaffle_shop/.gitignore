@@ -1,5 +1,5 @@
 
 target/
-dbt_models/
+dbt_tasks/
 logs/
 **/.DS_Store

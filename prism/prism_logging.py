@@ -130,7 +130,7 @@ AGENT_LEVEL = logging.INFO + 5
 # Add logging level
 def add_logging_level(level_name, level_num, method_name=None):
     """
-    Comprehensively adds a new logging level to the `logging` model and the
+    Comprehensively adds a new logging level to the `logging` task and the
     currently configured logging class. Inspired heavily by the answer here:
     https://stackoverflow.com/a/35804945/1691778
 
@@ -140,16 +140,16 @@ def add_logging_level(level_name, level_num, method_name=None):
         method_name: method name used to invoke log level. If not specified,
                      `level_name.lower()` is used.
     return:
-        `level_name` becomes an attribute of the `logging` model with the value
+        `level_name` becomes an attribute of the `logging` task with the value
         `level_num`
     """
     if not method_name:
         method_name = level_name.lower()
 
     if hasattr(logging, level_name):
-        raise AttributeError('{} already defined in logging model'.format(level_name))
+        raise AttributeError('{} already defined in logging task'.format(level_name))
     if hasattr(logging, method_name):
-        raise AttributeError('{} already defined in logging model'.format(method_name))
+        raise AttributeError('{} already defined in logging task'.format(method_name))
     if hasattr(logging.getLoggerClass(), method_name):
         raise AttributeError('{} already defined in logger class'.format(method_name))
 
@@ -397,18 +397,18 @@ class EmptyLineEvent(Event):
 
 
 @dataclass
-class ModelsFolderNotFoundEvent(Event):
+class TasksFolderNotFoundEvent(Event):
     path: str
 
     def message(self):
-        return f'{RED}`models` subfolder not found in {self.path}{RESET}'
+        return f'{RED}`tasks` subfolder not found in {self.path}{RESET}'
 
 
 @dataclass
 class ModulesFolderDeprecated(Event):
 
     def message(self):
-        return f'{YELLOW}`modules` should be renamed to `models`...this will be an error in a future version of Prism{RESET}'  # noqa: E501
+        return f'{YELLOW}`modules` should be renamed to `tasks`...this will be an error in a future version of Prism{RESET}'  # noqa: E501
 
 
 @dataclass
@@ -586,10 +586,10 @@ class ThreadsWarningEvent(Event):
 
 @dataclass
 class PyWarningEvent(Event):
-    model_name: str
+    task_name: str
 
     def message(self):
-        return f'{YELLOW}Found `.py` in a tasks.ref(...) argument in `{self.model_name}`...This will be an error in a future version of Prism.{RESET}'  # noqa: E501
+        return f'{YELLOW}Found `.py` in a tasks.ref(...) argument in `{self.task_name}`...This will be an error in a future version of Prism.{RESET}'  # noqa: E501
 
 
 @dataclass
