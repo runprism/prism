@@ -221,22 +221,18 @@ class DagCompiler:
             nodes: list of nodes (models)
             edges: list of edges (tuple of nodes, i.e. models)
         """
-
         # Create edges and nodes
         edges: List[Tuple[Path, Path]] = []
         nodes: List[Path] = []
 
         # Iterate through model references. Keys represent distinct models in the DAG,
         # and values represent the models that feed into the key.
-        for mod, ref in model_references.items():
+        for mod, refs in model_references.items():
             nodes = self.add_graph_node(mod, nodes)
-            if ref is None:
-                pass
-            elif isinstance(ref, Path):
-                nodes = self.add_graph_node(ref, nodes)
-                edges = self.add_graph_edge((ref, mod), edges)
+            if refs is None:
+                continue
             else:
-                for v in ref:
+                for v in refs:
                     nodes = self.add_graph_node(v, nodes)
                     edges = self.add_graph_edge((v, mod), edges)
         return nodes, edges
@@ -278,7 +274,6 @@ class DagCompiler:
             raise prism.exceptions.DAGException(
                 message=f"invalid DAG, cycle found in {str(cycles)}"
             )
-
         return graph
 
     def get_node_dependencies(self,
