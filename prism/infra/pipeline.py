@@ -67,7 +67,10 @@ class PrismPipeline:
                 )
 
         # Create task_manager and hooks objects
-        task_manager_obj = task_manager.PrismTaskManager(upstream={})
+        task_manager_obj = task_manager.PrismTaskManager(
+            upstream={},
+            parsed_models=executor.compiled_dag.parsed_models
+        )
         hooks_obj = hooks.PrismHooks(self.project)
 
         # If PySpark adapter is specified in the profile, then explicitly add

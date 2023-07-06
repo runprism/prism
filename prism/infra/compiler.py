@@ -47,6 +47,7 @@ class CompiledDag:
         self.topological_sort = topological_sort
         self.user_arg_models = user_arg_models
         self.model_manifests = model_manifests
+        self.parsed_models = parsed_models
 
         # Store full paths in attribute
         self.topological_sort_full_path = []
@@ -63,7 +64,7 @@ class CompiledDag:
 
             # Current parser
             model_ast_parser = [
-                _p for _p in parsed_models if _p.model_relative_path == relative_path
+                _p for _p in self.parsed_models if _p.model_relative_path == relative_path  # noqa: E501
             ][0]
 
             # Update attribute

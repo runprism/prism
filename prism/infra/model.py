@@ -199,5 +199,5 @@ class CompiledModel:
 
         # Execute the task
         run_context[task_var_name].exec()
-        task_manager.upstream[self.name] = run_context[task_var_name]
+        task_manager.upstream[self.task_var_name] = run_context[task_var_name]
         return task_manager

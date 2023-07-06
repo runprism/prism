@@ -16,6 +16,7 @@ from multiprocessing.dummy import Pool
 from pathlib import Path
 import time
 from typing import Any, Dict, List, Optional, Union
+import re
 
 # Prism-specific imports
 import prism.exceptions
@@ -64,7 +65,7 @@ class DagExecutor:
         # Extract attributes from compiled_dag instance
         self.compiled_models = self.compiled_dag.compiled_models
         self.nxdag = self.compiled_dag.nxdag
-        self.topological_sort_relative_path = self.compiled_dag.topological_sort
+        self.topological_sort_model_names = self.compiled_dag.topological_sort
         self.topological_sort_full_path = self.compiled_dag.topological_sort_full_path
         self.user_arg_models = self.compiled_dag.user_arg_models
         self.user_arg_all_upstream = user_arg_all_upstream
@@ -74,7 +75,7 @@ class DagExecutor:
         # Identify nodes not explicitly run and update (only if --all-upstream is False)
         if not self.user_arg_all_upstream and not self.user_arg_all_downstream:
             self.nodes_not_explicitly_run = list(
-                set(self.topological_sort_relative_path) - set(self.user_arg_models)
+                set(self.topological_sort_model_names) - set(self.user_arg_models)
             )
         else:
             self.nodes_not_explicitly_run = []
@@ -119,17 +120,21 @@ class DagExecutor:
         """
         Callback used to get results of model execution in Pool
         """
+        # Keep track of current module in tasks manager
+        task_manager.curr_module = re.sub(
+            r'\.py$', '', model.model_relative_path.name
+        )
         # Keep track of events
         event_list: List[Event] = []
         if task_manager == 0:
             base_event_manager.EventManagerOutput(0, None, event_list)
+        model_name = model.task_var_name
         relative_path = model.model_relative_path
-        full_path = model.model_full_path
 
         # Boolean for whether to fire exec event for current script. We do not want to
         # fire the exec events if the user did not explicitly include the script in
         # their arguments
-        fire_exec_events = relative_path in self.user_arg_models \
+        fire_exec_events = model_name in self.user_arg_models \
             or self.user_arg_all_upstream \
             or self.user_arg_all_downstream
 
@@ -140,16 +145,16 @@ class DagExecutor:
 
         # First, sort the user arg models in the order in which they appear in the DAG
         models_idx = [
-            self.topological_sort_relative_path.index(m) for m in self.user_arg_models
+            self.topological_sort_model_names.index(m) for m in self.user_arg_models
         ]
         models_sorted = [x for _, x in sorted(zip(models_idx, self.user_arg_models))]
 
         # Define the idx and total
         if self.user_arg_all_upstream or self.user_arg_all_downstream:
-            idx = self.topological_sort_full_path.index(full_path) + 1
-            total = len(self.topological_sort_full_path)
-        elif relative_path in self.user_arg_models:
-            idx = models_sorted.index(relative_path) + 1
+            idx = self.topological_sort_model_names.index(model_name) + 1
+            total = len(self.topological_sort_model_names)
+        elif model_name in self.user_arg_models:
+            idx = models_sorted.index(model_name) + 1
             total = len(models_sorted)
         else:
             idx = None
@@ -167,7 +172,7 @@ class DagExecutor:
         num_runs = 0
         num_expected_runs = retries + 1
         outputs = 0
-        name = f"{model.name.replace('.py', '')}.{model.prism_task_name}"
+        name = model.task_var_name
 
         # For testing, keep track of all events
         all_events = []
@@ -176,11 +181,13 @@ class DagExecutor:
             num_runs += 1
             if num_runs > 1:
                 event_list = fire_console_event(
-                    prism.prism_logging.DelayEvent(name, retry_delay_seconds),
+                    prism.prism_logging.DelayEvent(
+                        name, retry_delay_seconds
+                    ),
                     log_level='warn'
                 )
                 time.sleep(retry_delay_seconds)
-                name = model.name + f' (RETRY {num_runs - 1})'
+                name = name + f' (RETRY {num_runs - 1})'
 
             # Only fire empty line if last retry has been executed
             fire_empty_line_events = num_runs == num_expected_runs
@@ -260,7 +267,7 @@ class DagExecutor:
         # If single-threaded, just run the models in order
         if self.threads == 1:
             while self.compiled_models != []:
-                curr = self.compiled_models.pop(0)
+                curr: prism_model.CompiledModel = self.compiled_models.pop(0)
                 result = self.exec_single(
                     full_tb,
                     curr,
@@ -300,7 +307,7 @@ class DagExecutor:
                                 args=(full_tb, curr, self.task_manager, self.hooks, self.user_context),  # noqa: E501
                                 callback=callback
                             )
-                            async_results[curr.name] = res
+                            async_results[curr.task_var_name] = res
                             self.compiled_models.pop(0)
 
                         # Since DAG is run in order, refs should have been added to pool
@@ -318,7 +325,7 @@ class DagExecutor:
                                     args=(full_tb, curr, self.task_manager, self.hooks, self.user_context),  # noqa: E501
                                     callback=callback
                                 )
-                                async_results[curr.name] = res
+                                async_results[curr.task_var_name] = res
                                 self.compiled_models.pop(0)
                 pool.close()
                 pool.join()
