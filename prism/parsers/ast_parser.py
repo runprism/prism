@@ -335,8 +335,7 @@ class AstParser:
         ref_task_arg_split = ref_task_arg.split(".")
         if len(ref_task_arg_split) == 1:
 
-            # If the ref'd module contains more than one module,
-            # then throw an error.
+            # If the ref'd module contains more than one module, then throw an error.
             if len(refd_parser.prism_task_nodes) > 1:
                 raise prism.exceptions.ReferenceException(
                     message=f"module `{ref_task_arg}` has multiple tasks...specify the task name and try again"  # noqa: E501
@@ -454,12 +453,19 @@ class AstParser:
                         # Let's start with the case where local = False. This means that
                         # the user is referencing a task from a separate module.
                         if not ref_local_arg:
+                            relative_path = Path(f'{ref_task_arg.split(".")[0]}.py')
+
+                            # If the ref'd module is the same as the current one, throw
+                            # an error.
+                            if relative_path == self.task_relative_path:
+                                raise prism.exceptions.ReferenceException(
+                                    'Are you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`'  # noqa: E501
+                                )
 
                             # Now, get the ref'd task. If the argument is in the format
                             # `<module>`, then the ref'd module should only have one
                             # task. Otherwise, the user wants a specific task within
                             # the module.
-                            relative_path = Path(f'{ref_task_arg.split(".")[0]}.py')
                             refd_parser_list = [
                                 _p for _p in other_parsed_tasks if _p.task_relative_path == relative_path  # noqa: E501
                             ]
