@@ -279,8 +279,8 @@ class DagCompiler:
 
     def get_node_dependencies(self,
         graph: nx.DiGraph,
-        start_nodes: List[Path]
-    ) -> List[Path]:
+        start_nodes: List[str]
+    ) -> List[str]:
         """
         Parse the DiGraph and get all nodes upstream of the `start_nodes`
 
