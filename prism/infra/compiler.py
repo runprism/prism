@@ -338,8 +338,7 @@ class DagCompiler:
         args:
             all_tasks: list of all tasks
             user_arg_tasks: tasks passed in user arguments
-            parent_path: path containing the tasks
-            compiler_dict: globals dictionary for compiler
+            parsed_tasks: list of AstParsers associated with each task module
         returns:
             topological sorted DAG as a list
         """
