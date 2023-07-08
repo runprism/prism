@@ -744,7 +744,7 @@ class AstParser:
             elif isinstance(_node, ast.FunctionDef):
                 expected = [prism_task_manager_alias, prism_hooks_alias]
             if sorted(run_args) != sorted(expected):
-                msg = f'invalid arguments in `run` function in PrismTask in `{str(self.task_relative_path)}`; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
+                msg = f'invalid arguments in `run` function in PrismTask in `{str(self.task_relative_path)}.{_node.name}`; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
                 raise prism.exceptions.ParserException(message=msg)
 
             # Parse targets
