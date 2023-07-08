@@ -6,7 +6,7 @@ import prism.decorators
 class Task07a(prism.task.PrismTask):
 
     def run(self, tasks, hooks):
-        return tasks.ref('task04.py') + tasks.ref('task06.py') + "This is task 07. "
+        return tasks.ref('task04') + tasks.ref('task06') + "This is task 07. "
 
 
 # Function-based task

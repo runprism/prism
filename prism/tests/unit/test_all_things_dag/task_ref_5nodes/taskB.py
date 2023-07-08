@@ -4,4 +4,4 @@ from prism.task import PrismTask
 class Taskb(PrismTask):
 
     def run(self, tasks, hooks):
-        return tasks.ref('taskA.py') + " This is task B."
+        return tasks.ref('taskA') + " This is task B."

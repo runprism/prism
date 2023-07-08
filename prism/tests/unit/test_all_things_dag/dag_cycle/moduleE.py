@@ -1,10 +1,7 @@
 from prism.task import PrismTask
-import prism.target as PrismTarget
+
 
 class Taske(PrismTask):
 
     def run(self, tasks, hooks):
-        return tasks.ref('taskA.py') + tasks.ref('taskC.py') + tasks.ref('taskD.py') + " This is task E."
-
-
-# EOF
+        return tasks.ref('moduleA') + tasks.ref('moduleC') + tasks.ref('moduleD') + " This is task E."  # noqa
