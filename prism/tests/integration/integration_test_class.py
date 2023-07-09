@@ -83,6 +83,7 @@ class IntegrationTestCase(unittest.TestCase):
 
     def _load_task_refs(
         self,
+        module_name: str,
         task_name: str,
         manifest: Dict[str, Any]
     ) -> List[str]:
@@ -91,13 +92,15 @@ class IntegrationTestCase(unittest.TestCase):
         """
         task_refs = []
         all_refs = manifest["refs"]
-        for ref_obj in all_refs:
-            if ref_obj["target"] == task_name:
-                task_refs.append(ref_obj["source"])
-        if len(task_refs) == 1:
-            return task_refs[0]
+        if module_name in all_refs.keys():
+            module_refs = all_refs[module_name]
+            if task_name in module_refs.keys():
+                task_refs = module_refs[task_name]
+                return task_refs
+            else:
+                return []
         else:
-            return task_refs
+            return []
 
     def _run_prism(self, args: list):
         """

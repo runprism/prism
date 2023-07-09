@@ -23,7 +23,7 @@ class Task04(prism.task.PrismTask):
     ## Run
     @prism.decorators.target(type=prism.target.PySparkParquet, loc=str(prism_project.OUTPUT / 'task04'), mode='overwrite')
     def run(self, tasks, hooks):
-        df_new = tasks.ref('task03.py').filter(F.col('col1')>=F.lit('col1_value4'))
+        df_new = tasks.ref('module03.py').filter(F.col('col1')>=F.lit('col1_value4'))
         return df_new
 
 

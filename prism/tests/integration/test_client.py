@@ -92,8 +92,8 @@ class TestClient(
             dag.compile()
         expected_msg = "invalid DAG, cycle found in"
         self.assertTrue(expected_msg in str(cm.exception))
-        self.assertTrue('task02.py' in str(cm.exception))
-        self.assertTrue('task03.py' in str(cm.exception))
+        self.assertTrue('module02.py' in str(cm.exception))
+        self.assertTrue('module03.py' in str(cm.exception))
 
         # Check that manifest is not formed
         self.assertFalse(
@@ -126,17 +126,17 @@ class TestClient(
         manifest = self._load_manifest(
             Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.json')
         )
-        task01_refs = self._load_task_refs("task01.py", manifest)
-        task02_refs = self._load_task_refs("task02.py", manifest)
-        task03_refs = self._load_task_refs("task03.py", manifest)
+        task01_refs = self._load_task_refs("module01.py", manifest)
+        task02_refs = self._load_task_refs("module02.py", manifest)
+        task03_refs = self._load_task_refs("module03.py", manifest)
         self.assertEqual([], task01_refs)
-        self.assertEqual('task01.py', task02_refs)
+        self.assertEqual('module01.py', task02_refs)
         self.assertEqual([], task03_refs)
 
         # Check topological sort
         topsort = compiled_dag.topological_sort
         topsort_str = [str(t) for t in topsort]
-        self.assertEqual(['task03.py', 'task01.py', 'task02.py'], topsort_str)
+        self.assertEqual(['module03.py', 'module01.py', 'module02.py'], topsort_str)
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(P004_SIMPLE_PROJECT)
@@ -204,11 +204,11 @@ class TestClient(
         manifest = self._load_manifest(
             Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.json')
         )
-        task01_refs = self._load_task_refs("task01.py", manifest)
-        task02_refs = self._load_task_refs("task02.py", manifest)
-        task03_refs = self._load_task_refs("task03.py", manifest)
+        task01_refs = self._load_task_refs("module01.py", manifest)
+        task02_refs = self._load_task_refs("module02.py", manifest)
+        task03_refs = self._load_task_refs("module03.py", manifest)
         self.assertEqual([], task01_refs)
-        self.assertEqual('task01.py', task02_refs)
+        self.assertEqual('module01.py', task02_refs)
         self.assertEqual([], task03_refs)
 
         # Cleanup
@@ -223,7 +223,7 @@ class TestClient(
 
         # -------------------------------------------------------
         # With `task` param
-        dag5.run(tasks=['task01.py'])
+        dag5.run(tasks=['module01.py'])
 
         # Confirm creation of manifest
         self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / '.compiled').is_dir())
@@ -320,13 +320,13 @@ class TestClient(
         # Get output of a task without a target (without running pipeline). This should
         # result in an error.
         with self.assertRaises(prism.exceptions.RuntimeException) as cm:
-            dag5.get_task_output('task03.py')
+            dag5.get_task_output('module03.py')
         expected_msg_components = ['cannot access the output of', 'either explicitly running task or setting a target']  # noqa: E501
         for comp in expected_msg_components:
             self.assertTrue(comp in str(cm.exception))
 
         # Get output of a task with a target (without running pipeline)
-        task01_output = dag5.get_task_output('task01.py')
+        task01_output = dag5.get_task_output('module01.py')
         expected_output = str(
             Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task01.txt')
         )
@@ -334,7 +334,7 @@ class TestClient(
 
         # Get output of a task without a target (after running pipeline)
         dag5.run()
-        output = dag5.get_task_output('task03.py')
+        output = dag5.get_task_output('module03.py')
         expected_output = 'Hello from task 1!\nHello from task 2!\nHello from task 3!'  # noqa: E501
         self.assertEqual(expected_output, output)
 

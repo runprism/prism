@@ -31,7 +31,7 @@ class Task03(prism.task.PrismTask):
         returns:
             task output
         """
-        with open(tasks.ref('extract/task02.py')) as f:
+        with open(tasks.ref('extract/module02.py')) as f:
             lines = f.read()
         return lines + '\n' + 'Hello from task 3!'
 

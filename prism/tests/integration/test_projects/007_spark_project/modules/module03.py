@@ -34,7 +34,7 @@ class Task03(prism.task.PrismTask):
         returns:
             task output
         """
-        df = hooks.spark.read.parquet(tasks.ref('task02.py'))
+        df = hooks.spark.read.parquet(tasks.ref('module02.py'))
         df_new = df.filter(F.col('col1')>=F.lit('col1_value3'))
         return df_new
 

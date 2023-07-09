@@ -90,16 +90,16 @@ run_success_starting_events = [
 
 simple_project_all_tasks_expected_events = run_success_starting_events + \
     ['TasksHeaderEvent'] + \
-    _execution_events_tasks({'task03.py': 'ERROR'}) + \
+    _execution_events_tasks({'module03.py': 'ERROR'}) + \
     _run_task_end_events('PrismExceptionErrorEvent')
 
 simple_project_no_null_all_tasks_expected_events = run_success_starting_events + \
     ['TasksHeaderEvent'] + \
     _execution_events_tasks({
-        'task01.py': 'DONE',
-        'task02.py': 'DONE',
-        'task03.py': 'DONE',
-        'task04.py': 'DONE',
+        'module01.py': 'DONE',
+        'module02.py': 'DONE',
+        'module03.py': 'DONE',
+        'module04.py': 'DONE',
     }) + _run_task_end_events('TaskSuccessfulEndEvent')
 
 
@@ -137,11 +137,11 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Check manifest.json
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("task01.py", manifest)
-        task02_refs = self._load_task_refs("task02.py", manifest)
-        task03_refs = self._load_task_refs("task03.py", manifest)
+        task01_refs = self._load_task_refs("module01.py", manifest)
+        task02_refs = self._load_task_refs("module02.py", manifest)
+        task03_refs = self._load_task_refs("module03.py", manifest)
         self.assertEqual([], task01_refs)
-        self.assertEqual('task01.py', task02_refs)
+        self.assertEqual('module01.py', task02_refs)
         self.assertEqual([], task03_refs)
 
         # Remove the .compiled directory, if it exists
@@ -214,12 +214,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Expecatation: task 1 is the first task in the DAG. Therefore, we should
         # not encounter any errors with this command.
-        args = ['run', '--task', 'task01.py']
+        args = ['run', '--task', 'module01.py']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_tasks({'task01.py': 'DONE'}) + \
+            _execution_events_tasks({'module01.py': 'DONE'}) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), runtask_run_results)
 
@@ -233,14 +233,14 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("task01.py", manifest)
-        task02_refs = self._load_task_refs("task02.py", manifest)
-        task03_refs = self._load_task_refs("task03.py", manifest)
-        task04_refs = self._load_task_refs("task04.py", manifest)
+        task01_refs = self._load_task_refs("module01.py", manifest)
+        task02_refs = self._load_task_refs("module02.py", manifest)
+        task03_refs = self._load_task_refs("module03.py", manifest)
+        task04_refs = self._load_task_refs("module04.py", manifest)
         self.assertEqual([], task01_refs)
-        self.assertEqual('task01.py', task02_refs)
-        self.assertEqual('task02.py', task03_refs)
-        self.assertEqual('task03.py', task04_refs)
+        self.assertEqual('module01.py', task02_refs)
+        self.assertEqual('module02.py', task03_refs)
+        self.assertEqual('module03.py', task04_refs)
 
         # **************** #
         # Execute task 2 #
@@ -252,12 +252,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # errors with this command.
 
         # Execute command
-        args = ['run', '--task', 'task02.py', '--full-tb']
+        args = ['run', '--task', 'module02.py', '--full-tb']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_tasks({'task02.py': 'DONE'}) + \
+            _execution_events_tasks({'module02.py': 'DONE'}) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), runtask_run_results)
 
@@ -280,12 +280,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # -------------------------------------
         # Execute command without `all-upstream`
-        args = ['run', '--task', 'task04.py']
+        args = ['run', '--task', 'module04.py']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
-            _execution_events_tasks({'task04.py': 'ERROR'}) + \
+            _execution_events_tasks({'module04.py': 'ERROR'}) + \
             _run_task_end_events('PrismExceptionErrorEvent')
         self.assertEqual(' | '.join(expected_events), runtask_run_results)
 
@@ -293,7 +293,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Execute command with `all-upstream`
         self._remove_compiled_dir(wkdir)
         self._remove_files_in_output(wkdir)
-        args = ['run', '--task', 'task04.py', '--all-upstream']
+        args = ['run', '--task', 'module04.py', '--all-upstream']
         runtask_run = self._run_prism(args)
         runtask_run_results = runtask_run.get_results()
         self.assertEqual(
@@ -362,22 +362,22 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             ['TasksHeaderEvent'] + \
             _execution_events_tasks(
                 {
-                    'extract/task01.py': 'DONE',
-                    'extract/task02.py': 'DONE'
+                    'extract/module01.py': 'DONE',
+                    'extract/module02.py': 'DONE'
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
 
         # Check manifest
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        extract_task01_refs = self._load_task_refs("extract/task01.py", manifest)
-        extract_task02_refs = self._load_task_refs("extract/task02.py", manifest)
-        load_task03_refs = self._load_task_refs("load/task03.py", manifest)
-        task04_refs = self._load_task_refs("task04.py", manifest)
+        extract_task01_refs = self._load_task_refs("extract/module01.py", manifest)
+        extract_task02_refs = self._load_task_refs("extract/module02.py", manifest)
+        load_task03_refs = self._load_task_refs("load/module03.py", manifest)
+        task04_refs = self._load_task_refs("module04.py", manifest)
         self.assertEqual([], extract_task01_refs)
-        self.assertEqual("extract/task01.py", extract_task02_refs)
-        self.assertEqual("extract/task02.py", load_task03_refs)
-        self.assertEqual("load/task03.py", task04_refs)
+        self.assertEqual("extract/module01.py", extract_task02_refs)
+        self.assertEqual("extract/module02.py", load_task03_refs)
+        self.assertEqual("load/module03.py", task04_refs)
 
         # Check results
         check_tasks_1_2_results()
@@ -393,11 +393,11 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         args = [
             'run',
             '--task',
-            'extract/task01.py',
+            'extract/module01.py',
             '--task',
-            'extract/task02.py',
+            'extract/module02.py',
             '--task',
-            'load/task03.py'
+            'load/module03.py'
         ]
         run = self._run_prism(args)
         run_results = run.get_results()
@@ -405,9 +405,9 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             ['TasksHeaderEvent'] + \
             _execution_events_tasks(
                 {
-                    'extract/task01.py': 'DONE',
-                    'extract/task02.py': 'DONE',
-                    'load/task03.py': 'DONE',
+                    'extract/module01.py': 'DONE',
+                    'extract/module02.py': 'DONE',
+                    'load/module03.py': 'DONE',
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -430,10 +430,10 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             ['TasksHeaderEvent'] + \
             _execution_events_tasks(
                 {
-                    'extract/task01.py': 'DONE',
-                    'extract/task02.py': 'DONE',
-                    'load/task03.py': 'DONE',
-                    'task04.py': 'DONE'
+                    'extract/module01.py': 'DONE',
+                    'extract/module02.py': 'DONE',
+                    'load/module03.py': 'DONE',
+                    'module04.py': 'DONE'
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -547,7 +547,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # New output path
         output_path = str(wkdir.parent)
         self.assertFalse((Path(output_path) / 'task01.txt').is_file())
-        args = ['run', '--task', 'task01.py', '--vars', f'OUTPUT={output_path}']
+        args = ['run', '--task', 'module01.py', '--vars', f'OUTPUT={output_path}']
         self._run_prism(args)
 
         # Get output
@@ -581,18 +581,18 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all tasks downstream of task01.py
-        args = ['run', '--task', 'task01.py', '--all-downstream']
+        # Run all tasks downstream of module01.py
+        args = ['run', '--task', 'module01.py', '--all-downstream']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = run_success_starting_events + \
             ['TasksHeaderEvent'] + \
             _execution_events_tasks(
                 {
-                    'task01.py': 'DONE',
-                    'task02.py': 'DONE',
-                    'task03.py': 'DONE',
-                    'task04.py': 'DONE',
+                    'module01.py': 'DONE',
+                    'module02.py': 'DONE',
+                    'module03.py': 'DONE',
+                    'module04.py': 'DONE',
                 }) + \
             _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -601,14 +601,14 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("task01.py", manifest)
-        task02_refs = self._load_task_refs("task02.py", manifest)
-        task03_refs = self._load_task_refs("task03.py", manifest)
-        task04_refs = self._load_task_refs("task04.py", manifest)
+        task01_refs = self._load_task_refs("module01.py", manifest)
+        task02_refs = self._load_task_refs("module02.py", manifest)
+        task03_refs = self._load_task_refs("module03.py", manifest)
+        task04_refs = self._load_task_refs("module04.py", manifest)
         self.assertEqual([], task01_refs)
-        self.assertEqual("task01.py", task02_refs)
-        self.assertEqual("task02.py", task03_refs)
-        self.assertEqual("task03.py", task04_refs)
+        self.assertEqual("module01.py", task02_refs)
+        self.assertEqual("module02.py", task03_refs)
+        self.assertEqual("module03.py", task04_refs)
 
         # Check that outputs are created
         self.assertTrue(Path(wkdir / 'output' / 'task01.txt').is_file())
@@ -672,12 +672,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all tasks downstream of task01.py
-        args = ['run', '--task', 'task01.py']
+        # Run all tasks downstream of module01.py
+        args = ['run', '--task', 'module01.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'task01.py': 'DONE'}
+            {'module01.py': 'DONE'}
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
 
@@ -705,12 +705,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all tasks downstream of task01.py
-        args = ['run', '--task', 'task02.py']
+        # Run all tasks downstream of module01.py
+        args = ['run', '--task', 'module02.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'task02.py': 'ERROR'},
+            {'module02.py': 'ERROR'},
             ["ExecutionErrorEvent", "TriggersHeaderEvent"]
         ) + ["SeparatorEvent"]
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -739,12 +739,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all tasks downstream of task01.py
-        args = ['run', '--task', 'task01.py']
+        # Run all tasks downstream of module01.py
+        args = ['run', '--task', 'module01.py']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'task01.py': 'DONE'},
+            {'module01.py': 'DONE'},
             ["TriggersHeaderEvent", "TriggersPathNotDefined"]
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -773,12 +773,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all tasks downstream of task01.py
+        # Run all tasks downstream of module01.py
         args = ['run']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'task01.py': 'DONE'},
+            {'module01.py': 'DONE'},
             ["TriggersHeaderEvent"],
             'ERROR'
         ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']
@@ -805,12 +805,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all tasks downstream of task01.py
+        # Run all tasks downstream of module01.py
         args = ['run']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'task01.py': 'DONE'},
+            {'module01.py': 'DONE'},
             ["TriggersHeaderEvent", "UnexpectedTriggersYmlKeysEvent"]
         ) + _run_task_end_events('TaskSuccessfulEndEvent')
         self.assertEqual(' | '.join(expected_events), run_results)
@@ -840,12 +840,12 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_files_in_output(wkdir)
 
-        # Run all tasks downstream of task01.py
+        # Run all tasks downstream of module01.py
         args = ['run']
         run = self._run_prism(args)
         run_results = run.get_results()
         expected_events = self._check_trigger_events(
-            {'task01.py': 'DONE'},
+            {'module01.py': 'DONE'},
             ["TriggersHeaderEvent"],
             'ERROR'
         ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']

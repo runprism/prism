@@ -89,15 +89,15 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("task01.py", manifest)
-        task02_refs = self._load_task_refs("task02.py", manifest)
-        task03_refs = self._load_task_refs("task03.py", manifest)
-        task04_refs = self._load_task_refs("task04.py", manifest)
+        task01_refs = self._load_task_refs("module01.py", manifest)
+        task02_refs = self._load_task_refs("module02.py", manifest)
+        task03_refs = self._load_task_refs("module03.py", manifest)
+        task04_refs = self._load_task_refs("module04.py", manifest)
 
         self.assertEqual([], task01_refs)
-        self.assertEqual('task01.py', task02_refs)
-        self.assertEqual('task02.py', task03_refs)
-        self.assertEqual('task03.py', task04_refs)
+        self.assertEqual('module01.py', task02_refs)
+        self.assertEqual('module02.py', task03_refs)
+        self.assertEqual('module03.py', task04_refs)
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
@@ -131,22 +131,22 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # Expecatation: task 1 is the first task in the DAG. Therefore, we should
         # not encounter any errors with this command.
-        args = ['spark-submit', '--task', 'task01.py']
+        args = ['spark-submit', '--task', 'module01.py']
         self._run_prism(args)
 
         # Check manifest
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("task01.py", manifest)
-        task02_refs = self._load_task_refs("task02.py", manifest)
-        task03_refs = self._load_task_refs("task03.py", manifest)
-        task04_refs = self._load_task_refs("task04.py", manifest)
+        task01_refs = self._load_task_refs("module01.py", manifest)
+        task02_refs = self._load_task_refs("module02.py", manifest)
+        task03_refs = self._load_task_refs("module03.py", manifest)
+        task04_refs = self._load_task_refs("module04.py", manifest)
 
         self.assertEqual([], task01_refs)
-        self.assertEqual('task01.py', task02_refs)
-        self.assertEqual('task02.py', task03_refs)
-        self.assertEqual('task03.py', task04_refs)
+        self.assertEqual('module01.py', task02_refs)
+        self.assertEqual('module02.py', task03_refs)
+        self.assertEqual('module03.py', task04_refs)
 
         # Check the results of the output directory
         self.assertTrue(Path(wkdir / 'output' / 'task01').is_dir())
@@ -163,7 +163,7 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         # 1, and the output of task 1 is stored in a target, we do not need to re-run
         # task 1 in order to run task 2. Therefore, we should not encounter any
         # errors with this command.
-        args = ['spark-submit', '--task', 'task02.py']
+        args = ['spark-submit', '--task', 'module02.py']
         self._run_prism(args)
 
         # Check the results of the output directory
@@ -187,13 +187,13 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # -------------------------------------
         # Execute command without `all-upstream`
-        args = ['spark-submit', '--task', 'task04.py']
+        args = ['spark-submit', '--task', 'module04.py']
         self._run_prism(args)
         self.assertFalse(Path(wkdir / 'output' / 'task04').is_dir())
 
         # -----------------------------------
         # Execute command with `all-upstream`
-        args = ['spark-submit', '--task', 'task04.py', '--all-upstream']
+        args = ['spark-submit', '--task', 'module04.py', '--all-upstream']
         self._run_prism(args)
         self.assertTrue(Path(wkdir / 'output' / 'task04').is_dir())
         task04_df = pd.read_parquet(Path(wkdir / 'output' / 'task04'))
@@ -231,23 +231,23 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         # Remove all files in the output directory
         self._remove_dirs_in_output(wkdir)
 
-        # Run all tasks downstream of task01.py
-        args = ['spark-submit', '--task', 'task01.py', '--all-downstream']
+        # Run all tasks downstream of module01.py
+        args = ['spark-submit', '--task', 'module01.py', '--all-downstream']
         self._run_prism(args)
 
         # Check manifest
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("task01.py", manifest)
-        task02_refs = self._load_task_refs("task02.py", manifest)
-        task03_refs = self._load_task_refs("task03.py", manifest)
-        task04_refs = self._load_task_refs("task04.py", manifest)
+        task01_refs = self._load_task_refs("module01.py", manifest)
+        task02_refs = self._load_task_refs("module02.py", manifest)
+        task03_refs = self._load_task_refs("module03.py", manifest)
+        task04_refs = self._load_task_refs("module04.py", manifest)
 
         self.assertEqual([], task01_refs)
-        self.assertEqual('task01.py', task02_refs)
-        self.assertEqual('task02.py', task03_refs)
-        self.assertEqual('task03.py', task04_refs)
+        self.assertEqual('module01.py', task02_refs)
+        self.assertEqual('module02.py', task03_refs)
+        self.assertEqual('module03.py', task04_refs)
 
         # ------------------------------------------------------------------------------
         # Check the results of the output directory

@@ -40,8 +40,8 @@ class Task03(prism.task.PrismTask):
         returns:
             task output
         """
-        task1_times = pd.read_csv(tasks.ref('task01.py'))
-        task2_times = pd.read_csv(tasks.ref('task02.py'))
+        task1_times = pd.read_csv(tasks.ref('module01.py'))
+        task2_times = pd.read_csv(tasks.ref('module02.py'))
         return 'Hello from task 3!'
 
 

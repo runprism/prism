@@ -31,7 +31,7 @@ class Task04(prism.task.PrismTask):
         returns:
             task output
         """
-        return tasks.ref('task03.py') + "\n" + "Hello from task 4!"
+        return tasks.ref('module03.py') + "\n" + "Hello from task 4!"
 
 
 # EOF
