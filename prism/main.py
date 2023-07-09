@@ -139,7 +139,7 @@ def invoke(args: Optional[List[str]] = None, bool_return: bool = False):
     required=False
 )
 @click.option(
-    "--tinimal",
+    "--minimal",
     is_flag=True,
     help="""Create minimal project (just `prism_project.py` and `tasks`)""",
     default=False,
