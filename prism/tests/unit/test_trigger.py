@@ -201,10 +201,19 @@ class TestTrigger(unittest.TestCase):
         """
         # Path of interest
         DUMMY_TASKS = Path(TEST_CASE_WKDIR) / 'dummy_tasks'
-        print(prism_project.run_context['sys'].path)
+
+        # Cleanup the project's sys.path
+        prism_project.cleanup(prism_project.run_context)
 
         # In `prism_project.py`, we have `Path(__file__).parent` in `SYS_PATH_CONFIG`.
-        # Therefore, `test_trigger_yml` should be in the project's sys.path.
+        # But, we haven't created our sys.path engine yet, so it shouldn't appear in our
+        # project's sys.path
+        self.assertFalse(str(TEST_TRIGGER_YML) in prism_project.run_context['sys'].path)
+
+        # Update the sys.path engine
+        prism_project.sys_path_engine.modify_sys_path(prism_project.sys_path_config)
+
+        # Now, it should appear in our project's sys.path
         self.assertTrue(str(TEST_TRIGGER_YML) in prism_project.run_context['sys'].path)
         self.assertFalse(str(DUMMY_TASKS) in prism_project.run_context['sys'].path)
 
