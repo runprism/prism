@@ -167,71 +167,99 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
 
-    # def test_project_nested_task_dirs(self):
-    #     """
-    #     `prism compile` in a project with directories in the tasks folder
-    #     """
+    def test_project_nested_task_dirs(self):
+        """
+        `prism compile` in a project with directories in the tasks folder
+        """
 
-    #     # Set working directory
-    #     wkdir = Path(TEST_PROJECTS) / '010_project_nested_task_dirs'
-    #     os.chdir(wkdir)
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '010_project_nested_module_dirs'
+        os.chdir(wkdir)
 
-    #     # Remove the .compiled directory, if it exists
-    #     if Path(wkdir / '.compiled').is_dir():
-    #         shutil.rmtree(Path(wkdir / '.compiled'))
+        # Remove the .compiled directory, if it exists
+        if Path(wkdir / '.compiled').is_dir():
+            shutil.rmtree(Path(wkdir / '.compiled'))
 
-    #     args = ['compile']
-    #     compile_run = self._run_prism(args)
-    #     compile_run_results = compile_run.get_results()
-    #     self.assertEqual(
-    #         ' | '.join(simple_project_expected_events),
-    #         compile_run_results
-    #     )
+        args = ['compile']
+        compile_run = self._run_prism(args)
+        compile_run_results = compile_run.get_results()
+        self.assertEqual(
+            ' | '.join(simple_project_expected_events),
+            compile_run_results
+        )
 
-    #     # Check that .compiled directory is formed
-    #     self.assertTrue(Path(wkdir / '.compiled').is_dir())
-    #     self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+        # Check that .compiled directory is formed
+        self.assertTrue(Path(wkdir / '.compiled').is_dir())
+        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
-    #     # Check elements of manifest
-    #     manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-    #     extract_task01_refs = self._load_task_refs("extract/module01.py", manifest)
-    #     extract_task02_refs = self._load_task_refs("extract/module02.py", manifest)
-    #     load_task03_refs = self._load_task_refs("load/module03.py", manifest)
-    #     task04_refs = self._load_task_refs("module04.py", manifest)
-    #     self.assertEqual([], extract_task01_refs)
-    #     self.assertEqual("extract/module01.py", extract_task02_refs)
-    #     self.assertEqual("extract/module02.py", load_task03_refs)
-    #     self.assertEqual("load/module03.py", task04_refs)
+        # Check elements of manifest
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        extract_task01_refs = self._load_task_refs(
+            "extract/module01",
+            'Task01',
+            manifest)
+        extract_task02_refs = self._load_task_refs(
+            "extract/module02",
+            'Task02',
+            manifest)
+        load_task03_refs = self._load_task_refs(
+            "load/module03",
+            'Task03',
+            manifest
+        )
+        task04_refs = self._load_task_refs(
+            "module04",
+            "Task04",
+            manifest
+        )
+        self.assertEqual([], extract_task01_refs)
+        self.assertEqual(["extract/module01.Task01"], extract_task02_refs)
+        self.assertEqual(["extract/module02.Task02"], load_task03_refs)
+        self.assertEqual(["load/module03.Task03"], task04_refs)
 
-    #     # Set up wkdir for the next test case
-    #     shutil.rmtree(Path(wkdir / '.compiled'))
-    #     self._set_up_wkdir()
+        # Set up wkdir for the next test case
+        shutil.rmtree(Path(wkdir / '.compiled'))
+        self._set_up_wkdir()
 
-    # def test_bad_task_ref(self):
-    #     """
-    #     `prism compile` fails in a project with a bad mod ref
-    #     """
+    def test_bad_task_ref(self):
+        """
+        `prism compile` fails in a project with a bad mod ref
+        """
 
-    #     # Set working directory
-    #     wkdir = Path(TEST_PROJECTS) / '011_bad_task_ref'
-    #     os.chdir(wkdir)
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '011_bad_task_ref'
+        os.chdir(wkdir)
 
-    #     # Remove the .compiled directory, if it exists
-    #     if Path(wkdir / '.compiled').is_dir():
-    #         shutil.rmtree(Path(wkdir / '.compiled'))
+        # Remove the .compiled directory, if it exists
+        if Path(wkdir / '.compiled').is_dir():
+            shutil.rmtree(Path(wkdir / '.compiled'))
 
-    #     args = ['compile']
-    #     compile_run = self._run_prism(args)
-    #     compile_run_results = compile_run.get_results()
-    #     self.assertEqual(
-    #         ' | '.join(project_with_error_expected_events),
-    #         compile_run_results
-    #     )
+        args = ['compile']
+        compile_run = self._run_prism(args)
+        compile_run_results = compile_run.get_results()
+        self.assertEqual(
+            ' | '.join(project_with_error_expected_events),
+            compile_run_results
+        )
 
-    #     # Check that .compiled directory is not created
-    #     self.assertTrue(Path(wkdir / '.compiled').is_dir())
-    #     self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+        # Check that .compiled directory is not created
+        self.assertTrue(Path(wkdir / '.compiled').is_dir())
+        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
 
-    #     # Set up wkdir for the next test case
-    #     shutil.rmtree(Path(wkdir / '.compiled'))
-    #     self._set_up_wkdir()
+        # Set up wkdir for the next test case
+        shutil.rmtree(Path(wkdir / '.compiled'))
+        self._set_up_wkdir()
+
+    def test_project_with_local_tasks(self):
+        """
+        `prism compile` works as expected with multiple tasks are defined in a single
+        file and `local` is correctly specified
+        """
+        pass
+
+    def test_project_with_bad_local_tasks(self):
+        """
+        `prism compile` works as expected with multiple tasks are defined in a single
+        file and `local` is not used
+        """
+        pass
