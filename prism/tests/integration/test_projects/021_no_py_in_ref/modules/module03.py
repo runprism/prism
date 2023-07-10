@@ -1,3 +1,4 @@
+
 ###########
 # Imports #
 ###########
@@ -7,17 +8,14 @@ import prism.task
 import prism.target
 import prism.decorators
 
-# Prism project imports
-import prism_project
 
-
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Task03(prism.task.PrismTask):
-    
-    ## Run
+
+    # Run
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -25,15 +23,12 @@ class Task03(prism.task.PrismTask):
         args:
             tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
-                - hooks.dbt_ref --> for getting dbt tasks as a pandas DataFrame
-                - hooks.sql     --> for executing sql query using an adapter in profile YML
-                - hooks.spark   --> for accessing SparkSession (if pyspark specified in profile YML)
+            - hooks.dbt_ref --> for getting dbt tasks as a pandas DataFrame
+            - hooks.sql     --> for executing sql query using an adapter in profile YML
+            - hooks.spark   --> for accessing SparkSession
         returns:
             task output
         """
-        with open(tasks.ref('task02')) as f:
+        with open(tasks.ref('module02')) as f:
             lines = f.read()
         return lines + '\n' + 'Hello from task 3!'
-
-
-# EOF
