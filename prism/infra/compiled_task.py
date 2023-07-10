@@ -77,10 +77,10 @@ class CompiledTask:
         # If the task is a class, the variables will be stored in class attributes
         if isinstance(prism_task_node, ast.ClassDef):
             retries = self.ast_parser.get_variable_assignments(
-                self.ast_parser.ast_task, 'RETRIES'
+                prism_task_node, 'RETRIES'
             )
             retry_delay_seconds = self.ast_parser.get_variable_assignments(
-                self.ast_parser.ast_task, 'RETRY_DELAY_SECONDS'
+                prism_task_node, 'RETRY_DELAY_SECONDS'
             )
 
         # If the task is a decorated function, the variables will be stored as keyword

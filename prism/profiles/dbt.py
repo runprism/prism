@@ -280,9 +280,9 @@ class Dbt(Adapter):
         return adapter
 
     def get_parsed_task_node(self,
-        target_task_name: str,
-        target_task_package: Optional[str],
-        target_task_version: Optional[str],
+        target_model_name: str,
+        target_model_package: Optional[str],
+        target_model_version: Optional[str],
         project_dir: str,
         manifest: Manifest
     ) -> ResultNode:
@@ -290,7 +290,7 @@ class Dbt(Adapter):
         Get the node associated with the inputted target task
 
         args:
-            target_task_name: name of task to retrieve from manifest
+            target_model_name: name of task to retrieve from manifest
             target_package_name: package containing task
             project_dir: project directory
             manifest: dbt Manifest
@@ -303,31 +303,31 @@ class Dbt(Adapter):
         # version for now.
 
         # TODO: test target task creation where node_package != project_dir
-        target_task: MaybeNonSource = manifest.resolve_ref(
-            target_task_name=target_task_name,
-            target_task_package=target_task_package,
-            target_task_version=target_task_version,
+        target_model: MaybeNonSource = manifest.resolve_ref(
+            target_model_name=target_model_name,
+            target_model_package=target_model_package,
+            target_model_version=target_model_version,
             current_project=project_dir,
             node_package=project_dir
         )
 
         # If task isn't found, then throw an error.
-        package_str = f"'{target_task_package}'." if target_task_package is not None else ""  # noqa: E501
-        task_str = f"{package_str}'{target_task_name}'"
-        if target_task is None:
+        package_str = f"'{target_model_package}'." if target_model_package is not None else ""  # noqa: E501
+        task_str = f"{package_str}'{target_model_name}'"
+        if target_model is None:
             raise prism.exceptions.RuntimeException(
                 message=f'could not find task dbt task `{task_str}`'
             )
 
         # The task could be disabled
-        if isinstance(target_task, Disabled):
+        if isinstance(target_model, Disabled):
             raise prism.exceptions.RuntimeException(
                 message=f'dbt task `{task_str}` is disabled'
             )
 
-        return target_task
+        return target_model
 
-    def get_target_task_relation(self,
+    def get_target_model_relation(self,
         target: ResultNode,
         adapter: SQLAdapter,
         manifest: Manifest
@@ -425,15 +425,15 @@ class Dbt(Adapter):
             pandas DataFrame
         """
         # Convert inputs into package and task name
-        target_task_name = target_1
+        target_model_name = target_1
         target_package_name = None
         if target_2 is not None:
             target_package_name = target_1
-            target_task_name = target_2
+            target_model_name = target_2
 
         # Get target task
-        target_task = self.get_parsed_task_node(
-            target_task_name,
+        target_model = self.get_parsed_task_node(
+            target_model_name,
             target_package_name,
             target_version,
             self.dbt_project_dir,
@@ -441,14 +441,14 @@ class Dbt(Adapter):
         )
 
         # Get relation
-        target_task_relation = self.get_target_task_relation(
-            target_task,
+        target_model_relation = self.get_target_model_relation(
+            target_model,
             self.adapter,
             self.manifest
         )
 
         # Download task
-        query = f"SELECT * FROM {target_task_relation}"
+        query = f"SELECT * FROM {target_model_relation}"
         response, result = self.execute_sql(self.adapter, query)
         df = self.remote_result_to_pd(result)
         return df
