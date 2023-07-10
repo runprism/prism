@@ -459,7 +459,7 @@ class AstParser:
                             # an error.
                             if relative_path == self.task_relative_path:
                                 raise prism.exceptions.ReferenceException(
-                                    'Are you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`'  # noqa: E501
+                                    '\n\nAre you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`'  # noqa: E501
                                 )
 
                             # Now, get the ref'd task. If the argument is in the format

@@ -197,11 +197,13 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         extract_task01_refs = self._load_task_refs(
             "extract/module01",
             'Task01',
-            manifest)
+            manifest
+        )
         extract_task02_refs = self._load_task_refs(
             "extract/module02",
             'Task02',
-            manifest)
+            manifest
+        )
         load_task03_refs = self._load_task_refs(
             "load/module03",
             'Task03',
@@ -255,11 +257,72 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         `prism compile` works as expected with multiple tasks are defined in a single
         file and `local` is correctly specified
         """
-        pass
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '022_project_with_local_tasks'
+        os.chdir(wkdir)
+
+        # Remove compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Compile the project
+        args = ['compile']
+        compile_run = self._run_prism(args)
+        compile_run_results = compile_run.get_results()
+        self.assertEqual(
+            ' | '.join(simple_project_expected_events),
+            compile_run_results
+        )
+
+        # Check elements of manifest
+        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
+        extract_refs = self._load_task_refs(
+            "extract",
+            'extract',
+            manifest
+        )
+        transform_refs = self._load_task_refs(
+            "transform_load",
+            'transform',
+            manifest
+        )
+        load_refs = self._load_task_refs(
+            "transform_load",
+            'load',
+            manifest
+        )
+        self.assertEqual([], extract_refs)
+        self.assertEqual(["extract.extract"], transform_refs)
+        self.assertEqual(["transform_load.transform"], load_refs)
+
+        # Set up wkdir for the next test case
+        shutil.rmtree(Path(wkdir / '.compiled'))
+        self._set_up_wkdir()
 
     def test_project_with_bad_local_tasks(self):
         """
         `prism compile` works as expected with multiple tasks are defined in a single
-        file and `local` is not used
+        file and `local` is correctly specified
         """
-        pass
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '023_project_with_bad_local_tasks'
+        os.chdir(wkdir)
+
+        # Remove compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Compile the project
+        args = ['compile']
+        compile_run = self._run_prism(args)
+        compile_run_results = compile_run.get_results()
+        self.assertEqual(
+            ' | '.join(project_with_error_expected_events),
+            compile_run_results
+        )
+
+        # Check that .compiled directory is not created
+        self.assertTrue(Path(wkdir / '.compiled').is_dir())
+        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+
+        # Set up wkdir for the next test case
+        shutil.rmtree(Path(wkdir / '.compiled'))
+        self._set_up_wkdir()
