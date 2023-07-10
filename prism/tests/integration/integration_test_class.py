@@ -29,7 +29,6 @@ from typing import Any, Dict, List
 
 # Prism imports
 import prism.cli.base
-from prism.infra import compiler
 import prism.prism_logging
 
 # Ignore ResourceWarnings introduced by boto3
