@@ -1,3 +1,4 @@
+
 ###########
 # Imports #
 ###########
@@ -11,17 +12,17 @@ import prism.decorators
 import prism_project
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
-class Task02(prism.task.PrismTask):
+class TxtTask(prism.task.PrismTask):
 
-    ## Run    
-    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'target_txt.txt')
+    # Run
+    @prism.decorators.target(
+        type=prism.target.Txt,
+        loc=prism_project.OUTPUT / 'target_txt.txt'
+    )
     def run(self, tasks, hooks):
         string = "Hello, world!"
         return string
-
-
-# EOF

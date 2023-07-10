@@ -1,3 +1,4 @@
+
 ###########
 # Imports #
 ###########
@@ -14,15 +15,23 @@ import prism_project
 import pandas as pd
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
-class Task03(prism.task.PrismTask):
+class MultipleCsvTargetsTask(prism.task.PrismTask):
 
-    ## Run    
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'target_csv_mult_df1.csv', index=False)
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'target_csv_mult_df2.csv', index=False)
+    # Run
+    @prism.decorators.target(
+        type=prism.target.PandasCsv,
+        loc=prism_project.OUTPUT / 'target_csv_mult_df1.csv',
+        index=False
+    )
+    @prism.decorators.target(
+        type=prism.target.PandasCsv,
+        loc=prism_project.OUTPUT / 'target_csv_mult_df2.csv',
+        index=False
+    )
     def run(self, tasks, hooks):
         data1 = {
             'col1': ['col1_value1', 'col1_value2', 'col1_value3'],
@@ -43,8 +52,5 @@ class Task03(prism.task.PrismTask):
         }
         df1 = pd.DataFrame(data1)
         df2 = pd.DataFrame(data2)
-        
+
         return df1, df2
-
-
-# EOF

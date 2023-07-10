@@ -58,8 +58,15 @@ class TestTargetIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        for task in ['parquet.py', 'txt.py', 'csv.py', 'csv_mult.py']:
-            refs = self._load_task_refs(task, manifest)
+        for module_name, task_name in zip(
+            ['parquet.py', 'txt.py', 'csv.py', 'csv_mult.py', 'csv_iter.py'],
+            ["ParquetTask", "TxtTask", "BasicCsvTask", "MultipleCsvsTask", "CsvIteratorTask"]  # noqa: E501
+        ):
+            refs = self._load_task_refs(
+                module_name=module_name,
+                task_name=task_name,
+                manifest=manifest,
+            )
             self.assertEqual([], refs)
 
         # Check contents of output

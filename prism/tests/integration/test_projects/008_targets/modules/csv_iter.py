@@ -1,3 +1,4 @@
+
 ###########
 # Imports #
 ###########
@@ -14,14 +15,18 @@ import prism_project
 import pandas as pd
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class CsvIteratorTask(prism.task.PrismTask):
 
-    ## Run    
-    @prism.decorators.target_iterator(type=prism.target.PandasCsv, loc=prism_project.OUTPUT, index=False)
+    # Run
+    @prism.decorators.target_iterator(
+        type=prism.target.PandasCsv,
+        loc=prism_project.OUTPUT,
+        index=False
+    )
     def run(self, tasks, hooks):
         data1 = {
             'col1': ['col1_value1', 'col1_value2', 'col1_value3'],
@@ -47,6 +52,3 @@ class CsvIteratorTask(prism.task.PrismTask):
             'target_csv_iter_df1.csv': df1,
             'target_csv_iter_df2.csv': df2,
         }
-
-
-# EOF

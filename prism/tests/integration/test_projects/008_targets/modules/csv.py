@@ -1,3 +1,4 @@
+
 ###########
 # Imports #
 ###########
@@ -14,14 +15,17 @@ import prism_project
 import pandas as pd
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
-class Task03(prism.task.PrismTask):
+class BasicCsvTask(prism.task.PrismTask):
 
-    ## Run    
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'target_csv.csv', index=False)
+    # Run
+    @prism.decorators.target(
+        type=prism.target.PandasCsv,
+        loc=prism_project.OUTPUT / 'target_csv.csv', index=False
+    )
     def run(self, tasks, hooks):
         data = {
             'col1': ['col1_value1', 'col1_value2', 'col1_value3'],
@@ -33,6 +37,3 @@ class Task03(prism.task.PrismTask):
         }
         df = pd.DataFrame(data)
         return df
-
-
-# EOF
