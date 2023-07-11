@@ -19,7 +19,7 @@ import pandas as pd
 # Class definition #
 ####################
 
-class MultipleCsvTargetsTask(prism.task.PrismTask):
+class MultipleCsvsTask(prism.task.PrismTask):
 
     # Run
     @prism.decorators.target(
