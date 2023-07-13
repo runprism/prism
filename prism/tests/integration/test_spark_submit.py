@@ -12,11 +12,15 @@ Table of Contents:
 ###########
 
 # Standard library imports
+from io import StringIO
 import os
 from pathlib import Path
 import pandas as pd
 
 # Prism imports
+from click.testing import CliRunner
+from prism.main import cli
+from prism.prism_logging import string_stream_handler
 import prism.tests.integration.integration_test_class as integration_test_class
 
 
@@ -44,6 +48,10 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         # Set working directory
         wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null_tasks'
         os.chdir(wkdir)
+
+        # Update logger streamer
+        new_streamer = StringIO()
+        string_stream_handler.setStream(new_streamer)
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
@@ -75,6 +83,10 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         wkdir = Path(TEST_PROJECTS) / '007_spark_project'
         os.chdir(wkdir)
 
+        # Update logger streamer
+        new_streamer = StringIO()
+        string_stream_handler.setStream(new_streamer)
+
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
 
@@ -89,15 +101,20 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("module01.py", manifest)
-        task02_refs = self._load_task_refs("module02.py", manifest)
-        task03_refs = self._load_task_refs("module03.py", manifest)
-        task04_refs = self._load_task_refs("module04.py", manifest)
+        task01_refs = self._load_task_refs("module01", "Task01", manifest)
+        task02_refs = self._load_task_refs("module02", "Task02", manifest)
+        task03_refs = self._load_task_refs("module03", "Task03", manifest)
+        task04_refs = self._load_task_refs("module04", "Task04", manifest)
 
         self.assertEqual([], task01_refs)
-        self.assertEqual('module01.py', task02_refs)
-        self.assertEqual('module02.py', task03_refs)
-        self.assertEqual('module03.py', task04_refs)
+        self.assertEqual(['module01.Task01'], task02_refs)
+        self.assertEqual(['module02.Task02'], task03_refs)
+        self.assertEqual(['module03.Task03'], task04_refs)
+
+        # Check output
+        self.assertTrue(Path(wkdir / 'output' / 'task01').is_dir())
+        self.assertTrue(Path(wkdir / 'output' / 'task02').is_dir())
+        self.assertTrue(Path(wkdir / 'output' / 'task04').is_dir())
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
@@ -119,6 +136,10 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         wkdir = Path(TEST_PROJECTS) / '007_spark_project'
         os.chdir(wkdir)
 
+        # Update logger streamer
+        new_streamer = StringIO()
+        string_stream_handler.setStream(new_streamer)
+
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
 
@@ -131,22 +152,22 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # Expecatation: task 1 is the first task in the DAG. Therefore, we should
         # not encounter any errors with this command.
-        args = ['spark-submit', '--task', 'module01.py']
+        args = ['spark-submit', '--task', 'module01']
         self._run_prism(args)
 
         # Check manifest
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("module01.py", manifest)
-        task02_refs = self._load_task_refs("module02.py", manifest)
-        task03_refs = self._load_task_refs("module03.py", manifest)
-        task04_refs = self._load_task_refs("module04.py", manifest)
+        task01_refs = self._load_task_refs("module01", "Task01", manifest)
+        task02_refs = self._load_task_refs("module02", "Task02", manifest)
+        task03_refs = self._load_task_refs("module03", "Task03", manifest)
+        task04_refs = self._load_task_refs("module04", "Task04", manifest)
 
         self.assertEqual([], task01_refs)
-        self.assertEqual('module01.py', task02_refs)
-        self.assertEqual('module02.py', task03_refs)
-        self.assertEqual('module03.py', task04_refs)
+        self.assertEqual(['module01.Task01'], task02_refs)
+        self.assertEqual(['module02.Task02'], task03_refs)
+        self.assertEqual(['module03.Task03'], task04_refs)
 
         # Check the results of the output directory
         self.assertTrue(Path(wkdir / 'output' / 'task01').is_dir())
@@ -163,7 +184,7 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         # 1, and the output of task 1 is stored in a target, we do not need to re-run
         # task 1 in order to run task 2. Therefore, we should not encounter any
         # errors with this command.
-        args = ['spark-submit', '--task', 'module02.py']
+        args = ['spark-submit', '--task', 'module02']
         self._run_prism(args)
 
         # Check the results of the output directory
@@ -187,13 +208,13 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
 
         # -------------------------------------
         # Execute command without `all-upstream`
-        args = ['spark-submit', '--task', 'module04.py']
+        args = ['spark-submit', '--task', 'module04']
         self._run_prism(args)
         self.assertFalse(Path(wkdir / 'output' / 'task04').is_dir())
 
         # -----------------------------------
         # Execute command with `all-upstream`
-        args = ['spark-submit', '--task', 'module04.py', '--all-upstream']
+        args = ['spark-submit', '--task', 'module04', '--all-upstream']
         self._run_prism(args)
         self.assertTrue(Path(wkdir / 'output' / 'task04').is_dir())
         task04_df = pd.read_parquet(Path(wkdir / 'output' / 'task04'))
@@ -225,6 +246,10 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         wkdir = Path(TEST_PROJECTS) / '007_spark_project'
         os.chdir(wkdir)
 
+        # Update logger streamer
+        new_streamer = StringIO()
+        string_stream_handler.setStream(new_streamer)
+
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
 
@@ -232,22 +257,22 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         self._remove_dirs_in_output(wkdir)
 
         # Run all tasks downstream of module01.py
-        args = ['spark-submit', '--task', 'module01.py', '--all-downstream']
+        args = ['spark-submit', '--task', 'module01', '--all-downstream']
         self._run_prism(args)
 
         # Check manifest
         self.assertTrue(Path(wkdir / '.compiled').is_dir())
         self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
         manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("module01.py", manifest)
-        task02_refs = self._load_task_refs("module02.py", manifest)
-        task03_refs = self._load_task_refs("module03.py", manifest)
-        task04_refs = self._load_task_refs("module04.py", manifest)
+        task01_refs = self._load_task_refs("module01", "Task01", manifest)
+        task02_refs = self._load_task_refs("module02", "Task02", manifest)
+        task03_refs = self._load_task_refs("module03", "Task03", manifest)
+        task04_refs = self._load_task_refs("module04", "Task04", manifest)
 
         self.assertEqual([], task01_refs)
-        self.assertEqual('module01.py', task02_refs)
-        self.assertEqual('module02.py', task03_refs)
-        self.assertEqual('module03.py', task04_refs)
+        self.assertEqual(['module01.Task01'], task02_refs)
+        self.assertEqual(['module02.Task02'], task03_refs)
+        self.assertEqual(['module03.Task03'], task04_refs)
 
         # ------------------------------------------------------------------------------
         # Check the results of the output directory
@@ -285,6 +310,45 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         task04_df.reset_index(inplace=True)
         task04_df.drop(columns=['index'], inplace=True)
         self.assertEqual('col1_value4', task04_df['col1'][0])
+
+        # ----------------------------------
+        # Cleanup
+
+        # Remove parquet files from outputs (to avoid re-comitting to Github)
+        self._remove_parquet_files_in_dir(Path(wkdir / 'output' / 'task01'))
+        self._remove_parquet_files_in_dir(Path(wkdir / 'output' / 'task02'))
+        self._remove_parquet_files_in_dir(Path(wkdir / 'output' / 'task04'))
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Set up wkdir for next test
+        self._set_up_wkdir()
+
+    def test_py_in_task_arg(self):
+        """
+        If `.py` is included in a `--task` arg with `prism spark-submit`, Prism throws
+        a warning
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '007_spark_project'
+        os.chdir(wkdir)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_dirs_in_output(wkdir)
+
+        # Run all tasks downstream of module01.py
+        args = ['spark-submit', '--task', 'module01.py', '--all-downstream']
+        runner = CliRunner()
+        result = runner.invoke(cli, args)
+        expected_msg = "ArgumentWarning: `.py` in --task arguments will be an error in a future version of Prism.\n"  # noqa: E501
+        self.assertEqual(expected_msg, result.output)
+        self.assertEqual(0, result.exit_code)
 
         # ----------------------------------
         # Cleanup
