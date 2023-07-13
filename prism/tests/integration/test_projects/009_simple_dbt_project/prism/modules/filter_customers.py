@@ -11,13 +11,13 @@ import prism.decorators
 import prism_project
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class FilterCustomers(prism.task.PrismTask):
 
-    ## Run    
+    # Run    
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'jaffle_shop_customers.csv', index=False)
     def run(self, tasks, hooks):
         df = hooks.dbt_ref('dbt_profile', 'customers')

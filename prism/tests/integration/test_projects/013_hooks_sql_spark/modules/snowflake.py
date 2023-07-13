@@ -15,13 +15,13 @@ import time
 import pandas as pd
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class SnowflakeTask(prism.task.PrismTask):
 
-    ## Run
+    # Run
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'machinery_sample.csv', index=False)
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'household_sample.csv', index=False)
     def run(self, tasks, hooks):

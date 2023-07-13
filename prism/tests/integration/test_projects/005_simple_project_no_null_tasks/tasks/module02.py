@@ -8,14 +8,21 @@ import prism.task
 import prism.target
 import prism.decorators
 
+# Prism project imports
+import prism_project
+
 
 ####################
 # Class definition #
 ####################
 
-class Task04(prism.task.PrismTask):
+class Task02(prism.task.PrismTask):
 
     # Run
+    @prism.decorators.target(
+        type=prism.target.Txt,
+        loc=prism_project.OUTPUT / 'task02.txt'
+    )
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -29,4 +36,8 @@ class Task04(prism.task.PrismTask):
         returns:
             task output
         """
-        return tasks.ref('module03') + "\n" + "Hello from task 4!"
+        # Use the module name and the task name to get the task output
+        with open(tasks.ref('module01.Task01'), 'r') as f:
+            lines = f.read()
+        f.close()
+        return lines + "\n" + "Hello from task 2!"

@@ -13,6 +13,7 @@ Table of Contents
 ###########
 
 # General package imports
+from io import StringIO
 import argparse
 import re
 import os
@@ -201,7 +202,17 @@ class FormatterWithAnsi(logging.Formatter):
             return formatter.format(record)
 
 
+class FileHandlerFormatter(FormatterWithAnsi):
+    def format(self, record):
+        return escape_ansi(super().format(record))
+
+
 DEFAULT_LOGGER: logging.Logger
+
+# String handler
+string_streamer = StringIO()
+string_stream_handler = logging.StreamHandler(stream=string_streamer)
+string_stream_handler.setFormatter(FileHandlerFormatter())
 
 
 def set_up_logger(args: argparse.Namespace):
@@ -232,10 +243,6 @@ def set_up_logger(args: argparse.Namespace):
         handler.setFormatter(FormatterWithAnsi())
 
         # File handler -- remove ANSI codes
-        class FileHandlerFormatter(FormatterWithAnsi):
-            def format(self, record):
-                return escape_ansi(super().format(record))
-
         file_handler = logging.FileHandler('logs.log')
         file_handler = _set_level(file_handler, args.log_level)
         file_handler.setLevel(logging.INFO)
@@ -244,6 +251,7 @@ def set_up_logger(args: argparse.Namespace):
         # Add handlers
         DEFAULT_LOGGER.addHandler(file_handler)
         DEFAULT_LOGGER.addHandler(handler)
+        DEFAULT_LOGGER.addHandler(string_stream_handler)
 
 
 #################

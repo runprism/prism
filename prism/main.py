@@ -82,14 +82,6 @@ def _process_tasks(inputted_tasks) -> Optional[List[Any]]:
             click.echo(
                 f'{YELLOW}ArgumentWarning: `.py` in --task arguments will be an error in a future version of Prism.{RESET}'  # noqa: E501
             )
-
-        # If the user wants to run a specific task but doesn't put .py at the end,
-        # then add it in.
-        if (
-            len(re.findall(r'\.py$', processed)) == 0
-            and len(re.findall(r'\/\*$', processed)) == 0  # noqa: W503
-        ):
-            processed = f'{processed}.py'
         processed_tasks.append(processed)
 
     if len(processed_tasks) > 0:

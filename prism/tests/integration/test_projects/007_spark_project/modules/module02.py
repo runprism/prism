@@ -14,13 +14,13 @@ import prism_project
 import pyspark.sql.functions as F
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Task02(prism.task.PrismTask):
 
-    ## Run
+    # Run
     @prism.decorators.target(type=prism.target.PySparkParquet, loc=str(prism_project.OUTPUT / 'task02'), mode='overwrite')
     def run(self, tasks, hooks):
         """

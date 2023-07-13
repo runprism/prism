@@ -16,9 +16,9 @@ import pandas as pd
 import pyspark.sql.functions as F
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class PysparkTask(prism.task.PrismTask):
     

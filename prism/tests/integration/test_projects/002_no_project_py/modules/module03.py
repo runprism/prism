@@ -8,13 +8,13 @@ import prism.target
 import prism.decorators
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Task03(prism.task.PrismTask):
 
-    ## Run
+    # Run
     def run(self, tasks, hooks):
         """
         Execute task.

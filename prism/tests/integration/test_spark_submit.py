@@ -42,7 +42,7 @@ class TestSparkSubmitIntegration(integration_test_class.IntegrationTestCase):
         self.maxDiff = None
 
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null'
+        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null_tasks'
         os.chdir(wkdir)
 
         # Remove the .compiled directory, if it exists

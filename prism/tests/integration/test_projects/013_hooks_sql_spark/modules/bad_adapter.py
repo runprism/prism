@@ -16,13 +16,13 @@ import pandas as pd
 import pyspark.sql.functions as F
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class BadAdapterTask(prism.task.PrismTask):
     
-    ## Run
+    # Run
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'bad_adapter.csv', index=False)
     def run(self, tasks, hooks):
         """

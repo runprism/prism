@@ -1,4 +1,3 @@
-
 ###########
 # Imports #
 ###########
@@ -13,7 +12,7 @@ import prism.decorators
 # Class definition #
 ####################
 
-class Task03(prism.task.PrismTask):
+class Task01(prism.task.PrismTask):
 
     # Run
     def run(self, tasks, hooks):
@@ -29,6 +28,4 @@ class Task03(prism.task.PrismTask):
         returns:
             task output
         """
-        with open(tasks.ref('module02')) as f:
-            lines = f.read()
-        return lines + '\n' + 'Hello from task 3!'
+        return "Hello from task 1!"

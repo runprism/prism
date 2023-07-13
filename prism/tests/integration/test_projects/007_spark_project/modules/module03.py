@@ -14,13 +14,13 @@ import prism_project
 import pyspark.sql.functions as F
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Task03(prism.task.PrismTask):
 
-    ## Run
+    # Run
     def run(self, tasks, hooks):
         """
         Execute task.

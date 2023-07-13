@@ -127,7 +127,7 @@ class DagExecutor:
         # Keep track of events
         event_list: List[Event] = []
         if task_manager == 0:
-            base_event_manager.EventManagerOutput(0, None, event_list)
+            return base_event_manager.EventManagerOutput(0, None, event_list)
         task_name = task.task_var_name
         relative_path = task.task_relative_path
 
@@ -164,7 +164,7 @@ class DagExecutor:
         # Instances of DagExecutor will only be called within the project directory.
         # Therefore, __files__ should be tasks/{name of script}
         self.run_context['__file__'] = str(
-            self.project_dir / f'tasks/{str(relative_path)}'
+            Path(self.compiled_dag.tasks_dir) / str(relative_path)
         )
 
         # Execute the task with appropriate number of retries
@@ -178,12 +178,16 @@ class DagExecutor:
         all_events = []
 
         while num_runs != num_expected_runs and outputs == 0:
+            # Keep track of script events
+            script_event_list = []
+
             num_runs += 1
             if num_runs > 1:
-                event_list = fire_console_event(
+                script_event_list = fire_console_event(
                     prism.prism_logging.DelayEvent(
                         name, retry_delay_seconds
                     ),
+                    script_event_list,
                     log_level='warn'
                 )
                 time.sleep(retry_delay_seconds)
@@ -199,13 +203,13 @@ class DagExecutor:
                 func=task.exec
             )
             script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(  # noqa: E501
-                event_list,
+                script_event_list,
                 fire_exec_events,
                 fire_empty_line_events,
                 run_context=self.run_context,
                 task_manager=task_manager,
                 hooks=hooks,
-                explicit_run=relative_path not in self.nodes_not_explicitly_run,
+                explicit_run=task.task_var_name not in self.nodes_not_explicitly_run,
                 user_context=user_context
             )
 

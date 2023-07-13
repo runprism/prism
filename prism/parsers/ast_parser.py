@@ -278,7 +278,7 @@ class AstParser:
                         message=f"{self.task_relative_path}.{task_name}: `task` argument in `tasks.ref()` must be a string"  # noqa: E501
                     )
 
-                if i == 1 and isinstance(tmp_value, bool):
+                if i == 1 and not isinstance(tmp_value, bool):
                     raise prism.exceptions.ReferenceException(
                         message=f"{self.task_relative_path}.{task_name}: `local` argument in `tasks.ref()` must be a bool"  # noqa: E501
                     )

@@ -12,6 +12,7 @@ from prism.decorators import (
 import prism_project
 
 # Other imports
+import json
 from pathlib import Path
 
 
@@ -21,10 +22,18 @@ from pathlib import Path
 
 @task()
 def transform(tasks, hooks):
-    data = tasks.ref("extract.extract")
+    data_path = tasks.ref("extract.extract")
+    with open(data_path, 'r') as f:
+        data = json.loads(f.read())
 
-    # Filter to countries whose status is `independent`
-    independent_countries = [c for c in data if c["independent"]]
+    # Filter
+    independent_countries = []
+    for c in data:
+        try:
+            if c["independent"]:
+                independent_countries.append(c)
+        except KeyError:
+            continue
     return independent_countries
 
 

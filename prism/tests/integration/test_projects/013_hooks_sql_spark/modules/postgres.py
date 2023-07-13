@@ -17,7 +17,7 @@ import prism_project
 
 class PostgresTask(prism.task.PrismTask):
     
-    ## Run
+    # Run
     @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'sample_postgres_data.csv', index=False)
     def run(self, tasks, hooks):
         """

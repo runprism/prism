@@ -28,7 +28,7 @@ TEST_CASE_WKDIR = os.path.dirname(__file__)
 TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 
 # Project directories
-P005_SIMPLE_PROJECT_NO_NULL = Path(TEST_PROJECTS / '022_project_with_local_tasks')
+P005_SIMPLE_PROJECT_NO_NULL = Path(TEST_PROJECTS / '021_project_with_local_tasks')
 
 
 ###################
@@ -80,7 +80,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         self.maxDiff = None
 
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '022_project_with_local_tasks'
+        wkdir = Path(TEST_PROJECTS) / '021_project_with_local_tasks'
         os.chdir(wkdir)
 
         # First, check that `triggers.yml` does not exist in the project
@@ -111,7 +111,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         self.maxDiff = None
 
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '022_project_with_local_tasks'
+        wkdir = Path(TEST_PROJECTS) / '021_project_with_local_tasks'
         os.chdir(wkdir)
 
         # First, check that `dummy_task.py` does not exist in the project
@@ -159,7 +159,7 @@ class TestCreate(integration_test_class.IntegrationTestCase):
         self.maxDiff = None
 
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '022_project_with_local_tasks'
+        wkdir = Path(TEST_PROJECTS) / '021_project_with_local_tasks'
         os.chdir(wkdir)
 
         # First, check that `dummy_task.py` does not exist in the project

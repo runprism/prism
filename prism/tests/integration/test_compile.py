@@ -252,54 +252,13 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
 
-    def test_simple_project_no_py_in_ref(self):
-        """
-        `prism run` on simple project where `tasks/` is included in the `--task`
-        CLI argument
-        """
-        self.maxDiff = None
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '021_no_py_in_ref'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Compile the project
-        args = ['compile']
-        compile_run = self._run_prism(args)
-        compile_run_results = compile_run.get_results()
-        self.assertEqual(
-            ' | '.join(simple_project_expected_events),
-            compile_run_results
-        )
-
-        # Check elements of manifest
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        module01_refs = self._load_task_refs("module01", 'Task01', manifest)
-        module02_refs = self._load_task_refs("module02", 'Task02', manifest)
-        module03_refs = self._load_task_refs("module03", 'Task03', manifest)
-        module04_refs = self._load_task_refs("module04", 'Task04', manifest)
-        self.assertEqual([], module01_refs)
-        self.assertEqual(["module01.Task01"], module02_refs)
-        self.assertEqual(["module02.Task02"], module03_refs)
-        self.assertEqual(["module03.Task03"], module04_refs)
-
-        # Set up wkdir for the next test case
-        shutil.rmtree(Path(wkdir / '.compiled'))
-        self._set_up_wkdir()
-
     def test_project_with_local_tasks(self):
         """
         `prism compile` works as expected with multiple tasks are defined in a single
         file and `local` is correctly specified
         """
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '022_project_with_local_tasks'
+        wkdir = Path(TEST_PROJECTS) / '021_project_with_local_tasks'
         os.chdir(wkdir)
 
         # Remove compiled directory, if it exists
@@ -345,7 +304,7 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         file and `local` is correctly specified
         """
         # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '023_project_with_bad_local_tasks'
+        wkdir = Path(TEST_PROJECTS) / '022_project_with_bad_local_tasks'
         os.chdir(wkdir)
 
         # Remove compiled directory, if it exists

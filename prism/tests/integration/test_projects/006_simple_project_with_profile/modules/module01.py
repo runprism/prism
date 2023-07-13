@@ -11,13 +11,13 @@ import prism.decorators
 import prism_project
 
 
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class Task01(prism.task.PrismTask):
 
-    ## Run
+    # Run
     @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'task01.txt')
     def run(self, tasks, hooks):
         """

@@ -172,7 +172,7 @@ class CompileMixin():
         args: argparse.Namespace,
         tasks_dir: Path,
         all_parsed_tasks: List[AstParser],
-    ) -> List[Path]:
+    ) -> List[str]:
         """
         Process user arg tasks
 
@@ -192,8 +192,9 @@ class CompileMixin():
 
             # Otherwise, iterate through the user arguments
             else:
-                processed_tasks: Optional[List[str]] = None
+                processed_tasks: List[str] = []
                 for m in raw_tasks:
+                    curr_m_tasks: List[str] = []
 
                     # Check if * is used. If so, get the tasks contained with all
                     # modules in the parent path (i.e., if `extract/*` is used, get the
@@ -206,7 +207,7 @@ class CompileMixin():
                         parsed_subset = [
                             _p for _p in all_parsed_tasks if _p.task_relative_path.parent == Path(parent)  # noqa: E501
                         ]
-                        processed_tasks = self.get_task_names(parsed_subset)
+                        curr_m_tasks = self.get_task_names(parsed_subset)
 
                     # Check if path is a directory
                     elif Path(tasks_dir / m).is_dir():
@@ -237,14 +238,15 @@ class CompileMixin():
                         parsed_subset = [
                             _p for _p in all_parsed_tasks if _p.task_relative_path == Path(f"{m_split[0]}.py")  # noqa: E501
                         ]
-                        processed_tasks = self.get_task_names(parsed_subset)
+                        curr_m_tasks = self.get_task_names(parsed_subset)
 
                         # If the user wants a specific task within the module, then
                         # update `processed_tasks`
                         if len(m_split) > 1:
-                            processed_tasks = [
-                                p for p in processed_tasks if p.split(".")[1] == m_split[1]  # noqa: E501
+                            curr_m_tasks = [
+                                p for p in curr_m_tasks if p.split(".")[1] == m_split[1]
                             ]
+                    processed_tasks += curr_m_tasks
 
             return processed_tasks
 
