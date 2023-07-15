@@ -16,9 +16,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 import re
 
-# Prism imports
-import prism.exceptions
-
 
 ####################
 # Class definition #
@@ -43,15 +40,7 @@ class TaskManifest:
         target_module_no_py = re.sub(r'\.py$', '', str(target_module))
         if target_module_no_py not in self.manifest_dict["refs"].keys():
             self.manifest_dict["refs"][target_module_no_py] = {}
-
-        # If the task is already in the manifest, then raise an error, because we'd
-        # be double-adding the refs
-        if target_task in self.manifest_dict["refs"][target_module_no_py].keys():  # noqa: E501
-            raise prism.exceptions.ParserException(
-                message=f"manifest already contains refs for task `{target_module_no_py}.{target_task}`"  # noqa: E501
-            )
-        else:
-            self.manifest_dict["refs"][target_module_no_py][target_task] = sources
+        self.manifest_dict["refs"][target_module_no_py][target_task] = sources
 
     def add_targets(self,
         module_relative_path: Path,
@@ -61,15 +50,7 @@ class TaskManifest:
         module_name_no_py = re.sub(r'\.py$', '', str(module_relative_path))
         if module_name_no_py not in self.manifest_dict["targets"].keys():
             self.manifest_dict["targets"][module_name_no_py] = {}
-
-        # If the task is already in the manifest, then raise an error, because we'd
-        # be double-adding the targets
-        if task_name in self.manifest_dict["targets"][module_name_no_py].keys():  # noqa: E501
-            raise prism.exceptions.ParserException(
-                message=f"manifest already contains targets for task `{module_name_no_py}.{task_name}`"  # noqa: E501
-            )
-        else:
-            self.manifest_dict["targets"][module_name_no_py][task_name] = locs
+        self.manifest_dict["targets"][module_name_no_py][task_name] = locs
 
 
 class Manifest:

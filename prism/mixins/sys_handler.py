@@ -134,4 +134,9 @@ class SysHandlerMixin:
         # Delete tasks
         for mod in mods_to_del:
             del globals_dict['sys'].modules[mod]
+            try:
+                del globals_dict[mod]
+            except KeyError:
+                continue
+
         return globals_dict
