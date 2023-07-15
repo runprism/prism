@@ -37,9 +37,9 @@ class CompiledDag:
     def __init__(self,
         tasks_dir: Path,
         nxdag: nx.DiGraph,
-        topological_sort: List[Path],
-        user_arg_tasks: List[Path],
-        task_manifests: Dict[Path, TaskManifest],
+        topological_sort: List[str],
+        user_arg_tasks: List[str],
+        task_manifests: Dict[str, TaskManifest],
         parsed_tasks: List[ast_parser.AstParser],
     ):
         self.tasks_dir = tasks_dir
@@ -124,12 +124,12 @@ class DagCompiler:
         self.tasks_dir = tasks_dir
 
         # Task manifests
-        self.task_manifests: Dict[Path, TaskManifest] = {}
+        self.task_manifests: Dict[str, TaskManifest] = {}
 
     def parse_task_refs(self,
         tasks: List[str],
         parsed_tasks: List[ast_parser.AstParser],
-    ) -> Dict[Path, Any]:
+    ) -> Dict[str, List[str]]:
         """
         Parse node dictionary listed at the beginning of each python script. If
         node_dict does not exist in any script, throw an error.
@@ -143,7 +143,7 @@ class DagCompiler:
 
         # This is only ever called on the output of `get_all_tasks`, which sorts the
         # tasks alphabetically. Therefore, all mod refs will be sorted.
-        task_refs_dict: Dict[Path, Any] = {}
+        task_refs_dict: Dict[str, List[str]] = {}
 
         # Iterate through all of the tasks
         for _mod in tasks:
@@ -163,10 +163,7 @@ class DagCompiler:
 
             # Get task refs
             task_refs = curr_parser.parse(curr_task, other_parsers)
-            if task_refs is None or task_refs == '' or task_refs == {}:
-                task_refs_dict[_mod] = None
-            else:
-                task_refs_dict[_mod] = task_refs
+            task_refs_dict[_mod] = task_refs
 
             # Keep track of task manifest
             self.task_manifests[_mod] = curr_parser.task_manifest
@@ -193,26 +190,26 @@ class DagCompiler:
         return master
 
     def add_graph_node(self,
-        elem: Path,
-        master: List[Path]
-    ) -> List[Path]:
+        elem: str,
+        master: List[str]
+    ) -> List[str]:
         """
         To resolve mypy errors...
         """
         return self.add_graph_elem(elem, master)
 
     def add_graph_edge(self,
-        elem: Tuple[Path, Path],
-        master: List[Tuple[Path, Path]]
-    ) -> List[Tuple[Path, Path]]:
+        elem: Tuple[str, str],
+        master: List[Tuple[str, str]]
+    ) -> List[Tuple[str, str]]:
         """
         To resolve mypy errors...
         """
         return self.add_graph_elem(elem, master)
 
     def create_nodes_edges(self,
-        task_references: Dict[Path, Any]
-    ) -> Tuple[List[Path], List[Tuple[Path, Path]]]:
+        task_references: Dict[str, Any]
+    ) -> Tuple[List[str], List[Tuple[str, str]]]:
         """
         Create nodes / edges from task connections
 
@@ -223,8 +220,8 @@ class DagCompiler:
             edges: list of edges (tuple of nodes, i.e. tasks)
         """
         # Create edges and nodes
-        edges: List[Tuple[Path, Path]] = []
-        nodes: List[Path] = []
+        edges: List[Tuple[str, str]] = []
+        nodes: List[str] = []
 
         # Iterate through task references. Keys represent distinct tasks in the DAG,
         # and values represent the tasks that feed into the key.
@@ -239,8 +236,8 @@ class DagCompiler:
         return nodes, edges
 
     def create_dag(self,
-        nodes: List[Path],
-        edges: List[Tuple[Path, Path]]
+        nodes: List[str],
+        edges: List[Tuple[str, str]]
     ) -> nx.DiGraph:
         """
         Create DAG from edges
@@ -304,8 +301,8 @@ class DagCompiler:
 
     def get_node_successors(self,
         graph: nx.DiGraph,
-        start_nodes: List[Path]
-    ) -> List[Path]:
+        start_nodes: List[str]
+    ) -> List[str]:
         """
         Parse the DiGraph and get all nodes downstream of the `start_nodes`
 

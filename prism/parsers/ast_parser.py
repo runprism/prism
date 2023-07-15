@@ -16,7 +16,7 @@ import re
 import ast
 import astor
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 # Prism imports
 import prism.constants
@@ -117,7 +117,7 @@ class AstParser:
     def get_prism_task_nodes(self,
         classes: List[ast.ClassDef],
         bases: List[List[ast.expr]]
-    ) -> List[Any]:
+    ) -> List[Union[ast.ClassDef, ast.FunctionDef]]:
         """
         Get the node associated with the prism task from `task`
 
@@ -166,7 +166,7 @@ class AstParser:
         else:
             return None
 
-    def get_task_decorated_function(self) -> Optional[ast.FunctionDef]:
+    def get_task_decorated_function(self) -> List[ast.FunctionDef]:
         """
         Get the function decorated with the `task` decorator (if any)
         """
@@ -291,19 +291,20 @@ class AstParser:
 
         # Check kwargs
         for _kw in kwargs:
-            tmp_value = _kw.value.value
-            if _kw.arg == "task":
-                if not isinstance(tmp_value, str):
-                    raise prism.exceptions.ReferenceException(
-                        message=f"{self.task_relative_path}.{task_name}: `task` argument in `tasks.ref()` must be a string"  # noqa: E501
-                    )
-                task_arg = tmp_value
-            if _kw.arg == "local":
-                if not isinstance(tmp_value, bool):
-                    raise prism.exceptions.ReferenceException(
-                        message=f"{self.task_relative_path}.{task_name}: `local` argument in `tasks.ref()` must be a bool"  # noqa: E501
-                    )
-                local_arg = tmp_value
+            if hasattr(_kw.value, "value"):
+                tmp_value = _kw.value.value
+                if _kw.arg == "task":
+                    if not isinstance(tmp_value, str):
+                        raise prism.exceptions.ReferenceException(
+                            message=f"{self.task_relative_path}.{task_name}: `task` argument in `tasks.ref()` must be a string"  # noqa: E501
+                        )
+                    task_arg = tmp_value
+                if _kw.arg == "local":
+                    if not isinstance(tmp_value, bool):
+                        raise prism.exceptions.ReferenceException(
+                            message=f"{self.task_relative_path}.{task_name}: `local` argument in `tasks.ref()` must be a bool"  # noqa: E501
+                        )
+                    local_arg = tmp_value
 
         # If the user doesn't have a a task arg, throw an error
         if task_arg is None:
@@ -403,7 +404,7 @@ class AstParser:
         task_name: str,
         func: ast.FunctionDef,
         other_parsed_tasks: List[Any],
-    ) -> List[Path]:
+    ) -> List[str]:
         """
         Get calls to `tasks.ref` from `func`
 
@@ -560,7 +561,7 @@ class AstParser:
 
     def get_targets_class_def(self,
         run_func: ast.FunctionDef,
-    ) -> Union[str, List[str]]:
+    ) -> List[str]:
         """
         Get targets are strings when the task is a PrismTask class (not a decorated
         function)
@@ -593,11 +594,7 @@ class AstParser:
             for kw in kws:
                 if kw.arg == "loc":
                     locs.append(self.get_keyword_value(kw))
-
-        if len(locs) == 1:
-            return locs[0]
-        else:
-            return locs
+        return locs
 
     def get_task_decorator_call(self,
         function: ast.FunctionDef
@@ -631,7 +628,7 @@ class AstParser:
 
     def get_targets_function_def(self,
         function: ast.FunctionDef
-    ) -> Union[str, List[str]]:
+    ) -> List[str]:
         """
         Get targets are strings when the task is a decorated function (not a PrismTask)
 
@@ -674,15 +671,12 @@ class AstParser:
                         if kw.arg == "loc":
                             locs.append(self.get_keyword_value(kw))
 
-        if len(locs) == 1:
-            return locs[0]
-        else:
-            return locs
+        return locs
 
     def get_targets(self,
         prism_task_node: Union[ast.FunctionDef, ast.ClassDef],
         run_func: ast.FunctionDef
-    ) -> Union[str, List[str]]:
+    ) -> List[str]:
         """
         Get targets as strings
 
@@ -706,7 +700,7 @@ class AstParser:
         self,
         task: str,
         other_parsed_tasks: List[Any]
-    ) -> Dict[str, List[str]]:
+    ) -> List[str]:
         """
         Parse task references in `task`
 
@@ -724,7 +718,6 @@ class AstParser:
             )
 
         # Iterate through all of the Prism tasks
-        all_task_refs = {}
         for _node in self.prism_task_nodes:
             if _node.name != task:
                 continue
@@ -756,10 +749,10 @@ class AstParser:
             )
 
             # Iterate through all functions and get prism task.ref calls
-            all_funcs = self.get_all_funcs(_node)
-            all_task_refs: List[Path] = []
-            for func in all_funcs:
-                all_task_refs += self.get_prism_mod_calls(
+            curr_task_funcs = self.get_all_funcs(_node)
+            curr_task_refs: List[str] = []
+            for func in curr_task_funcs:
+                curr_task_refs += self.get_prism_mod_calls(
                     _node.name,
                     func,
                     other_parsed_tasks
@@ -769,9 +762,10 @@ class AstParser:
             self.task_manifest.add_refs(
                 target_module=self.task_relative_path,
                 target_task=_node.name,
-                sources=all_task_refs
+                sources=curr_task_refs
             )
-        return all_task_refs
+
+        return curr_task_refs
 
     def get_variable_assignments(self, node, var_name: str):
         """

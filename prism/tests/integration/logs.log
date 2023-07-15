@@ -1,0 +1,212 @@
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+16:41:03 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:03 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:41:03 | ERROR | 1 of 3 ERROR IN EVENT 'module03.Task03'......................................... [ERROR in 0.01s]
+16:41:07 | ERROR | 1 of 2 ERROR IN EVENT 'module02.Task02'......................................... [ERROR in 0.01s]
+16:41:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:08 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:41:08 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+16:41:08 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+16:41:08 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.06s]
+16:41:08 | ERROR | ReferenceException in `task DAG`: could not find module associated with `extract/this_is_an_error`, so could not parse task
+16:41:09 | ERROR | ProjectPyNotFoundException: prism_project.py file not found in current directory or any of its parents
+16:41:10 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:10 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:41:10 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+16:41:10 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+16:41:11 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.01s]
+16:41:11 | ERROR | ReferenceException in `task DAG`: 
+
+Are you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`
+16:41:12 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:12 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+16:41:12 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:41:12 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.04s]
+16:41:12 | ERROR | DAGException in `task DAG`: invalid DAG, cycle found in [{'module02.Task02', 'module03.Task03'}]
+16:41:14 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:41:14 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:41:19 | ERROR | InvalidProfileException in `connection setup`: adapter with name `snowflake_adapter_name_here` already exists! Change this adapter name and try again
+16:41:20 | ERROR | ProjectPyNotFoundException: prism_project.py file not found in current directory or any of its parents
+16:41:25 | ERROR | TaskAlreadyExistsException in `creating tasks`: task `tasks/dummy_task.py` already exists
+16:41:27 | WARN  | project directory not in `SYS_PATH_CONF`
+16:41:27 | ERROR | 1 of 1 ERROR IN EVENT 'bad_adapter.FilterCustomers'............................. [ERROR in 0.01s]
+16:41:27 | ERROR | RuntimeException in `bad_adapter.FilterCustomers`: adapter `dbt_prsdfofile` not defined
+16:42:07 | ERROR | /Users/mihirtrivedi/Documents/datastack/git/prism/prism/tests/integration/test_projects/001_init already exists
+16:42:07 | ERROR | /Users/mihirtrivedi/Documents/datastack/git/prism/prism/tests/integration/test_projects/001a_init_minimal already exists
+16:42:09 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:42:09 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:42:09 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+16:42:09 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+16:42:09 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.05s]
+16:42:09 | ERROR | ReferenceException in `task DAG`: could not find module associated with `extract/this_is_an_error`, so could not parse task
+16:42:10 | ERROR | ERROR IN EVENT 'test_trigger_function'.......................................... [ERROR in 0.01s]
+16:42:10 | ERROR | Traceback (most recent call last):
+...
+...
+  File "/Users/mihirtrivedi/Documents/datastack/git/prism/prism/tests/integration/test_projects/016_test_triggers_error/utils.py", line 8, in test_trigger_function
+    hi
+NameError: name 'hi' is not defined
+
+16:42:11 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:42:11 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:42:11 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+16:42:11 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+16:42:44 | WARN  | Found `.py` in a tasks.ref(...) argument in `load.py`...This will be an error in a future version of Prism.
+16:42:44 | ERROR | 2 of 2 ERROR IN EVENT 'load.load'............................................... [ERROR in 0.01s]
+16:42:44 | WARN  | load.load failed...restarting immediately
+16:42:44 | ERROR | 2 of 2 ERROR IN EVENT 'load.load (RETRY 1)'..................................... [ERROR in 0.01s]
+16:42:44 | ERROR | Traceback (most recent call last):
+...
+...
+  File load.load (RETRY 1), line 24, in load
+NameError: name 'hi' is not defined
+
+16:42:45 | WARN  | Found `.py` in a tasks.ref(...) argument in `load.py`...This will be an error in a future version of Prism.
+16:42:48 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.01s]
+16:42:48 | ERROR | ReferenceException in `task DAG`: 
+
+Are you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`
+16:42:52 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:42:52 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:42:52 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+16:42:52 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+16:42:53 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:42:53 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:42:53 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+16:42:53 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+16:42:55 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:42:55 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:42:55 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+16:42:55 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+16:42:56 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:42:56 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:42:56 | ERROR | 1 of 3 ERROR IN EVENT 'module03.Task03'......................................... [ERROR in 0.01s]
+16:42:56 | ERROR | RuntimeException in `module03.Task03`: `run` method must produce a non-null output
+16:42:57 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:42:57 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:42:57 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+16:42:57 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:43:02 | ERROR | 1 of 1 ERROR IN EVENT 'module04.Task04'......................................... [ERROR in 0.01s]
+16:43:02 | ERROR | RuntimeException in `module04.Task04`: cannot access the output of `Task03` without either explicitly running task or setting a target
+16:43:06 | WARN  | `TRIGGERS_YML_PATH` not found in prism_project.py; defaulting to `triggers.yml` in project directory
+16:43:07 | ERROR | 1 of 1 ERROR IN EVENT 'module02.Task02'......................................... [ERROR in 0.01s]
+16:43:07 | ERROR | Traceback (most recent call last):
+...
+...
+  File module02.Task02, line 22, in run
+NameError: name 'pd' is not defined
+
+16:43:09 | ERROR | ERROR IN EVENT 'test_trigger_function'.......................................... [ERROR in 0.01s]
+16:43:09 | ERROR | Traceback (most recent call last):
+...
+...
+  File test_trigger_function, line 1, in <module>
+ModuleNotFoundError: No module named 'common'
+
+16:43:11 | WARN  | found unexpected keys in the triggers YML file: `['some_other_key']`
+16:59:07 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:07 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+16:59:08 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:08 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:59:08 | ERROR | 1 of 3 ERROR IN EVENT 'module03.Task03'......................................... [ERROR in 0.01s]
+16:59:11 | ERROR | 1 of 2 ERROR IN EVENT 'module02.Task02'......................................... [ERROR in 0.01s]
+16:59:12 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:12 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:59:12 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+16:59:12 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+16:59:12 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.05s]
+16:59:12 | ERROR | ReferenceException in `task DAG`: could not find module associated with `extract/this_is_an_error`, so could not parse task
+16:59:13 | ERROR | ProjectPyNotFoundException: prism_project.py file not found in current directory or any of its parents
+16:59:14 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:14 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+16:59:14 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+16:59:14 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+16:59:15 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.01s]
+16:59:15 | ERROR | ReferenceException in `task DAG`: 
+
+Are you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`
+16:59:16 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:16 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+16:59:16 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:59:16 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.04s]
+16:59:16 | ERROR | DAGException in `task DAG`: invalid DAG, cycle found in [{'module03.Task03', 'module02.Task02'}]
+16:59:19 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+16:59:19 | WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism.
+16:59:23 | ERROR | InvalidProfileException in `connection setup`: adapter with name `snowflake_adapter_name_here` already exists! Change this adapter name and try again
+16:59:24 | ERROR | ProjectPyNotFoundException: prism_project.py file not found in current directory or any of its parents
+16:59:29 | ERROR | TaskAlreadyExistsException in `creating tasks`: task `tasks/dummy_task.py` already exists
+16:59:31 | WARN  | project directory not in `SYS_PATH_CONF`
+16:59:32 | ERROR | 1 of 1 ERROR IN EVENT 'bad_adapter.FilterCustomers'............................. [ERROR in 0.01s]
+16:59:32 | ERROR | RuntimeException in `bad_adapter.FilterCustomers`: adapter `dbt_prsdfofile` not defined
+17:00:12 | ERROR | /Users/mihirtrivedi/Documents/datastack/git/prism/prism/tests/integration/test_projects/001_init already exists
+17:00:12 | ERROR | /Users/mihirtrivedi/Documents/datastack/git/prism/prism/tests/integration/test_projects/001a_init_minimal already exists
+17:00:14 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+17:00:15 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+17:00:15 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+17:00:15 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+17:00:15 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.05s]
+17:00:15 | ERROR | ReferenceException in `task DAG`: could not find module associated with `extract/this_is_an_error`, so could not parse task
+17:00:16 | ERROR | ERROR IN EVENT 'test_trigger_function'.......................................... [ERROR in 0.01s]
+17:00:16 | ERROR | Traceback (most recent call last):
+...
+...
+  File "/Users/mihirtrivedi/Documents/datastack/git/prism/prism/tests/integration/test_projects/016_test_triggers_error/utils.py", line 8, in test_trigger_function
+    hi
+NameError: name 'hi' is not defined
+
+17:00:17 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+17:00:17 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+17:00:17 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+17:00:17 | WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism.
+17:00:49 | WARN  | Found `.py` in a tasks.ref(...) argument in `load.py`...This will be an error in a future version of Prism.
+17:00:50 | ERROR | 2 of 2 ERROR IN EVENT 'load.load'............................................... [ERROR in 0.01s]
+17:00:50 | WARN  | load.load failed...restarting immediately
+17:00:50 | ERROR | 2 of 2 ERROR IN EVENT 'load.load (RETRY 1)'..................................... [ERROR in 0.01s]
+17:00:50 | ERROR | Traceback (most recent call last):
+...
+...
+  File load.load (RETRY 1), line 24, in load
+NameError: name 'hi' is not defined
+
+17:00:51 | WARN  | Found `.py` in a tasks.ref(...) argument in `load.py`...This will be an error in a future version of Prism.
+17:00:55 | ERROR | ERROR IN EVENT 'task DAG'....................................................... [ERROR in 0.01s]
+17:00:55 | ERROR | ReferenceException in `task DAG`: 
+
+Are you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`
+17:00:58 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+17:00:58 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+17:00:58 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+17:00:58 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+17:01:00 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+17:01:00 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+17:01:00 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+17:01:00 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.
+17:01:01 | WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism
+17:01:01 | WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism.
+17:01:01 | WARN  | Found `.py` in a tasks.ref(...) argument in `load/module03.py`...This will be an error in a future version of Prism.
+17:01:01 | WARN  | Found `.py` in a tasks.ref(...) argument in `extract/module02.py`...This will be an error in a future version of Prism.

@@ -159,7 +159,7 @@ class CompileMixin():
 
     def get_task_names(self,
         parsed_tasks: List[AstParser]
-    ):
+    ) -> List[str]:
         all_task_names = []
         for _p in parsed_tasks:
             module_name_no_py = re.sub(r'\.py$', '', str(_p.task_relative_path))

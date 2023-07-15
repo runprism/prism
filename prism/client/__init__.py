@@ -24,10 +24,11 @@ from typing import Any, Dict, List, Optional
 import prism.constants
 import prism.cli.base
 import prism.exceptions
+from prism.task import PrismTask
 from prism.infra import executor as prism_executor
 from prism.infra import compiler as prism_compiler
 from prism.infra.compiler import CompiledDag
-from prism.infra.model import CompiledTask
+from prism.infra.compiled_task import CompiledTask
 import prism.mixins.base
 import prism.mixins.compile
 import prism.mixins.connect
@@ -82,7 +83,7 @@ class PrismDAG(
         self.run_context = prism.constants.CONTEXT.copy()
 
         # Store outputs of tasks
-        self.task_outputs = {}
+        self.task_outputs: Dict[str, Any] = {}
 
     def _is_valid_project(self, user_project_dir: Path) -> bool:
         """
@@ -313,6 +314,10 @@ class PrismDAG(
             # Store the outputs of the various tasks
             for task in user_arg_tasks:
                 task_instance = self.run_context[task]
+                if not isinstance(task_instance, PrismTask):
+                    raise prism.exceptions.RuntimeException(
+                        "task is not an instance of the `PrismTask` class"
+                    )
                 self.task_outputs[task] = task_instance.get_output()
 
             # Cleanup
@@ -422,11 +427,15 @@ class PrismDAG(
                 try:
                     task_var_name = compiled_task.instantiate_task_class(
                         run_context=self.run_context,
-                        task_manager=None,
-                        hooks=None,
+                        task_manager=None,  # type: ignore
+                        hooks=None,  # type: ignore
                         explicit_run=False
                     )
                     task_cls = self.run_context[task_var_name]
+                    if not isinstance(task_cls, PrismTask):
+                        raise prism.exceptions.RuntimeException(
+                            "task is not an instance of the `PrismTask` class"
+                        )
                     task_cls.exec()
                     output = task_cls.get_output()
 

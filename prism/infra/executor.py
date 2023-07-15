@@ -121,9 +121,11 @@ class DagExecutor:
         Callback used to get results of task execution in Pool
         """
         # Keep track of current module in tasks manager
-        task_manager.curr_module = re.sub(
-            r'\.py$', '', task.task_relative_path.name
-        )
+        if isinstance(task_manager, PrismTaskManager):
+            task_manager.curr_module = re.sub(
+                r'\.py$', '', task.task_relative_path.name
+            )
+
         # Keep track of events
         event_list: List[Event] = []
         if task_manager == 0:
@@ -179,7 +181,7 @@ class DagExecutor:
 
         while num_runs != num_expected_runs and outputs == 0:
             # Keep track of script events
-            script_event_list = []
+            script_event_list: List[Event] = []
 
             num_runs += 1
             if num_runs > 1:
