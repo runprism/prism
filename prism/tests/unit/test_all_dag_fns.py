@@ -239,7 +239,7 @@ class TestAllDagFunctions(
                 tasks_dir=TASK_REF_SELFREF_DIR,
                 task_list=TASK_REF_SELFREF_TASK_LIST,
             )
-        expected_msg = 'Are you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`'  # noqa
+        expected_msg = '\n\nAre you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`'  # noqa
         self.assertEqual(expected_msg, str(cm.exception))
 
     def test_task_refs_cycle(self):

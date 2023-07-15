@@ -210,8 +210,8 @@ class TestTrigger(unittest.TestCase):
         # project's sys.path
         self.assertFalse(str(TEST_TRIGGER_YML) in prism_project.run_context['sys'].path)
 
-        # Update the sys.path engine
-        prism_project.sys_path_engine.modify_sys_path(prism_project.sys_path_config)
+        # Set-up the project
+        prism_project.setup()
 
         # Now, it should appear in our project's sys.path
         self.assertTrue(str(TEST_TRIGGER_YML) in prism_project.run_context['sys'].path)
@@ -256,4 +256,4 @@ class TestTrigger(unittest.TestCase):
 
 
 # Cleanup
-prism_project.cleanup(prism_project.run_context)
+# prism_project.cleanup(prism_project.run_context)

@@ -305,4 +305,4 @@ class TestAgent(unittest.TestCase):
 
 
 # Cleanup
-project.cleanup(project.run_context)
+# project.cleanup(project.run_context)

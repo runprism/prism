@@ -240,7 +240,7 @@ class TestAstParserClassTasks(unittest.TestCase):
 
         # Get target
         targets = parser.get_targets(prism_task, run_func)
-        expected_targets = "os.path.join(os.getcwd(), 'temp')"
+        expected_targets = ["os.path.join(os.getcwd(), 'temp')"]
         self.assertEqual(targets, expected_targets)
 
     def test_tasks_refs(self):
@@ -524,7 +524,7 @@ class TestAstParserDecTasks(unittest.TestCase):
 
         # Get target
         targets = parser.get_targets(prism_task, run_func)
-        expected_targets = "Path(__file__) / 'test.txt'"
+        expected_targets = ["Path(__file__) / 'test.txt'"]
         self.assertEqual(targets, expected_targets)
 
     def test_dec_tasks_refs(self):
