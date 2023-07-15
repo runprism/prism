@@ -39,10 +39,12 @@ class BaseMixin:
         with event manager.
 
         args:
-            code: str or code object to run
-            globals_dict: globals dictionary
+            project_dir: project directory
+            user_context: user-defined context to override prism_project.py
+            which: task that requires Prism project
+            filename: filename of prism_project.py. Default is `prism_project.py`.
         returns:
-            PrismPipeline object
+            PrismProject object
         """
         project = prism_project.PrismProject(
             project_dir=project_dir,
