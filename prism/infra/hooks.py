@@ -34,10 +34,53 @@ class PrismHooks:
     def __init__(self, project: prism_project.PrismProject):
         self.project = project
 
+    def get_connection(self, adapter_name: str):
+        """
+        For SQL adapters, get the database connection:
+            - BigQuery --> google.cloud.bigquery.Client
+            - Postgres --> psycopg2.Connection
+            - Redshift --> psycopg2.Connection
+            - Snowflake --> snowflake.connector.CONNECTION
+            - Trino --> trino.dbapi.Connection
+
+        args:
+            adapter_name: SQL adapter
+        returns
+            database connection as a class object
+        """
+        try:
+            adapter_obj = self.project.adapters_object_dict[adapter_name]
+        except KeyError:
+            raise prism.exceptions.RuntimeException(
+                message=f'adapter `{adapter_name}` not defined'
+            )
+        if not hasattr(adapter_obj, "engine"):
+            raise prism.exceptions.RuntimeException(
+                message=f'class for adapter `{adapter_name}` does not have `engine` attribute'  # noqa: E501
+            )
+        return adapter_obj.engine
+
+    def get_cursor(self,
+        adapter_name: str,
+    ):
+        """
+        For SQL adapters, get a cursor object associated with the current database
+        connection. This is only available for the following adapters:
+            - Postgres
+            - Redshift
+            - Snowflake
+            - Trino
+
+        args:
+            adapter_name: SQL adapter
+        """
+        conn = self.get_connection(adapter_name)
+        return conn.cursor()
+
     def sql(self,
         adapter_name: str,
         query: str,
-        return_type: str = "pandas"
+        return_type: str
     ) -> Any:
         """
         Execute SQL query using adapter
@@ -45,6 +88,7 @@ class PrismHooks:
         args:
             adapter: SQL adapter
             query: query to execute
+            return_type: return type...accepted values are [`pandas`]
         returns:
             DataFrame containing results of SQL query
         """
@@ -58,9 +102,8 @@ class PrismHooks:
             raise prism.exceptions.RuntimeException(
                 message=f'class for adapter `{adapter_name}` does not have `execute_sql` method'  # noqa: E501
             )
-        df = adapter_obj.execute_sql(query, return_type)
-        if return_type == "pandas":
-            return df
+        data = adapter_obj.execute_sql(query, return_type)
+        return data
 
     def dbt_ref(self,
         adapter_name: str,

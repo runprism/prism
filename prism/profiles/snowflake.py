@@ -119,11 +119,15 @@ class Snowflake(Adapter):
         # Create cursor for every SQL query -- this ensures thread safety
         cursor = self.engine.cursor()
         cursor.execute(query)
+
+        # If the return type is `pandas`, then return a DataFrame
         if return_type == "pandas":
             df: pd.DataFrame = cursor.fetch_pandas_all()
             cursor.close()
             return df
+
+        # Otherwise, just return the data
         else:
-            # Fetch one to ensure that the query was executed
-            cursor.fetchone()
+            data = cursor.fetchall()
             cursor.close()
+            return data
