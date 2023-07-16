@@ -217,7 +217,8 @@ class CompileMixin():
 
                     # Otherwise, the task must be either a module or a module.task
                     else:
-                        if len(re.findall(r'(?i)^[a-z0-9\_\-\/\*\.]+(?:\.py)?$', m)) == 0:  # noqa: E501
+                        task_arg_regex = r'(?i)^[a-z0-9\_\-\/\*]+\.?(?:[a-z0-9\_\-\/\*]+|py)?$'  # noqa: E501
+                        if len(re.findall(task_arg_regex, m)) == 0:  # noqa: E501
                             raise prism.exceptions.ParserException(
                                 f'invalid --task argument `{m}`...--module must either by `<module_name>` or `<module_name>.<task_name>`'  # noqa: E501
                             )
