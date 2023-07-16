@@ -56,9 +56,6 @@ class AstParser:
         f.close()
         self.ast_module = ast.parse(self.task_str)
 
-        # Add task source code to manifest
-        self.task_manifest.add_task(self.task_relative_path)
-
         # Check existence of if-name-main
         bool_if_name_main = self.check_if_name_main(self.ast_module)
         if bool_if_name_main:
@@ -739,6 +736,12 @@ class AstParser:
             if sorted(run_args) != sorted(expected):
                 msg = f'invalid arguments in `run` function in PrismTask in `{str(self.task_relative_path)}.{_node.name}`; should only be {",".join([f"`{a}`" for a in expected])}'  # noqa: E501
                 raise prism.exceptions.ParserException(message=msg)
+
+            # Add task
+            self.task_manifest.add_task(
+                self.task_relative_path,
+                _node.name,
+            )
 
             # Parse targets
             target_locs = self.get_targets(_node, run_func)

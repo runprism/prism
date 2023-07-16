@@ -29,8 +29,13 @@ class TaskManifest:
     def __init__(self):
         self.manifest_dict: Dict[str, Any] = {"targets": {}, "tasks": [], "refs": {}}
 
-    def add_task(self, task_name: Path):
-        self.manifest_dict["tasks"].append(str(task_name))
+    def add_task(self,
+        task_module: Path,
+        task_name: str
+    ):
+        task_module_no_py = re.sub(r'\.py$', '', str(task_module))
+        processed_task_name = f"{task_module_no_py}.{task_name}"
+        self.manifest_dict["tasks"].append(processed_task_name)
 
     def add_refs(self,
         target_module: Path,
