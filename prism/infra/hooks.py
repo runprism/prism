@@ -40,7 +40,7 @@ class PrismHooks:
             - BigQuery --> google.cloud.bigquery.Client
             - Postgres --> psycopg2.Connection
             - Redshift --> psycopg2.Connection
-            - Snowflake --> snowflake.connector.CONNECTION
+            - Snowflake --> snowflake.connector.Connection
             - Trino --> trino.dbapi.Connection
 
         args:
