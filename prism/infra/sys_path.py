@@ -11,6 +11,8 @@ Table of Contents
 ###########
 
 # Prism-specific imports
+import site
+import importlib
 from prism.mixins.sys_handler import SysHandlerMixin
 
 # Standard library imports
@@ -28,16 +30,18 @@ class SysPathEngine(SysHandlerMixin):
     """
 
     def __init__(self,
-        run_context: Dict[Any, Any]
+        run_context: Dict[Any, Any],
+        project_dir: Path,
     ):
         self.run_context = run_context
+        self.project_dir = project_dir
 
         # Define base sys path and base sys tasks
-        temp_context: Dict[Any, Any] = {}
-        exec('import sys', temp_context)
-        self.base_sys_path = [p for p in temp_context['sys'].path]
+        importlib.reload(site)
+        import sys
+        self.base_sys_path = sys.path.copy()
         self.base_sys_tasks = {
-            k: v for k, v in temp_context['sys'].modules.items()
+            k: v for k, v in sys.modules.items()
         }
 
     def modify_sys_path(self, sys_path_config):
@@ -61,7 +65,7 @@ class SysPathEngine(SysHandlerMixin):
             sys_path_config, run_context
         )
         self.run_context = self.remove_paths_from_sys_path(
-            self.base_sys_path, sys_path_config, run_context
+            sys_path_config, run_context
         )
 
         # Return run context

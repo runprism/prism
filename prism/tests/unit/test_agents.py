@@ -57,7 +57,6 @@ project = PrismProject(
     user_context={},
     which="agent-run"
 )
-project.setup()
 
 
 ##################
@@ -100,6 +99,14 @@ def _remove_logs():
 ##############################
 
 class TestAgent(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        project.setup()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        project.cleanup(project.run_context)
 
     def test_valid_docker_agent_yml_conf(self):
         """
@@ -302,7 +309,3 @@ class TestAgent(unittest.TestCase):
         )
 
         _remove_logs()
-
-
-# Cleanup
-# project.cleanup(project.run_context)

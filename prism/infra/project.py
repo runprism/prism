@@ -105,7 +105,8 @@ class PrismProject():
 
         # Create sys.path engine
         self.sys_path_engine = SysPathEngine(
-            self.run_context
+            self.run_context,
+            self.project_dir,
         )
 
         # Execute

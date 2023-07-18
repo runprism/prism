@@ -12,7 +12,7 @@ from prism.admin import generate_run_id, generate_run_slug
 # sys.path config. This gives your tasks access to local tasks / packages that exist
 # outside of your project structure.
 SYS_PATH_CONF = [
-    Path(__file__).parent,
+    Path(__file__).parent.parent,
 ]
 
 # Run ID and slug

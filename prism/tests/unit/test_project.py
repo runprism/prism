@@ -154,7 +154,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=TRIGGERS_NORMAL
         )
-        engine = SysPathEngine(run_context)
+        engine = SysPathEngine(run_context, prism_project.project_dir)
         prism_project.exec(run_context, engine)
 
         # Triggers directory
@@ -172,6 +172,8 @@ class TestPrismProject(unittest.TestCase):
         }
         self.assertEqual(triggers, expected_triggers)
 
+        engine.remove_sys_path(prism_project.project_dir, run_context)
+
     def test_on_failure_triggers_only(self):
         """
         on_success triggers is an empty list when not defined
@@ -183,7 +185,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=ON_FAILURE_TRIGGERS_ONLY
         )
-        engine = SysPathEngine(run_context)
+        engine = SysPathEngine(run_context, prism_project.project_dir)
         prism_project.exec(run_context, engine)
 
         # Triggers
@@ -193,6 +195,8 @@ class TestPrismProject(unittest.TestCase):
             "on_failure": ['test_fn'],
         }
         self.assertEqual(triggers, expected_triggers)
+
+        engine.remove_sys_path(prism_project.project_dir, run_context)
 
     def test_on_success_triggers_only(self):
         """
@@ -205,7 +209,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=ON_SUCCESS_TRIGGERS_ONLY
         )
-        engine = SysPathEngine(run_context)
+        engine = SysPathEngine(run_context, prism_project.project_dir)
         prism_project.exec(run_context, engine)
 
         # Triggers
@@ -215,6 +219,8 @@ class TestPrismProject(unittest.TestCase):
             "on_failure": [],
         }
         self.assertEqual(triggers, expected_triggers)
+
+        engine.remove_sys_path(prism_project.project_dir, run_context)
 
     def test_bad_trigger_key(self):
         """
@@ -227,7 +233,7 @@ class TestPrismProject(unittest.TestCase):
             which="run",
             filename=BAD_TRIGGER_KEY
         )
-        engine = SysPathEngine(run_context)
+        engine = SysPathEngine(run_context, prism_project.project_dir)
         prism_project.exec(run_context, engine)
 
         # Triggers
@@ -235,3 +241,5 @@ class TestPrismProject(unittest.TestCase):
             prism_project.get_triggers(run_context)
         expected_msg = 'invalid key `this_key_should_not_exist` in TRIGGERS dictionary'
         self.assertEqual(str(cm.exception), expected_msg)
+
+        engine.remove_sys_path(prism_project.project_dir, run_context)

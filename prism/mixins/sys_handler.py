@@ -52,7 +52,6 @@ class SysHandlerMixin:
         return globals_dict
 
     def remove_paths_from_sys_path(self,
-        base_sys_path: List[str],
         paths: List[Path],
         globals_dict: Dict[Any, Any]
     ):
@@ -71,8 +70,7 @@ class SysHandlerMixin:
 
         for p in paths:
             try:
-                if str(p) not in base_sys_path:
-                    globals_dict['sys'].path.remove(str(p))
+                globals_dict['sys'].path.remove(str(p))
             except ValueError:
                 continue
         return globals_dict
@@ -110,7 +108,6 @@ class SysHandlerMixin:
         This is definitely not best practice; need to find a better way of doing this.
 
         args:
-            base_sys_tasks: base sys.tasks
             paths: custom paths (`SYS_PATH_CONF` in prism_project.py)
             globals_dict: globals dictionary
         returns:
