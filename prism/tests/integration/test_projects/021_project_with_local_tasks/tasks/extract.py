@@ -31,6 +31,6 @@ import json
 )
 def extract(tasks, hooks):
     api_url = "https://restcountries.com/v3.1/all"
-    resp = requests.get(api_url)
+    resp = requests.get(api_url, verify=False)
     data = json.loads(resp.text)
     return data

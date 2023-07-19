@@ -80,7 +80,7 @@ class PrismHooks:
     def sql(self,
         adapter_name: str,
         query: str,
-        return_type: str
+        return_type: Optional[str] = None
     ) -> Any:
         """
         Execute SQL query using adapter

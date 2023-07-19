@@ -109,6 +109,11 @@ class BigQuery(Adapter):
         """
         Execute the SQL query
         """
-        df = self.engine.query(query).to_dataframe()
+        data = self.engine.query(query)
         if return_type == "pandas":
+            df = data.to_dataframe()
             return df
+        res = []
+        for row in data.result():
+            res.append(row)
+        return res

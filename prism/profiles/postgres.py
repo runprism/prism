@@ -12,7 +12,7 @@ Table of Contents
 
 # Standard library imports
 import pandas as pd
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import psycopg2
 
 # Prism-specific imports
@@ -120,7 +120,7 @@ class Postgres(Adapter):
             conn.set_session(autocommit=True)
         return conn
 
-    def execute_sql(self, query: str, return_type: str) -> pd.DataFrame:
+    def execute_sql(self, query: str, return_type: Optional[str]) -> pd.DataFrame:
         """
         Execute the SQL query
         """
