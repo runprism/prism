@@ -116,7 +116,8 @@ class AgentTask(
         # run the agent (`prism agent build`). We run the agent in a separate function,
         # so focus on just building it for now.
         else:
-            return agent.apply()
+            agent.apply()
+            return agent
 
     def run_agent(self, agent: Agent):
         """
