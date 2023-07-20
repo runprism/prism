@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/runprism/prism/raw/main/.github/prism_logo_light.png" alt="prism logo" width="350"/>
+  <img src="https://github.com/runprism/prism/raw/main/.github/Logo.png" alt="prism logo" height="100"/>
 </p>
 <p align="center">
     <a href="https://pypi.python.org/pypi/prism-ds/" alt="PyPI version">
