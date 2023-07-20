@@ -742,7 +742,7 @@ class Ec2(
     ):
         """
         Prism projects often rely on more than just their own directory. They can import
-        functions / modules or reference configuration files from other directories. We
+        functions / tasks or reference configuration files from other directories. We
         need to copy all relevant directories into our agent, and we need to ensure that
         these paths have the same relative location to the project directory.
 
@@ -866,7 +866,7 @@ class Ec2(
                 break
             self._log_output(color, which, output)
 
-        return process.stdout, process.stderr
+        return process.stdout, process.stderr, process.returncode
 
     def apply(self):
         """
@@ -917,8 +917,17 @@ class Ec2(
         ]
 
         # Open a subprocess and stream the logs
-        return_code = self.stream_logs(cmd, prism.ui.AGENT_WHICH_BUILD, "build")
-        return return_code
+        _, err, returncode = self.stream_logs(cmd, prism.ui.AGENT_WHICH_BUILD, "build")
+
+        # Log anything from stderr that was printed in the project
+        for line in err.readlines():
+            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET} | {line.rstrip()}"  # noqa: E501
+            )
+
+        # Return the returncode. Return a dictionary in order to avoid confusing this
+        # output with the output of an event manager.
+        return {"return_code": returncode}
 
     def run(self):
         """
@@ -947,13 +956,17 @@ class Ec2(
             '-d', str(self.project.project_dir),
             '-c', full_cmd,
         ]
-        out, _ = self.stream_logs(cmd, prism.ui.AGENT_WHICH_RUN, "run")
+        out, _, returncode = self.stream_logs(cmd, prism.ui.AGENT_WHICH_RUN, "run")
 
         # Log anything from stdout that was printed in the project
         for line in out.readlines():
             prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                 f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_RUN}[run]{prism.ui.RESET} | {line.rstrip()}"  # noqa: E501
             )
+
+        # Return the returncode. Return a dictionary in order to avoid confusing this
+        # output with the output of an event manager.
+        return {"return_code": returncode}
 
     def delete(self):
         """

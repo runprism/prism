@@ -16,10 +16,11 @@ from multiprocessing.dummy import Pool
 from pathlib import Path
 import time
 from typing import Any, Dict, List, Optional, Union
+import re
 
 # Prism-specific imports
 import prism.exceptions
-from prism.infra import module as prism_module
+from prism.infra import compiled_task
 from prism.infra import compiler as prism_compiler
 from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
@@ -62,11 +63,11 @@ class DagExecutor:
         self.compiled_dag = compiled_dag
 
         # Extract attributes from compiled_dag instance
-        self.compiled_modules = self.compiled_dag.compiled_modules
+        self.compiled_tasks = self.compiled_dag.compiled_tasks
         self.nxdag = self.compiled_dag.nxdag
-        self.topological_sort_relative_path = self.compiled_dag.topological_sort
+        self.topological_sort_task_names = self.compiled_dag.topological_sort
         self.topological_sort_full_path = self.compiled_dag.topological_sort_full_path
-        self.user_arg_modules = self.compiled_dag.user_arg_modules
+        self.user_arg_tasks = self.compiled_dag.user_arg_tasks
         self.user_arg_all_upstream = user_arg_all_upstream
         self.user_arg_all_downstream = user_arg_all_downstream
         self.user_context = user_context
@@ -74,7 +75,7 @@ class DagExecutor:
         # Identify nodes not explicitly run and update (only if --all-upstream is False)
         if not self.user_arg_all_upstream and not self.user_arg_all_downstream:
             self.nodes_not_explicitly_run = list(
-                set(self.topological_sort_relative_path) - set(self.user_arg_modules)
+                set(self.topological_sort_task_names) - set(self.user_arg_tasks)
             )
         else:
             self.nodes_not_explicitly_run = []
@@ -91,96 +92,108 @@ class DagExecutor:
         """
         self.run_context = run_context
 
-    def check_task_refs(self, module: prism_module.CompiledModule) -> List[str]:
+    def check_task_refs(self, task: compiled_task.CompiledTask) -> List[str]:
         """
         Get task refs
 
         args:
-            module: CompiledModule object
+            task: CompiledTask object
         returns:
             refs as a list of strings
         """
-        if isinstance(module.refs, str):
-            return [module.refs]
+        if isinstance(task.refs, str):
+            return [task.refs]
         else:
-            if not isinstance(module.refs, list):
+            if not isinstance(task.refs, list):
                 raise prism.exceptions.CompileException(
-                    message=f'invalid type `{type(module.refs)}`, must be list'
+                    message=f'invalid type `{type(task.refs)}`, must be list'
                 )
-            return module.refs
+            return task.refs
 
     def exec_single(self,
         full_tb: bool,
-        module: prism_module.CompiledModule,
+        task: compiled_task.CompiledTask,
         task_manager: Union[int, PrismTaskManager],
         hooks: PrismHooks,
         user_context: Dict[Any, Any] = {}
     ) -> base_event_manager.EventManagerOutput:
         """
-        Callback used to get results of module execution in Pool
+        Callback used to get results of task execution in Pool
         """
+        # Keep track of current module in tasks manager
+        if isinstance(task_manager, PrismTaskManager):
+            task_manager.curr_module = re.sub(
+                r'\.py$', '', task.task_relative_path.name
+            )
+
         # Keep track of events
         event_list: List[Event] = []
         if task_manager == 0:
-            base_event_manager.EventManagerOutput(0, None, event_list)
-        relative_path = module.module_relative_path
-        full_path = module.module_full_path
+            return base_event_manager.EventManagerOutput(0, None, event_list)
+        task_name = task.task_var_name
+        relative_path = task.task_relative_path
 
         # Boolean for whether to fire exec event for current script. We do not want to
         # fire the exec events if the user did not explicitly include the script in
         # their arguments
-        fire_exec_events = relative_path in self.user_arg_modules \
+        fire_exec_events = task_name in self.user_arg_tasks \
             or self.user_arg_all_upstream \
             or self.user_arg_all_downstream
 
-        # If all upstream modules are to be run, the compute the idx and total using the
+        # If all upstream tasks are to be run, the compute the idx and total using the
         # `dag`` list. Otherwise, if the script is explicitly included in the user's run
-        # command then compute the idx and total using the `modules` list. Otherwise,
+        # command then compute the idx and total using the `tasks` list. Otherwise,
         # set both to None.
 
-        # First, sort the user arg modules in the order in which they appear in the DAG
-        modules_idx = [
-            self.topological_sort_relative_path.index(m) for m in self.user_arg_modules
+        # First, sort the user arg tasks in the order in which they appear in the DAG
+        tasks_idx = [
+            self.topological_sort_task_names.index(m) for m in self.user_arg_tasks
         ]
-        modules_sorted = [x for _, x in sorted(zip(modules_idx, self.user_arg_modules))]
+        tasks_sorted = [x for _, x in sorted(zip(tasks_idx, self.user_arg_tasks))]
 
         # Define the idx and total
         if self.user_arg_all_upstream or self.user_arg_all_downstream:
-            idx = self.topological_sort_full_path.index(full_path) + 1
-            total = len(self.topological_sort_full_path)
-        elif relative_path in self.user_arg_modules:
-            idx = modules_sorted.index(relative_path) + 1
-            total = len(modules_sorted)
+            idx = self.topological_sort_task_names.index(task_name) + 1
+            total = len(self.topological_sort_task_names)
+        elif task_name in self.user_arg_tasks:
+            idx = tasks_sorted.index(task_name) + 1
+            total = len(tasks_sorted)
         else:
             idx = None
             total = None
 
-        # Event manager. We want '__file__' to be the path to the un-compiled module.
+        # Event manager. We want '__file__' to be the path to the un-compiled task.
         # Instances of DagExecutor will only be called within the project directory.
-        # Therefore, __files__ should be modules/{name of script}
+        # Therefore, __files__ should be tasks/{name of script}
         self.run_context['__file__'] = str(
-            self.project_dir / f'modules/{str(relative_path)}'
+            Path(self.compiled_dag.tasks_dir) / str(relative_path)
         )
 
-        # Execute the module with appropriate number of retries
-        retries, retry_delay_seconds = module.grab_retries_metadata()
+        # Execute the task with appropriate number of retries
+        retries, retry_delay_seconds = task.grab_retries_metadata()
         num_runs = 0
         num_expected_runs = retries + 1
         outputs = 0
-        name = module.name
+        name = task.task_var_name
 
         # For testing, keep track of all events
         all_events = []
 
         while num_runs != num_expected_runs and outputs == 0:
+            # Keep track of script events
+            script_event_list: List[Event] = []
+
             num_runs += 1
             if num_runs > 1:
-                event_list = fire_console_event(
-                    prism.prism_logging.DelayEvent(name, retry_delay_seconds),
+                script_event_list = fire_console_event(
+                    prism.prism_logging.DelayEvent(
+                        name, retry_delay_seconds
+                    ),
+                    script_event_list,
                     log_level='warn'
                 )
                 time.sleep(retry_delay_seconds)
-                name = module.name + f' (RETRY {num_runs - 1})'
+                name = name + f' (RETRY {num_runs - 1})'
 
             # Only fire empty line if last retry has been executed
             fire_empty_line_events = num_runs == num_expected_runs
@@ -189,16 +202,16 @@ class DagExecutor:
                 total=total,
                 name=name,
                 full_tb=full_tb,
-                func=module.exec
+                func=task.exec
             )
             script_event_manager_result: base_event_manager.EventManagerOutput = script_manager.manage_events_during_run(  # noqa: E501
-                event_list,
+                script_event_list,
                 fire_exec_events,
                 fire_empty_line_events,
                 run_context=self.run_context,
                 task_manager=task_manager,
                 hooks=hooks,
-                explicit_run=relative_path not in self.nodes_not_explicitly_run,
+                explicit_run=task.task_var_name not in self.nodes_not_explicitly_run,
                 user_context=user_context
             )
 
@@ -224,7 +237,7 @@ class DagExecutor:
     def exec(self, full_tb: bool):
         """
         Execute DAG. Our general approach is as follows:
-            1. Create a queue of the tasks (i.e., the modules) that need to be executed.
+            1. Create a queue of the tasks (i.e., the tasks) that need to be executed.
             2. Create a pool with `n` processes
             3. While queue is not empty
                 - Get task from the top of the queue
@@ -257,10 +270,10 @@ class DagExecutor:
         self._wait_and_return = False
         self.error_event = None
 
-        # If single-threaded, just run the modules in order
+        # If single-threaded, just run the tasks in order
         if self.threads == 1:
-            while self.compiled_modules != []:
-                curr = self.compiled_modules.pop(0)
+            while self.compiled_tasks != []:
+                curr: compiled_task.CompiledTask = self.compiled_tasks.pop(0)
                 result = self.exec_single(
                     full_tb,
                     curr,
@@ -276,15 +289,15 @@ class DagExecutor:
             # class.
             return ExecutorOutput(1, self.error_event, self.event_list)
 
-        # If the pool has multiple threads, then iterate through modules and add them to
+        # If the pool has multiple threads, then iterate through tasks and add them to
         # the Pool
         else:
             async_results = {}
             with Pool(processes=self.threads) as pool:
-                while self.compiled_modules != []:
+                while self.compiled_tasks != []:
 
-                    # Get first module to execute
-                    curr = self.compiled_modules[0]
+                    # Get first task to execute
+                    curr = self.compiled_tasks[0]
                     refs = self.check_task_refs(curr)
 
                     # If an error occurred, skip all remaining tasks
@@ -293,15 +306,15 @@ class DagExecutor:
 
                     else:
 
-                        # If no refs, then add module to pool
+                        # If no refs, then add task to pool
                         if len(refs) == 0:
                             res = pool.apply_async(
                                 self.exec_single,
                                 args=(full_tb, curr, self.task_manager, self.hooks, self.user_context),  # noqa: E501
                                 callback=callback
                             )
-                            async_results[curr.name] = res
-                            self.compiled_modules.pop(0)
+                            async_results[curr.task_var_name] = res
+                            self.compiled_tasks.pop(0)
 
                         # Since DAG is run in order, refs should have been added to pool
                         # before current task. Wait for upstream tasks
@@ -318,8 +331,8 @@ class DagExecutor:
                                     args=(full_tb, curr, self.task_manager, self.hooks, self.user_context),  # noqa: E501
                                     callback=callback
                                 )
-                                async_results[curr.name] = res
-                                self.compiled_modules.pop(0)
+                                async_results[curr.task_var_name] = res
+                                self.compiled_tasks.pop(0)
                 pool.close()
                 pool.join()
 

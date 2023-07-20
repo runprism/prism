@@ -71,7 +71,7 @@ class InitializeFlagsArgs(Namespace):
 class InitializeDbtCompileTaskArgs:
     selector_name: Optional[str]
     select: List[str]
-    models: List[str]
+    tasks: List[str]
     exclude: Tuple[str, str]
     state: Optional[Path]
     single_threaded: Optional[bool]
@@ -207,7 +207,7 @@ class Dbt(Adapter):
         profiles_dir: str
     ):
         """
-        Initializes the flags module from dbt. This module ensures that the dbt compile
+        Initializes the flags task from dbt. This task ensures that the dbt compile
         task does not throw an error.
 
         args:
@@ -230,7 +230,7 @@ class Dbt(Adapter):
     ):
         """
         Initialize the compile task and call _runtime_initialize(). This must be done
-        after the flags module has been initialized.
+        after the flags task has been initialized.
 
         args:
             profiles_dir: directory of dbt profiles
@@ -279,7 +279,7 @@ class Dbt(Adapter):
         adapter: SQLAdapter = adapters_factory.get_adapter(dbt_config)
         return adapter
 
-    def get_parsed_model_node(self,
+    def get_parsed_task_node(self,
         target_model_name: str,
         target_model_package: Optional[str],
         target_model_version: Optional[str],
@@ -287,22 +287,22 @@ class Dbt(Adapter):
         manifest: Manifest
     ) -> ResultNode:
         """
-        Get the node associated with the inputted target model
+        Get the node associated with the inputted target task
 
         args:
-            target_model_name: name of model to retrieve from manifest
-            target_package_name: package containing model
+            target_model_name: name of task to retrieve from manifest
+            target_package_name: package containing task
             project_dir: project directory
             manifest: dbt Manifest
         returns:
-            node associated with inputted target model
+            node associated with inputted target task
         """
         # Use `resolve_ref` method from manifest class. For simple projects, it should
         # be the case that `node_package` is identical to `project_directory`. There may
         # be more complex projects where this is not the case. We implement the simple
         # version for now.
 
-        # TODO: test target model creation where node_package != project_dir
+        # TODO: test target task creation where node_package != project_dir
         target_model: MaybeNonSource = manifest.resolve_ref(
             target_model_name=target_model_name,
             target_model_package=target_model_package,
@@ -311,18 +311,18 @@ class Dbt(Adapter):
             node_package=project_dir
         )
 
-        # If model isn't found, then throw an error.
+        # If task isn't found, then throw an error.
         package_str = f"'{target_model_package}'." if target_model_package is not None else ""  # noqa: E501
-        model_str = f"{package_str}'{target_model_name}'"
+        task_str = f"{package_str}'{target_model_name}'"
         if target_model is None:
             raise prism.exceptions.RuntimeException(
-                message=f'could not find model dbt model `{model_str}`'
+                message=f'could not find task dbt task `{task_str}`'
             )
 
-        # The model could be disabled
+        # The task could be disabled
         if isinstance(target_model, Disabled):
             raise prism.exceptions.RuntimeException(
-                message=f'dbt model `{model_str}` is disabled'
+                message=f'dbt task `{task_str}` is disabled'
             )
 
         return target_model
@@ -333,15 +333,15 @@ class Dbt(Adapter):
         manifest: Manifest
     ):
         """
-        Get target model relation (i.e., the location of target model in syntax of
+        Get target task relation (i.e., the location of target task in syntax of
         project's SQL engine)
 
         args:
-            target: target model node
+            target: target task node
             adapter: dbt adapter
             manifest: dbt Manifest
         returns:
-            target model relation
+            target task relation
         """
 
         # Create a unique adapter connection and avoid clashes
@@ -417,22 +417,22 @@ class Dbt(Adapter):
         target_version: Optional[str] = None,
     ) -> pd.DataFrame:
         """
-        Download a dbt model into a Pandas DataFrame:
+        Download a dbt task into a Pandas DataFrame:
 
         args:
-            target_1, target_2: dbt model
+            target_1, target_2: dbt task
         returns:
             pandas DataFrame
         """
-        # Convert inputs into package and model name
+        # Convert inputs into package and task name
         target_model_name = target_1
         target_package_name = None
         if target_2 is not None:
             target_package_name = target_1
             target_model_name = target_2
 
-        # Get target model
-        target_model = self.get_parsed_model_node(
+        # Get target task
+        target_model = self.get_parsed_task_node(
             target_model_name,
             target_package_name,
             target_version,
@@ -447,7 +447,7 @@ class Dbt(Adapter):
             self.manifest
         )
 
-        # Download model
+        # Download task
         query = f"SELECT * FROM {target_model_relation}"
         response, result = self.execute_sql(self.adapter, query)
         df = self.remote_result_to_pd(result)

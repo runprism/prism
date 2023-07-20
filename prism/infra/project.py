@@ -86,7 +86,7 @@ class PrismProject():
         os.chdir(self.project_dir)
 
         # By importing the prism_project, we take advantage of Python's import
-        # caching. That is, if we execute a module that imports prism_project,
+        # caching. That is, if we execute a task that imports prism_project,
         # Python will see that prism_project has already been imported and will not
         # re-import it and overwrite the user context.
         run_context = sys_path_engine.add_sys_path(self.project_dir, run_context)
@@ -105,7 +105,8 @@ class PrismProject():
 
         # Create sys.path engine
         self.sys_path_engine = SysPathEngine(
-            self.run_context
+            self.run_context,
+            self.project_dir,
         )
 
         # Execute
@@ -488,7 +489,7 @@ class PrismProject():
     def cleanup(self, run_context: Dict[Any, Any]):
         """
         Thin wrapper around SysPathEngine's `revert_to_base_sys_path` function. This
-        removes all project modules from sys.path
+        removes all project tasks from sys.path
         """
         return self.sys_path_engine.revert_to_base_sys_path(
             self.sys_path_config,

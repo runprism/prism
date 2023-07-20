@@ -1,3 +1,4 @@
+
 ###########
 # Imports #
 ###########
@@ -10,20 +11,24 @@ import prism.decorators
 # Prism project imports
 import prism_project
 
-# Other imports
-import time
-import pandas as pd
 
-
-######################
-## Class definition ##
-######################
+####################
+# Class definition #
+####################
 
 class SnowflakeTask(prism.task.PrismTask):
 
-    ## Run
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'machinery_sample.csv', index=False)
-    @prism.decorators.target(type=prism.target.PandasCsv, loc=prism_project.OUTPUT / 'household_sample.csv', index=False)
+    # Run
+    @prism.decorators.target(
+        type=prism.target.PandasCsv,
+        loc=prism_project.OUTPUT / 'machinery_sample.csv',
+        index=False
+    )
+    @prism.decorators.target(
+        type=prism.target.PandasCsv,
+        loc=prism_project.OUTPUT / 'household_sample.csv',
+        index=False
+    )
     def run(self, tasks, hooks):
         """
         Execute task.
@@ -31,13 +36,13 @@ class SnowflakeTask(prism.task.PrismTask):
         args:
             tasks: used to reference output of other tasks --> tasks.ref('...')
             hooks: built-in Prism hooks. These include:
-                - hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
-                - hooks.sql     --> for executing sql query using an adapter in profile YML
-                - hooks.spark   --> for accessing SparkSession (if pyspark specified in profile YML)
+            - hooks.dbt_ref --> for getting dbt tasks as a pandas DataFrame
+            - hooks.sql     --> for executing sql query using an adapter in profile YML
+            - hooks.spark   --> for accessing SparkSession
         returns:
             task output
         """
-        machinery_sql = f"""
+        machinery_sql = """
         SELECT
             *
         FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER"
@@ -47,9 +52,11 @@ class SnowflakeTask(prism.task.PrismTask):
             c_custkey
         LIMIT 50
         """
-        machinery_df = hooks.sql(adapter_name="snowflake_base", query=machinery_sql)
+        machinery_df = hooks.sql(
+            adapter_name="snowflake_base", query=machinery_sql, return_type="pandas"
+        )
 
-        household_sql = f"""
+        household_sql = """
         SELECT
             *
         FROM "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF1"."CUSTOMER"
@@ -59,9 +66,8 @@ class SnowflakeTask(prism.task.PrismTask):
             c_custkey
         LIMIT 50
         """
-        household_df = hooks.sql(adapter_name="snowflake_base", query=household_sql)
+        household_df = hooks.sql(
+            adapter_name="snowflake_base", query=household_sql, return_type="pandas"
+        )
 
         return machinery_df, household_df
-
-
-# EOF

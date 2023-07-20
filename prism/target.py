@@ -73,10 +73,6 @@ class JSON(PrismTarget):
         import json
 
         # Check object type
-        if not isinstance(self.obj, dict):
-            raise ValueError(
-                "object must be a dictionary!"
-            )
         json_object = json.dumps(self.obj, **kwargs)
 
         # Write

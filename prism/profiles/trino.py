@@ -12,7 +12,7 @@ Table of Contents
 
 # Standard library imports
 import pandas as pd
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import trino
 
 # Prism-specific imports
@@ -162,22 +162,25 @@ class Trino(Adapter):
 
         return conn
 
-    def execute_sql(self, query: str, return_type: str) -> pd.DataFrame:
+    def execute_sql(self, query: str, return_type: Optional[str]) -> pd.DataFrame:
         """
         Execute the SQL query
         """
         # Create cursor for every SQL query -- this ensures thread safety
         cursor = self.engine.cursor()
         cursor.execute(query)
+        data = cursor.fetchall()
+
+        # If the return type is `pandas`, then return a DataFrame
         if return_type == "pandas":
-            data = cursor.fetchall()
             cols = []
             for elts in cursor.description:
                 cols.append(elts[0])
             df: pd.DataFrame = pd.DataFrame(data=data, columns=cols)
             cursor.close()
             return df
+
+        # Otherwise, return the data as it exists
         else:
-            # Fetch one to ensure that the query was executed
-            cursor.fetchone()
             cursor.close()
+            return data

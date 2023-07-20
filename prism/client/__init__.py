@@ -17,22 +17,26 @@ Table of Contents
 import argparse
 import os
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Optional
 
 # Prism-specific imports
 import prism.constants
 import prism.cli.base
 import prism.exceptions
+from prism.task import PrismTask
 from prism.infra import executor as prism_executor
-from prism.infra import module as prism_module
 from prism.infra import compiler as prism_compiler
+from prism.infra.compiler import CompiledDag
+from prism.infra.compiled_task import CompiledTask
 import prism.mixins.base
 import prism.mixins.compile
 import prism.mixins.connect
 import prism.mixins.run
 import prism.mixins.sys_handler
-from prism.parsers import ast_parser
 import prism.prism_logging
+import prism.cli.run
+from prism.triggers import TriggerManager
 
 
 ####################
@@ -57,29 +61,34 @@ class PrismDAG(
         self.project_dir = project_dir
         self.log_level = log_level
 
-        # Set the project to None.
+        # Set up default logger
+        self.args = argparse.Namespace()
+        self.args.log_level = self.log_level
+        prism.prism_logging.set_up_logger(self.args)
 
         # Check if project is valid
         self._is_valid_project(self.project_dir)
 
-        # Modules directory
-        self.modules_dir = self.get_modules_dir(self.project_dir)
+        # Tasks directory
+        self.tasks_dir = self.get_tasks_dir(self.project_dir)
 
-        # All modules in project
-        self.all_modules = self.get_modules(self.modules_dir)
+        # All tasks in project
+        self.all_modules = self.get_modules(self.tasks_dir)
+        self.all_tasks = self.parse_all_tasks(
+            all_modules=self.all_modules,
+            tasks_dir=self.tasks_dir
+        )
 
         # Define run context
         self.run_context = prism.constants.CONTEXT.copy()
 
-        # Set up default logger
-        args = argparse.Namespace()
-        args.log_level = self.log_level
-        prism.prism_logging.set_up_logger(args)
+        # Store outputs of tasks
+        self.task_outputs: Dict[str, Any] = {}
 
     def _is_valid_project(self, user_project_dir: Path) -> bool:
         """
         Determine if `user_project_dir` is a valid project (i.e., that is has a
-        `prism_project.py` file and a `modules` folder)
+        `prism_project.py` file and a `tasks` folder)
 
         args:
             user_project_dir: project path
@@ -94,11 +103,21 @@ class PrismDAG(
             msg = f'no project at `{str(user_project_dir)}, closest project found at `{str(temp_project_dir)}`'   # noqa: E501
             raise prism.exceptions.InvalidProjectException(message=msg)
 
-        # Modules folder is not found
-        if not Path(user_project_dir / 'modules').is_dir():
-            raise prism.exceptions.InvalidProjectException(
-                message=f'`modules` directory not found in `{str(user_project_dir)}`'
-            )
+        # Tasks folder is not found
+        if not Path(user_project_dir / 'tasks').is_dir():
+
+            # If the `modules` directory is found, then raise a warning
+            if Path(user_project_dir / 'modules').is_dir():
+                prism.prism_logging.fire_console_event(
+                    prism.prism_logging.ModulesFolderDeprecated(),
+                    log_level='warn'
+                )
+
+            # Otherwise, raise an error
+            else:
+                raise prism.exceptions.InvalidProjectException(
+                    message=f'`tasks` directory not found in `{str(user_project_dir)}`'
+                )
 
         return True
 
@@ -145,31 +164,52 @@ class PrismDAG(
             self.run_context = prism_project.cleanup(self.run_context)
 
     def compile(self,
-        modules: Optional[List[str]] = None,
+        tasks: Optional[List[str]] = None,
         all_downstream: bool = True
     ) -> prism_compiler.CompiledDag:
         """
         Compile the Prism project
         """
-        if modules is None:
-            module_paths = self.all_modules
-        else:
-            module_paths = [Path(p) for p in modules]
-        self.user_arg_modules_list = module_paths
+        # Prism project
+        prism_project = self.create_project(
+            project_dir=self.project_dir,
+            user_context={},
+            which="compile",
+            filename="prism_project.py"
+        )
+        self.run_context = prism_project.run_context
 
-        # Create compiled directory and compile the DAG
+        # Construct list of all tasks
+        self.args.tasks = tasks
+        user_arg_tasks = self.user_arg_tasks(self.args, self.tasks_dir, self.all_tasks)
+
+        # Create compiled directory
         compiled_dir = self.create_compiled_dir(self.project_dir)
         self.compiled_dir = compiled_dir
-        return self.compile_dag(
-            self.project_dir,
-            self.compiled_dir,
-            self.all_modules,
-            self.user_arg_modules_list,
-            all_downstream
-        )
+
+        # Try to compile the DAG. If we encounter an error, then cleanup first and then
+        # raise the exception.
+        try:
+            compiled_dag = self.compile_dag(
+                project_dir=self.project_dir,
+                tasks_dir=self.tasks_dir,
+                compiled_dir=compiled_dir,
+                all_parsed_tasks=self.all_tasks,
+                user_arg_tasks=user_arg_tasks,
+                user_arg_all_downstream=all_downstream,
+                project=prism_project
+            )
+        except Exception as e:
+            raise e
+        finally:
+            self.run_context = prism_project.cleanup(self.run_context)
+
+        # Return
+        self.compiled_dag = compiled_dag
+        return compiled_dag
 
     def run(self,
-        modules: Optional[List[str]] = None,
+        tasks: Optional[List[str]] = None,
         all_upstream: bool = True,
         all_downstream: bool = False,
         full_tb: bool = True,
@@ -178,7 +218,7 @@ class PrismDAG(
         """
         Run the Prism project
         """
-        # Create PrismProject
+        # Create Prism project
         if user_context is None:
             user_context = {}
         prism_project = self.create_project(
@@ -187,113 +227,187 @@ class PrismDAG(
             which="run",
             filename="prism_project.py",
         )
+        self.run_context = prism_project.run_context
 
-        # Run sys.path engine
-        sys_path_engine = prism_project.sys_path_engine
-        self.run_context = sys_path_engine.modify_sys_path(
-            prism_project.sys_path_config
-        )
+        # Wrap everything in a try-except block. If any error occurs, cleanup the Prism
+        # project before re-running anything
+        try:
+            # Run sys.path engine
+            sys_path_engine = prism_project.sys_path_engine
+            self.run_context = sys_path_engine.modify_sys_path(
+                prism_project.sys_path_config
+            )
 
-        # Compile the DAG
-        compiled_dag = self.compile(modules, all_downstream)
+            # Prepare triggers
+            triggers_yml_path = prism_project.triggers_yml_path
+            trigger_manager = TriggerManager(
+                triggers_yml_path,
+                prism_project,
+            )
 
-        # Create DAG executor and Pipeline objects
-        threads = prism_project.thread_count
-        dag_executor = prism_executor.DagExecutor(
-            self.project_dir,
-            compiled_dag,
-            all_upstream,
-            all_downstream,
-            threads,
-            user_context
-        )
-        pipeline = self.create_pipeline(
-            prism_project, dag_executor, self.run_context
-        )
+            # Construct list of all tasks
+            self.args.tasks = tasks
+            user_arg_tasks = self.user_arg_tasks(
+                self.args,
+                self.tasks_dir,
+                self.all_tasks
+            )
 
-        # Create args and exec
-        output = pipeline.exec(full_tb)
+            # Create compiled directory
+            self.compiled_dir = self.create_compiled_dir(self.project_dir)
 
-        # Cleanup
-        self.run_context = prism_project.cleanup(
-            self.run_context
-        )
+            # Compile the DAG
+            self.compiled_dag = self.compile_dag(
+                project_dir=self.project_dir,
+                tasks_dir=self.tasks_dir,
+                compiled_dir=self.compiled_dir,
+                all_parsed_tasks=self.all_tasks,
+                user_arg_tasks=user_arg_tasks,
+                user_arg_all_downstream=all_downstream,
+                project=prism_project
+            )
 
-        # Write error
-        if output.error_event is not None:
-            event = output.error_event
-            try:
-                # Exception is a PrismException
-                exception = event.err
-            except AttributeError:
-                # All other exceptions
-                exception = event.value
-            raise exception
+            # Create DAG executor and Pipeline objects
+            threads = prism_project.thread_count
+            dag_executor = prism_executor.DagExecutor(
+                self.project_dir,
+                self.compiled_dag,
+                all_upstream,
+                all_downstream,
+                threads,
+                user_context
+            )
+            pipeline = self.create_pipeline(
+                prism_project, dag_executor, self.run_context
+            )
 
-    def _get_task_cls_from_namespace(self, module_path: Path):
-        """
-        Get PrismTask associated with `module_path` from Prism namespace
+            # Create args and exec
+            output = pipeline.exec(full_tb)
 
-        args:
-            module_path: path to module (relative to `modules/` folder)
-        returns:
-            task class
-        """
+            # Write error
+            if output.error_event is not None:
+                event = output.error_event
+                try:
+                    # Exception is a PrismException
+                    exception = event.err
+                except AttributeError:
+                    # All other exceptions
+                    exception = event.value
 
-        # Name of variable containing the PrismTask for `module_path`
-        task_var_name = prism_module.get_task_var_name(module_path)
-        task_cls = self.run_context.get(task_var_name)
+                # Fire the `on_failure` events
+                trigger_manager.exec(
+                    'on_failure',
+                    full_tb,
+                    [],
+                    self.run_context,
+                )
+                raise exception
 
-        # If class is None, then raise an error. Otherwise, return the class
-        if task_cls is None:
-            msg_list = [
-                f'no output found for `{str(module_path)}` in the PrismProject namespace',                     # noqa: E501
-                f'check that `{str(module_path)}` has a PrismTask and that `{str(module_path)}` has been run'  # noqa: E501
-            ]
-            raise prism.exceptions.RuntimeException(message='\n'.join(msg_list))
-        return task_cls
+            # Otherwise, fire the `on_success` events
+            trigger_manager.exec(
+                'on_success',
+                full_tb,
+                [],
+                self.run_context,
+            )
+
+            # Store the outputs of the various tasks
+            for task in user_arg_tasks:
+                task_instance = self.run_context[task]
+                if not isinstance(task_instance, PrismTask):
+                    raise prism.exceptions.RuntimeException(
+                        "task is not an instance of the `PrismTask` class"
+                    )
+                self.task_outputs[task] = task_instance.get_output()
+
+            # Cleanup
+            self.run_context = prism_project.cleanup(
+                self.run_context
+            )
+
+        # If we encounter any exception, then cleanup first and then raise
+        except Exception:
+            self.run_context = prism_project.cleanup(
+                self.run_context
+            )
+            raise
+
+    def clear_task_output(self):
+        self.task_outputs = {}
 
     def get_task_output(self,
-        module_path: Path,
+        task_name: str,
         bool_run: bool = False,
         **kwargs
     ) -> Any:
         """
-        Get output of the task in `module`. If bool_run==True, then run the project
+        Get output of the task in `task`. If bool_run==True, then run the project
         first. Note that if bool_run==False, then only tasks with a target can be
         parsed.
 
         args:
-            module: path to module (relative to `modules/` folder)
+            task_name: either `<module_name>` or `<module_name>.<task_name>`. Note that
+                if the user inputs the former, then the module should only have one
+                task.
             bool_run: boolean indicating whether to run pipeline first; default is False
             **kwargs: keyword arguments for running
         returns:
             task output
         """
-        # The user may have run the project in their script. Try retrieving the output
-        try:
-            task_cls = self._get_task_cls_from_namespace(module_path)
-            return task_cls.get_output()
+        # Remove the `.py` from the ending of the task name, if it exists
+        task_name = re.sub(r'\.py$', '', task_name)
 
-        except prism.exceptions.RuntimeException:
+        # Process the task name
+        tmp_module_name = task_name.split(".")[0]
+        tmp_task_name = None
+        try:
+            tmp_task_name = task_name.split(".")[1]
+        except IndexError:
+            for _p in self.all_tasks:
+                if Path(f"{tmp_module_name}.py") == _p.task_relative_path:
+                    if len(_p.prism_task_names) == 0:
+                        raise prism.exceptions.ParserException(
+                            message=f"no PrismTask in `{str(_p.task_relative_path)}`"
+                        )
+                    if len(_p.prism_task_names) > 1:
+                        raise prism.exceptions.RuntimeException(
+                            message=f"module `{tmp_module_name}` has multiple tasks...specify the task name and try again"  # noqa: E501
+                        )
+                    tmp_task_name = _p.prism_task_names[0]
+
+        # If task name is still null, then something when wrong
+        if tmp_task_name is None:
+            raise prism.exceptions.RuntimeException(
+                message=f"could not find any task with module `{tmp_module_name}`"
+            )
+        processed_task_name = f"{tmp_module_name}.{tmp_task_name}"
+
+        # The user may have run the project in their script. In that case, the PrismDAG
+        # instance will have a `compiled_dag` attribute that stores an instance of the
+        # `CompiledDag` class.
+        try:
+            return self.task_outputs[processed_task_name]
+
+        except KeyError:
             # If project is run, then any output can be retrieved from any task
             if bool_run:
                 self.run(**kwargs)
-                task_cls = self._get_task_cls_from_namespace(module_path)
-                return task_cls.get_output()
+                return self.task_outputs[processed_task_name]
 
             # If project is not run, then only targets can be retrieved
             else:
-                parsed_ast_module = ast_parser.AstParser(module_path, self.modules_dir)
-                prism_task_cls = parsed_ast_module.get_prism_task_node(
-                    parsed_ast_module.classes, parsed_ast_module.bases
-                )
-                if prism_task_cls is None:
-                    return None
-                prism_task_cls_name = prism_task_cls.name
+
+                # We need to compile the project
+                compiled_dag: CompiledDag = self.compile()
+
+                # Get the task associated with `processed_task_name`
+                compiled_task: CompiledTask
+                for _t in compiled_dag.compiled_tasks:
+                    if _t.task_var_name == processed_task_name:
+                        compiled_task = _t
 
                 # We need to update sys.path to include all paths in SYS_PATH_CONF,
-                # since some target locations may depend on vars stored in modules
+                # since some target locations may depend on vars stored in tasks
                 # imported from directories contained therein.
                 user_context = kwargs.get("user_context", {})
                 prism_project = self.create_project(
@@ -310,16 +424,20 @@ class PrismDAG(
                 )
 
                 # Execute the class definition code
-                exec(parsed_ast_module.module_str, self.run_context)
-                task = self.run_context[prism_task_cls_name](False)  # type: ignore # noqa: E501
-
-                # No need for an actual task_manager/hooks, since we're only accessing
-                # the target
                 try:
-                    task.set_hooks(None)
-                    task.set_task_manager(None)
-                    task.exec()
-                    output = task.get_output()
+                    task_var_name = compiled_task.instantiate_task_class(
+                        run_context=self.run_context,
+                        task_manager=None,  # type: ignore
+                        hooks=None,  # type: ignore
+                        explicit_run=False
+                    )
+                    task_cls = self.run_context[task_var_name]
+                    if not isinstance(task_cls, PrismTask):
+                        raise prism.exceptions.RuntimeException(
+                            "task is not an instance of the `PrismTask` class"
+                        )
+                    task_cls.exec()
+                    output = task_cls.get_output()
 
                     # Cleanup
                     self.run_context = prism_project.cleanup(

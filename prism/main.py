@@ -63,37 +63,29 @@ def _check_context(inputted_vars, inputted_context):
         )
 
 
-def _process_modules(inputted_modules) -> Optional[List[Any]]:
-    processed_modules = []
-    for m in list(inputted_modules):
+def _process_tasks(inputted_tasks) -> Optional[List[Any]]:
+    processed_tasks = []
+    for m in list(inputted_tasks):
         processed = m
 
-        # If the user adds modules/ at the beginning of their modules (for auto-fill
+        # If the user adds tasks/ at the beginning of their tasks (for auto-fill
         # purposes), then just remove that prefix.
-        if len(re.findall(r'^modules\/', processed)) > 0:
+        if len(re.findall(r'^tasks\/', processed)) > 0:
             click.echo(
-                f"{RED}ArgumentError: remove `modules/` from your --module argument `{m}`{RESET}"  # noqa: E501
+                f"{RED}ArgumentError: remove `tasks/` from your --task argument `{m}`{RESET}"  # noqa: E501
             )
             sys.exit(1)
 
-        # If the user wants to run a specific module and puts .py at the end, fire a
+        # If the user wants to run a specific task and puts .py at the end, fire a
         # warning.
         if len(re.findall(r'\.py$', processed)) > 0:
             click.echo(
-                f'{YELLOW}ArgumentWarning: `.py` in --module arguments will be an error in a future version of Prism.{RESET}'  # noqa: E501
+                f'{YELLOW}ArgumentWarning: `.py` in --task arguments will be an error in a future version of Prism.{RESET}'  # noqa: E501
             )
+        processed_tasks.append(processed)
 
-        # If the user wants to run a specific module but doesn't put .py at the end,
-        # then add it in.
-        if (
-            len(re.findall(r'\.py$', processed)) == 0
-            and len(re.findall(r'\/\*$', processed)) == 0  # noqa: W503
-        ):
-            processed = f'{processed}.py'
-        processed_modules.append(processed)
-
-    if len(processed_modules) > 0:
-        return processed_modules
+    if len(processed_tasks) > 0:
+        return processed_tasks
     return None
 
 
@@ -141,7 +133,7 @@ def invoke(args: Optional[List[str]] = None, bool_return: bool = False):
 @click.option(
     "--minimal",
     is_flag=True,
-    help="""Create minimal project (just `prism_project.py` and `modules`)""",
+    help="""Create minimal project (just `prism_project.py` and `tasks`)""",
     default=False,
     required=False
 )
@@ -270,22 +262,22 @@ def connect(
 
 @cli.command()
 @click.option(
-    '--module', '-m',
+    '--task', '-t',
     type=str,
-    help="Modules to execute. You can specify multiple modules with as follows: `-m <your_first_module> -m <your_second_module>`.",  # noqa: E501
+    help="Tasks to execute. You can specify multiple tasks with as follows: `-t <your_first_task> -t <your_second_task>`.",  # noqa: E501
     multiple=True,
     default=[]
 )
 @click.option(
     '--all-downstream',
     is_flag=True,
-    help="Execute all tasks downstream of modules specified with `--module`"
+    help="Execute all tasks downstream of tasks specified with `--task`"
 )
 @click.option(
     '--all-upstream',
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of modules specified with `--module`"
+    help="Execute all tasks upstream of tasks specified with `--task`"
 )
 @click.option(
     '--log-level', '-l',
@@ -312,7 +304,7 @@ def connect(
     default='{}'
 )
 def run(
-    module,
+    task,
     all_downstream,
     all_upstream,
     log_level,
@@ -324,13 +316,13 @@ def run(
 
     <br>Examples:
     - prism run
-    - prism run -m module01.py -m module02.py
-    - prism run -m module01 --all-downstream
+    - prism run -t task01.py -t task02.py
+    - prism run -t task01 --all-downstream
     - prism run -v VAR1=VALUE1 -v VAR2=VALUE2
     - prism run --context '{"hi": 1}'
     """
-    # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = _process_modules(module)
+    # Convert tuple of tasks to list
+    tasks_list: Optional[List[Any]] = _process_tasks(task)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -338,7 +330,7 @@ def run(
 
     # Namespace
     ns = argparse.Namespace()
-    ns.modules = modules_list
+    ns.tasks = tasks_list
     ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
     ns.full_tb = full_tb
@@ -449,7 +441,7 @@ def create_agent(
     Task name. If only a single task is requested, then the task will be named
     `<task_name>.py`. If multiple tasks are requested, then the tasks will be named
     `<task_name>_<number>.py`. Tasks should have short, all-lowercase names. Underscores
-    can be used in the module name if it improves readability.
+    can be used in the task name if it improves readability.
     """
 )
 @click.option(
@@ -458,8 +450,8 @@ def create_agent(
     required=False,
     default="",
     help="""
-    Folder within the `modules` directory in which the new tasks should live. If not
-        specified, then new tasks will be dumpted into `modules/`
+    Folder within the `tasks` directory in which the new tasks should live. If not
+        specified, then new tasks will be dumpted into `tasks/`
     """
 )
 @click.option(
@@ -711,22 +703,22 @@ def agent_apply(
     help="Path to agent configuration YML"
 )
 @click.option(
-    '--module', '-m',
+    '--task', '-t',
     type=str,
-    help="Modules to execute. You can specify multiple modules with as follows: `-m <your_first_module> -m <your_second_module>`.",  # noqa: E501
+    help="Tasks to execute. You can specify multiple tasks with as follows: `-t <your_first_task> -t <your_second_task>`.",  # noqa: E501
     multiple=True,
     default=[]
 )
 @click.option(
     '--all-downstream',
     is_flag=True,
-    help="Execute all tasks downstream of modules specified with `--module`"
+    help="Execute all tasks downstream of tasks specified with `--task`"
 )
 @click.option(
     '--all-upstream',
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of modules specified with `--module`"
+    help="Execute all tasks upstream of tasks specified with `--task`"
 )
 @click.option(
     '--log-level', '-l',
@@ -754,7 +746,7 @@ def agent_apply(
 )
 def agent_run(
     file,
-    module,
+    task,
     all_downstream,
     all_upstream,
     log_level,
@@ -765,15 +757,15 @@ def agent_run(
     """Run your project using an agent.
 
     <br>Examples:
-    - prism agent run -f ./ec2.yml --module module01.py --module module02.py
-    - prism agent run -f ./docker.yml --m module01
+    - prism agent run -f ./ec2.yml --task task01.py --task task02.py
+    - prism agent run -f ./docker.yml --t task01
     - prism agent run -f /Users/docker.yml --vars VAR1=VALUE1
     """
     # Namespace
     ns = argparse.Namespace()
 
-    # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = _process_modules(module)
+    # Convert tuple of tasks to list
+    tasks_list: Optional[List[Any]] = _process_tasks(task)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -782,7 +774,7 @@ def agent_run(
     # Namespace
     ns = argparse.Namespace()
     ns.file = file
-    ns.modules = modules_list
+    ns.tasks = tasks_list
     ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
     ns.full_tb = full_tb
@@ -805,22 +797,22 @@ def agent_run(
     help="Path to agent configuration YML"
 )
 @click.option(
-    '--module', '-m',
+    '--task', '-t',
     type=str,
-    help="Modules to execute. You can specify multiple modules with as follows: `-m <your_first_module> -m <your_second_module>`.",  # noqa: E501
+    help="Tasks to execute. You can specify multiple tasks with as follows: `-t <your_first_task> -t <your_second_task>`.",  # noqa: E501
     multiple=True,
     default=[]
 )
 @click.option(
     '--all-downstream',
     is_flag=True,
-    help="Execute all tasks downstream of modules specified with `--module`"
+    help="Execute all tasks downstream of tasks specified with `--task`"
 )
 @click.option(
     '--all-upstream',
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of modules specified with `--module`"
+    help="Execute all tasks upstream of tasks specified with `--task`"
 )
 @click.option(
     '--log-level', '-l',
@@ -848,7 +840,7 @@ def agent_run(
 )
 def agent_build(
     file,
-    module,
+    task,
     all_downstream,
     all_upstream,
     log_level,
@@ -866,8 +858,8 @@ def agent_build(
     # Namespace
     ns = argparse.Namespace()
 
-    # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = _process_modules(module)
+    # Convert tuple of tasks to list
+    tasks_list: Optional[List[Any]] = _process_tasks(task)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -876,7 +868,7 @@ def agent_build(
     # Namespace
     ns = argparse.Namespace()
     ns.file = file
-    ns.modules = modules_list
+    ns.tasks = tasks_list
     ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
     ns.full_tb = full_tb
@@ -941,22 +933,22 @@ def agent_delete(
 
 @cli.command('spark-submit')
 @click.option(
-    '--module', '-m',
+    '--task', '-t',
     type=str,
-    help="Modules to execute. You can specify multiple modules with as follows: `-m <your_first_module> -m <your_second_module>`.",  # noqa: E501
+    help="Tasks to execute. You can specify multiple tasks with as follows: `-t <your_first_task> -t <your_second_task>`.",  # noqa: E501
     multiple=True,
     default=[]
 )
 @click.option(
     '--all-downstream',
     is_flag=True,
-    help="Execute all tasks downstream of modules specified with `--module`."
+    help="Execute all tasks downstream of tasks specified with `--task`."
 )
 @click.option(
     '--all-upstream',
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of modules specified with `--module`."
+    help="Execute all tasks upstream of tasks specified with `--task`."
 )
 @click.option(
     '--log-level', '-l',
@@ -983,7 +975,7 @@ def agent_delete(
     default='{}'
 )
 def spark_submit(
-    module,
+    task,
     all_downstream,
     all_upstream,
     log_level,
@@ -995,13 +987,13 @@ def spark_submit(
 
     <br>Examples:
     - prism spark-submit
-    - prism spark-submit -m module01.py -m module02.py
-    - prism spark-submit -m module01 --all-downstream
+    - prism spark-submit -t task01.py -t task02.py
+    - prism spark-submit -t task01 --all-downstream
     - prism spark-submit -v VAR1=VALUE1 -v VAR2=VALUE2
     - prism spark-submit --context '{"hi": 1}'
     """
-    # Convert tuple of modules to list
-    modules_list: Optional[List[Any]] = _process_modules(module)
+    # Convert tuple of tasks to list
+    tasks_list: Optional[List[Any]] = _process_tasks(task)
 
     # Check `vars` and `context`
     vars_dict = _check_vars_format(vars)
@@ -1009,7 +1001,7 @@ def spark_submit(
 
     # Namespace
     ns = argparse.Namespace()
-    ns.modules = modules_list
+    ns.tasks = tasks_list
     ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
     ns.full_tb = full_tb

@@ -36,10 +36,11 @@ TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
 P002_NO_PROJECT_PY = Path(TEST_PROJECTS / '002_no_project_py')
 P003_PROJECT_WITH_CYCLE = Path(TEST_PROJECTS / '003_project_with_cycle')
 P004_SIMPLE_PROJECT = Path(TEST_PROJECTS / '004_simple_project')
-P005_SIMPLE_PROJECT_NO_NULL = Path(TEST_PROJECTS / '005_simple_project_no_null')
+P005_SIMPLE_PROJECT_NO_NULL = Path(TEST_PROJECTS / '005_simple_project_no_null_tasks')
 P006_SIMPLE_PROJECT_WITH_PROFILE = Path(TEST_PROJECTS / '006_simple_project_with_profile')  # noqa: E501
 P007_SPARK_PROJECT = Path(TEST_PROJECTS / '007_spark_project')
 P009_SIMPLE_DBT_PROJECT = Path(TEST_PROJECTS / '009_simple_dbt_project' / 'prism')
+P014_TEST_TRIGGERS_NORMAL = Path(TEST_PROJECTS / '014_test_triggers_normal')
 
 
 #############
@@ -92,8 +93,8 @@ class TestClient(
             dag.compile()
         expected_msg = "invalid DAG, cycle found in"
         self.assertTrue(expected_msg in str(cm.exception))
-        self.assertTrue('module02.py' in str(cm.exception))
-        self.assertTrue('module03.py' in str(cm.exception))
+        self.assertTrue('module02.Task02' in str(cm.exception))
+        self.assertTrue('module03.Task03' in str(cm.exception))
 
         # Check that manifest is not formed
         self.assertFalse(
@@ -126,17 +127,20 @@ class TestClient(
         manifest = self._load_manifest(
             Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.json')
         )
-        module01_refs = self._load_module_refs("module01.py", manifest)
-        module02_refs = self._load_module_refs("module02.py", manifest)
-        module03_refs = self._load_module_refs("module03.py", manifest)
-        self.assertEqual([], module01_refs)
-        self.assertEqual('module01.py', module02_refs)
-        self.assertEqual([], module03_refs)
+        task01_refs = self._load_task_refs("module01", "Task01", manifest)
+        task02_refs = self._load_task_refs("module02", "Task02", manifest)
+        task03_refs = self._load_task_refs("module03", "Task03", manifest)
+        self.assertEqual([], task01_refs)
+        self.assertEqual(['module01.Task01'], task02_refs)
+        self.assertEqual([], task03_refs)
 
         # Check topological sort
         topsort = compiled_dag.topological_sort
         topsort_str = [str(t) for t in topsort]
-        self.assertEqual(['module03.py', 'module01.py', 'module02.py'], topsort_str)
+        self.assertEqual(
+            ['module03.Task03', 'module01.Task01', 'module02.Task02'],
+            topsort_str
+        )
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(P004_SIMPLE_PROJECT)
@@ -204,26 +208,26 @@ class TestClient(
         manifest = self._load_manifest(
             Path(P004_SIMPLE_PROJECT / '.compiled' / 'manifest.json')
         )
-        module01_refs = self._load_module_refs("module01.py", manifest)
-        module02_refs = self._load_module_refs("module02.py", manifest)
-        module03_refs = self._load_module_refs("module03.py", manifest)
-        self.assertEqual([], module01_refs)
-        self.assertEqual('module01.py', module02_refs)
-        self.assertEqual([], module03_refs)
+        task01_refs = self._load_task_refs("module01", "Task01", manifest)
+        task02_refs = self._load_task_refs("module02", "Task02", manifest)
+        task03_refs = self._load_task_refs("module03", "Task03", manifest)
+        self.assertEqual([], task01_refs)
+        self.assertEqual(['module01.Task01'], task02_refs)
+        self.assertEqual([], task03_refs)
 
         # Cleanup
         self._remove_compiled_dir(P004_SIMPLE_PROJECT)
 
         # ------------------------------------------------------------------------------
-        # Run P005_SIMPLE_PROJECT_NO_NULL (with and without the `modules` param defined)
+        # Run P005_SIMPLE_PROJECT_NO_NULL (with and without the `tasks` param defined)
 
         # Remove compiled directory and outputs, if they exist
         self._remove_compiled_dir(P005_SIMPLE_PROJECT_NO_NULL)
         self._remove_files_in_output(P005_SIMPLE_PROJECT_NO_NULL)
 
         # -------------------------------------------------------
-        # With `module` param
-        dag5.run(modules=['module01.py'])
+        # With `task` param
+        dag5.run(tasks=['module01'])
 
         # Confirm creation of manifest
         self.assertTrue(Path(P005_SIMPLE_PROJECT_NO_NULL / '.compiled').is_dir())
@@ -233,37 +237,37 @@ class TestClient(
 
         # Confirm creation of outputs
         self.assertTrue(
-            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt').is_file()
+            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task01.txt').is_file()
         )
         self.assertFalse(
-            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module02.txt').is_file()
+            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task02.txt').is_file()
         )
 
         # Confirm contents of outputs
-        module01_txt = self._file_as_str(
-            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt')
+        task01_txt = self._file_as_str(
+            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task01.txt')
         )
-        expected_output = 'Hello from module 1!'
-        self.assertEqual(expected_output, module01_txt)
+        expected_output = 'Hello from task 1!'
+        self.assertEqual(expected_output, task01_txt)
 
         # -------------------------------------------------------
-        # Without `module` param
+        # Without `task` param
         dag5.run()
 
         # Confirm creation of outputs
         self.assertTrue(
-            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt').is_file()
+            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task01.txt').is_file()
         )
         self.assertTrue(
-            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module02.txt').is_file()
+            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task02.txt').is_file()
         )
 
         # Confirm contents of outputs
-        module02_txt = self._file_as_str(
-            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module02.txt')
+        task02_txt = self._file_as_str(
+            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task02.txt')
         )
-        expected_output = 'Hello from module 1!\nHello from module 2!'
-        self.assertEqual(expected_output, module02_txt)
+        expected_output = 'Hello from task 1!\nHello from task 2!'
+        self.assertEqual(expected_output, task02_txt)
 
         # Remove compiled directory and outputs, if they exist
         self._remove_compiled_dir(P005_SIMPLE_PROJECT_NO_NULL)
@@ -276,7 +280,7 @@ class TestClient(
         self._remove_compiled_dir(P009_SIMPLE_DBT_PROJECT)
         self._remove_files_in_output(P009_SIMPLE_DBT_PROJECT)
 
-        dag9.run(modules=['filter_customers.py'])
+        dag9.run(tasks=['filter_customers.py'])
 
         self.assertTrue(Path(P009_SIMPLE_DBT_PROJECT / '.compiled').is_dir())
         self.assertTrue(
@@ -310,6 +314,38 @@ class TestClient(
         # Set up directory for next test
         self._set_up_wkdir()
 
+    def test_run_with_triggers(self):
+        """
+        Test run with some triggers
+        """
+        dag = prism.client.PrismDAG(P014_TEST_TRIGGERS_NORMAL)
+
+        # Confirm expected output doesn't exist
+        trigger_output = Path(P014_TEST_TRIGGERS_NORMAL / 'output' / 'trigger.txt')
+        if trigger_output.is_file():
+            os.unlink(trigger_output)
+        self.assertFalse(trigger_output.is_file())
+
+        # Run. This will produce an error, but we want to see if our trigger output was
+        # created
+        try:
+            dag.run()
+        except Exception:
+            pass
+
+        # We expect the trigger to produce an output
+        self.assertTrue(trigger_output.is_file())
+        with open(trigger_output, 'r') as f:
+            trigger_output_str = f.read()
+        expected_str = 'This is outputted from the trigger function!'
+        self.assertTrue(expected_str, trigger_output_str)
+
+        # Remove compiled folder
+        self._remove_compiled_dir(P014_TEST_TRIGGERS_NORMAL)
+
+        # Set up directory for next test
+        self._set_up_wkdir()
+
     def test_get_task_output(self):
         """
         Test task output retrieval
@@ -320,22 +356,22 @@ class TestClient(
         # Get output of a task without a target (without running pipeline). This should
         # result in an error.
         with self.assertRaises(prism.exceptions.RuntimeException) as cm:
-            dag5.get_task_output('module03.py')
+            dag5.get_task_output('module03')
         expected_msg_components = ['cannot access the output of', 'either explicitly running task or setting a target']  # noqa: E501
         for comp in expected_msg_components:
             self.assertTrue(comp in str(cm.exception))
 
         # Get output of a task with a target (without running pipeline)
-        module01_output = dag5.get_task_output('module01.py')
+        task01_output = dag5.get_task_output('module01.py')
         expected_output = str(
-            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'module01.txt')
+            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task01.txt')
         )
-        self.assertEqual(str(module01_output), expected_output)
+        self.assertEqual(str(task01_output), expected_output)
 
         # Get output of a task without a target (after running pipeline)
         dag5.run()
         output = dag5.get_task_output('module03.py')
-        expected_output = 'Hello from module 1!\nHello from module 2!\nHello from module 3!'  # noqa: E501
+        expected_output = 'Hello from task 1!\nHello from task 2!\nHello from task 3!'  # noqa: E501
         self.assertEqual(expected_output, output)
 
         # Remove compiled directory and outputs, if they exist
@@ -362,7 +398,7 @@ class TestClient(
         # Get output of a task with a target (without running pipeline)
         dag5.run()
         output = dag5.get_pipeline_output()
-        expected_output = 'Hello from module 1!\nHello from module 2!\nHello from module 3!\nHello from module 4!'  # noqa: E501
+        expected_output = 'Hello from task 1!\nHello from task 2!\nHello from task 3!\nHello from task 4!'  # noqa: E501
         self.assertEqual(expected_output, output)
 
         # Remove compiled directory and outputs, if they exist

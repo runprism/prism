@@ -75,9 +75,9 @@ class ProjectPyNotFoundException(PrismException):
         return self.message
 
 
-class ModulesDirNotFoundException(PrismException):
+class TasksDirNotFoundException(PrismException):
     """
-    Exception raised if modules dir isn't not found
+    Exception raised if tasks dir isn't not found
     """
 
     def __init__(self, message):
@@ -340,6 +340,19 @@ class InvalidTaskNameException(PrismException):
 
     def __init__(self, task_name):
         self.message = f"invalid task name `{task_name}`...task names should only have lowercase letters and underscores"  # noqa: E501
+        super().__init__(self.message)
+
+    def __str__(self):
+        return self.message
+
+
+class ReferenceException(PrismException):
+    """
+    Exception raised with a bad `tasks.ref()` call
+    """
+
+    def __init__(self, message):
+        self.message = message
         super().__init__(self.message)
 
     def __str__(self):

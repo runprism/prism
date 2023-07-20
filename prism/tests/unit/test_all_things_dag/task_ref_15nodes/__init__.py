@@ -1,22 +1,12 @@
-
+# Module list
 from pathlib import Path
-TASK_REF_15NODES_LIST = [
-    Path('module01.py'),
-    Path('module02.py'),
-    Path('module03.py'),
-    Path('module04.py'),
-    Path('module05.py'),
-    Path('module06.py'),
-    Path('module07.py'),
-    Path('module08.py'),
-    Path('module09.py'),
-    Path('module10.py'),
-    Path('module11.py'),
-    Path('module12.py'),
-    Path('module13.py'),
-    Path('module14.py'),
-    Path('module15.py'),
+TASK_REF_15NODES_MODULE_LIST = [
+    Path(f"task0{n}.py") if len(str(n)) == 1 else Path(f"task{n}.py") for n in range(1, 16)  # noqa
 ]
 
-
-# EOF
+TASK_REF_15NODES_TASK_LIST = [
+    f"task0{n}.Task0{n}" if len(str(n)) == 1 else f"task{n}.Task{n}" for n in range(1, 16)  # noqa
+]
+idx = TASK_REF_15NODES_TASK_LIST.index("task07.Task07")
+TASK_REF_15NODES_TASK_LIST.pop(idx)
+TASK_REF_15NODES_TASK_LIST += ["task07.Task07a", "task07.task_07b"]

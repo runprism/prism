@@ -84,7 +84,7 @@ class CreateTaskMixins:
             else:
                 return user_task_name
 
-    def create_task_module(self,
+    def create_task_task(self,
         task_type: str,
         task_template: Template,
         args: Dict[str, str],
@@ -92,7 +92,7 @@ class CreateTaskMixins:
         task_dir: Path,
     ) -> Path:
         f"""
-        Create the standalone module associated with the new task
+        Create the standalone task associated with the new task
 
         args:
             task_type: one of {','.join(prism.constants.VALID_TASK_TYPES)}
@@ -157,7 +157,7 @@ class CreateTaskMixins:
                     task_type, user_task_name, decorated
                 )
             }
-            self.create_task_module(
+            self.create_task_task(
                 task_type,
                 task_template,
                 template_args,
@@ -179,8 +179,8 @@ class CreateTaskMixins:
                 }
                 new_user_task_name = user_task_name + f"_{i}"
 
-                # Create task modules
-                self.create_task_module(
+                # Create task tasks
+                self.create_task_task(
                     task_type,
                     task_template,
                     template_args,

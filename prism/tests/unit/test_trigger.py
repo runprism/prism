@@ -43,7 +43,6 @@ prism_project = PrismProject(
     which="run",
     filename="prism_project.py"
 )
-prism_project.setup()
 
 
 ###################
@@ -70,6 +69,14 @@ def _load_yml_spec(yml_path: Path, trigger_name: str):
 ##############################
 
 class TestTrigger(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        prism_project.setup()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        prism_project.cleanup(prism_project.run_context)
 
     def test_triggers(self):
         """
@@ -199,14 +206,12 @@ class TestTrigger(unittest.TestCase):
         """
         Paths in `include` are added to the Prism project's sys.path.config
         """
-        # Path of interest
-        DUMMY_MODULES = Path(TEST_CASE_WKDIR) / 'dummy_modules'
-        print(prism_project.run_context['sys'].path)
 
-        # In `prism_project.py`, we have `Path(__file__).parent` in `SYS_PATH_CONFIG`.
-        # Therefore, `test_trigger_yml` should be in the project's sys.path.
-        self.assertTrue(str(TEST_TRIGGER_YML) in prism_project.run_context['sys'].path)
-        self.assertFalse(str(DUMMY_MODULES) in prism_project.run_context['sys'].path)
+        # Path of interest
+        DUMMY_TASKS = Path(TEST_CASE_WKDIR) / 'dummy_tasks'
+
+        # Now, it should appear in our project's sys.path
+        self.assertFalse(str(DUMMY_TASKS) in prism_project.run_context['sys'].path)
 
         # Create the TriggerManager
         manager = TriggerManager(
@@ -214,11 +219,11 @@ class TestTrigger(unittest.TestCase):
             prism_project=prism_project
         )
         manager.check_trigger_components(prism_project.run_context)
-        self.assertTrue(str(DUMMY_MODULES) in prism_project.run_context['sys'].path)
+        self.assertTrue(str(DUMMY_TASKS) in prism_project.run_context['sys'].path)
 
         # Cleanup
         prism_project.cleanup(prism_project.run_context)
-        self.assertFalse(str(DUMMY_MODULES) in prism_project.run_context['sys'].path)
+        self.assertFalse(str(DUMMY_TASKS) in prism_project.run_context['sys'].path)
 
         # The original project directory was also removed
         self.assertFalse(str(TEST_TRIGGER_YML) in prism_project.run_context['sys'].path)
@@ -244,7 +249,3 @@ class TestTrigger(unittest.TestCase):
         )
         expected_import_statement = "import test_fn"
         self.assertEqual(expected_import_statement, actual_import_statement)
-
-
-# Cleanup
-prism_project.cleanup(prism_project.run_context)

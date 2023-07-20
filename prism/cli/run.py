@@ -115,7 +115,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         compiled_dag_error_event = result.event_to_fire
         event_list = result.event_list
 
-        # If no modules in DAG, return
+        # If no tasks in DAG, return
         if compiled_dag == 0 and compiled_dag_error_event is not None:
             event_list = self.fire_error_events(
                 event_list,
@@ -194,8 +194,8 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
         )
 
         # We don't fire the actual exec events for this manager, since executor class
-        # fired individual exec events for each module. This manager is simply for
-        # capturing any non-module related errors in the logger.
+        # fired individual exec events for each task. This manager is simply for
+        # capturing any non-task related errors in the logger.
         exec_event_manager_output = pipeline_exec_manager.manage_events_during_run(
             fire_exec_events=False,
             fire_empty_line_events=False,

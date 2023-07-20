@@ -122,8 +122,8 @@ class PrismTrigger:
         mode="prod"
     ) -> Optional[str]:
         """
-        For function triggers, we may need to import the function from a module. Note
-        that the user must ensure that the path to that module is contained in
+        For function triggers, we may need to import the function from a task. Note
+        that the user must ensure that the path to that task is contained in
         SYS_PATH_CONF.
 
         args:
@@ -143,11 +143,11 @@ class PrismTrigger:
         fn = trigger_spec["function"]
         fn_split = fn.split('.')
 
-        # There must be a parent module specified. If there isn't, then something is
+        # There must be a parent task specified. If there isn't, then something is
         # wrong.
         if len(fn_split) == 1:
             raise prism.exceptions.RuntimeException(
-                message=f"no parent module specified for trigger `{trigger_name}`"
+                message=f"no parent task specified for trigger `{trigger_name}`"
             )
         else:
             if mode == "prod":

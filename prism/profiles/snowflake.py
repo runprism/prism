@@ -12,7 +12,7 @@ Table of Contents
 
 # Standard library imports
 import pandas as pd
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Prism-specific imports
 from .adapter import Adapter
@@ -112,18 +112,22 @@ class Snowflake(Adapter):
         )
         return ctx
 
-    def execute_sql(self, query: str, return_type: str) -> pd.DataFrame:
+    def execute_sql(self, query: str, return_type: Optional[str]) -> pd.DataFrame:
         """
         Execute the SQL query
         """
         # Create cursor for every SQL query -- this ensures thread safety
         cursor = self.engine.cursor()
         cursor.execute(query)
+
+        # If the return type is `pandas`, then return a DataFrame
         if return_type == "pandas":
             df: pd.DataFrame = cursor.fetch_pandas_all()
             cursor.close()
             return df
+
+        # Otherwise, just return the data
         else:
-            # Fetch one to ensure that the query was executed
-            cursor.fetchone()
+            data = cursor.fetchall()
             cursor.close()
+            return data

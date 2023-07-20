@@ -1,10 +1,7 @@
 from prism.task import PrismTask
-import prism.target as PrismTarget
 
-class Modulec(PrismTask):
+
+class Taskc(PrismTask):
 
     def run(self, tasks, hooks):
-        return "This is module C."
-
-
-# EOF
+        return "This is task C."

@@ -13,37 +13,49 @@ Table of Contents
 # Standard library imports
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
+import re
 
 
 ####################
 # Class definition #
 ####################
 
-class ModuleManifest:
+class TaskManifest:
     """
-    Class used to store metadata on a parsed module
+    Class used to store metadata on a parsed task
     """
 
     def __init__(self):
-        self.manifest_dict: Dict[str, Any] = {"targets": [], "modules": [], "refs": []}
+        self.manifest_dict: Dict[str, Any] = {"targets": {}, "tasks": [], "refs": {}}
 
-    def add_module(self, module_name: Path):
-        self.manifest_dict["modules"].append(str(module_name))
+    def add_task(self,
+        task_module: Path,
+        task_name: str
+    ):
+        task_module_no_py = re.sub(r'\.py$', '', str(task_module))
+        processed_task_name = f"{task_module_no_py}.{task_name}"
+        self.manifest_dict["tasks"].append(processed_task_name)
 
-    def add_ref(self, target: Path, source: Path):
-        obj = {
-            "target": str(target),
-            "source": str(source)
-        }
-        self.manifest_dict["refs"].append(obj)
+    def add_refs(self,
+        target_module: Path,
+        target_task: str,
+        sources: List[str]
+    ):
+        target_module_no_py = re.sub(r'\.py$', '', str(target_module))
+        if target_module_no_py not in self.manifest_dict["refs"].keys():
+            self.manifest_dict["refs"][target_module_no_py] = {}
+        self.manifest_dict["refs"][target_module_no_py][target_task] = sources
 
-    def add_target(self, module_name: Path, loc: Union[str, List[str]]):
-        obj = {
-            "module_name": str(module_name),
-            "target_locs": loc
-        }
-        self.manifest_dict["targets"].append(obj)
+    def add_targets(self,
+        module_relative_path: Path,
+        task_name: str,
+        locs: List[str]
+    ):
+        module_name_no_py = re.sub(r'\.py$', '', str(module_relative_path))
+        if module_name_no_py not in self.manifest_dict["targets"].keys():
+            self.manifest_dict["targets"][module_name_no_py] = {}
+        self.manifest_dict["targets"][module_name_no_py][task_name] = locs
 
 
 class Manifest:
@@ -51,41 +63,20 @@ class Manifest:
     Class used to store metadata on compiled prism project
     """
 
-    def __init__(self, module_manifests: List[ModuleManifest] = []):
+    def __init__(self, task_manifests: List[TaskManifest] = []):
         self.manifest_dict: Dict[str, Any] = {
-            "targets": [], "prism_project": "", "modules": [], "refs": []
+            "targets": {}, "prism_project": "", "tasks": [], "refs": {}
         }
-        self.module_manifests = module_manifests
+        self.task_manifests = task_manifests
 
-        # Iterate through module manifests and add to manifest
-        for mm in self.module_manifests:
-            self.manifest_dict["targets"].extend(mm.manifest_dict["targets"])
-            self.manifest_dict["modules"].extend(mm.manifest_dict["modules"])
-            self.manifest_dict["refs"].extend(mm.manifest_dict["refs"])
+        # Iterate through task manifests and add to manifest
+        for mm in self.task_manifests:
+            self.manifest_dict["targets"].update(mm.manifest_dict["targets"])
+            self.manifest_dict["tasks"].extend(mm.manifest_dict["tasks"])
+            self.manifest_dict["refs"].update(mm.manifest_dict["refs"])
 
     def add_prism_project(self, prism_project_data: str):
         self.manifest_dict["prism_project"] = prism_project_data
-
-    def add_module(self, module_name: Path, module_data: str):
-        obj = {
-            "module_name": str(module_name),
-            "module_data": module_data
-        }
-        self.manifest_dict["modules"].append(obj)
-
-    def add_ref(self, target: Path, source: Path):
-        obj = {
-            "target": str(target),
-            "source": str(source)
-        }
-        self.manifest_dict["refs"].append(obj)
-
-    def add_target(self, module_name: Path, loc: Union[str, List[str]]):
-        obj = {
-            "module_name": str(module_name),
-            "target_locs": loc
-        }
-        self.manifest_dict["targets"].append(obj)
 
     def json_dump(self, path: Path):
         with open(path / 'manifest.json', 'w') as f:

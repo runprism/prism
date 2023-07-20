@@ -1,11 +1,5 @@
 """
-Unit testing for functions used to parse {{ mod }} references in the modules and
-construct the DAG.
-
-Table of Contents:
-- Imports
-- Compile task instance to call functions
-- Test case class definition
+Unit testing for functions used to parse tasks.ref(...) references within a DAG
 """
 
 
@@ -14,51 +8,69 @@ Table of Contents:
 ###########
 
 # Standard library imports
+import argparse
 import unittest
 from pathlib import Path
-from typing import Union
+from typing import Any, List, Union, Optional
 
 # Prism imports
 import prism.exceptions
+from prism.mixins.compile import CompileMixin
 from prism.infra import compiler
-from prism.tests.unit.test_all_things_dag import TASK_REF_TEST_CASES
-from prism.tests.unit.test_all_things_dag.task_ref_3nodes import TASK_REF_3NODES_LIST
-from prism.tests.unit.test_all_things_dag.task_ref_5nodes import TASK_REF_5NODES_LIST
-from prism.tests.unit.test_all_things_dag.task_ref_15nodes import TASK_REF_15NODES_LIST
-from prism.tests.unit.test_all_things_dag.task_ref_norefs import TASK_REF_NOREFS_LIST
-from prism.tests.unit.test_all_things_dag.task_ref_selfref import TASK_REF_SELFREF_LIST
-from prism.tests.unit.test_all_things_dag.dag_cycle import DAG_CYCLE_LIST
+import prism.prism_logging
+from prism.tests.unit.test_all_things_dag import DAG_TEST_CASES
+from prism.tests.unit.test_all_things_dag.task_ref_3nodes import (
+    TASK_REF_3NODES_MODULE_LIST,
+    TASK_REF_3NODES_TASK_LIST,
+)
+from prism.tests.unit.test_all_things_dag.task_ref_5nodes import (
+    TASK_REF_5NODES_MODULE_LIST,
+    TASK_REF_5NODES_TASK_LIST,
+)
+from prism.tests.unit.test_all_things_dag.task_ref_15nodes import (
+    TASK_REF_15NODES_MODULE_LIST,
+    TASK_REF_15NODES_TASK_LIST,
+)
+from prism.tests.unit.test_all_things_dag.task_ref_norefs import (
+    TASK_REF_NOREFS_MODULE_LIST,
+    TASK_REF_NOREFS_TASK_LIST,
+)
+from prism.tests.unit.test_all_things_dag.task_ref_selfref import (
+    TASK_REF_SELFREF_MODULE_LIST,
+    TASK_REF_SELFREF_TASK_LIST,
+)
+from prism.tests.unit.test_all_things_dag.dag_cycle import (
+    DAG_CYCLE_MODULE_LIST,
+    DAG_CYCLE_TASK_LIST,
+)
 
-# Make sure that list of modules are actual PosixPath objects
-TASK_REF_3NODES_LIST = [Path(p) for p in TASK_REF_3NODES_LIST]
-TASK_REF_5NODES_LIST = [Path(p) for p in TASK_REF_5NODES_LIST]
-TASK_REF_15NODES_LIST = [Path(p) for p in TASK_REF_15NODES_LIST]
-TASK_REF_NOREFS_LIST = [Path(p) for p in TASK_REF_NOREFS_LIST]
-TASK_REF_SELFREF_LIST = [Path(p) for p in TASK_REF_SELFREF_LIST]
-DAG_CYCLE_LIST = [Path(p) for p in DAG_CYCLE_LIST]
+# Set up logger
+args = argparse.Namespace()
+args.log_level = "info"
+prism.prism_logging.set_up_logger(args)
 
 
-###########################################
-# Compile task instance to call functions #
-###########################################
+###########################
+# Paths / class instances #
+###########################
 
-# Task
-dag_compiler = compiler.DagCompiler(TASK_REF_TEST_CASES, None, None, None, False)
-
-# Constants
-TASK_REF_3NODES_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_3nodes'
-TASK_REF_5NODES_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_5nodes'
-TASK_REF_15NODES_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_15nodes'
-TASK_REF_NOREFS_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_norefs'
-TASK_REF_SELFREF_DIR = Path(TASK_REF_TEST_CASES) / 'task_ref_selfref'
-DAG_CYCLE_DIR = Path(TASK_REF_TEST_CASES) / 'dag_cycle'
+# Task directories
+TASK_REF_3NODES_DIR = Path(DAG_TEST_CASES) / 'task_ref_3nodes'
+TASK_REF_5NODES_DIR = Path(DAG_TEST_CASES) / 'task_ref_5nodes'
+TASK_REF_15NODES_DIR = Path(DAG_TEST_CASES) / 'task_ref_15nodes'
+TASK_REF_NOREFS_DIR = Path(DAG_TEST_CASES) / 'task_ref_norefs'
+TASK_REF_SELFREF_DIR = Path(DAG_TEST_CASES) / 'task_ref_selfref'
+DAG_CYCLE_DIR = Path(DAG_TEST_CASES) / 'dag_cycle'
 
 
 ##############################
 # Test case class definition #
 ##############################
 
-class TestAllDagFunctions(unittest.TestCase):
+class TestAllDagFunctions(
+    unittest.TestCase,
+    CompileMixin
+):
 
     def _convert_task_refs_to_str(self, task_refs: dict):
         task_refs_str = {}
@@ -89,311 +101,388 @@ class TestAllDagFunctions(unittest.TestCase):
         return [str(p) for p in topsort]
 
     ###################
-    # Mod ref parsing #
+    # Task references #
     ###################
 
-    def test_task_ref_varying_complexity(self):
-        """
-        Parse mod refs with different node counts and dependency complexities. These
-        should not result in an error.
-        """
-        task_ref_3nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR
+    def _parse_task_refs(self,
+        project_dir: Path,
+        module_list: List[Any],
+        tasks_dir: Path,
+        task_list: List[str]
+    ):
+        all_parsed_tasks = self.parse_all_tasks(
+            module_list,
+            tasks_dir=tasks_dir
         )
-        task_ref_5nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR
+        all_task_names = self.get_task_names(all_parsed_tasks)
+        self.assertEqual(sorted(task_list), sorted(all_task_names))
+
+        # Task references
+        dag_compiler = compiler.DagCompiler(
+            project_dir=project_dir,
+            tasks_dir=tasks_dir,
+            compiled_dir=None,
+            all_tasks=all_task_names,
+            parsed_tasks=all_parsed_tasks,
+            user_arg_tasks=[],
+            user_arg_all_downstream=False,
+            project=None,
         )
-        task_ref_15nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR
+        task_refs = dag_compiler.parse_task_refs(
+            tasks=all_task_names,
+            parsed_tasks=all_parsed_tasks
         )
 
-        # Expected mod refs. The order here is based on the order of the
-        # `TASK_REF_XNODES_LIST` and the order of {{ mod }} within the modules
-        # themselves.
-        expected_3nodes_modrefs = {
-            Path('module01.py'): None,
-            Path('module02.py'): Path('module01.py'),
-            Path('module03.py'): Path('module02.py')
+        # Return
+        return task_refs, dag_compiler
+
+    def test_task_refs_3nodes(self):
+        """
+        Parse task references for DAG with 3 nodes
+        """
+        task_refs_3nodes, _ = self._parse_task_refs(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_3NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_3NODES_DIR,
+            task_list=TASK_REF_3NODES_TASK_LIST,
+        )
+        expected_task_refs = {
+            'task01.Task01': [],
+            'task02.Task02': ['task01.Task01'],
+            'task03.Task03': ['task02.Task02']
         }
+        self.assertEqual(expected_task_refs, task_refs_3nodes)
 
-        expected_5nodes_modrefs = {
-            Path('moduleA.py'): None,
-            Path('moduleB.py'): Path('moduleA.py'),
-            Path('moduleC.py'): Path('moduleA.py'),
-            Path('moduleD.py'): [
-                Path('moduleB.py'),
-                Path('moduleA.py'),
-                Path('moduleC.py')
-            ],
-            Path('moduleE.py'): [
-                Path('moduleA.py'),
-                Path('moduleC.py'),
-                Path('moduleD.py')
-            ],
+    def test_task_refs_5nodes(self):
+        """
+        Parse task references for DAG with 5 nodes
+        """
+        task_refs_5nodes, _ = self._parse_task_refs(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_5NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_5NODES_DIR,
+            task_list=TASK_REF_5NODES_TASK_LIST,
+        )
+        expected_task_refs = {
+            'taskA.Taska': [],
+            'taskB.Taskb': ['taskA.Taska'],
+            'taskC.Taskc': ['taskA.Taska'],
+            'taskD.Taskd': ['taskB.Taskb', 'taskA.Taska', 'taskC.Taskc'],
+            'taskE.Taske': ['taskA.Taska', 'taskC.Taskc', 'taskD.Taskd'],
         }
+        for k, _ in expected_task_refs.items():
+            self.assertEqual(sorted(expected_task_refs[k]), sorted(task_refs_5nodes[k]))
 
-        expected_15nodes_modrefs = {
-            Path('module01.py'): None,
-            Path('module02.py'): Path('module01.py'),
-            Path('module03.py'): Path('module01.py'),
-            Path('module04.py'): [Path('module02.py'), Path('module03.py')],
-            Path('module05.py'): Path('module01.py'),
-            Path('module06.py'): Path('module05.py'),
-            Path('module07.py'): [Path('module04.py'), Path('module06.py')],
-            Path('module08.py'): Path('module01.py'),
-            Path('module09.py'): [Path('module05.py'), Path('module08.py')],
-            Path('module10.py'): Path('module01.py'),
-            Path('module11.py'): Path('module10.py'),
-            Path('module12.py'): Path('module10.py'),
-            Path('module13.py'): Path('module10.py'),
-            Path('module14.py'): Path('module11.py'),
-            Path('module15.py'): Path('module11.py')
+    def test_task_refs_15nodes(self):
+        """
+        Parse task references for DAG with 15 nodes. This DAG also has some local /
+        function-based tasks.
+        """
+        task_refs_15nodes, _ = self._parse_task_refs(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_15NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_15NODES_DIR,
+            task_list=TASK_REF_15NODES_TASK_LIST,
+        )
+        expected_task_refs = {
+            'task01.Task01': [],
+            'task02.Task02': ['task01.Task01'],
+            'task03.Task03': ['task01.Task01'],
+            'task04.Task04': ['task02.Task02', 'task03.Task03'],
+            'task05.Task05': ['task01.Task01'],
+            'task06.Task06': ['task05.Task05'],
+            'task07.Task07a': ['task04.Task04', 'task06.Task06'],
+            'task07.task_07b': ['task07.Task07a'],
+            'task08.Task08': ['task01.Task01'],
+            'task09.Task09': ['task05.Task05', 'task08.Task08'],
+            'task10.Task10': ['task01.Task01'],
+            'task11.Task11': ['task07.Task07a', 'task10.Task10'],
+            'task12.Task12': ['task10.Task10'],
+            'task13.Task13': ['task10.Task10'],
+            'task14.Task14': ['task11.Task11'],
+            'task15.Task15': ['task11.Task11'],
         }
+        for k, _ in expected_task_refs.items():
+            self.assertEqual(
+                sorted(expected_task_refs[k]),
+                sorted(task_refs_15nodes[k])
+            )
 
-        # Sort mod ref values to test equality
-        def _sort_values(task_ref_dict: dict):
-            return {k: sorted(v) if isinstance(v, list) else v for k, v in task_ref_dict.items()}  # noqa: E501
-
-        expected_3nodes_modrefs_sorted = _sort_values(expected_3nodes_modrefs)
-        expected_5nodes_modrefs_sorted = _sort_values(expected_5nodes_modrefs)
-        expected_15nodes_modrefs_sorted = _sort_values(expected_15nodes_modrefs)
-        task_ref_3nodes_modrefs_sorted = _sort_values(task_ref_3nodes_modrefs)
-        task_ref_5nodes_modrefs_sorted = _sort_values(task_ref_5nodes_modrefs)
-        task_ref_15nodes_modrefs_sorted = _sort_values(task_ref_15nodes_modrefs)
-
-        # Asserts
-        self.assertEqual(
-            expected_3nodes_modrefs_sorted, task_ref_3nodes_modrefs_sorted
-        )
-        self.assertEqual(
-            expected_5nodes_modrefs_sorted, task_ref_5nodes_modrefs_sorted
-        )
-        self.assertEqual(
-            expected_15nodes_modrefs_sorted, task_ref_15nodes_modrefs_sorted
-        )
-
-    def test_no_task_refs(self):
+    def test_task_refs_norefs(self):
         """
-        Modules without any mod refs will not throw an error
+        Parse task references for DAG with 5 nodes but no task refs
         """
-        task_ref_nomod_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR
+        task_refs_norefs, _ = self._parse_task_refs(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_NOREFS_MODULE_LIST,
+            tasks_dir=TASK_REF_NOREFS_DIR,
+            task_list=TASK_REF_NOREFS_TASK_LIST,
         )
-        expected_nomod_modrefs = {
-            Path('moduleA.py'): None,
-            Path('moduleB.py'): None,
-            Path('moduleC.py'): None,
-            Path('moduleD.py'): None,
-            Path('moduleE.py'): None
+        expected_task_refs = {
+            'moduleA.Taska': [],
+            'moduleB.Taskb': [],
+            'moduleC.Taskc': [],
+            'moduleD.Taskd': [],
+            'moduleE.Taske': [],
         }
+        for k, _ in expected_task_refs.items():
+            self.assertEqual(sorted(expected_task_refs[k]), sorted(task_refs_norefs[k]))
 
-        # Asserts
-        self.assertEqual(expected_nomod_modrefs, task_ref_nomod_modrefs)
-
-    def test_self_ref(self):
+    def test_task_refs_selfref(self):
         """
-        Self-references with mod throw a ParserException
+        Parse task references for DAG with 5 nodes but no task refs
         """
-        with self.assertRaises(prism.exceptions.ParserException) as cm:
-            dag_compiler.parse_task_refs(TASK_REF_SELFREF_LIST, TASK_REF_SELFREF_DIR)
-        expected_msg = "self-references found in `moduleB.py`"
+        with self.assertRaises(prism.exceptions.ReferenceException) as cm:
+            _, _ = self._parse_task_refs(
+                project_dir=DAG_TEST_CASES,
+                module_list=TASK_REF_SELFREF_MODULE_LIST,
+                tasks_dir=TASK_REF_SELFREF_DIR,
+                task_list=TASK_REF_SELFREF_TASK_LIST,
+            )
+        expected_msg = '\n\nAre you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`'  # noqa
         self.assertEqual(expected_msg, str(cm.exception))
+
+    def test_task_refs_cycle(self):
+        """
+        Parse task references for DAG with 5 nodes but no task refs
+        """
+        task_refs_norefs, _ = self._parse_task_refs(
+            project_dir=DAG_TEST_CASES,
+            module_list=DAG_CYCLE_MODULE_LIST,
+            tasks_dir=DAG_CYCLE_DIR,
+            task_list=DAG_CYCLE_TASK_LIST,
+        )
+        expected_task_refs = {
+            'moduleA.Taska': [],
+            'moduleB.Taskb': ['moduleA.Taska', 'moduleE.Taske'],
+            'moduleC.Taskc': ['moduleA.Taska'],
+            'moduleD.Taskd': ['moduleB.Taskb', 'moduleA.Taska', 'moduleC.Taskc'],
+            'moduleE.Taske': ['moduleA.Taska', 'moduleC.Taskc', 'moduleD.Taskd'],
+        }
+        for k, _ in expected_task_refs.items():
+            self.assertEqual(sorted(expected_task_refs[k]), sorted(task_refs_norefs[k]))
 
     #######################
     # Create nodes, edges #
     #######################
 
-    def test_create_nodes_edges_varying_complexity(self):
+    def _create_nodes_edges(self,
+        project_dir: Path,
+        module_list: List[Any],
+        tasks_dir: Path,
+        task_list: List[str]
+    ):
+        task_refs, dag_compiler = self._parse_task_refs(
+            project_dir=project_dir,
+            module_list=module_list,
+            tasks_dir=tasks_dir,
+            task_list=task_list,
+        )
+        nodes, edges = dag_compiler.create_nodes_edges(task_refs)
+        return nodes, edges, dag_compiler
+
+    def test_create_nodes_edges_3nodes(self):
         """
-        Use parsed mod refs (which we know from above should work as expected) to create
-        nodes and edges for 3-, 5-, and 15-node graphs. These should not throw any
-        errors.
+        Create nodes / edges for the DAG with 3 nodes.
         """
-        task_ref_3nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR
-        )
-        task_ref_5nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR
-        )
-        task_ref_15nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR
+        nodes, edges, _ = self._create_nodes_edges(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_3NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_3NODES_DIR,
+            task_list=TASK_REF_3NODES_TASK_LIST,
         )
 
-        # Create nodes and edges
-        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(
-            task_ref_3nodes_modrefs
-        )
-        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(
-            task_ref_5nodes_modrefs
-        )
-        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(
-            task_ref_15nodes_modrefs
-        )
+        # Nodes
+        self.assertEqual(sorted(TASK_REF_3NODES_TASK_LIST), sorted(nodes))
 
-        # Nodes should just be the full list of modules
-        self.assertEqual(TASK_REF_3NODES_LIST, nodes_3nodes)
-        self.assertEqual(TASK_REF_5NODES_LIST, nodes_5nodes)
-        self.assertEqual(TASK_REF_15NODES_LIST, nodes_15nodes)
-
-        # Expected edges
-        expected_edges_3nodes = [
-            (Path('module01.py'), Path('module02.py')),
-            (Path('module02.py'), Path('module03.py'))
+        # Edges
+        expected_edges = [
+            ('task01.Task01', 'task02.Task02'),
+            ('task02.Task02', 'task03.Task03'),
         ]
+        self.assertEqual(sorted(expected_edges), sorted(edges))
 
-        expected_edges_5nodes = [
-            (Path('moduleA.py'), Path('moduleB.py')),
-            (Path('moduleA.py'), Path('moduleC.py')),
-            (Path('moduleA.py'), Path('moduleD.py')),
-            (Path('moduleA.py'), Path('moduleE.py')),
-            (Path('moduleB.py'), Path('moduleD.py')),
-            (Path('moduleC.py'), Path('moduleD.py')),
-            (Path('moduleC.py'), Path('moduleE.py')),
-            (Path('moduleD.py'), Path('moduleE.py'))
-        ]
-
-        expected_edges_15nodes = [
-            (Path('module01.py'), Path('module10.py')),
-            (Path('module01.py'), Path('module02.py')),
-            (Path('module01.py'), Path('module03.py')),
-            (Path('module01.py'), Path('module05.py')),
-            (Path('module01.py'), Path('module08.py')),
-            (Path('module10.py'), Path('module11.py')),
-            (Path('module10.py'), Path('module12.py')),
-            (Path('module10.py'), Path('module13.py')),
-            (Path('module02.py'), Path('module04.py')),
-            (Path('module03.py'), Path('module04.py')),
-            (Path('module05.py'), Path('module06.py')),
-            (Path('module05.py'), Path('module09.py')),
-            (Path('module08.py'), Path('module09.py')),
-            (Path('module11.py'), Path('module14.py')),
-            (Path('module11.py'), Path('module15.py')),
-            (Path('module04.py'), Path('module07.py')),
-            (Path('module06.py'), Path('module07.py'))
-        ]
-
-        # Asserts
-        self.assertEqual(set(expected_edges_3nodes), set(edges_3nodes))
-        self.assertEqual(set(expected_edges_5nodes), set(edges_5nodes))
-        self.assertEqual(set(expected_edges_15nodes), set(edges_15nodes))
-
-    def test_create_nodes_edges_no_modrefs(self):
+    def test_create_nodes_edges_5nodes(self):
         """
-        Nodes/edges are created as expected even in situations where scripts have no mod
-        refs
+        Create nodes / edges for the DAG with 5 nodes.
         """
-        task_ref_nomod_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR
-        )
-        nodes_nomod, edges_nomod = dag_compiler.create_nodes_edges(
-            task_ref_nomod_modrefs
+        nodes, edges, _ = self._create_nodes_edges(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_5NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_5NODES_DIR,
+            task_list=TASK_REF_5NODES_TASK_LIST,
         )
 
-        # Node should just be the full list of nodes
-        self.assertEqual(TASK_REF_NOREFS_LIST, nodes_nomod)
+        # Nodes
+        self.assertEqual(sorted(TASK_REF_5NODES_TASK_LIST), sorted(nodes))
 
-        # Edge list should be empty
-        self.assertEqual([], edges_nomod)
+        # Edges
+        expected_edges = [
+            ('taskA.Taska', 'taskB.Taskb'),
+            ('taskA.Taska', 'taskC.Taskc'),
+            ('taskB.Taskb', 'taskD.Taskd'),
+            ('taskA.Taska', 'taskD.Taskd'),
+            ('taskC.Taskc', 'taskD.Taskd'),
+            ('taskA.Taska', 'taskE.Taske'),
+            ('taskC.Taskc', 'taskE.Taske'),
+            ('taskD.Taskd', 'taskE.Taske'),
+        ]
+        self.assertEqual(sorted(expected_edges), sorted(edges))
+
+    def test_create_nodes_edges_15nodes(self):
+        """
+        Create nodes / edges for the DAG with 3 nodes.
+        """
+        nodes, edges, _ = self._create_nodes_edges(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_15NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_15NODES_DIR,
+            task_list=TASK_REF_15NODES_TASK_LIST,
+        )
+
+        # Nodes
+        self.assertEqual(sorted(TASK_REF_15NODES_TASK_LIST), sorted(nodes))
+
+        # Edges
+        expected_edges = [
+            ('task01.Task01', 'task02.Task02'),
+            ('task01.Task01', 'task03.Task03'),
+            ('task02.Task02', 'task04.Task04'),
+            ('task03.Task03', 'task04.Task04'),
+            ('task01.Task01', 'task05.Task05'),
+            ('task05.Task05', 'task06.Task06'),
+            ('task04.Task04', 'task07.Task07a'),
+            ('task06.Task06', 'task07.Task07a'),
+            ('task07.Task07a', 'task07.task_07b'),
+            ('task01.Task01', 'task08.Task08'),
+            ('task05.Task05', 'task09.Task09'),
+            ('task08.Task08', 'task09.Task09'),
+            ('task01.Task01', 'task10.Task10'),
+            ('task07.Task07a', 'task11.Task11'),
+            ('task10.Task10', 'task11.Task11'),
+            ('task10.Task10', 'task12.Task12'),
+            ('task10.Task10', 'task13.Task13'),
+            ('task11.Task11', 'task14.Task14'),
+            ('task11.Task11', 'task15.Task15'),
+        ]
+        self.assertEqual(sorted(expected_edges), sorted(edges))
+
+    def test_create_nodes_edges_norefs(self):
+        """
+        Create nodes / edges for the DAG with 3 nodes.
+        """
+        nodes, edges, _ = self._create_nodes_edges(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_NOREFS_MODULE_LIST,
+            tasks_dir=TASK_REF_NOREFS_DIR,
+            task_list=TASK_REF_NOREFS_TASK_LIST,
+        )
+
+        # Nodes
+        self.assertEqual(sorted(TASK_REF_NOREFS_TASK_LIST), sorted(nodes))
+
+        # Edges
+        expected_edges = []
+        self.assertEqual(sorted(expected_edges), sorted(edges))
+
+    def test_create_nodes_edges_cycle(self):
+        """
+        Create nodes / edges for the DAG with a cycle
+        """
+        nodes, edges, _ = self._create_nodes_edges(
+            project_dir=DAG_TEST_CASES,
+            module_list=DAG_CYCLE_MODULE_LIST,
+            tasks_dir=DAG_CYCLE_DIR,
+            task_list=DAG_CYCLE_TASK_LIST,
+        )
+
+        # Nodes
+        self.assertEqual(sorted(DAG_CYCLE_TASK_LIST), sorted(nodes))
+
+        # Edges
+        expected_edges = [
+            ('moduleA.Taska', 'moduleB.Taskb'),
+            ('moduleE.Taske', 'moduleB.Taskb'),
+            ('moduleA.Taska', 'moduleC.Taskc'),
+            ('moduleC.Taskc', 'moduleD.Taskd'),
+            ('moduleB.Taskb', 'moduleD.Taskd'),
+            ('moduleA.Taska', 'moduleD.Taskd'),
+            ('moduleD.Taskd', 'moduleE.Taske'),
+            ('moduleA.Taska', 'moduleE.Taske'),
+            ('moduleC.Taskc', 'moduleE.Taske'),
+        ]
+        self.assertEqual(sorted(expected_edges), sorted(edges))
 
     ##############
     # Create DAG #
     ##############
+
+    def _create_dag(self,
+        project_dir: Path,
+        module_list: List[Any],
+        tasks_dir: Path,
+        task_list: List[str]
+    ):
+        nodes, edges, dag_compiler = self._create_nodes_edges(
+            project_dir=project_dir,
+            module_list=module_list,
+            tasks_dir=tasks_dir,
+            task_list=task_list,
+        )
+        dag = dag_compiler.create_dag(
+            nodes, edges
+        )
+        return dag, dag_compiler
 
     def test_create_dag_varying_complexity(self):
         """
         Create topsort for DAGs with different node counts and dependency complexities.
         These should not result in an error.
         """
-        # Parse mod refs
-        task_ref_3nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR
-        )
-        task_ref_5nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR
-        )
-        task_ref_15nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR
+        self._create_dag(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_3NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_3NODES_DIR,
+            task_list=TASK_REF_3NODES_TASK_LIST,
         )
 
-        # Create nodes and edges
-        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(
-            task_ref_3nodes_modrefs
-        )
-        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(
-            task_ref_5nodes_modrefs
-        )
-        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(
-            task_ref_15nodes_modrefs
+        self._create_dag(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_5NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_5NODES_DIR,
+            task_list=TASK_REF_5NODES_TASK_LIST,
         )
 
-        # Create DAG
-        dag_compiler.create_dag(nodes_3nodes, edges_3nodes)
-        dag_compiler.create_dag(nodes_5nodes, edges_5nodes)
-        dag_compiler.create_dag(nodes_15nodes, edges_15nodes)
+        self._create_dag(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_15NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_15NODES_DIR,
+            task_list=TASK_REF_15NODES_TASK_LIST,
+        )
 
-    def test_dag_no_modrefs(self):
-        """
-        DAG is created as expected even in situations where scripts have no mod refs
-        """
-        task_ref_nomod_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR
+        self._create_dag(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_NOREFS_MODULE_LIST,
+            tasks_dir=TASK_REF_NOREFS_DIR,
+            task_list=TASK_REF_NOREFS_TASK_LIST,
         )
-        nodes_nomod, edges_nomod = dag_compiler.create_nodes_edges(
-            task_ref_nomod_modrefs
-        )
-        dag_compiler.create_dag(nodes_nomod, edges_nomod)
 
     def test_create_dag_cycle(self):
         """
         Cycle in DAG throws an error
         """
-        # Parse mod refs
-        dag_cycle_modrefs = dag_compiler.parse_task_refs(DAG_CYCLE_LIST, DAG_CYCLE_DIR)
-        expected_dag_cycle_modrefs = {
-            Path('moduleA.py'): None,
-            Path('moduleB.py'): [Path('moduleA.py'), Path('moduleE.py')],
-            Path('moduleC.py'): Path('moduleA.py'),
-            Path('moduleD.py'): [
-                Path('moduleB.py'),
-                Path('moduleA.py'),
-                Path('moduleC.py')
-            ],
-            Path('moduleE.py'): [
-                Path('moduleA.py'),
-                Path('moduleC.py'),
-                Path('moduleD.py')
-            ]
-        }
-
-        # Sort values of dict for testing equality
-        expected_dag_cycle_modrefs_sorted = {k: sorted(v) if isinstance(v, list) else v for k, v in expected_dag_cycle_modrefs.items()}  # noqa: E501
-        dag_cycle_modrefs_sorted = {k: sorted(v) if isinstance(v, list) else v for k, v in dag_cycle_modrefs.items()}  # noqa: E501
-        self.assertEqual(expected_dag_cycle_modrefs_sorted, dag_cycle_modrefs_sorted)
-
-        # Create nodes and edges
-        nodes_dag_cycle, edges_dag_cycle = dag_compiler.create_nodes_edges(
-            dag_cycle_modrefs
-        )
-        expected_edges_dag_cycle = [
-            (Path('moduleA.py'), Path('moduleB.py')),
-            (Path('moduleA.py'), Path('moduleC.py')),
-            (Path('moduleA.py'), Path('moduleD.py')),
-            (Path('moduleA.py'), Path('moduleE.py')),
-            (Path('moduleB.py'), Path('moduleD.py')),
-            (Path('moduleC.py'), Path('moduleD.py')),
-            (Path('moduleC.py'), Path('moduleE.py')),
-            (Path('moduleD.py'), Path('moduleE.py')),
-            (Path('moduleE.py'), Path('moduleB.py'))
-        ]
-        self.assertEqual(set(DAG_CYCLE_LIST), set(nodes_dag_cycle))
-        self.assertEqual(set(expected_edges_dag_cycle), set(edges_dag_cycle))
-
-        # Create DAG
         with self.assertRaises(prism.exceptions.DAGException) as cm:
-            dag_compiler.create_dag(nodes_dag_cycle, edges_dag_cycle)
-        self.assertTrue("invalid DAG, cycle found in " in str(cm.exception))
-        self.assertTrue("moduleB.py" in str(cm.exception))
-        self.assertTrue("moduleE.py" in str(cm.exception))
+            self._create_dag(
+                project_dir=DAG_TEST_CASES,
+                module_list=DAG_CYCLE_MODULE_LIST,
+                tasks_dir=DAG_CYCLE_DIR,
+                task_list=DAG_CYCLE_TASK_LIST,
+            )
+        expected_msg = "invalid DAG, cycle found"
+        cycled_tasks = ['moduleD.Taskd', 'moduleB.Taskb', 'moduleE.Taske']
+        self.assertTrue(expected_msg in str(cm.exception))
+        for _t in cycled_tasks:
+            self.assertTrue(str(_t) in str(cm.exception))
 
     #########################
     # Get node dependencies #
@@ -403,33 +492,30 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         Get node dependencies from DAGs with 3 nodes.
         """
-        task_ref_3nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR
+        dag, dag_compiler = self._create_dag(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_3NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_3NODES_DIR,
+            task_list=TASK_REF_3NODES_TASK_LIST,
         )
-        nodes_3nodes, edges_3nodes = dag_compiler.create_nodes_edges(
-            task_ref_3nodes_modrefs
-        )
-        dag_3nodes = dag_compiler.create_dag(nodes_3nodes, edges_3nodes)
-
-        # Node dependencies
         node_deps_1 = dag_compiler.get_node_dependencies(
-            dag_3nodes, [Path('module01.py')]
+            dag, ["task01.Task01"]
         )
         node_deps_2 = dag_compiler.get_node_dependencies(
-            dag_3nodes, [Path('module02.py')]
+            dag, ['task02.Task02']
         )
         node_deps_3 = dag_compiler.get_node_dependencies(
-            dag_3nodes, [Path('module03.py')]
+            dag, ['task03.Task03']
         )
         node_deps_1_2 = dag_compiler.get_node_dependencies(
-            dag_3nodes, [Path('module01.py'), Path('module02.py')]
+            dag, ['task01.Task01', 'task02.Task02']
         )
 
         # Expected node dependencies
-        expected_node_deps_1 = [Path('module01.py')]
-        expected_node_deps_2 = [Path('module01.py'), Path('module02.py')]
-        expected_node_deps_3 = [Path('module01.py'), Path('module02.py'), Path('module03.py')]  # noqa: E501
-        expected_node_deps_1_2 = [Path('module01.py'), Path('module02.py')]
+        expected_node_deps_1 = ['task01.Task01']
+        expected_node_deps_2 = ['task01.Task01', 'task02.Task02']
+        expected_node_deps_3 = ['task01.Task01', 'task02.Task02', 'task03.Task03']
+        expected_node_deps_1_2 = ['task01.Task01', 'task02.Task02']
 
         # Asserts
         self.assertEqual(set(expected_node_deps_1), set(node_deps_1))
@@ -441,24 +527,22 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         Get node dependencies from DAGs with 5 nodes.
         """
-        task_ref_5nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR
+        dag, dag_compiler = self._create_dag(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_5NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_5NODES_DIR,
+            task_list=TASK_REF_5NODES_TASK_LIST,
         )
-        nodes_5nodes, edges_5nodes = dag_compiler.create_nodes_edges(
-            task_ref_5nodes_modrefs
-        )
-        dag_5nodes = dag_compiler.create_dag(nodes_5nodes, edges_5nodes)
-
         # Node dependencies
         node_deps_e = dag_compiler.get_node_dependencies(
-            dag_5nodes, [Path('moduleE.py')]
+            dag, ['taskE.Taske']
         )
         expected_node_deps_e = [
-            Path('moduleA.py'),
-            Path('moduleB.py'),
-            Path('moduleC.py'),
-            Path('moduleD.py'),
-            Path('moduleE.py'),
+            'taskA.Taska',
+            'taskB.Taskb',
+            'taskC.Taskc',
+            'taskD.Taskd',
+            'taskE.Taske',
         ]
         self.assertEqual(set(expected_node_deps_e), set(node_deps_e))
 
@@ -466,56 +550,58 @@ class TestAllDagFunctions(unittest.TestCase):
         """
         Get node dependencies from DAGs with 15 nodes.
         """
-        task_ref_15nodes_modrefs = dag_compiler.parse_task_refs(
-            TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR
+        dag, dag_compiler = self._create_dag(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_15NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_15NODES_DIR,
+            task_list=TASK_REF_15NODES_TASK_LIST,
         )
-        nodes_15nodes, edges_15nodes = dag_compiler.create_nodes_edges(
-            task_ref_15nodes_modrefs
-        )
-        dag_15nodes = dag_compiler.create_dag(nodes_15nodes, edges_15nodes)
 
         # Node dependencies
-        node_deps_7 = dag_compiler.get_node_dependencies(
-            dag_15nodes, [Path('module07.py')]
+        node_deps_7b = dag_compiler.get_node_dependencies(
+            dag, ['task07.task_07b']
         )
         expected_node_deps_7 = [
-            Path('module07.py'),
-            Path('module04.py'),
-            Path('module06.py'),
-            Path('module02.py'),
-            Path('module03.py'),
-            Path('module05.py'),
-            Path('module01.py')
+            'task07.task_07b',
+            'task07.Task07a',
+            'task04.Task04',
+            'task06.Task06',
+            'task02.Task02',
+            'task03.Task03',
+            'task05.Task05',
+            'task01.Task01'
         ]
-        self.assertEqual(set(expected_node_deps_7), set(node_deps_7))
+        self.assertEqual(set(expected_node_deps_7), set(node_deps_7b))
 
+        # Set of nodes with all nodes as their dependencies
         node_deps_all = dag_compiler.get_node_dependencies(
-            dag_15nodes,
+            dag,
             [
-                Path('module07.py'),
-                Path('module14.py'),
-                Path('module15.py'),
-                Path('module12.py'),
-                Path('module13.py'),
-                Path('module09.py')
+                'task07.task_07b',
+                'task14.Task14',
+                'task15.Task15',
+                'task12.Task12',
+                'task13.Task13',
+                'task09.Task09'
             ]
         )
         expected_node_deps_all = [
-            Path('module01.py'),
-            Path('module02.py'),
-            Path('module03.py'),
-            Path('module04.py'),
-            Path('module05.py'),
-            Path('module06.py'),
-            Path('module07.py'),
-            Path('module08.py'),
-            Path('module09.py'),
-            Path('module10.py'),
-            Path('module11.py'),
-            Path('module12.py'),
-            Path('module13.py'),
-            Path('module14.py'),
-            Path('module15.py')
+            'task01.Task01',
+            'task02.Task02',
+            'task03.Task03',
+            'task04.Task04',
+            'task05.Task05',
+            'task06.Task06',
+            'task07.Task07a',
+            'task07.task_07b',
+            'task08.Task08',
+            'task09.Task09',
+            'task10.Task10',
+            'task11.Task11',
+            'task12.Task12',
+            'task13.Task13',
+            'task14.Task14',
+            'task15.Task15'
         ]
         self.assertEqual(set(expected_node_deps_all), set(node_deps_all))
 
@@ -523,164 +609,233 @@ class TestAllDagFunctions(unittest.TestCase):
     # Create topsort #
     ##################
 
-    def test_topsort_varying_complexity(self):
-        """
-        Create topsort for DAGs with different node counts and dependency complexities.
-        These should not result in an error.
-        """
-        _, dag_topsort_3nodes = dag_compiler.create_topsort(
-            TASK_REF_3NODES_LIST, TASK_REF_3NODES_LIST, TASK_REF_3NODES_DIR
+    def _create_topsort(self,
+        project_dir: Path,
+        module_list: List[Any],
+        tasks_dir: Path,
+        task_list: List[str],
+        user_arg_tasks: Optional[List[str]] = None
+    ):
+        all_parsed_tasks = self.parse_all_tasks(
+            module_list,
+            tasks_dir=tasks_dir
         )
-        _, dag_topsort_5nodes = dag_compiler.create_topsort(
-            TASK_REF_5NODES_LIST, TASK_REF_5NODES_LIST, TASK_REF_5NODES_DIR
+        _, dag_compiler = self._parse_task_refs(
+            project_dir=project_dir,
+            module_list=module_list,
+            tasks_dir=tasks_dir,
+            task_list=task_list
         )
-        _, dag_topsort_15nodes = dag_compiler.create_topsort(
-            TASK_REF_15NODES_LIST, TASK_REF_15NODES_LIST, TASK_REF_15NODES_DIR
+        if user_arg_tasks is None:
+            user_arg_tasks = task_list
+        _, topsort = dag_compiler.create_topsort(
+            all_tasks=task_list,
+            user_arg_tasks=user_arg_tasks,
+            parsed_tasks=all_parsed_tasks
         )
+        return topsort
 
-        # For our simple, 3-node DAG, we know what the topsort list should look like.
-        # For the others, there are multiple possible orderings. We initially tried to
-        # sort the result of the NetworkX `all_topological_sorts` function returns a
-        # generator, but this turned out to be too computationally expensive when the
-        # number of possible orderings was high. Therefore, rather than test the value
-        # of the list itself, we will confirm that parent nodes appear before their
-        # children in the list.
-        expected_dag_topsort_3nodes = [
-            Path('module01.py'),
-            Path('module02.py'),
-            Path('module03.py')
-        ]
-        self.assertEqual(expected_dag_topsort_3nodes, dag_topsort_3nodes)
-
-        # Helper function for testing
-        def parent_before_child(parent_list, parent: str, child: Union[str, list]):
-            idx1 = parent_list.index(parent)
-            if isinstance(child, str):
-                idx2 = parent_list.index(child)
+    def _parent_before_child(self,
+        parent_list,
+        parent: str,
+        child: Union[str, list]
+    ):
+        """
+        For our simple, 3-node DAG, we know what the topsort list should look like.
+        For the others, there are multiple possible orderings. We initially tried to
+        sort the result of the NetworkX `all_topological_sorts` function returns a
+        generator, but this turned out to be too computationally expensive when the
+        number of possible orderings was high. Therefore, rather than test the value
+        of the list itself, we will confirm that parent nodes appear before their
+        children in the list.
+        """
+        idx1 = parent_list.index(parent)
+        if isinstance(child, str):
+            idx2 = parent_list.index(child)
+            self.assertTrue(idx1 < idx2)
+        elif isinstance(child, list):
+            for node in child:
+                idx2 = parent_list.index(node)
                 self.assertTrue(idx1 < idx2)
-            elif isinstance(child, list):
-                for node in child:
-                    idx2 = parent_list.index(node)
-                    self.assertTrue(idx1 < idx2)
 
-        # 5-node DAG
-        parent_before_child(
-            dag_topsort_5nodes,
-            Path('moduleA.py'),
+    def test_topsort_3nodes(self):
+        """
+        Create the topological sort for the DAG with 3 nodes
+        """
+        topsort = self._create_topsort(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_3NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_3NODES_DIR,
+            task_list=TASK_REF_3NODES_TASK_LIST,
+        )
+        expected_topsort = [
+            'task01.Task01',
+            'task02.Task02',
+            'task03.Task03'
+        ]
+        self.assertEqual(expected_topsort, topsort)
+
+    def test_topsort_5nodes(self):
+        """
+        Create the topological sort for the DAG with 5 nodes
+        """
+        topsort = self._create_topsort(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_5NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_5NODES_DIR,
+            task_list=TASK_REF_5NODES_TASK_LIST,
+        )
+
+        self._parent_before_child(
+            topsort,
+            'taskA.Taska',
             [
-                Path('moduleB.py'),
-                Path('moduleC.py'),
-                Path('moduleD.py'),
-                Path('moduleE.py')
+                'taskB.Taskb',
+                'taskC.Taskc',
+                'taskD.Taskd',
+                'taskE.Taske'
             ],
         )
-        parent_before_child(
-            dag_topsort_5nodes, Path('moduleB.py'), Path('moduleD.py'),
+        self._parent_before_child(
+            topsort,
+            'taskB.Taskb',
+            'taskD.Taskd',
         )
-        parent_before_child(
-            dag_topsort_5nodes,
-            Path('moduleC.py'),
-            [Path('moduleD.py'), Path('moduleE.py')],
-        )
-        parent_before_child(
-            dag_topsort_5nodes, Path('moduleD.py'), Path('moduleE.py')
-        )
-
-        # 15-node DAG
-        parent_before_child(
-            dag_topsort_15nodes,
-            Path('module01.py'),
+        self._parent_before_child(
+            topsort,
+            'taskC.Taskc',
             [
-                Path('module10.py'),
-                Path('module02.py'),
-                Path('module03.py'),
-                Path('module05.py'),
-                Path('module08.py')
+                'taskD.Taskd',
+                'taskE.Taske'
             ],
         )
-        parent_before_child(
-            dag_topsort_15nodes,
-            Path('module10.py'),
-            [Path('module11.py'), Path('module12.py'), Path('module13.py')],
-        )
-        parent_before_child(
-            dag_topsort_15nodes, Path('module02.py'), Path('module04.py')
-        )
-        parent_before_child(
-            dag_topsort_15nodes, Path('module03.py'), Path('module04.py')
-        )
-        parent_before_child(
-            dag_topsort_15nodes,
-            Path('module05.py'), [Path('module06.py'), Path('module09.py')]
-        )
-        parent_before_child(
-            dag_topsort_15nodes, Path('module08.py'), Path('module09.py')
-        )
-        parent_before_child(
-            dag_topsort_15nodes,
-            Path('module11.py'), [Path('module14.py'), Path('module15.py')]
-        )
-        parent_before_child(
-            dag_topsort_15nodes, Path('module04.py'), Path('module07.py')
-        )
-        parent_before_child(
-            dag_topsort_15nodes, Path('module06.py'), Path('module07.py')
+        self._parent_before_child(
+            topsort,
+            'taskD.Taskd',
+            'taskE.Taske'
         )
 
-    def test_topsort_no_modrefs(self):
+    def test_topsort_15nodes(self):
         """
-        DAGs with no dependencies should include all modules (assuming a subset of
-        modules is not explicitly specified).
+        Create the topological sort for the DAG with 15 nodes
         """
-        _, dag_topsort_no_modrefs = dag_compiler.create_topsort(
-            TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_LIST, TASK_REF_NOREFS_DIR
+        topsort = self._create_topsort(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_15NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_15NODES_DIR,
+            task_list=TASK_REF_15NODES_TASK_LIST,
         )
 
-        # All modules must be in DAG
-        for mod in TASK_REF_NOREFS_LIST:
-            self.assertTrue(mod in dag_topsort_no_modrefs)
+        self._parent_before_child(
+            topsort,
+            'task01.Task01',
+            [
+                'task10.Task10',
+                'task02.Task02',
+                'task03.Task03',
+                'task05.Task05',
+                'task08.Task08'
+            ],
+        )
+        self._parent_before_child(
+            topsort,
+            'task10.Task10',
+            ['task11.Task11', 'task12.Task12', 'task13.Task13'],
+        )
+        self._parent_before_child(
+            topsort, 'task02.Task02', 'task04.Task04'
+        )
+        self._parent_before_child(
+            topsort, 'task03.Task03', 'task04.Task04'
+        )
+        self._parent_before_child(
+            topsort,
+            'task05.Task05', ['task06.Task06', 'task09.Task09']
+        )
+        self._parent_before_child(
+            topsort, 'task08.Task08', 'task09.Task09'
+        )
+        self._parent_before_child(
+            topsort,
+            'task11.Task11', ['task14.Task14', 'task15.Task15']
+        )
+        self._parent_before_child(
+            topsort, 'task04.Task04', 'task07.Task07a'
+        )
+        self._parent_before_child(
+            topsort, 'task06.Task06', 'task07.Task07a'
+        )
+        self._parent_before_child(
+            topsort, 'task07.Task07a', 'task07.task_07b'
+        )
+
+    def test_topsort_no_refs(self):
+        """
+        DAGs with no dependencies should include all tasks (assuming a subset of
+        tasks is not explicitly specified).
+        """
+        topsort = self._create_topsort(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_NOREFS_MODULE_LIST,
+            tasks_dir=TASK_REF_NOREFS_DIR,
+            task_list=TASK_REF_NOREFS_TASK_LIST,
+        )
+
+        # All tasks must be in DAG
+        for mod in TASK_REF_NOREFS_TASK_LIST:
+            self.assertTrue(mod in topsort)
 
     def test_topsort_subset(self):
         """
         DAGs created with only a subset of nodes are created normally / without error
         """
-        _, dag_topsort_15nodes_7 = dag_compiler.create_topsort(
-            TASK_REF_15NODES_LIST, [Path('module07.py')], TASK_REF_15NODES_DIR
+        topsort_15_7 = self._create_topsort(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_15NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_15NODES_DIR,
+            task_list=TASK_REF_15NODES_TASK_LIST,
+            user_arg_tasks=["task07.Task07a"]
         )
-        _, dag_topsort_15nodes_all = dag_compiler.create_topsort(
-            TASK_REF_15NODES_LIST,
-            [
-                Path('module07.py'),
-                Path('module14.py'),
-                Path('module15.py'),
-                Path('module12.py'),
-                Path('module13.py'),
-                Path('module09.py')
-            ],
-            TASK_REF_15NODES_DIR
+        topsort_15_all = self._create_topsort(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_15NODES_MODULE_LIST,
+            tasks_dir=TASK_REF_15NODES_DIR,
+            task_list=TASK_REF_15NODES_TASK_LIST,
+            user_arg_tasks=[
+                'task07.task_07b',
+                'task14.Task14',
+                'task15.Task15',
+                'task12.Task12',
+                'task13.Task13',
+                'task09.Task09'
+            ]
         )
-        _, dag_topsort_no_modrefs = dag_compiler.create_topsort(
-            TASK_REF_NOREFS_LIST,
-            [Path('moduleB.py'), Path('moduleC.py')],
-            TASK_REF_NOREFS_DIR
+        topsort_norefs = self._create_topsort(
+            project_dir=DAG_TEST_CASES,
+            module_list=TASK_REF_NOREFS_MODULE_LIST,
+            tasks_dir=TASK_REF_NOREFS_DIR,
+            task_list=TASK_REF_NOREFS_TASK_LIST,
+            user_arg_tasks=[
+                'moduleB.Taskb',
+                'moduleC.Taskc',
+            ]
         )
-
         # In the DAG with 15 nodes, specify which nodes should be included in the DAG
-        # based on the modules for compilation
+        # based on the tasks for compilation
         actual_topsort_15nodes_7 = [
-            Path('module01.py'),
-            Path('module02.py'),
-            Path('module03.py'),
-            Path('module04.py'),
-            Path('module05.py'),
-            Path('module06.py'),
-            Path('module07.py')
+            'task01.Task01',
+            'task02.Task02',
+            'task03.Task03',
+            'task04.Task04',
+            'task05.Task05',
+            'task06.Task06',
+            'task07.Task07a'
         ]
-        actual_topsort_15nodes_all = TASK_REF_15NODES_LIST
-        self.assertEqual(set(actual_topsort_15nodes_7), set(dag_topsort_15nodes_7))
-        self.assertEqual(set(actual_topsort_15nodes_all), set(dag_topsort_15nodes_all))
+        actual_topsort_15nodes_all = TASK_REF_15NODES_TASK_LIST
+        self.assertEqual(set(actual_topsort_15nodes_7), set(topsort_15_7))
+        self.assertEqual(set(actual_topsort_15nodes_all), set(topsort_15_all))
 
         # In the DAG without mod refs, there aren't any edges. The only nodes in the DAG
-        # will be moduleB and moduleC
-        actual_topsort_no_modrefs = [Path('moduleB.py'), Path('moduleC.py')]
-        self.assertEqual(set(actual_topsort_no_modrefs), set(dag_topsort_no_modrefs))
+        # will be taskB and taskC
+        actual_topsort_no_modrefs = ['moduleB.Taskb', 'moduleC.Taskc']
+        self.assertEqual(set(actual_topsort_no_modrefs), set(topsort_norefs))

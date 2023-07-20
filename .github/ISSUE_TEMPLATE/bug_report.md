@@ -15,8 +15,8 @@ Create a  skeleton below with your project structure.
 ```
 project
   |-- prism_project.py
-  |-- modules
-      |-- module01.py
+  |-- tasks
+      |-- task01.py
       ...
   ...
 ```

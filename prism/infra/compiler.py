@@ -21,8 +21,8 @@ import prism.constants
 import prism.exceptions
 import prism.prism_logging
 import prism.parsers.ast_parser as ast_parser
-import prism.infra.module
-from prism.infra.manifest import Manifest, ModuleManifest
+import prism.infra.compiled_task
+from prism.infra.manifest import Manifest, TaskManifest
 from prism.infra.project import PrismProject
 
 
@@ -35,29 +35,49 @@ class CompiledDag:
     Compiled DAG
     """
     def __init__(self,
-        modules_dir: Path,
+        tasks_dir: Path,
         nxdag: nx.DiGraph,
-        topological_sort: List[Path],
-        user_arg_modules: List[Path],
-        module_manifests: Dict[Path, ModuleManifest]
+        topological_sort: List[str],
+        user_arg_tasks: List[str],
+        task_manifests: Dict[str, TaskManifest],
+        parsed_tasks: List[ast_parser.AstParser],
     ):
-        self.modules_dir = modules_dir
+        self.tasks_dir = tasks_dir
         self.nxdag = nxdag
         self.topological_sort = topological_sort
-        self.user_arg_modules = user_arg_modules
-        self.module_manifests = module_manifests
+        self.user_arg_tasks = user_arg_tasks
+        self.task_manifests = task_manifests
+        self.parsed_tasks = parsed_tasks
 
         # Store full paths in attribute
-        self.topological_sort_full_path = [
-            self.modules_dir / module for module in self.topological_sort
-        ]
+        self.topological_sort_full_path = []
 
-        # Create module objects
-        self.compiled_modules = []
-        for relative, full in zip(self.topological_sort, self.topological_sort_full_path):  # noqa: E501
-            self.compiled_modules.append(
-                prism.infra.module.CompiledModule(
-                    relative, full, self.module_manifests[relative]
+        # Create task objects
+        self.compiled_tasks = []
+        for _task in self.topological_sort:
+            # Task name
+            task_name = _task.split('.')[1]
+
+            # Relative path and full path
+            relative_path = Path(f'{_task.split(".")[0]}.py')
+            full_path = tasks_dir / relative_path
+
+            # Current parser
+            task_ast_parser = [
+                _p for _p in self.parsed_tasks if _p.task_relative_path == relative_path  # noqa: E501
+            ][0]
+
+            # Update attribute
+            self.topological_sort_full_path.append(full_path)
+
+            # Compiled task
+            self.compiled_tasks.append(
+                prism.infra.compiled_task.CompiledTask(
+                    task_name,
+                    relative_path,
+                    full_path,
+                    self.task_manifests[_task],
+                    task_ast_parser,
                 )
             )
 
@@ -69,22 +89,27 @@ class DagCompiler:
 
     def __init__(self,
         project_dir: Path,
+        tasks_dir: Path,
         compiled_dir: Path,
-        all_modules: List[Path],
-        user_arg_modules: List[Path],
+        all_tasks: List[str],
+        parsed_tasks: List[ast_parser.AstParser],
+        user_arg_tasks: List[str],
         user_arg_all_downstream: bool,
         project: Optional[PrismProject] = None
     ):
         self.project_dir = project_dir
         self.compiled_dir = compiled_dir
-        self.all_modules = all_modules
-        self.user_arg_modules = user_arg_modules
+        self.all_tasks = all_tasks
+        self.user_arg_tasks = user_arg_tasks
         self.project = project
         os.chdir(project_dir)
 
-        # Modules can only be executed if their predecessors are explicitly run or have
+        # Parsed tasks
+        self.parsed_tasks = parsed_tasks
+
+        # Tasks can only be executed if their predecessors are explicitly run or have
         # targets. For example, if our DAG is A --> B --> C and we call `prism run
-        # --module C`, then Prism will parse the execution order, instantiate but NOT
+        # --task C`, then Prism will parse the execution order, instantiate but NOT
         # execute tasks A and B, and then run task C. In other words, A and B will
         # always be instantiated; the --all-upstream argument controls whether A and B
         # are executed.
@@ -95,40 +120,53 @@ class DagCompiler:
         # instantiated at all.
         self.user_arg_all_downstream = user_arg_all_downstream
 
-        # Path of modules
-        self.modules_dir = self.project_dir / 'modules'
+        # Path of tasks
+        self.tasks_dir = tasks_dir
 
-        # Module manifests
-        self.module_manifests: Dict[Path, ModuleManifest] = {}
+        # Task manifests
+        self.task_manifests: Dict[str, TaskManifest] = {}
 
     def parse_task_refs(self,
-        modules: List[Path],
-        parent_path: Path
-    ) -> Dict[Path, Any]:
+        tasks: List[str],
+        parsed_tasks: List[ast_parser.AstParser],
+    ) -> Dict[str, List[str]]:
         """
         Parse node dictionary listed at the beginning of each python script. If
         node_dict does not exist in any script, throw an error.
 
         args:
-            modules: modules to compile
-            parent_path: parent path of modules
+            tasks: tasks to compile
+            parent_path: parent path of tasks
         returns:
-            module references as a dictionary
+            task references as a dictionary
         """
 
-        # This is only ever called on the output of `get_all_modules`, which sorts the
-        # modules alphabetically. Therefore, all mod refs will be sorted.
-        task_refs_dict: Dict[Path, Any] = {}
-        for m in modules:
-            parser = ast_parser.AstParser(m, parent_path)
-            task_refs = parser.parse()
-            if task_refs is None or task_refs == '' or task_refs == []:
-                task_refs_dict[m] = None
-            else:
-                task_refs_dict[m] = task_refs
+        # This is only ever called on the output of `get_all_tasks`, which sorts the
+        # tasks alphabetically. Therefore, all mod refs will be sorted.
+        task_refs_dict: Dict[str, List[str]] = {}
 
-            # Keep track of module manifest
-            self.module_manifests[m] = parser.module_manifest
+        # Iterate through all of the tasks
+        for _mod in tasks:
+            # Current module / task
+            current_module = Path(f"{_mod.split('.')[0]}.py")
+            curr_task = _mod.split('.')[1]
+
+            # Current parser
+            curr_parser = [
+                _p for _p in parsed_tasks if _p.task_relative_path == current_module
+            ][0]
+
+            # Other parsers
+            other_parsers = [
+                _p for _p in parsed_tasks if _p.task_relative_path != current_module
+            ]
+
+            # Get task refs
+            task_refs = curr_parser.parse(curr_task, other_parsers)
+            task_refs_dict[_mod] = task_refs
+
+            # Keep track of task manifest
+            self.task_manifests[_mod] = curr_parser.task_manifest
 
         return task_refs_dict
 
@@ -152,66 +190,62 @@ class DagCompiler:
         return master
 
     def add_graph_node(self,
-        elem: Path,
-        master: List[Path]
-    ) -> List[Path]:
+        elem: str,
+        master: List[str]
+    ) -> List[str]:
         """
         To resolve mypy errors...
         """
         return self.add_graph_elem(elem, master)
 
     def add_graph_edge(self,
-        elem: Tuple[Path, Path],
-        master: List[Tuple[Path, Path]]
-    ) -> List[Tuple[Path, Path]]:
+        elem: Tuple[str, str],
+        master: List[Tuple[str, str]]
+    ) -> List[Tuple[str, str]]:
         """
         To resolve mypy errors...
         """
         return self.add_graph_elem(elem, master)
 
     def create_nodes_edges(self,
-        module_references: Dict[Path, Any]
-    ) -> Tuple[List[Path], List[Tuple[Path, Path]]]:
+        task_references: Dict[str, Any]
+    ) -> Tuple[List[str], List[Tuple[str, str]]]:
         """
-        Create nodes / edges from module connections
+        Create nodes / edges from task connections
 
         args:
-            module_references: connections defined via {{ mod(...) }} in modules
+            task_references: connections defined via {{ mod(...) }} in tasks
         outputs:
-            nodes: list of nodes (modules)
-            edges: list of edges (tuple of nodes, i.e. modules)
+            nodes: list of nodes (tasks)
+            edges: list of edges (tuple of nodes, i.e. tasks)
         """
-
         # Create edges and nodes
-        edges: List[Tuple[Path, Path]] = []
-        nodes: List[Path] = []
+        edges: List[Tuple[str, str]] = []
+        nodes: List[str] = []
 
-        # Iterate through module references. Keys represent distinct modules in the DAG,
-        # and values represent the modules that feed into the key.
-        for mod, ref in module_references.items():
+        # Iterate through task references. Keys represent distinct tasks in the DAG,
+        # and values represent the tasks that feed into the key.
+        for mod, refs in task_references.items():
             nodes = self.add_graph_node(mod, nodes)
-            if ref is None:
-                pass
-            elif isinstance(ref, Path):
-                nodes = self.add_graph_node(ref, nodes)
-                edges = self.add_graph_edge((ref, mod), edges)
+            if refs is None:
+                continue
             else:
-                for v in ref:
+                for v in refs:
                     nodes = self.add_graph_node(v, nodes)
                     edges = self.add_graph_edge((v, mod), edges)
         return nodes, edges
 
     def create_dag(self,
-        nodes: List[Path],
-        edges: List[Tuple[Path, Path]]
+        nodes: List[str],
+        edges: List[Tuple[str, str]]
     ) -> nx.DiGraph:
         """
         Create DAG from edges
 
         args:
-            user_arg_modules: modules passed in user arguments
-            nodes: list of nodes (modules)
-            edges: list of edges (tuple of nodes, i.e. modules)
+            user_arg_tasks: tasks passed in user arguments
+            nodes: list of nodes (tasks)
+            edges: list of edges (tuple of nodes, i.e. tasks)
         outputs:
             topological sort of edges
         """
@@ -238,13 +272,12 @@ class DagCompiler:
             raise prism.exceptions.DAGException(
                 message=f"invalid DAG, cycle found in {str(cycles)}"
             )
-
         return graph
 
     def get_node_dependencies(self,
         graph: nx.DiGraph,
-        start_nodes: List[Path]
-    ) -> List[Path]:
+        start_nodes: List[str]
+    ) -> List[str]:
         """
         Parse the DiGraph and get all nodes upstream of the `start_nodes`
 
@@ -268,8 +301,8 @@ class DagCompiler:
 
     def get_node_successors(self,
         graph: nx.DiGraph,
-        start_nodes: List[Path]
-    ) -> List[Path]:
+        start_nodes: List[str]
+    ) -> List[str]:
         """
         Parse the DiGraph and get all nodes downstream of the `start_nodes`
 
@@ -292,65 +325,67 @@ class DagCompiler:
         return unique_successors
 
     def create_topsort(self,
-        all_modules: List[Path],
-        user_arg_modules: List[Path],
-        parent_path: Path
+        all_tasks: List[str],
+        user_arg_tasks: List[str],
+        parsed_tasks: List[ast_parser.AstParser],
     ) -> Any:
         """
         Parse mod refs, create the DAG, and create a topological sort of the DAG
 
         args:
-            all_modules: list of all modules
-            user_arg_modules: modules passed in user arguments
-            parent_path: path containing the modules
-            compiler_dict: globals dictionary for compiler
+            all_tasks: list of all tasks
+            user_arg_tasks: tasks passed in user arguments
+            parsed_tasks: list of AstParsers associated with each task module
         returns:
             topological sorted DAG as a list
         """
 
-        # Create a DAG using all the modules. We use `all_modules` instead of
-        # `user_arg_modules`, because using `user_arg_modules` will only compile/run the
-        # modules referenced in the modules themselves. For example, if we have a dag A
+        # Create a DAG using all the tasks. We use `all_tasks` instead of
+        # `user_arg_tasks`, because using `user_arg_tasks` will only compile/run the
+        # tasks referenced in the tasks themselves. For example, if we have a dag A
         # --> B --> C and wish to to only compile/run script C, then our code will only
         # run script B. This will throw an error, because script B relies on script A,
         # and we will need to instantiate the script A task for the script B task to
         # execute fully.
-        task_refs = self.parse_task_refs(all_modules, parent_path)
+        task_refs = self.parse_task_refs(
+            all_tasks,
+            parsed_tasks,
+        )
         nodes, edges = self.create_nodes_edges(task_refs)
         dag = self.create_dag(nodes, edges)
 
-        # If `user_arg_modules` is equivalent to `all_modules`, then create a
+        # If `user_arg_tasks` is equivalent to `all_tasks`, then create a
         # topological sorting of the full DAG. From the NetworkX documentation: A
         # topological sort is a nonunique permutation of the nodes of a directed graph
         # such that an edge from u to v implies that u appears before v in the
         # topological sort order. This ordering is valid only if the graph has no
         # directed cycles.
-        if len(user_arg_modules) == len(all_modules):
+        if len(user_arg_tasks) == len(all_tasks):
             all_topological_sorts = nx.algorithms.dag.all_topological_sorts(dag)
             all_topological_sorts_list = next(all_topological_sorts)
 
-        # Otherwise, the user has selected to run a subset of the modules. Identify all
-        # modules upstream (and potentially downstream) of `user_arg_modules`.
+        # Otherwise, the user has selected to run a subset of the tasks. Identify all
+        # tasks upstream (and potentially downstream) of `user_arg_tasks`.
         else:
 
             # Keep only the dependencies, and create a topological sort.
-            all_nodes = self.get_node_dependencies(dag, user_arg_modules)
+            all_nodes = self.get_node_dependencies(dag, user_arg_tasks)
 
             # Add successors if the user wants them
             if self.user_arg_all_downstream:
-                all_nodes.extend(self.get_node_successors(dag, user_arg_modules))
+                all_nodes.extend(self.get_node_successors(dag, user_arg_tasks))
 
             subgraph = dag.subgraph(list(set(all_nodes)))
             all_topological_sorts = nx.algorithms.dag.all_topological_sorts(subgraph)  # noqa: E501
             all_topological_sorts_list = next(all_topological_sorts)
 
-        # Add each module to manifest
+        # Add each task to manifest
         for elem in all_topological_sorts_list:
 
             # Raise error if node not in project
-            if elem not in all_modules:
+            if elem not in all_tasks:
                 raise prism.exceptions.CompileException(
-                    message=f'module `{str(elem)}` not found in project'
+                    message=f'task `{str(elem)}` not found in project'
                 )
 
         return dag, all_topological_sorts_list
@@ -360,11 +395,11 @@ class DagCompiler:
         Compile the DAG
         """
         nxdag, all_topological_sorts_list = self.create_topsort(
-            self.all_modules, self.user_arg_modules, self.modules_dir
+            self.all_tasks, self.user_arg_tasks, self.parsed_tasks
         )
 
         # Dump manifest
-        manifest = Manifest(list(self.module_manifests.values()))
+        manifest = Manifest(list(self.task_manifests.values()))
 
         # Add the prism project to the Manifest
         if self.project is not None:
@@ -382,10 +417,11 @@ class DagCompiler:
 
         # Return dag
         dag = CompiledDag(
-            self.modules_dir,
+            self.tasks_dir,
             nxdag,
             all_topological_sorts_list,
-            self.user_arg_modules,
-            self.module_manifests
+            self.user_arg_tasks,
+            self.task_manifests,
+            self.parsed_tasks,
         )
         return dag

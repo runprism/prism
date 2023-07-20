@@ -28,17 +28,11 @@ class SysPathEngine(SysHandlerMixin):
     """
 
     def __init__(self,
-        run_context: Dict[Any, Any]
+        run_context: Dict[Any, Any],
+        project_dir: Path,
     ):
-        self.run_context = run_context
-
-        # Define base sys path and base sys modules
-        temp_context: Dict[Any, Any] = {}
-        exec('import sys', temp_context)
-        self.base_sys_path = [p for p in temp_context['sys'].path]
-        self.base_sys_modules = {
-            k: v for k, v in temp_context['sys'].modules.items()
-        }
+        self.run_context = self.import_sys(run_context)
+        self.project_dir = project_dir
 
     def modify_sys_path(self, sys_path_config):
         """
@@ -55,13 +49,13 @@ class SysPathEngine(SysHandlerMixin):
 
     def revert_to_base_sys_path(self, sys_path_config, run_context: Dict[Any, Any]):
         """
-        Remove project dir and all associated modules from sys path
+        Remove project dir and all associated tasks from sys path
         """
-        run_context = self.remove_project_modules(
+        run_context = self.remove_project_tasks(
             sys_path_config, run_context
         )
         self.run_context = self.remove_paths_from_sys_path(
-            self.base_sys_path, sys_path_config, run_context
+            sys_path_config, run_context
         )
 
         # Return run context
