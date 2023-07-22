@@ -1339,8 +1339,8 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             all_countries = json.loads(f.read())
         with open(Path(wkdir / 'output' / 'independent_countries.json'), 'r') as f:
             independent_countries = json.loads(f.read())
-        self.assertEqual(all_countries[-1]["name"]["common"], "Guinea-Bissau")
-        self.assertEqual(independent_countries[0]["name"]["common"], "Jordan")
+        self.assertEqual(all_countries[-1]["name"]["common"], "Åland Islands")
+        self.assertEqual(independent_countries[0]["name"]["common"], "Afghanistan")
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
@@ -1398,7 +1398,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         )
         with open(Path(wkdir / 'output' / 'all_countries.json'), 'r') as f:
             all_countries = json.loads(f.read())
-        self.assertEqual(all_countries[-1]["name"]["common"], "Guinea-Bissau")
+        self.assertEqual(all_countries[-1]["name"]["common"], "Åland Islands")
 
         # ------------------------------------------
         # Now, execute transform_load
@@ -1427,7 +1427,7 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertTrue(Path(wkdir / 'output' / 'independent_countries.json').is_file())
         with open(Path(wkdir / 'output' / 'independent_countries.json'), 'r') as f:
             independent_countries = json.loads(f.read())
-        self.assertEqual(independent_countries[0]["name"]["common"], "Jordan")
+        self.assertEqual(independent_countries[0]["name"]["common"], "Afghanistan")
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)

@@ -34,7 +34,7 @@ def transform(tasks, hooks):
                 independent_countries.append(c)
         except KeyError:
             continue
-    return independent_countries
+    return sorted(independent_countries, key=lambda x: x["name"]["common"])
 
 
 @task(

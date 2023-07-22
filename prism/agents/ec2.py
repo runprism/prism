@@ -150,7 +150,7 @@ class Ec2(
         """
         Delete all resources found in the JSON
         """
-        del_resources = {}
+        del_resources: Dict[str, str] = {}
         json_path = Path(prism.constants.INTERNAL_FOLDER) / 'ec2.json'
         if not json_path.is_file():
             return del_resources
@@ -751,7 +751,7 @@ class Ec2(
             # Write data
             data = {
                 "resources": {
-                    "instance_id": instance_id,
+                    "instance_id": instance_id,  # type: ignore
                     "public_dns_name": resp["public_dns_name"],
                     "state": resp["state"]
                 },
