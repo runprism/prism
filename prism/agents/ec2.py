@@ -121,6 +121,83 @@ class Ec2(
         with open(Path(prism.constants.INTERNAL_FOLDER) / 'ec2.json', 'w') as f:
             json.dump(data, f)
 
+    def update_json(self, data: Dict[str, Dict[str, Any]]):
+        """
+        Update ~/.prism/ec2.json
+
+        args:
+            ...
+        """
+        json_path = Path(prism.constants.INTERNAL_FOLDER) / 'ec2.json'
+        if not json_path.is_file():
+            self.write_json(data)
+            return data
+        else:
+            with open(json_path, 'r') as f:
+                json_data = json.loads(f.read())
+            f.close()
+
+            # Update the data
+            for key in ["resources", "files"]:
+                if key in list(data.keys()):
+                    json_data[key].update(data[key])
+
+            # Write the json
+            self.write_json(json_data)
+            return json_data
+
+    def delete_resources_in_json(self) -> Dict[str, str]:
+        """
+        Delete all resources found in the JSON
+        """
+        del_resources = {}
+        json_path = Path(prism.constants.INTERNAL_FOLDER) / 'ec2.json'
+        if not json_path.is_file():
+            return del_resources
+        else:
+            with open(json_path, 'r') as f:
+                json_data = json.loads(f.read())
+            f.close()
+
+            # Resources and files
+            resources = json_data["resources"]
+            files = json_data["files"]
+
+            # Key name
+            if "key_name" in resources.keys():
+                pem_key_path = files["pem_key_path"]
+                self.ec2_client.delete_key_pair(
+                    KeyName=resources["key_name"]
+                )
+                os.unlink(str(pem_key_path))
+                del_resources["PEM key"] = resources["key_name"]
+
+            # Instance
+            if "instance_id" in resources.keys():
+                self.ec2_client.terminate_instances(
+                    InstanceIds=[resources["instance_id"]]
+                )
+                del_resources["instance"] = resources["instance_id"]
+
+            # Security group
+            if "security_group_id" in resources.keys():
+                while True:
+                    try:
+                        self.ec2_client.delete_security_group(
+                            GroupId=resources["security_group_id"]
+                        )
+                        break
+                    except botocore.exceptions.ClientError as e:
+                        if "DependencyViolation" in str(e):
+                            time.sleep(5)
+                        else:
+                            raise e
+
+                del_resources["security group"] = resources["security_group_id"]
+
+        os.unlink(json_path)
+        return del_resources
+
     def is_valid_conf(self, agent_conf: Dict[str, Any]):
         """
         A EC2 agent should be formatted as follows:
@@ -416,14 +493,26 @@ class Ec2(
         )
         security_group_id = response['GroupId']
 
-        # IP address
-        external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
-        self.add_ingress_rule(
-            ec2_client,
-            security_group_id,
-            external_ip
-        )
-        return security_group_id, vpc_id
+        # Add an ingress rule
+        try:
+            external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')  # noqa: E501
+            self.add_ingress_rule(
+                ec2_client,
+                security_group_id,
+                external_ip
+            )
+            return security_group_id, vpc_id
+
+        # If we encounter an error, first delete the newly created security group. Then
+        # raise the exception.
+        except Exception as e:
+
+            # The security group shouldn't be attached to an instance at this point, so
+            # we are safe to just delete it.
+            ec2_client.delete_security_group(
+                GroupId=security_group_id
+            )
+            raise e
 
     def check_ingress_ip(self,
         ec2_client: Any,
@@ -497,176 +586,200 @@ class Ec2(
         returns:
             EC2 response
         """
-        # Data to write
-        data = {}
+        # Wrap the whole thing in a single try-except block
+        try:
 
-        # Check resources
-        resources = self.check_resources(ec2_client, instance_name, instance_id)
+            # Data to write
+            data = {}
 
-        # Log prefix
-        log_prefix = f"{prism.ui.AGENT_EVENT}{instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET}"  # noqa: E501
+            # Check resources
+            resources = self.check_resources(ec2_client, instance_name, instance_id)
 
-        def _create_exception(resource):
-            return prism.exceptions.AwsException('\n'.join([
-                f"{resource} exists, but ~/.prism/ec2.json file not found! This only happens if:",  # noqa: E501
-                f"    1. You manually created the {resource}",
-                "    2. You deleted ~/.prism/ec2.json",
-                f"Delete the {resource} from EC2 and try again!"
-            ]))
+            # Log prefix
+            log_prefix = f"{prism.ui.AGENT_EVENT}{instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET}"  # noqa: E501
 
-        # Create PEM key pair
-        if resources["key_pair"] is None:
-            pem_key_path = self.create_key_pair(
-                ec2_client,
-                key_name=instance_name,
-            )
-            log_instance_name = f"{prism.ui.MAGENTA}{instance_name}{prism.ui.RESET}"
-            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | Created key pair {log_instance_name}"
-            )
-        else:
-            # If the key-pair exists, then the location of the PEM key path should be
-            # contained in ~/.prism/ec2.json. If it isn't, then either:
-            #   1. The user manually created the key pair
-            #   2. The user deleted ~/.prism/ec2.json
-            if not Path(prism.constants.INTERNAL_FOLDER / 'ec2.json').is_file():
-                raise _create_exception("key-pair")
-            pem_key_path = self.pem_key_path
+            def _create_exception(resource):
+                return prism.exceptions.AwsException('\n'.join([
+                    f"{resource} exists, but ~/.prism/ec2.json file not found! This only happens if:",  # noqa: E501
+                    f"    1. You manually created the {resource}",
+                    "    2. You deleted ~/.prism/ec2.json",
+                    f"Delete the {resource} from EC2 and try again!"
+                ]))
 
-            # Log
-            log_instance_name = f"{prism.ui.MAGENTA}{instance_name}{prism.ui.RESET}"  # noqa: E501
-            log_instance_path = f"{prism.ui.MAGENTA}{str(pem_key_path)}{prism.ui.RESET}"  # noqa: E501
-            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | Using existing key-pair {log_instance_name} at {log_instance_path}"  # noqa: E501
-            )
+            # Create PEM key pair
+            if resources["key_pair"] is None:
+                pem_key_path = self.create_key_pair(
+                    ec2_client,
+                    key_name=instance_name,
+                )
+                log_instance_name = f"{prism.ui.MAGENTA}{instance_name}{prism.ui.RESET}"
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{log_prefix} | Created key pair {log_instance_name}"
+                )
 
-        # Security group
-        if resources["security_group"] is None:
-            security_group_id, vpc_id = self.create_new_security_group(
-                ec2_client,
-                instance_name
-            )
+                # Write the data to the JSON
+                data = {
+                    "resources": {"key_name": instance_name},
+                    "files": {"pem_key_path": str(pem_key_path)}
+                }
+                self.update_json(data)
+            else:
 
-            # Log
-            log_security_group_id = f"{prism.ui.MAGENTA}{security_group_id}{prism.ui.RESET}"  # noqa: E501
-            log_vpc_id = f"{prism.ui.MAGENTA}{vpc_id}{prism.ui.RESET}"  # noqa: E501
-            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | Created security group with ID {log_security_group_id} in VPC {log_vpc_id}"  # noqa: E501
-            )
-        else:
-            if not Path(prism.constants.INTERNAL_FOLDER / 'ec2.json').is_file():
-                raise _create_exception("security group")
-
-            # Log
-            security_group_id = self.security_group_id
-            self.check_ingress_ip(ec2_client, security_group_id)
-            log_security_group_id = f"{prism.ui.MAGENTA}{security_group_id}{prism.ui.RESET}"  # noqa: E501
-            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | Using existing security group {log_security_group_id}"
-            )
-
-        # Log instance ID template
-        log_instance_id_template = f"{prism.ui.MAGENTA}{{instance_id}}{prism.ui.RESET}"
-
-        # Instance
-        if resources["instance"] is None:
-            instance = ec2_resource.create_instances(
-                InstanceType=instance_type,
-                KeyName=instance_name,
-                MinCount=1,
-                MaxCount=1,
-                ImageId="ami-0889a44b331db0194",
-                TagSpecifications=[
-                    {
-                        'ResourceType': 'instance',
-                        'Tags': [
-                            {
-                                'Key': 'Name',
-                                'Value': instance_name
-                            },
-                        ]
-                    },
-                ],
-                SecurityGroupIds=[
-                    security_group_id
-                ]
-            )
-            instance_id = instance[0].id
-
-            # Log
-            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | Created EC2 instance with ID {log_instance_id_template.format(instance_id=instance_id)}"  # noqa: E501
-            )
-            time.sleep(1)
-        else:
-            if not Path(prism.constants.INTERNAL_FOLDER / 'ec2.json').is_file():
-                raise _create_exception("instance")
-            instance_id = self.instance_id
-
-            # Log
-            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{log_prefix} | Using existing EC2 instance with ID {log_instance_id_template.format(instance_id=instance_id)}"  # noqa: E501
-            )
-
-        # Instance data
-        resp = self.check_instance_data(ec2_client, instance_id)
-
-        # If the instance exists but its key-name is not `instance_name` (this really
-        # should never happen unless the user manually creates an EC2 instance that has
-        # the same name), then raise an error
-        if len(resp.keys()) > 0 and resp["key_name"] != instance_name:
-            raise prism.exceptions.AwsException(
-                f"unrecognized key `{resp['key_name']}`...the agent requires key `{instance_name}.pem`"  # noqa: E501
-            )
-
-        # If the instance exists and is running, then just return
-        elif len(resp.keys()) > 0 and resp["state"] in [State.PENDING, State.RUNNING]:
-            while resp["state"] == State.PENDING:
+                # If the key-pair exists, then the location of the PEM key path should
+                # be contained in ~/.prism/ec2.json. If it isn't, then either:
+                #   1. The user manually created the key pair
+                #   2. The user deleted ~/.prism/ec2.json
+                if not Path(prism.constants.INTERNAL_FOLDER / 'ec2.json').is_file():
+                    raise _create_exception("key-pair")
+                pem_key_path = self.pem_key_path
 
                 # Log
-                log_pending_status = f"{prism.ui.YELLOW}pending{prism.ui.RESET}"
+                log_instance_name = f"{prism.ui.MAGENTA}{instance_name}{prism.ui.RESET}"  # noqa: E501
+                log_instance_path = f"{prism.ui.MAGENTA}{str(pem_key_path)}{prism.ui.RESET}"  # noqa: E501
                 prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
-                    f"{log_prefix} | Instance {log_instance_id_template.format(instance_id=instance_id)} is `{log_pending_status}`... checking again in 5 seconds"  # noqa: E501
+                    f"{log_prefix} | Using existing key-pair {log_instance_name} at {log_instance_path}"  # noqa: E501
                 )
-                resp = self.check_instance_data(
+
+            # Security group
+            if resources["security_group"] is None:
+                security_group_id, vpc_id = self.create_new_security_group(
                     ec2_client,
-                    instance_id
+                    instance_name
                 )
-                time.sleep(5)
 
-        # If the state exiss but has stopped, then restart it
-        elif len(resp.keys()) > 0 and resp["state"] in [State.STOPPED, State.STOPPING]:
-            self.restart_instance(
-                ec2_client,
-                resp["state"],
-                resp["instance_id"]
-            )
+                # Log
+                log_security_group_id = f"{prism.ui.MAGENTA}{security_group_id}{prism.ui.RESET}"  # noqa: E501
+                log_vpc_id = f"{prism.ui.MAGENTA}{vpc_id}{prism.ui.RESET}"  # noqa: E501
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{log_prefix} | Created security group with ID {log_security_group_id} in VPC {log_vpc_id}"  # noqa: E501
+                )
 
-        # Write data
-        data = {
-            "resources": {
-                "instance_id": instance_id,
-                "public_dns_name": resp["public_dns_name"],
-                "security_group_id": security_group_id,
-                "key_name": instance_name,
-                "state": resp["state"]
-            },
-            "files": {
-                "pem_key_path": str(pem_key_path)
+                # Write the data to the JSON
+                data = {
+                    "resources": {"security_group_id": security_group_id},
+                }
+                self.update_json(data)
+            else:
+                if not Path(prism.constants.INTERNAL_FOLDER / 'ec2.json').is_file():
+                    raise _create_exception("security group")
+
+                # Log
+                security_group_id = self.security_group_id
+                self.check_ingress_ip(ec2_client, security_group_id)
+                log_security_group_id = f"{prism.ui.MAGENTA}{security_group_id}{prism.ui.RESET}"  # noqa: E501
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{log_prefix} | Using existing security group {log_security_group_id}"  # noqa: E501
+                )
+
+            # Log instance ID template
+            log_instance_id_template = f"{prism.ui.MAGENTA}{{instance_id}}{prism.ui.RESET}"  # noqa: E501
+
+            # Instance
+            if resources["instance"] is None:
+                instance = ec2_resource.create_instances(
+                    InstanceType=instance_type,
+                    KeyName=instance_name,
+                    MinCount=1,
+                    MaxCount=1,
+                    ImageId="ami-0889a44b331db0194",
+                    TagSpecifications=[
+                        {
+                            'ResourceType': 'instance',
+                            'Tags': [
+                                {
+                                    'Key': 'Name',
+                                    'Value': instance_name
+                                },
+                            ]
+                        },
+                    ],
+                    SecurityGroupIds=[
+                        security_group_id
+                    ]
+                )
+                instance_id = instance[0].id
+
+                # Log
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{log_prefix} | Created EC2 instance with ID {log_instance_id_template.format(instance_id=instance_id)}"  # noqa: E501
+                )
+                time.sleep(1)
+            else:
+                if not Path(prism.constants.INTERNAL_FOLDER / 'ec2.json').is_file():
+                    raise _create_exception("instance")
+                instance_id = self.instance_id
+
+                # Log
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{log_prefix} | Using existing EC2 instance with ID {log_instance_id_template.format(instance_id=instance_id)}"  # noqa: E501
+                )
+
+            # Instance data
+            resp = self.check_instance_data(ec2_client, instance_id)
+
+            # If the instance exists but its key-name is not `instance_name` (this
+            # really should never happen unless the user manually creates an EC2
+            # instance that has the same name), then raise an error
+            if len(resp.keys()) > 0 and resp["key_name"] != instance_name:
+                raise prism.exceptions.AwsException(
+                    f"unrecognized key `{resp['key_name']}`...the agent requires key `{instance_name}.pem`"  # noqa: E501
+                )
+
+            # If the instance exists and is running, then just return
+            elif len(resp.keys()) > 0 and resp["state"] in [State.PENDING, State.RUNNING]:  # noqa: E501
+                while resp["state"] == State.PENDING:
+
+                    # Log
+                    log_pending_status = f"{prism.ui.YELLOW}pending{prism.ui.RESET}"
+                    prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                        f"{log_prefix} | Instance {log_instance_id_template.format(instance_id=instance_id)} is `{log_pending_status}`... checking again in 5 seconds"  # noqa: E501
+                    )
+                    resp = self.check_instance_data(
+                        ec2_client,
+                        instance_id
+                    )
+                    time.sleep(5)
+
+            # If the state exiss but has stopped, then restart it
+            elif len(resp.keys()) > 0 and resp["state"] in [State.STOPPED, State.STOPPING]:  # noqa: E501
+                self.restart_instance(
+                    ec2_client,
+                    resp["state"],
+                    resp["instance_id"]
+                )
+
+            # Write data
+            data = {
+                "resources": {
+                    "instance_id": instance_id,
+                    "public_dns_name": resp["public_dns_name"],
+                    "state": resp["state"]
+                },
             }
-        }
-        self.write_json(data)
+            data = self.update_json(data)
 
-        # Update class attributes
-        self.instance_id = instance_id
-        self.public_dns_name = resp["public_dns_name"]
-        self.security_group_id = security_group_id
-        self.key_name = instance_name
-        self.state = resp["state"]
-        self.pem_key_path = pem_key_path
+            # Update class attributes
+            self.instance_id = instance_id
+            self.public_dns_name = resp["public_dns_name"]
+            self.security_group_id = security_group_id
+            self.key_name = instance_name
+            self.state = resp["state"]
+            self.pem_key_path = pem_key_path
 
-        # Return the data
-        return data
+            # Return the data
+            return data
+
+        # If an error occurs, delete whatever resources may have been created
+        except Exception as e:
+            deleted_resources = self.delete_resources_in_json()
+
+            # Log the deleted resources
+            log_prefix = f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.RED}[delete]{prism.ui.RESET}"  # noqa: E501
+            for rs_name, rs_id in deleted_resources.items():
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{log_prefix} | Deleting {rs_name} `{rs_id}`"
+                )
+            raise e
 
     def parse_profile_paths(self,
         project: PrismProject
@@ -900,34 +1013,47 @@ class Ec2(
 
         # The `create_instance` command is blocking — it won't finish until the instance
         # is up and running.
-        user = "ec2-user"
-        public_dns_name = data["resources"]["public_dns_name"]
-        pem_key_path = data["files"]["pem_key_path"]
+        try:
+            user = "ec2-user"
+            public_dns_name = data["resources"]["public_dns_name"]
+            pem_key_path = data["files"]["pem_key_path"]
 
-        # Build the shell command
-        cmd = [
-            '/bin/sh', self.AGENT_APPLY_SCRIPT,
-            '-r', str(requirements_txt_path),
-            '-p', str(pem_key_path),
-            '-u', user,
-            '-n', public_dns_name,
-            '-d', str(self.project.project_dir),
-            '-c', project_paths_cli,
-            '-e', env_cli,
-        ]
+            # Build the shell command
+            cmd = [
+                '/bin/sh', self.AGENT_APPLY_SCRIPT,
+                '-r', str(requirements_txt_path),
+                '-p', str(pem_key_path),
+                '-u', user,
+                '-n', public_dns_name,
+                '-d', str(self.project.project_dir),
+                '-c', project_paths_cli,
+                '-e', env_cli,
+            ]
 
-        # Open a subprocess and stream the logs
-        _, err, returncode = self.stream_logs(cmd, prism.ui.AGENT_WHICH_BUILD, "build")
-
-        # Log anything from stderr that was printed in the project
-        for line in err.readlines():
-            prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
-                f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET} | {line.rstrip()}"  # noqa: E501
+            # Open a subprocess and stream the logs
+            _, err, returncode = self.stream_logs(
+                cmd, prism.ui.AGENT_WHICH_BUILD, "build"
             )
 
-        # Return the returncode. Return a dictionary in order to avoid confusing this
-        # output with the output of an event manager.
-        return {"return_code": returncode}
+            # Log anything from stderr that was printed in the project
+            for line in err.readlines():
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET} | {line.rstrip()}"  # noqa: E501
+                )
+
+            # If the return code is non-zero, then an error occurred. Delete all of the
+            # resources so that the user can try again.
+            if returncode != 0:
+                self.delete()
+
+            # Return the returncode. Return a dictionary in order to avoid confusing
+            # this output with the output of an event manager.
+            return {"return_code": returncode}
+
+        # If we encounter any sort of error, delete the resources first and then raise
+        except Exception as e:
+            self.delete()
+            raise e
 
     def run(self):
         """
