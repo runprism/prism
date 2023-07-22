@@ -75,8 +75,19 @@ class AwsMixin():
         )
         if not Path(directory).is_dir():
             Path(directory).mkdir(parents=True)
-        with open(Path(directory / f"{key_name}.pem"), 'w') as f:
-            f.write(response["KeyMaterial"])
+
+        # Write the key to a local file
+        try:
+            with open(Path(directory / f"{key_name}.pem"), 'w') as f:
+                f.write(response["KeyMaterial"])
+
+        # If the path already exists and cannot be edited, then raise the exception. But
+        # first, delete the newly created key pair.
+        except Exception as e:
+            ec2_client.delete_key_pair(
+                KeyName=key_name
+            )
+            raise e
 
         # Change the permissions
         os.chmod(Path(directory / f"{key_name}.pem"), stat.S_IREAD)

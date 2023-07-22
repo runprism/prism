@@ -33,4 +33,5 @@ def extract(tasks, hooks):
     api_url = "https://restcountries.com/v3.1/all"
     resp = requests.get(api_url, verify=False)
     data = json.loads(resp.text)
+    data = sorted(data, key=lambda x: x["name"]["common"])
     return data
