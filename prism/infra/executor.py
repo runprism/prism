@@ -123,7 +123,7 @@ class DagExecutor:
         # Keep track of current module in tasks manager
         if isinstance(task_manager, PrismTaskManager):
             task_manager.curr_module = re.sub(
-                r'\.py$', '', task.task_relative_path.name
+                r'\.py$', '', str(task.task_relative_path)
             )
 
         # Keep track of events
