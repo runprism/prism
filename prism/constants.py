@@ -17,7 +17,7 @@ import builtins
 #############
 
 # Version number
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 
 # Root directory of project
 ROOT_DIR = str(Path(os.path.dirname(__file__)).parent)
