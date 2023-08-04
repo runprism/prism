@@ -35,6 +35,7 @@ VALID_ADAPTERS = [
     "redshift",
     "snowflake",
     "trino",
+    "presto",
 ]
 
 # Task types

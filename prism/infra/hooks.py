@@ -42,6 +42,7 @@ class PrismHooks:
             - Redshift --> psycopg2.Connection
             - Snowflake --> snowflake.connector.Connection
             - Trino --> trino.dbapi.Connection
+            - Presto --> prestodb.dbapi.Connection
 
         args:
             adapter_name: SQL adapter
