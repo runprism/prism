@@ -2,6 +2,7 @@
 -e .[bigquery]
 -e .[redshift]
 -e .[postgres]
+-e .[presto]
 -e .[trino]
 -e .[pyspark]
 -e .[dbt]

@@ -1,0 +1,11 @@
+default:
+  adapters:
+    presto_adapter_name_here: # change this!
+      type: presto
+      host:
+      http_scheme: https
+      port:
+      user:
+      password:
+      catalog:
+      schema:

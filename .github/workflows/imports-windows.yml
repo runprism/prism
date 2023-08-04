@@ -29,6 +29,7 @@ jobs:
         pip install .[redshift]
         pip install .[postgres]
         pip install .[trino]
+        pip install .[presto]
         pip install .[pyspark]
         pip install .[dbt]
         pip install .[docker]

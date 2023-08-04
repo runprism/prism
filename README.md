@@ -60,6 +60,7 @@ Adapters allow users to connect to data warehouses or analytics engines. Prism c
 | **dbt** | ```pip install "prism-ds[dbt]"``` |
 | **Google BigQuery** | ```pip install "prism-ds[bigquery]"``` |
 | **Postgres** | ```pip install "prism-ds[postgres]"``` |
+| **Presto** | ```pip install "prism-ds[presto]"``` |
 | **PySpark** | ```pip install "prism-ds[pyspark]"``` |
 | **Redshift** | ```pip install "prism-ds[redshift]"``` |
 | **Snowflake** | ```pip install "prism-ds[snowflake]"``` |
