@@ -71,7 +71,10 @@ class PrismTask:
             # If bool_run, then execute the `run` function and set the `output`
             # attribute to its result
             if self.bool_run:
-                self._done(self.hooks) #call done method
+                if not self._done(self.hooks):
+                    raise prism.exceptions.RuntimeException(
+                        f"the _done method in {type(self).__name__} failed to execute")
+
                 self.output = self.run(self.task_manager, self.hooks)
                 if self.output is None:
                     raise prism.exceptions.RuntimeException(
