@@ -54,6 +54,14 @@ class PrismTask:
     def set_hooks(self, hooks: prism.infra.hooks.PrismHooks):
         self.hooks = hooks
 
+    def _done(self, hooks: prism.infra.hooks.PrismHooks) -> bool:
+        """
+        A protected method meant to be overrided by sub classes. Will be called 
+        automatically at the begin of exec()
+        """
+        return True
+
+
     def exec(self):
 
         # If the `target` decorator isn't applied, then only execute the `run` function
@@ -63,6 +71,7 @@ class PrismTask:
             # If bool_run, then execute the `run` function and set the `output`
             # attribute to its result
             if self.bool_run:
+                self._done(self.hooks) #call done method
                 self.output = self.run(self.task_manager, self.hooks)
                 if self.output is None:
                     raise prism.exceptions.RuntimeException(
