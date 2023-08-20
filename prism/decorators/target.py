@@ -74,7 +74,7 @@ def target(*, type, loc, **kwargs):
                     )
 
                 # If the task should be run in full, then call the run function
-                if self.bool_run:
+                if self.bool_run and not self.done(task_manager, hooks):
 
                     # When using `target` as a decorator, `run` is a function. When
                     # using `target` as an argument to the `task()` decorator, `run` is

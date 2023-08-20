@@ -97,7 +97,7 @@ class PrismTask:
         returns:
             True if the task is already Done, False if not. Defaults to False.
         """
-        False
+        return False
 
     def run(self,
         tasks: prism.infra.task_manager.PrismTaskManager,
