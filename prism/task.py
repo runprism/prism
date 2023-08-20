@@ -83,6 +83,22 @@ class PrismTask:
                     "`run` method must produce a non-null output"
                 )
 
+    def done(self,
+        tasks: prism.infra.task_manager.PrismTaskManager,
+        hooks: prism.infra.hooks.PrismHooks,
+    ) -> bool:
+        """
+        Check if this task is already done. If it is, then don't execute `run`.
+        Otherwise, execute `run`.
+
+        args:
+            tasks: Prism task manager, used to reference other tasks
+            hooks: Prism hooks, used to access Prism adapters
+        returns:
+            True if the task is already Done, False if not. Defaults to False.
+        """
+        False
+
     def run(self,
         tasks: prism.infra.task_manager.PrismTaskManager,
         hooks: prism.infra.hooks.PrismHooks,
@@ -90,6 +106,11 @@ class PrismTask:
         """
         Run the task. The user should override this function definition when creating
         their own tasks.
+        args:
+            tasks: Prism task manager, used to reference other tasks
+            hooks: Prism hooks, used to access Prism adapters
+        returns:
+            Any
         """
         if self.func is not None:
             return self.func(tasks, hooks)
