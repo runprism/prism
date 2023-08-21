@@ -212,6 +212,7 @@ class PrismDAG(
         tasks: Optional[List[str]] = None,
         all_upstream: bool = True,
         all_downstream: bool = False,
+        full_refresh: bool = False,
         full_tb: bool = True,
         user_context: Optional[Dict[str, Any]] = None
     ):
@@ -275,6 +276,7 @@ class PrismDAG(
                 all_upstream,
                 all_downstream,
                 threads,
+                full_refresh,
                 user_context
             )
             pipeline = self.create_pipeline(
