@@ -45,6 +45,7 @@ from prism.ui import (
     HEADER_GRAY,
     GRAY_PINK,
     ORANGE_BROWN,
+    ORANGE,
     TERMINAL_WIDTH,
 )
 
@@ -62,7 +63,7 @@ def colorize_status(status):
     returns
         colorized_status: status with color
     """
-    if status not in ["RUN", "DONE", "ERROR"]:
+    if status not in ["RUN", "DONE", "ERROR", "SKIPPED"]:
         raise ValueError(f"{status} is invalid; must be either RUN, DONE, or ERROR")
     if status == "RUN":
         return f"{YELLOW}RUN{RESET}"
@@ -70,6 +71,8 @@ def colorize_status(status):
         return f"{GREEN}DONE{RESET}"
     elif status == "ERROR":
         return f"{RED}ERROR{RESET}"
+    elif status == "SKIPPED":
+        return f"{ORANGE}SKIPPED{RESET}"
 
 
 def escape_ansi(string: str) -> str:
@@ -448,6 +451,7 @@ class ExecutionEvent(Event):
             RUNNING EVENT {event.name}
             FINISHED EVENT {event.name}
             ERROR IN EVENT {event.name}
+            SKIPPED EVENT {event.name}
 
         Add name of event (after removing event status and ANSI codes) to string
         representation of event.
@@ -456,7 +460,7 @@ class ExecutionEvent(Event):
         msg_no_ansi = escape_ansi(self.msg)
 
         # Remove the event status
-        status_regex = re.compile('(RUNNING|FINISHED|ERROR)')
+        status_regex = re.compile('(RUNNING|FINISHED|ERROR|SKIPPED)')
         msg_no_ansi_status = status_regex.sub('', msg_no_ansi)
 
         # Remove EVENT and quotation marks

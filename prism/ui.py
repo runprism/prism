@@ -26,6 +26,7 @@ BOLD = "\u001b[1m"
 HEADER_GRAY = "\u001b[0m"
 GRAY_PINK = "\u001b[38;5;96m"
 ORANGE_BROWN = "\u001b[38;5;180m"
+ORANGE = "\u001b[38;5;208m"
 
 # Event colors
 EVENT_COLOR = "\u001b[38;5;103m"

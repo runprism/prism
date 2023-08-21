@@ -212,7 +212,9 @@ class DagExecutor:
                 task_manager=task_manager,
                 hooks=hooks,
                 explicit_run=task.task_var_name not in self.nodes_not_explicitly_run,
-                user_context=user_context
+                user_context=user_context,
+                idx=idx,
+                total=total,
             )
 
             # All events

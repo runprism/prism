@@ -53,6 +53,22 @@ class BaseEventManager:
         self.full_tb = full_tb
         self.func = func
 
+    def fire_skipped_exec_event(self,
+        event_list: List[prism.prism_logging.Event]
+    ):
+        """
+        Create ExecutionEvent informing user that a task was skipped
+        """
+        e = prism.prism_logging.ExecutionEvent(
+            msg=f"SKIPPED EVENT {EVENT_COLOR}'{self.name}'{RESET}",
+            num=self.idx,
+            total=self.total,
+            status="SKIP",
+            execution_time=None
+        )
+        event_list = fire_console_event(e, event_list, log_level='info')
+        return event_list
+
     def fire_running_exec_event(self,
         event_list: List[prism.prism_logging.Event]
     ):
@@ -118,6 +134,7 @@ class BaseEventManager:
         event_list: List[prism.prism_logging.Event],
         fire_exec_events=True,
         fire_empty_line_events=True,
+        skipped_event=False,
         **kwargs
     ) -> EventManagerOutput:
         """
@@ -130,9 +147,15 @@ class BaseEventManager:
 
         # Execute task
         try:
+            # The only events we ever really skip are actual tasks. For these, the skip
+            # logic is handled within the task's `exec` function. So, we just run it
+            # normally here.
             outputs = self.run(**kwargs)
             if fire_exec_events:
-                event_list = self.fire_success_exec_event(start_time, event_list)
+                if skipped_event:
+                    event_list = self.fire_skipped_exec_event(event_list)
+                else:
+                    event_list = self.fire_success_exec_event(start_time, event_list)
 
             # Return output of task execution
             return EventManagerOutput(outputs, None, event_list)

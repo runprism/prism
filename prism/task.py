@@ -48,6 +48,9 @@ class PrismTask:
         self.RETRIES = 0
         self.RETRY_DELAY_SECONDS = 0
 
+        # Initialize the is_done attribute
+        self.is_done: bool
+
     def set_task_manager(self, task_manager: prism.infra.task_manager.PrismTaskManager):
         self.task_manager = task_manager
 
@@ -58,7 +61,7 @@ class PrismTask:
 
         # If the `target` decorator isn't applied, then only execute the `run` function
         # of bool_run is true
-        if self.run.__name__ == "run":
+        if self.run.__name__ == "run" and not self.is_done:
 
             # If bool_run, then execute the `run` function and set the `output`
             # attribute to its result
@@ -140,7 +143,7 @@ class PrismTask:
                     )
 
                 # If the task should be run in full, then call the run function
-                if self.bool_run:
+                if self.bool_run and not self.is_done:
                     obj = func(self, task_manager, hooks)
 
                     # Initialize an instance of the target class and save the object

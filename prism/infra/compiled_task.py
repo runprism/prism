@@ -13,7 +13,7 @@ Table of Contents
 # Standard library imports
 import ast
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import re
 
 # Prism-specific imports
@@ -22,6 +22,15 @@ from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
 from prism.infra.manifest import TaskManifest
 from prism.parsers.ast_parser import AstParser
+from prism.prism_logging import (
+    fire_console_event,
+    ExecutionEvent
+)
+from prism.ui import (
+    ORANGE,
+    EVENT_COLOR,
+    RESET,
+)
 
 
 ####################
@@ -188,7 +197,9 @@ class CompiledTask:
         task_manager: PrismTaskManager,
         hooks: PrismHooks,
         explicit_run: bool = True,
-        user_context: Dict[Any, Any] = {}
+        user_context: Dict[Any, Any] = {},
+        idx: Optional[int] = None,
+        total: Optional[int] = None,
     ) -> PrismTaskManager:
         """
         Execute task
@@ -196,6 +207,19 @@ class CompiledTask:
         task_var_name = self.instantiate_task_class(
             run_context, task_manager, hooks, explicit_run, user_context
         )
+
+        # Check if the task is done
+        is_done = run_context[task_var_name].done(task_manager, hooks)
+        run_context[task_var_name].is_done = is_done
+        if is_done:
+            e = ExecutionEvent(
+                msg=f"{ORANGE}SKIPPING{RESET} EVENT {EVENT_COLOR}{task_var_name}{RESET}",  # noqa: E501
+                num=idx,
+                total=total,
+                status="SKIPPED",
+                execution_time=None
+            )
+            fire_console_event(e, [], log_level='info')
 
         # Execute the task
         run_context[task_var_name].exec()
