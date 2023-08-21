@@ -188,6 +188,7 @@ class CompiledTask:
         task_manager: PrismTaskManager,
         hooks: PrismHooks,
         explicit_run: bool = True,
+        full_refresh: bool = False,
         user_context: Dict[Any, Any] = {},
     ) -> PrismTaskManager:
         """
@@ -197,7 +198,7 @@ class CompiledTask:
             run_context, task_manager, hooks, explicit_run, user_context
         )
         is_done = run_context[task_var_name].done(task_manager, hooks)
-        run_context[task_var_name].is_done = is_done
+        run_context[task_var_name].is_done = is_done and not full_refresh
 
         # Execute the task
         run_context[task_var_name].exec()
