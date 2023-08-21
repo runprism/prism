@@ -49,7 +49,7 @@ class PrismTask:
         self.RETRY_DELAY_SECONDS = 0
 
         # Initialize the is_done attribute
-        self.is_done: bool
+        self.is_done: bool = False
 
     def set_task_manager(self, task_manager: prism.infra.task_manager.PrismTaskManager):
         self.task_manager = task_manager
