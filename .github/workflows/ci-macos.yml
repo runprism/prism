@@ -30,7 +30,7 @@ jobs:
         pip install tox tox-gh-actions
     - name: Install docker
       run: |
-        brew install docker
+        brew install docker@24.0.3
         colima start
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
