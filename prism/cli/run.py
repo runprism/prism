@@ -144,6 +144,7 @@ class RunTask(prism.cli.compile.CompileTask, prism.mixins.run.RunMixin):
             self.args.all_upstream,
             self.args.all_downstream,
             threads,
+            self.args.full_refresh,
             user_context
         )
 

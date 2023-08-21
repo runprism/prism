@@ -57,10 +57,14 @@ class DagExecutor:
         user_arg_all_upstream: bool,
         user_arg_all_downstream: bool,
         threads: int,
-        user_context: Dict[Any, Any] = {}
+        full_refresh: bool = False,
+        user_context: Dict[Any, Any] = {},
     ):
         self.project_dir = project_dir
         self.compiled_dag = compiled_dag
+
+        # Refresh all `done` tasks as well
+        self.full_refresh = full_refresh
 
         # Extract attributes from compiled_dag instance
         self.compiled_tasks = self.compiled_dag.compiled_tasks
@@ -212,7 +216,8 @@ class DagExecutor:
                 task_manager=task_manager,
                 hooks=hooks,
                 explicit_run=task.task_var_name not in self.nodes_not_explicitly_run,
-                user_context=user_context
+                full_refresh=self.full_refresh,
+                user_context=user_context,
             )
 
             # All events

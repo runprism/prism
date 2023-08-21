@@ -20,7 +20,8 @@ from typing import Any, Callable, List, Optional, Union
 import prism.prism_logging
 import prism.exceptions
 from prism.prism_logging import Event, fire_console_event, fire_empty_line_event
-from prism.ui import RED, GREEN, EVENT_COLOR, RESET
+from prism.ui import RED, GREEN, EVENT_COLOR, ORANGE, RESET
+from prism.infra.task_manager import PrismTaskManager
 
 
 ####################
@@ -52,6 +53,22 @@ class BaseEventManager:
         self.name = name
         self.full_tb = full_tb
         self.func = func
+
+    def fire_skipped_exec_event(self,
+        event_list: List[prism.prism_logging.Event]
+    ):
+        """
+        Create ExecutionEvent informing user that a task was skipped
+        """
+        e = prism.prism_logging.ExecutionEvent(
+            msg=f"{ORANGE}SKIPPING{RESET} EVENT {EVENT_COLOR}'{self.name}'{RESET}",
+            num=self.idx,
+            total=self.total,
+            status="SKIP",
+            execution_time=None
+        )
+        event_list = fire_console_event(e, event_list, log_level='info')
+        return event_list
 
     def fire_running_exec_event(self,
         event_list: List[prism.prism_logging.Event]
@@ -130,8 +147,21 @@ class BaseEventManager:
 
         # Execute task
         try:
+            # The only events we ever really skip are actual tasks. For these, the skip
+            # logic is handled within the task's `exec` function. So, we just run it
+            # normally here.
             outputs = self.run(**kwargs)
-            if fire_exec_events:
+
+            # Check if the output is a task manager. If it is, then we've run a task.
+            # Check if the task was skipped, and fire the corresponding event.
+            if isinstance(outputs, PrismTaskManager):
+                task_instance = outputs.upstream[self.name]
+                if fire_exec_events:
+                    if task_instance.is_done:
+                        event_list = self.fire_skipped_exec_event(event_list)
+                    else:
+                        event_list = self.fire_success_exec_event(start_time, event_list)  # noqa: E501
+            elif fire_exec_events:
                 event_list = self.fire_success_exec_event(start_time, event_list)
 
             # Return output of task execution

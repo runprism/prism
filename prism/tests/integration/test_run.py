@@ -1497,3 +1497,80 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
 
         # Set up wkdir for the next test case
         self._set_up_wkdir()
+
+    def test_project_with_skipped_task(self):
+        """
+        If the `done` method is satisfied, then the task is skipped.
+        """
+        self.maxDiff = None
+
+        # Set working directory
+        wkdir = Path(TEST_PROJECTS) / '023_skipped_task'
+        os.chdir(wkdir)
+
+        # Update logger streamer
+        new_streamer = StringIO()
+        string_stream_handler.setStream(new_streamer)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Check that previous output exists
+        self.assertFalse((wkdir / 'output' / 'task01.txt').is_file())
+        self.assertFalse((wkdir / 'output' / 'task02.txt').is_file())
+
+        # ------------------------------------------
+        # Execute command. This should run both tasks
+
+        args = ['run']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = run_success_starting_events + \
+            ['TasksHeaderEvent'] + \
+            _execution_events_tasks({
+                'task01.Task01': 'DONE',
+                'task02.Task02': 'DONE',
+            }) + _run_task_end_events('TaskSuccessfulEndEvent')
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Check new output
+        self.assertTrue((wkdir / 'output' / 'task01.txt').is_file())
+        self.assertTrue((wkdir / 'output' / 'task02.txt').is_file())
+
+        # ------------------------------------------
+        # Execute the command again. This should skip task 1
+
+        args = ['run']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = run_success_starting_events + \
+            ['TasksHeaderEvent'] + \
+            _execution_events_tasks({
+                'task01.Task01': 'SKIP',
+                'task02.Task02': 'DONE',
+            }) + _run_task_end_events('TaskSuccessfulEndEvent')
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # ------------------------------------------
+        # Execute the command again with `--full-refresh. Task 1 should be
+        # executed again
+
+        args = ['run', '--full-refresh']
+        run = self._run_prism(args)
+        run_results = run.get_results()
+        expected_events = run_success_starting_events + \
+            ['TasksHeaderEvent'] + \
+            _execution_events_tasks({
+                'task01.Task01': 'DONE',
+                'task02.Task02': 'DONE',
+            }) + _run_task_end_events('TaskSuccessfulEndEvent')
+        self.assertEqual(' | '.join(expected_events), run_results)
+
+        # Remove the .compiled directory, if it exists
+        self._remove_compiled_dir(wkdir)
+
+        # Remove all files in the output directory
+        self._remove_files_in_output(wkdir)
+
+        # Set up wkdir for the next test case
+        self._set_up_wkdir()

@@ -48,6 +48,9 @@ class PrismTask:
         self.RETRIES = 0
         self.RETRY_DELAY_SECONDS = 0
 
+        # Initialize the is_done attribute
+        self.is_done: bool = False
+
     def set_task_manager(self, task_manager: prism.infra.task_manager.PrismTaskManager):
         self.task_manager = task_manager
 
@@ -58,7 +61,7 @@ class PrismTask:
 
         # If the `target` decorator isn't applied, then only execute the `run` function
         # of bool_run is true
-        if self.run.__name__ == "run":
+        if self.run.__name__ == "run" and not self.is_done:
 
             # If bool_run, then execute the `run` function and set the `output`
             # attribute to its result
@@ -83,6 +86,22 @@ class PrismTask:
                     "`run` method must produce a non-null output"
                 )
 
+    def done(self,
+        tasks: prism.infra.task_manager.PrismTaskManager,
+        hooks: prism.infra.hooks.PrismHooks,
+    ) -> bool:
+        """
+        Check if this task is already done. If it is, then don't execute `run`.
+        Otherwise, execute `run`.
+
+        args:
+            tasks: Prism task manager, used to reference other tasks
+            hooks: Prism hooks, used to access Prism adapters
+        returns:
+            True if the task is already Done, False if not. Defaults to False.
+        """
+        return False
+
     def run(self,
         tasks: prism.infra.task_manager.PrismTaskManager,
         hooks: prism.infra.hooks.PrismHooks,
@@ -90,6 +109,11 @@ class PrismTask:
         """
         Run the task. The user should override this function definition when creating
         their own tasks.
+        args:
+            tasks: Prism task manager, used to reference other tasks
+            hooks: Prism hooks, used to access Prism adapters
+        returns:
+            Any
         """
         if self.func is not None:
             return self.func(tasks, hooks)
@@ -119,7 +143,7 @@ class PrismTask:
                     )
 
                 # If the task should be run in full, then call the run function
-                if self.bool_run:
+                if self.bool_run and not self.is_done:
                     obj = func(self, task_manager, hooks)
 
                     # Initialize an instance of the target class and save the object

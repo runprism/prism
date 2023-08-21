@@ -177,6 +177,7 @@ class Agent(metaclass=MetaAgent):
         tasks = self.args.tasks
         all_upstream = self.args.all_upstream
         all_downstream = self.args.all_downstream
+        full_refresh = self.args.full_refresh
 
         # Namespace to string conversion
         full_tb_cmd = "" if not full_tb else "--full-tb"
@@ -190,9 +191,10 @@ class Agent(metaclass=MetaAgent):
         ])
         all_upstream_cmd = "" if not all_upstream else "--all-upstream"
         all_downstream_cmd = "" if not all_downstream else "--all-downstream"
+        full_refresh_cmd = "" if not full_refresh else "--full-refresh"
 
         # Full command
-        full_cmd = f"prism run {full_tb_cmd} {log_level_cmd} {vars_cmd} {context_cmd} {tasks_cmd} {all_upstream_cmd} {all_downstream_cmd}"  # noqa: E501
+        full_cmd = f"prism run {full_tb_cmd} {log_level_cmd} {vars_cmd} {context_cmd} {tasks_cmd} {all_upstream_cmd} {all_downstream_cmd} {full_refresh_cmd}"  # noqa: E501
         return full_cmd
 
     def parse_environment_variables(self, agent_conf: Dict[str, Any]) -> Dict[str, str]:

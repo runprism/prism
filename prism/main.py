@@ -280,6 +280,13 @@ def connect(
     help="Execute all tasks upstream of tasks specified with `--task`"
 )
 @click.option(
+    '--full-refresh',
+    is_flag=True,
+    default=False,
+    type=bool,
+    help="Run tasks from scratch (even the ones that are considered `done`)"
+)
+@click.option(
     '--log-level', '-l',
     type=click.Choice(['info', 'warn', 'error', 'debug']),
     default="info",
@@ -307,6 +314,7 @@ def run(
     task,
     all_downstream,
     all_upstream,
+    full_refresh,
     log_level,
     full_tb,
     vars,
@@ -331,8 +339,9 @@ def run(
     # Namespace
     ns = argparse.Namespace()
     ns.tasks = tasks_list
-    ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
+    ns.all_upstream = all_upstream
+    ns.full_refresh = full_refresh
     ns.full_tb = full_tb
     ns.log_level = log_level
     ns.vars = vars_dict
@@ -721,6 +730,13 @@ def agent_apply(
     help="Execute all tasks upstream of tasks specified with `--task`"
 )
 @click.option(
+    '--full-refresh',
+    is_flag=True,
+    default=False,
+    type=bool,
+    help="Run tasks from scratch (even the ones that are considered `done`)"
+)
+@click.option(
     '--log-level', '-l',
     type=click.Choice(['info', 'warn', 'error', 'debug']),
     default="info",
@@ -749,6 +765,7 @@ def agent_run(
     task,
     all_downstream,
     all_upstream,
+    full_refresh,
     log_level,
     full_tb,
     vars,
@@ -775,8 +792,9 @@ def agent_run(
     ns = argparse.Namespace()
     ns.file = file
     ns.tasks = tasks_list
-    ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
+    ns.all_upstream = all_upstream
+    ns.full_refresh = full_refresh
     ns.full_tb = full_tb
     ns.log_level = log_level
     ns.vars = vars_dict
@@ -815,6 +833,13 @@ def agent_run(
     help="Execute all tasks upstream of tasks specified with `--task`"
 )
 @click.option(
+    '--full-refresh',
+    is_flag=True,
+    default=False,
+    type=bool,
+    help="Run tasks from scratch (even the ones that are considered `done`)"
+)
+@click.option(
     '--log-level', '-l',
     type=click.Choice(['info', 'warn', 'error', 'debug']),
     default="info",
@@ -843,6 +868,7 @@ def agent_build(
     task,
     all_downstream,
     all_upstream,
+    full_refresh,
     log_level,
     full_tb,
     vars,
@@ -869,8 +895,9 @@ def agent_build(
     ns = argparse.Namespace()
     ns.file = file
     ns.tasks = tasks_list
-    ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
+    ns.all_upstream = all_upstream
+    ns.full_refresh = full_refresh
     ns.full_tb = full_tb
     ns.log_level = log_level
     ns.vars = vars_dict
@@ -951,6 +978,13 @@ def agent_delete(
     help="Execute all tasks upstream of tasks specified with `--task`."
 )
 @click.option(
+    '--full-refresh',
+    is_flag=True,
+    default=False,
+    type=bool,
+    help="Run tasks from scratch (even the ones that are considered `done`)"
+)
+@click.option(
     '--log-level', '-l',
     type=click.Choice(['info', 'warn', 'error', 'debug']),
     default="info",
@@ -978,6 +1012,7 @@ def spark_submit(
     task,
     all_downstream,
     all_upstream,
+    full_refresh,
     log_level,
     full_tb,
     vars,
@@ -1002,8 +1037,9 @@ def spark_submit(
     # Namespace
     ns = argparse.Namespace()
     ns.tasks = tasks_list
-    ns.all_upstream = all_upstream
     ns.all_downstream = all_downstream
+    ns.all_upstream = all_upstream
+    ns.full_refresh = full_refresh
     ns.full_tb = full_tb
     ns.log_level = log_level
     ns.vars = vars_dict
