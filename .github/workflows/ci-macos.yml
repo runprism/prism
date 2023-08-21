@@ -30,10 +30,15 @@ jobs:
         pip install tox tox-gh-actions
     - name: Install docker
       run: |
-        brew install docker@24.0.3
+        # Workaround for https://github.com/actions/runner-images/issues/8104
+        brew remove --ignore-dependencies qemu
+        curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
+        brew install ./qemu.rb
+
+        brew install docker
         colima start
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
+    # - name: Set up QEMU
+    #   uses: docker/setup-qemu-action@v2
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
     - name: Test with tox
