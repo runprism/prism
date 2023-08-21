@@ -13,7 +13,7 @@ Table of Contents
 # Standard library imports
 import ast
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 import re
 
 # Prism-specific imports
@@ -189,8 +189,6 @@ class CompiledTask:
         hooks: PrismHooks,
         explicit_run: bool = True,
         user_context: Dict[Any, Any] = {},
-        idx: Optional[int] = None,
-        total: Optional[int] = None,
     ) -> PrismTaskManager:
         """
         Execute task
