@@ -22,15 +22,6 @@ from prism.infra.task_manager import PrismTaskManager
 from prism.infra.hooks import PrismHooks
 from prism.infra.manifest import TaskManifest
 from prism.parsers.ast_parser import AstParser
-from prism.prism_logging import (
-    fire_console_event,
-    ExecutionEvent
-)
-from prism.ui import (
-    ORANGE,
-    EVENT_COLOR,
-    RESET,
-)
 
 
 ####################
@@ -207,19 +198,8 @@ class CompiledTask:
         task_var_name = self.instantiate_task_class(
             run_context, task_manager, hooks, explicit_run, user_context
         )
-
-        # Check if the task is done
         is_done = run_context[task_var_name].done(task_manager, hooks)
         run_context[task_var_name].is_done = is_done
-        if is_done:
-            e = ExecutionEvent(
-                msg=f"{ORANGE}SKIPPING{RESET} EVENT {EVENT_COLOR}{task_var_name}{RESET}",  # noqa: E501
-                num=idx,
-                total=total,
-                status="SKIPPED",
-                execution_time=None
-            )
-            fire_console_event(e, [], log_level='info')
 
         # Execute the task
         run_context[task_var_name].exec()
