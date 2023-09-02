@@ -40,6 +40,60 @@ pip install --upgrade pip
 pip install prism-ds
 ```
 
+Start your first Prism project with the `prism init` command:
+```
+$ prism init --project-name my_first_project
+
+<HH:MM:SS> | INFO  | Running with prism v0.2.3...
+<HH:MM:SS> | INFO  | Creating project directory...
+ 
+      ______
+   ____  __ \_____(_)________ _______
+ _____  /_/ / ___/ / ___/ __ `__ \ ____
+____ / ____/ /  / (__  ) / / / / / _____
+ ___/_/   /_/  /_/____/_/ /_/ /_/  ___
+
+Welcome to Prism, the easiest way to create clean, modular data pipelines
+using Python!
+
+To get started, navigate to your newly created project "my_first_project" and try
+running the following commands:
+    prism compile
+    prism run
+
+Consult the documentation here for more information on how to get started.
+    docs.runprism.com
+
+Happy building!
+--------------------------------------------------------------------------------
+```
+
+Run your project by navigating to your project directory and running `prism run`:
+```
+$ cd my_first_project
+$ prism run
+--------------------------------------------------------------------------------
+<HH:MM:SS> | INFO  | Running with prism v0.2.3...
+<HH:MM:SS> | INFO  | Found project directory at /my_first_project
+ 
+<HH:MM:SS> | INFO  | RUNNING 'parsing prism_project.py'.............................................. [RUN]
+<HH:MM:SS> | INFO  | FINISHED 'parsing prism_project.py'............................................. [DONE in 0.03s]
+<HH:MM:SS> | INFO  | RUNNING 'task DAG'.............................................................. [RUN]
+<HH:MM:SS> | INFO  | FINISHED 'task DAG'............................................................. [DONE in 0.01s]
+<HH:MM:SS> | INFO  | RUNNING 'creating pipeline, DAG executor'....................................... [RUN]
+<HH:MM:SS> | INFO  | FINISHED 'creating pipeline, DAG executor'...................................... [DONE in 0.01s]
+ 
+<HH:MM:SS> | INFO  | ===================== tasks (vermilion-hornet-Gyycw4kRWG) =====================
+<HH:MM:SS> | INFO  | 1 of 2 RUNNING EVENT 'decorated_task.example_task'.............................. [RUN]
+<HH:MM:SS> | INFO  | 1 of 2 FINISHED EVENT 'decorated_task.example_task'............................. [DONE in 0.02s]
+<HH:MM:SS> | INFO  | 2 of 2 RUNNING EVENT 'class_task.ExampleTask'................................... [RUN]
+<HH:MM:SS> | INFO  | 2 of 2 FINISHED EVENT 'class_task.ExampleTask'.................................. [DONE in 0.01s]
+ 
+<HH:MM:SS> | INFO  | Done!
+--------------------------------------------------------------------------------
+```
+
+## Documentation
 To get started with Prism projects, check out our [documentation](https://docs.runprism.com). Some sections of interest include:
 
 - :key: [Fundamentals](https://docs.runprism.com/fundamentals)
