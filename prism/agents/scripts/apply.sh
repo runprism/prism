@@ -16,13 +16,18 @@ done
 # ssh into the project so that we can authenticate our key
 while true
 do
-  	ssh -o "StrictHostKeyChecking no" -i "${pem_path}" "${user}@${public_dns_name}" exit 2>/dev/null 2>&1
-    if [ $? -eq 0 ]; then
+  	errormessage=`ssh -o "StrictHostKeyChecking no" -i "${pem_path}" "${user}@${public_dns_name}" exit 2>/dev/null 2>&1`
+    if [ -z "$errormessage" ]; then
         echo "SSH connection succeeded!"
         break
     else
-        echo "SSH connection failed. Retrying in 5 seconds..."
-        sleep 5
+		if [[ "$errormessage" =~ "Operation timed out" ]]; then
+			echo "SSH connection failed."
+			exit 8
+		else
+        	echo "SSH connection refused. Retrying in 5 seconds..."
+        	sleep 5
+		fi
     fi
 done
 
@@ -52,6 +57,10 @@ source ~/.venv/${project_name}/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 EOF
+	exit_code=$?
+	if [ $exit_code -eq 1 ]; then
+		exit 1
+	fi
 fi
 
 # Log
@@ -59,6 +68,10 @@ echo "Updating remote project and file paths"
 
 # Copy project directory and other copy paths into the EC2 instance
 ssh -i ${pem_path} ${user}@${public_dns_name} "sudo mkdir -p .${project_dir}; sudo chmod 777 -R .${project_dir}"
+exit_code=$?
+if [ $exit_code -eq 1 ]; then
+	exit 1
+fi
 scp -r -i ${pem_path} ${project_dir} ${user}@${public_dns_name}:.${project_dir}
 echo "Copied project directory into instance"
 
@@ -66,6 +79,10 @@ IFS=',' read -ra array <<< "${copy_paths}"
 for path in "${array[@]}"; do
 	# Make a directory and change the permissions
 	ssh -i ${pem_path} ${user}@${public_dns_name} "sudo mkdir -p .${path%/*}; sudo chmod 777 -R .${path%/*}"
+	exit_code=$?
+	if [ $exit_code -eq 1 ]; then
+		exit 1
+	fi
 
 	# Copy
 	scp -r -i ${pem_path} ${path} ${user}@${public_dns_name}:.${path%/*} 2> scp.log
@@ -82,17 +99,33 @@ for keyvalue in "${env_array[@]}"; do
 	# Update the key-value pair in .bashrc if it exists
     if ssh -i ${pem_path} ${user}@${public_dns_name} "grep -q '^export ${key}=' ~/.bashrc"; then
         ssh -i ${pem_path} ${user}@${public_dns_name} "sed -i 's/^export ${key}=.*$/export ${key}=${value}/' ~/.bashrc"
+		exit_code=$?
+		if [ $exit_code -eq 1 ]; then
+			exit 1
+		fi
 
     # Add the new key-value pair to the end of .bashrc if it doesn't exist
     else
         ssh -i ${pem_path} ${user}@${public_dns_name} "echo 'export ${key}=${value}' >> ~/.bashrc"
+		exit_code=$?
+		if [ $exit_code -eq 1 ]; then
+			exit 1
+		fi
     fi
 	echo "Updated environment variable ${key}=${value}"
 done
 
 # Reload .bashrc to update environment variables
 ssh -i ${pem_path} ${user}@${public_dns_name} "source ~/.bashrc"
+exit_code=$?
+if [ $exit_code -eq 1 ]; then
+	exit 1
+fi
 
 # Move all folders into the root folder
-ssh -i ${pem_path} ${user}@${public_dns_name} 'cd ~ && for dir in */; do sudo mv $dir ../../$dir ; done'
+ssh -i ${pem_path} ${user}@${public_dns_name} 'cd ~ && for dir in */; do sudo rm -rf ../../$dir; do sudo mv $dir ../../$dir ; done'
+exit_code=$?
+if [ $exit_code -eq 1 ]; then
+	exit 1
+fi
 echo "Done updating remote project and file paths"
