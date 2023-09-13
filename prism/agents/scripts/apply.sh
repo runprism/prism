@@ -123,7 +123,7 @@ if [ $exit_code -eq 1 ]; then
 fi
 
 # Move all folders into the root folder
-ssh -i ${pem_path} ${user}@${public_dns_name} 'cd ~ && for dir in */; do sudo rm -rf ../../$dir; do sudo mv $dir ../../$dir ; done'
+ssh -i ${pem_path} ${user}@${public_dns_name} 'cd ~ && for dir in */; do sudo rm -rf ../../$dir; sudo mv -f $dir ../../ ; done'
 exit_code=$?
 if [ $exit_code -eq 1 ]; then
 	exit 1

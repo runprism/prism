@@ -451,7 +451,7 @@ class Ec2(
                     'IpProtocol': 'tcp',
                     'FromPort': 22,
                     'ToPort': 22,
-                    'IpRanges': [{'CidrIp': curr_cidr}]
+                    'IpRanges': [curr_cidr]
                 },
             ]
         else:
@@ -693,7 +693,7 @@ class Ec2(
                     KeyName=instance_name,
                     MinCount=1,
                     MaxCount=1,
-                    ImageId="ami-0889a44b331db0194",
+                    ImageId="ami-01c647eace872fc02",
                     TagSpecifications=[
                         {
                             'ResourceType': 'instance',
@@ -1071,7 +1071,6 @@ class Ec2(
                 # If the current IP address is already whitelisted, then just add
                 # 0.0.0.0/0 to the ingress rules.
                 if added_ip is None:
-                    self.args.whitelist_all = True
                     prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                         f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET}  | Current IP address already whitelisted...whitelisting 0.0.0.0/0"  # noqa: E501
                     )
