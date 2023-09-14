@@ -443,12 +443,15 @@ class Ec2(
 
         # Add rule
         if ip_address_type == IpAddressType('ipv4'):
+            curr_cidr = {'CidrIp': f'{external_ip}/32'}
+            if external_ip == "0.0.0.0":
+                curr_cidr = {'CidrIp': '0.0.0.0/0'}
             ip_permissions = [
                 {
                     'IpProtocol': 'tcp',
                     'FromPort': 22,
                     'ToPort': 22,
-                    'IpRanges': [{'CidrIp': f'{external_ip}/32'}]
+                    'IpRanges': [curr_cidr]
                 },
             ]
         else:
@@ -457,14 +460,22 @@ class Ec2(
                     'IpProtocol': 'tcp',
                     'FromPort': 22,
                     'ToPort': 22,
-                    'Ipv6Ranges': [{'CidrIpv6': f'{external_ip}/128'}]
+                    'Ipv6Ranges': [{'CidrIpv6': '::/0'}]
                 },
             ]
 
-        _ = ec2_client.authorize_security_group_ingress(
-            GroupId=security_group_id,
-            IpPermissions=ip_permissions
-        )
+        try:
+            _ = ec2_client.authorize_security_group_ingress(
+                GroupId=security_group_id,
+                IpPermissions=ip_permissions
+            )
+            return external_ip
+
+        # If the rule already exists, then we're all gucci
+        except botocore.exceptions.ClientError as e:
+            if "the specified rule" in str(e) and "already exists" in str(e):
+                return None
+            raise e
 
     def create_new_security_group(self,
         ec2_client: Any,
@@ -561,11 +572,12 @@ class Ec2(
 
         # If SSH traffic from the current IP address it not allowed, then authorize it.
         if not ip_allowed:
-            self.add_ingress_rule(
+            return self.add_ingress_rule(
                 ec2_client,
                 security_group_id,
                 external_ip
             )
+        return None
 
     def create_instance(self,
         ec2_client: Any,
@@ -681,7 +693,7 @@ class Ec2(
                     KeyName=instance_name,
                     MinCount=1,
                     MaxCount=1,
-                    ImageId="ami-0889a44b331db0194",
+                    ImageId="ami-01c647eace872fc02",
                     TagSpecifications=[
                         {
                             'ResourceType': 'instance',
@@ -1020,7 +1032,7 @@ class Ec2(
 
             # Build the shell command
             cmd = [
-                '/bin/sh', self.AGENT_APPLY_SCRIPT,
+                '/bin/bash', self.AGENT_APPLY_SCRIPT,
                 '-r', str(requirements_txt_path),
                 '-p', str(pem_key_path),
                 '-u', user,
@@ -1039,6 +1051,38 @@ class Ec2(
             for line in err.readlines():
                 prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
                     f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET} | {line.rstrip()}"  # noqa: E501
+                )
+
+            # A return code of 8 indicates that the SSH connection timed out. Try
+            # whitelisting the current IP and try again.
+            if returncode == 8:
+                # For mypy
+                if self.security_group_id is None:
+                    raise ValueError("`security_group_id` is still None!")
+                prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                    f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET}  | SSH connection timed out...checking security group ingress rules and trying again"  # noqa: E501
+                )
+
+                # Add the current IP to the security ingress rules
+                added_ip = self.check_ingress_ip(
+                    self.ec2_client, self.security_group_id
+                )
+
+                # If the current IP address is already whitelisted, then just add
+                # 0.0.0.0/0 to the ingress rules.
+                if added_ip is None:
+                    prism.prism_logging.DEFAULT_LOGGER.agent(  # type: ignore
+                        f"{prism.ui.AGENT_EVENT}{self.instance_name}{prism.ui.AGENT_WHICH_BUILD}[build]{prism.ui.RESET}  | Current IP address already whitelisted...whitelisting 0.0.0.0/0"  # noqa: E501
+                    )
+                    self.add_ingress_rule(
+                        self.ec2_client,
+                        self.security_group_id,
+                        "0.0.0.0",
+                    )
+
+                # Try again
+                _, err, returncode = self.stream_logs(
+                    cmd, prism.ui.AGENT_WHICH_BUILD, "build"
                 )
 
             # If the return code is non-zero, then an error occurred. Delete all of the
@@ -1075,7 +1119,7 @@ class Ec2(
 
         # The agent data should exist...Build the shell command
         cmd = [
-            '/bin/sh', self.AGENT_RUN_SCRIPT,
+            '/bin/bash', self.AGENT_RUN_SCRIPT,
             '-p', str(self.pem_key_path),
             '-u', 'ec2-user',
             '-n', self.public_dns_name,

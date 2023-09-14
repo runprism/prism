@@ -31,7 +31,7 @@ import importlib
 import json
 from pathlib import Path
 import os
-from typing import List
+from typing import List, Union
 
 
 ####################
@@ -73,7 +73,7 @@ class AgentTask(
         agent_yml_path: Path,
         agent_filename: str,
         prism_project: PrismProject,
-    ):
+    ) -> Union[int, Agent]:
         """
         Create the agent instance
         """
@@ -116,8 +116,11 @@ class AgentTask(
         # run the agent (`prism agent build`). We run the agent in a separate function,
         # so focus on just building it for now.
         else:
-            agent.apply()
-            return agent
+            returncode = agent.apply()
+            if returncode["return_code"] != 0:
+                return 0
+            else:
+                return agent
 
     def run_agent(self, agent: Agent):
         """

@@ -1161,13 +1161,13 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
             "Sergey Prokopyev",
             "Dmitry Petelin",
             "Frank Rubio",
-            "Stephen Bowen",
-            "Warren Hoburg",
-            "Sultan Alneyadi",
-            "Andrey Fedyaev",
             "Jing Haiping",
             "Gui Haichow",
             "Zhu Yangzhu",
+            "Jasmin Moghbeli",
+            "Andreas Mogensen",
+            "Satoshi Furukawa",
+            "Konstantin Borisov",
         ]
         for n in names:
             formatted_name = n.lower().replace(" ", "_")
