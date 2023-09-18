@@ -44,6 +44,15 @@ class PrismTaskManager:
         self.curr_module: str
 
     def ref(self, task: str, local: bool = False):
+        """
+        Grab output of another task
+
+        args:
+            task: task name
+            local: bool indicating whether task lives in the same module
+        returns:
+            `task`s output
+        """
         # Remove the `.py`, if it exists
         task = re.sub(r'\.py$', '', task)
 
