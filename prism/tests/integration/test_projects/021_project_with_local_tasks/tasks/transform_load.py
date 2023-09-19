@@ -22,9 +22,7 @@ from pathlib import Path
 
 @task()
 def transform(tasks, hooks):
-    data_path = tasks.ref("extract.extract")
-    with open(data_path, 'r') as f:
-        data = json.loads(f.read())
+    data = tasks.ref("extract.extract")
 
     # Filter
     independent_countries = []
