@@ -363,9 +363,7 @@ class TestClient(
 
         # Get output of a task with a target (without running pipeline)
         task01_output = dag5.get_task_output('module01.py')
-        expected_output = str(
-            Path(P005_SIMPLE_PROJECT_NO_NULL / 'output' / 'task01.txt')
-        )
+        expected_output = 'Hello from task 1!'
         self.assertEqual(str(task01_output), expected_output)
 
         # Get output of a task without a target (after running pipeline)
