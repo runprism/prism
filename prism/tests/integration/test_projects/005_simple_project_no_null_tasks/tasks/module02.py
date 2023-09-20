@@ -37,7 +37,5 @@ class Task02(prism.task.PrismTask):
             task output
         """
         # Use the module name and the task name to get the task output
-        with open(tasks.ref('module01.Task01'), 'r') as f:
-            lines = f.read()
-        f.close()
+        lines = tasks.ref('module01.Task01')
         return lines + "\n" + "Hello from task 2!"

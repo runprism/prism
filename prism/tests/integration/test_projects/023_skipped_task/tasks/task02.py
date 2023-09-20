@@ -39,7 +39,5 @@ class Task02(prism.task.PrismTask):
         returns:
             task output
         """
-        with open(tasks.ref('task01.py'), 'r') as f:
-            lines = f.read()
-        f.close()
+        lines = tasks.ref('task01.py')
         return lines + "\n" + "Hello from task 2!"

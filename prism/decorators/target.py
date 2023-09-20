@@ -103,7 +103,7 @@ def target(*, type, loc, **kwargs):
 
                         # If a target is set, just assume that the user wants to
                         # reference the location of the target when they call `mod`
-                        return self.locs
+                        return obj
 
                     # If return type is not a Tuple, we expect a single target
                     else:
@@ -113,23 +113,27 @@ def target(*, type, loc, **kwargs):
                         target = type(obj, loc, hooks)
                         target.save(**kwargs)
 
-                        # If a target is set, just assume that the user wants to
-                        # reference the location of the target when they call `mod`
-                        return loc
+                        # Return the object
+                        return obj
 
                 # If the task should not be run in full, then just return the location
                 # of the target
                 else:
                     # We still need to append the last location to self.locs
                     self.locs.append(loc)
+                    self.types.append(type)
 
                     # If multiple targets, then return all locs
                     if len(self.locs) > 1:
-                        return self.locs
+                        all_objs = []
+                        for _loc, _type in zip(self.locs, self.types):
+                            target = _type.open(_loc, hooks)
+                            all_objs.append(target.obj)
+                        return tuple(all_objs)
 
                     # For single-target case, return single loc
                     else:
-                        return loc
+                        return self.types[0].open(self.locs[0], hooks).obj
 
         return wrapper_target_dec
 

@@ -35,7 +35,5 @@ class Task02(prism.task.PrismTask):
         returns:
             task output
         """
-        with open(tasks.ref('extract/this_is_an_error.py'), 'r') as f:
-            lines = f.read()
-        f.close()
+        lines = tasks.ref('extract/this_is_an_error.py')
         return lines + "\n" + "Hello from task 2!"
