@@ -738,6 +738,7 @@ class AstParser:
                 raise prism.exceptions.ParserException(message=msg)
 
             # Add task
+            # print(_node.name)
             self.task_manifest.add_task(
                 self.task_relative_path,
                 _node.name,

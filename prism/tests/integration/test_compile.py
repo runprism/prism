@@ -13,9 +13,11 @@ Table of Contents:
 ###########
 
 # Standard library imports
+import json
 import os
 from pathlib import Path
 import shutil
+from typing import Any, Dict
 
 # Prism imports
 import prism.tests.integration.integration_test_class as integration_test_class
@@ -326,3 +328,67 @@ class TestCompileIntegration(integration_test_class.IntegrationTestCase):
         # Set up wkdir for the next test case
         shutil.rmtree(Path(wkdir / '.compiled'))
         self._set_up_wkdir()
+
+    def test_project_with_nested_dir(self):
+        """
+        `manifest` is compiled as expected when a project has nested directories
+        """
+        def _compile_test(wkdir: Path, expected_tasks: Dict[str, Any]):
+            # Remove compiled directory, if it exists
+            os.chdir(wkdir)
+            self._remove_compiled_dir(wkdir)
+
+            # Compile the project
+            args = ['compile']
+            compile_run = self._run_prism(args)
+            compile_run_results = compile_run.get_results()
+            self.assertEqual(
+                ' | '.join(simple_project_expected_events),
+                compile_run_results
+            )
+
+            # Check that .compiled directory is not created
+            self.assertTrue(Path(wkdir / '.compiled').is_dir())
+            self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
+
+            # Open the manifest
+            with open(Path(wkdir / '.compiled' / 'manifest.json'), 'r') as f:
+                manifest_json = json.loads(f.read())
+            tasks = manifest_json["tasks"]
+            self.assertEqual(expected_tasks, tasks)
+
+            # Set up wkdir for the next test case
+            shutil.rmtree(Path(wkdir / '.compiled'))
+            self._set_up_wkdir()
+
+        # ------------------------------------------------------------------------------
+        # Just one nested directory
+
+        wkdir = Path(TEST_PROJECTS) / '010_project_nested_module_dirs'
+        expected_tasks = {
+            "extract/": {
+                "module01": ["Task01"],
+                "module02": ["Task02"],
+            },
+            "load/": {
+                "module03": ["Task03"],
+            },
+            "module04": ["Task04"]
+        }
+        _compile_test(wkdir, expected_tasks)
+
+        # ------------------------------------------------------------------------------
+        # Multiple nested directories
+
+        wkdir = Path(TEST_PROJECTS) / '010a_multiple_nested_dirs'
+        expected_tasks = {
+            "extract/": {
+                "module01": ["Task01"],
+                "module02": ["Task02"],
+                "load/": {
+                    "module03": ["Task03"],
+                },
+            },
+            "module04": ["Task04"]
+        }
+        _compile_test(wkdir, expected_tasks)
