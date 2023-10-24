@@ -149,4 +149,8 @@ def load_hooks():
 
     # Hooks object
     hooks = PrismHooks(project)
+
+    # Print a warning if the hooks are empty
+    if hooks.project.adapters_object_dict == {}:
+        print("WARNING: Your hooks are empty! Create a profile YAML to populate your hooks")  # noqa
     return hooks
