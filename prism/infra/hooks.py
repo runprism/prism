@@ -13,6 +13,7 @@ Table of Contents
 # Standard library imports
 import pandas as pd
 from typing import Any, Optional
+from pathlib import Path
 
 # Prism-specific imports
 from prism.cli.base import get_project_dir
@@ -135,11 +136,12 @@ class PrismHooks:
 
 
 # Function to load hooks in a script or environment
-def load_hooks():
+def load_hooks(project_dir: Optional[Path] = None):
     """
     Load the PrismHooks associated with the current project
     """
-    project_dir = get_project_dir()
+    if project_dir is None:
+        project_dir = get_project_dir()
     project = prism_project.PrismProject(
         project_dir=project_dir,
         user_context={},
