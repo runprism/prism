@@ -13,8 +13,10 @@ Table of Contents
 # Standard library imports
 import pandas as pd
 from typing import Any, Optional
+from pathlib import Path
 
 # Prism-specific imports
+from prism.cli.base import get_project_dir
 from prism.infra import project as prism_project
 import prism.constants
 import prism.exceptions
@@ -131,3 +133,26 @@ class PrismHooks:
 
         df = dbt_project.handle_ref(target_1, target_2, target_version)
         return df
+
+
+# Function to load hooks in a script or environment
+def load_hooks(project_dir: Optional[Path] = None):
+    """
+    Load the PrismHooks associated with the current project
+    """
+    if project_dir is None:
+        project_dir = get_project_dir()
+    project = prism_project.PrismProject(
+        project_dir=project_dir,
+        user_context={},
+        which="run"
+    )
+    project.setup()
+
+    # Hooks object
+    hooks = PrismHooks(project)
+
+    # Print a warning if the hooks are empty
+    if hooks.project.adapters_object_dict == {}:
+        print("WARNING: Your hooks are empty! Create a profile YAML to populate your hooks")  # noqa
+    return hooks

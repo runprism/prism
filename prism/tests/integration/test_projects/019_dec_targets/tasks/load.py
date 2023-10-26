@@ -12,12 +12,9 @@ def load(tasks, hooks):
     data, _ = tasks.ref("extract.py")
 
     # Names
-    names = {}
-    for ppl in data["people"]:
-
-        # Formatted
-        name = ppl["name"].lower().replace(" ", "_")
-        names[f"{name}.txt"] = ppl["name"]
+    todos = {}
+    for todo in data:
+        todos[f"todo_{todo['id']}.txt"] = todo['title']
 
     # Return
-    return names
+    return todos

@@ -1142,14 +1142,14 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertEqual(' | '.join(expected_events), runtask_run_results)
 
         # Check output of 'extract' task
-        self.assertTrue(Path(wkdir / 'output' / 'astros.json').is_file())
+        self.assertTrue(Path(wkdir / 'output' / 'todos.json').is_file())
         self.assertTrue(Path(wkdir / 'output' / 'second_target.txt').is_file())
 
         # Astros JSON file
-        with open(Path(wkdir / 'output' / 'astros.json'), 'r') as f:
-            astros_str = f.read()
-        astros_dict = json.loads(astros_str)
-        self.assertEqual(astros_dict["message"], "success")
+        with open(Path(wkdir / 'output' / 'todos.json'), 'r') as f:
+            todos_str = f.read()
+        todos_dict = json.loads(todos_str)
+        self.assertEqual(len(todos_dict), 200)
 
         # Dummy second target text file
         with open(Path(wkdir / 'output' / 'second_target.txt'), 'r') as f:
@@ -1157,27 +1157,15 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertEqual(second_target, "second target")
 
         # Check output of 'load' task
-        names = [
-            "Sergey Prokopyev",
-            "Dmitry Petelin",
-            "Frank Rubio",
-            "Jing Haiping",
-            "Gui Haichow",
-            "Zhu Yangzhu",
-            "Jasmin Moghbeli",
-            "Andreas Mogensen",
-            "Satoshi Furukawa",
-            "Konstantin Borisov",
-        ]
-        for n in names:
-            formatted_name = n.lower().replace(" ", "_")
-            self.assertTrue(Path(wkdir / 'output' / f'{formatted_name}.txt').is_file())
-            with open(Path(wkdir / 'output' / f'{formatted_name}.txt'), 'r') as f:
+        for i in range(1, 201):
+            self.assertTrue(Path(wkdir / 'output' / f'todo_{i}.txt').is_file())
+            with open(Path(wkdir / 'output' / f'todo_{i}.txt'), 'r') as f:
                 contents = f.read()
-            self.assertEqual(contents, n)
+            self.assertEqual(contents, todos_dict[i - 1]['title'])
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
+        self._remove_files_in_output(wkdir)
 
         # Set up the working directory
         self._set_up_wkdir()
@@ -1230,31 +1218,20 @@ class TestRunIntegration(integration_test_class.IntegrationTestCase):
         self.assertEqual(' | '.join(expected_events), runtask_run_results)
 
         # Check output of 'extract' task
-        self.assertTrue(Path(wkdir / 'output' / 'astros.json').is_file())
-        with open(Path(wkdir / 'output' / 'astros.json'), 'r') as f:
-            astros_str = f.read()
-        astros_dict = json.loads(astros_str)
-        self.assertEqual(astros_dict["message"], "success")
+        self.assertTrue(Path(wkdir / 'output' / 'todos.json').is_file())
+        with open(Path(wkdir / 'output' / 'todos.json'), 'r') as f:
+            todos_str = f.read()
+        todos_dict = json.loads(todos_str)
+        self.assertEqual(len(todos_dict), 200)
 
         # Output of 'load' task was not created
-        names = [
-            "Andrey Fedyaev",
-            "Deng Qingming",
-            "Dmitry Petelin",
-            "Fei Junlong",
-            "Frank Rubio",
-            "Sergey Prokopyev",
-            "Stephen Bowen",
-            "Sultan Alneyadi",
-            "Warren Hoburg",
-            "Zhang Lu",
-        ]
-        for n in names:
-            formatted_name = n.lower().replace(" ", "_")
-            self.assertFalse(Path(wkdir / 'output' / f'{formatted_name}.txt').is_file())
+        # Check output of 'load' task
+        for i in range(1, 201):
+            self.assertFalse(Path(wkdir / 'output' / f'todo_{i}.txt').is_file())
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)
+        self._remove_files_in_output(wkdir)
 
         # Set up the working directory
         self._set_up_wkdir()
