@@ -7,6 +7,9 @@
     <a href="https://pepy.tech/badge/prism-ds/" alt="Downloads">
         <img src="https://static.pepy.tech/personalized-badge/prism-ds?period=total&units=international_system&left_color=black&right_color=blue&left_text=Downloads"/>
     </a>
+    <a href="https://python.org" alt="Python version">
+        <img src="https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue?labelColor=black"/>
+    </a>
 </p>
 <div align="center">
 
