@@ -1,9 +1,5 @@
 """
-DBT adapter class definition. This definition uses source code from:
-
-    https://github.com/fal-ai/fal
-
-Modifications are made to ensure compatibility with the rest of prism's architecture
+DBT adapter class definition.
 
 Table of Contents
 - Imports
@@ -35,8 +31,12 @@ import dbt.events.functions as events_functions
 import dbt.tracking
 from dbt.task.compile import CompileTask
 from dbt.parser.manifest import ManifestLoader
-from dbt.contracts.graph.manifest import Manifest, MaybeNonSource, Disabled
-from dbt.contracts.graph.nodes import ResultNode
+from dbt.contracts.graph.manifest import (
+    Manifest,
+    MaybeNonSource,
+    Disabled,
+)
+from dbt.contracts.graph.nodes import ResultNode, GraphMemberNode
 from dbt.adapters.sql.impl import SQLAdapter
 import dbt.adapters.factory as adapters_factory
 from dbt.contracts.sql import ResultTable, RemoteRunResult
@@ -76,6 +76,7 @@ class InitializeDbtCompileTaskArgs:
     exclude: Tuple[str, str]
     state: Optional[Path]
     single_threaded: Optional[bool]
+    defer_state: bool = False
 
 
 ####################
@@ -285,7 +286,8 @@ class Dbt(Adapter):
         target_model_package: Optional[str],
         target_model_version: Optional[str],
         project_dir: str,
-        manifest: Manifest
+        manifest: Manifest,
+        source_node: Optional[GraphMemberNode] = None
     ) -> ResultNode:
         """
         Get the node associated with the inputted target task
@@ -295,6 +297,8 @@ class Dbt(Adapter):
             target_package_name: package containing task
             project_dir: project directory
             manifest: dbt Manifest
+            source_node: dbt node from which we call `ref`. Since Prism exists outside
+                the dbt graph, this should almost always be `None`
         returns:
             node associated with inputted target task
         """
@@ -305,6 +309,7 @@ class Dbt(Adapter):
 
         # TODO: test target task creation where node_package != project_dir
         target_model: MaybeNonSource = manifest.resolve_ref(
+            source_node=source_node,
             target_model_name=target_model_name,
             target_model_package=target_model_package,
             target_model_version=target_model_version,
