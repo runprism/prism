@@ -45,6 +45,7 @@ from dbt.contracts.connection import AdapterResponse
 # Prism-specific imports
 from .adapter import Adapter
 import prism.exceptions
+from prism.utils import requires_dependencies
 
 
 ##########################
@@ -467,6 +468,10 @@ class Dbt(Adapter):
         else:
             return '\n'.join(execute_str)
 
+    @requires_dependencies(
+        "dbt-core>=1,<1.6.0",
+        "dbt"
+    )
     def create_engine(self,
         adapter_dict: Dict[str, Any],
         adapter_name: str,
