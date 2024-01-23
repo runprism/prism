@@ -17,6 +17,7 @@ from typing import Any, Dict, Optional
 # Prism-specific imports
 from .adapter import Adapter
 import prism.exceptions
+from prism.utils import requires_dependencies
 
 
 ####################
@@ -78,6 +79,10 @@ class Snowflake(Adapter):
         # If no exception has been raised, return True
         return True
 
+    @requires_dependencies(
+        ["snowflake.connector", "pyarrow"],
+        "snowflake"
+    )
     def create_engine(self,
         adapter_dict: Dict[str, Any],
         adapter_name: str,
@@ -112,6 +117,10 @@ class Snowflake(Adapter):
         )
         return ctx
 
+    @requires_dependencies(
+        ["snowflake.connector", "pyarrow"],
+        "snowflake"
+    )
     def execute_sql(self, query: str, return_type: Optional[str]) -> pd.DataFrame:
         """
         Execute the SQL query

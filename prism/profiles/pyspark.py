@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Union
 # Prism-specific imports
 from .adapter import Adapter
 import prism.exceptions
+from prism.utils import requires_dependencies
 
 
 ####################
@@ -90,6 +91,10 @@ class Pyspark(Adapter):
         else:
             return '\n'.join(profile_exec_list)
 
+    @requires_dependencies(
+        "pyspark",
+        "pyspark",
+    )
     def create_engine(self,
         adapter_dict: Dict[str,
         Any],

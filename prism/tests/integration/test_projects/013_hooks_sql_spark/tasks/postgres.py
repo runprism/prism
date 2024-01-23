@@ -37,7 +37,16 @@ class PostgresTask(prism.task.PrismTask):
         returns:
             task output
         """
-        sql = "SELECT 1 AS test_col"
+        sql = """
+        SELECT
+            first_name
+            , last_name
+        FROM us500
+        ORDER BY
+            first_name
+            , last_name
+        LIMIT 10
+        """
         df = hooks.sql(
             adapter_name="postgres_base",
             query=sql,

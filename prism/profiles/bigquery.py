@@ -17,6 +17,7 @@ import pandas as pd
 # Prism-specific imports
 from .adapter import Adapter
 import prism.exceptions
+from prism.utils import requires_dependencies
 
 
 ####################
@@ -75,6 +76,10 @@ class BigQuery(Adapter):
         # If no exception has been raised, return True
         return True
 
+    @requires_dependencies(
+        ["google.cloud", "google.oauth2"],  # noqa
+        "bigquery"
+    )
     def create_engine(self,
         adapter_dict: Dict[str, Any],
         adapter_name: str,
