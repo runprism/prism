@@ -157,8 +157,9 @@ class TestSqlIntegration(integration_test_class.IntegrationTestCase):
         # Check output
         self.assertTrue(expected_output.is_file())
         df = pd.read_csv(expected_output)
-        self.assertEqual(df.shape[0], 1)
-        self.assertEqual(df.test_col[0], 1)
+        self.assertEqual(df.shape[0], 10)
+        self.assertEqual(df["first_name"][0], "Abel")
+        self.assertEqual(df["last_name"][0], "Maclead")
 
         # Remove the .compiled directory, if it exists
         self._remove_compiled_dir(wkdir)

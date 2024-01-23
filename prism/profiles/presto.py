@@ -102,7 +102,7 @@ class Presto(Adapter):
         return True
 
     @requires_dependencies(
-        "presto-python-client",
+        "prestodb",
         "presto",
     )
     def create_engine(self,
@@ -168,7 +168,7 @@ class Presto(Adapter):
         return conn
 
     @requires_dependencies(
-        "presto-python-client",
+        "prestodb",
         "presto",
     )
     def execute_sql(self, query: str, return_type: Optional[str]) -> pd.DataFrame:

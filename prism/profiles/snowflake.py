@@ -80,7 +80,7 @@ class Snowflake(Adapter):
         return True
 
     @requires_dependencies(
-        ["snowflake-connector-python", "pyarrow"],
+        ["snowflake.connector", "pyarrow"],
         "snowflake"
     )
     def create_engine(self,
@@ -118,7 +118,7 @@ class Snowflake(Adapter):
         return ctx
 
     @requires_dependencies(
-        ["snowflake-connector-python", "pyarrow"],
+        ["snowflake.connector", "pyarrow"],
         "snowflake"
     )
     def execute_sql(self, query: str, return_type: Optional[str]) -> pd.DataFrame:

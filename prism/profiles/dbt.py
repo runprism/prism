@@ -474,7 +474,7 @@ class Dbt(Adapter):
             return '\n'.join(execute_str)
 
     @requires_dependencies(
-        "dbt-core>=1,<1.6.0",
+        "dbt",
         "dbt"
     )
     def create_engine(self,

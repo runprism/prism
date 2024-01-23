@@ -85,7 +85,7 @@ class Redshift(Adapter):
         return True
 
     @requires_dependencies(
-        "psycopg2-binary",
+        "psycopg2",
         "postgres"
     )
     def create_engine(self,
@@ -126,7 +126,7 @@ class Redshift(Adapter):
         return conn
 
     @requires_dependencies(
-        "psycopg2-binary",
+        "psycopg2",
         "postgres"
     )
     def execute_sql(self, query: str, return_type: Optional[str]) -> pd.DataFrame:

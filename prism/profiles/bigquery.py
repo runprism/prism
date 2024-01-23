@@ -77,7 +77,7 @@ class BigQuery(Adapter):
         return True
 
     @requires_dependencies(
-        ["google-api-python-client", "google-auth", "google-cloud-bigquery", "db-dtypes"],  # noqa
+        ["google.cloud", "google.oauth2"],  # noqa
         "bigquery"
     )
     def create_engine(self,
