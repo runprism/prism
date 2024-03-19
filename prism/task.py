@@ -1,27 +1,9 @@
-"""
-PrismTask class definition. All user-created tasks should inherit from PrismTask.
-
-Table of Contents
-- Imports
-- Class definition
-"""
-
-###########
-# Imports #
-###########
-
-# Standard library imports
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Union
 
 # Prism imports
 import prism.exceptions
 import prism.target
-
-
-####################
-# Class definition #
-####################
 
 
 class PrismTask:
@@ -55,11 +37,9 @@ class PrismTask:
         self.is_done: bool = False
 
     def exec(self):
-
         # If the `target` decorator isn't applied, then only execute the `run` function
         # of bool_run is true
         if self.run.__name__ == "run" and not self.is_done:
-
             # If bool_run, then execute the `run` function and set the `output`
             # attribute to its result
             if self.bool_run:
