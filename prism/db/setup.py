@@ -32,9 +32,7 @@ class Run(Base):
     logs_path: Mapped[str] = mapped_column(nullable=False)
     status: Mapped[
         Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED"]
-    ] = mapped_column(
-        nullable=True
-    )  # noqa: E501
+    ] = mapped_column(nullable=True)
     taskruns: Mapped[List["TaskRun"]] = relationship(backref="run")
     ctx: Mapped[Dict[str, Any]] = mapped_column(nullable=False)
     project_id: Mapped[str] = mapped_column(ForeignKey("project.id"))
