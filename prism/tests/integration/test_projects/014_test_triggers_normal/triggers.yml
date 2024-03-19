@@ -1,7 +1,0 @@
-include:
-  - "{{ Path(__file__).parent.parent }}"
-
-triggers:
-  test_trigger_function:
-    type: function
-    function: common.functions.test_trigger_function

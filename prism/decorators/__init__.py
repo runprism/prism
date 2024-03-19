@@ -1,8 +1,3 @@
-from .target import (  # noqa: F401
-    target,
-    target_iterator
-)
+from .target import target, target_iterator  # noqa: F401
 
-from .task import (  # noqa: F401
-    task
-)
+from .task import task  # noqa: F401

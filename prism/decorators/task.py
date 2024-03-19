@@ -1,29 +1,9 @@
-"""
-Task decorator
-
-Table of Contents
-- Imports
-- Target decorators
-"""
-
-###########
-# Imports #
-###########
-
-# Standard library imports
 from typing import Optional
-import inspect
 from functools import reduce
 
 # Prism imports
-import prism.infra.hooks
-import prism.infra.task_manager
 from prism.task import PrismTask
 
-
-##################
-# Task decorator #
-##################
 
 def bind(instance, func, as_name=None):
     """
@@ -38,33 +18,9 @@ def bind(instance, func, as_name=None):
     return bound_method
 
 
-def check_function_arguments(func):
-    """
-    Check function arguments and confirm that it has only `tasks` and `hooks`
-    """
-    sig = inspect.signature(func)
-    flag_has_tasks = False
-    flag_has_hooks = False
-    for param in sig.parameters:
-        if param == "tasks":
-            flag_has_tasks = True
-        if param == "hooks":
-            flag_has_hooks = True
-        if param not in ["tasks", "hooks"]:
-            raise prism.exceptions.RuntimeException(
-                f"`{func.__name__}` has unrecognized parameter `{param}`!"
-            )
-    if not flag_has_tasks:
-        raise prism.exceptions.RuntimeException(
-            f"`{func.__name__}` does not have `tasks` parameter!"
-        )
-    if not flag_has_hooks:
-        raise prism.exceptions.RuntimeException(
-            f"`{func.__name__}` does not have `hooks` parameter!"
-        )
-
-
-def task(*,
+def task(
+    *,
+    task_id: Optional[str] = None,
     retries: int = 0,
     retry_delay_seconds: Optional[int] = None,
     targets=None,
@@ -72,27 +28,18 @@ def task(*,
     """
     Decorator used to turn any Python function into a Prism task.
     """
+
     def decorator_task(func):
 
-        def wrapper_task(
-            task_manager: prism.infra.task_manager.PrismTaskManager,
-            hooks: prism.infra.hooks.PrismHooks
-        ):
-            # Check function arguments
-            check_function_arguments(func)
-
-            # Create the new task. Just set bool_run to `True` for now.
-            new_task = PrismTask(bool_run=True, func=func)
-
-            # Set task manager and hooks
-            new_task.task_manager = task_manager
-            new_task.hooks = hooks
+        def wrapper_task(task_id: Optional[str] = task_id, bool_run: bool = True):
+            assert task_id
+            new_task = PrismTask(task_id=task_id, func=func, bool_run=bool_run)
 
             # Set class attributes
             if retries:
-                new_task.RETRIES = retries
+                new_task.retries = retries
             if retry_delay_seconds:
-                new_task.RETRY_DELAY_SECONDS = retry_delay_seconds
+                new_task.retry_delay_seconds = retry_delay_seconds
 
             # Chain the decorators together and bind the decorated function to the task
             # instance.
@@ -107,4 +54,5 @@ def task(*,
             return new_task
 
         return wrapper_task
+
     return decorator_task

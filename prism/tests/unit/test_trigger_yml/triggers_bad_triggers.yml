@@ -1,7 +1,0 @@
-include:
-  path1: "{{ Path(__file__).parent }}"
-
-triggers:
-  - test_trigger_good_structure:
-      type: function
-      function: test_fn.test_agent_trigger

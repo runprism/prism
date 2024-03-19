@@ -2,5 +2,5 @@ from prism.decorators import task
 
 
 @task()
-def task_with_refs(tasks, hooks, other_arg):
+def task_with_refs(extra_arg):
     return "hi"

@@ -3,11 +3,11 @@ from prism.task import PrismTask
 
 class OnlyPrismTask(PrismTask):
 
-    def run(self, tasks, hooks):
-        return 'hi'
+    def run(self):
+        return "hi"
 
 
-class NonPrismTask():
+class NonPrismTask:
 
     def run(self):
-        return 'hi'
+        return "hi"

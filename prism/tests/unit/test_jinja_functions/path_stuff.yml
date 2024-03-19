@@ -1,6 +1,0 @@
-default:
-  adapters:
-    dbt:
-      type: dbt
-      project_dir: '{{ Path(__file__) }}'
-      profiles_dir: '{{ Path(__file__).parent }}'

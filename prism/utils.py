@@ -1,8 +1,3 @@
-"""
-Util functions
-"""
-
-# Imports
 from typing import (
     Any,
     Callable,
@@ -50,6 +45,7 @@ def requires_dependencies(
             return func(*args, **kwargs)
 
         return wrapper
+
     return decorator
 
 

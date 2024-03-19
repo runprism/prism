@@ -1,7 +1,0 @@
-default:
-  adapters:
-    dbt_adapter_name_here: # change this!
-      type: dbt
-      project_dir:
-      profiles_dir:
-      profiles_target:

@@ -16,9 +16,6 @@ from typing import Any, Callable, List, Optional, Union
 
 # Prism imports
 import prism.exceptions
-import prism.prism_logging
-import prism.infra.hooks
-import prism.infra.task_manager
 import prism.target
 
 
@@ -26,18 +23,24 @@ import prism.target
 # Class definition #
 ####################
 
-class PrismTask:
 
-    def __init__(self,
+class PrismTask:
+    retries: int
+    retry_delay_seconds: int
+
+    def __init__(
+        self,
+        task_id: str,
+        func: Optional[Callable[..., Any]] = None,
         bool_run: bool = True,
-        func: Optional[Callable[..., Any]] = None
     ):
         """
         Create an instance of the PrismTask. The class immediately calls the `run`
         function and assigns the result to the `output` attribute.
         """
-        self.bool_run = bool_run
+        self.task_id = task_id
         self.func = func
+        self.bool_run = bool_run
 
         # Tyeps, locs, and kwargs for target
         self.types: List[prism.target.PrismTarget] = []
@@ -45,17 +48,11 @@ class PrismTask:
         self.kwargs: List[Any] = []
 
         # Retries
-        self.RETRIES = 0
-        self.RETRY_DELAY_SECONDS = 0
+        self.retries = 0
+        self.retry_delay_seconds = 0
 
         # Initialize the is_done attribute
         self.is_done: bool = False
-
-    def set_task_manager(self, task_manager: prism.infra.task_manager.PrismTaskManager):
-        self.task_manager = task_manager
-
-    def set_hooks(self, hooks: prism.infra.hooks.PrismHooks):
-        self.hooks = hooks
 
     def exec(self):
 
@@ -66,7 +63,7 @@ class PrismTask:
             # If bool_run, then execute the `run` function and set the `output`
             # attribute to its result
             if self.bool_run:
-                self.output = self.run(self.task_manager, self.hooks)
+                self.output = self.run()
                 if self.output is None:
                     raise prism.exceptions.RuntimeException(
                         "`run` method must produce a non-null output"
@@ -80,87 +77,20 @@ class PrismTask:
 
         # Otherwise, the decorator uses bool_run in its internal computation
         else:
-            self.output = self.run(self.task_manager, self.hooks)
+            self.output = self.run()
             if self.output is None:
                 raise prism.exceptions.RuntimeException(
                     "`run` method must produce a non-null output"
                 )
 
-    def done(self,
-        tasks: prism.infra.task_manager.PrismTaskManager,
-        hooks: prism.infra.hooks.PrismHooks,
-    ) -> bool:
-        """
-        Check if this task is already done. If it is, then don't execute `run`.
-        Otherwise, execute `run`.
-
-        args:
-            tasks: Prism task manager, used to reference other tasks
-            hooks: Prism hooks, used to access Prism adapters
-        returns:
-            True if the task is already Done, False if not. Defaults to False.
-        """
+    def done(self) -> bool:
         return False
 
-    def run(self,
-        tasks: prism.infra.task_manager.PrismTaskManager,
-        hooks: prism.infra.hooks.PrismHooks,
-    ):
-        """
-        Run the task. The user should override this function definition when creating
-        their own tasks.
-        args:
-            tasks: Prism task manager, used to reference other tasks
-            hooks: Prism hooks, used to access Prism adapters
-        returns:
-            Any
-        """
+    def run(self):
         if self.func is not None:
-            return self.func(tasks, hooks)
+            return self.func()
         else:
             raise prism.exceptions.RuntimeException("`run` method not implemented")
-
-    @prism.prism_logging.deprecated(
-        'prism.task.PrismTask.target', 'prism.decorators.target'
-    )
-    def target(type, loc, **kwargs):
-        """
-        Decorator to use if task requires user to iterate through several different
-        objects and save each object to an external location
-        """
-
-        def decorator_target(func):
-
-            def wrapper_target(self,
-                task_manager: prism.infra.task_manager.PrismTaskManager,
-                hooks: prism.infra.hooks.PrismHooks
-            ):
-
-                # Decorator should only be called on the `run` function
-                if func.__name__ != "run":
-                    raise prism.exceptions.RuntimeException(
-                        message="`target` decorator can only be called on `run` function"  # noqa: E501
-                    )
-
-                # If the task should be run in full, then call the run function
-                if self.bool_run and not self.is_done:
-                    obj = func(self, task_manager, hooks)
-
-                    # Initialize an instance of the target class and save the object
-                    # using the target's `save` method
-                    target = type(obj, loc, hooks=None)  # type: ignore
-                    target.save(**kwargs)
-
-                    # If a target is set, just assume that the user wants to reference
-                    # the location of the target when they call `mod`
-                    return loc
-
-                # If the task should not be run in full, then just return the location
-                # of the target
-                else:
-                    return loc
-            return wrapper_target
-        return decorator_target
 
     def get_output(self):
         """

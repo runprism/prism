@@ -1,19 +1,11 @@
-###########
-# Imports #
-###########
+import pandas as pd
 
-# Prism infrastructure imports
+# Prism imports
 import prism.task
 import prism.target
 import prism.decorators
+from prism.runtime import CurrentRun
 
-# Other imports
-import pandas as pd
-
-
-####################
-# Class definition #
-####################
 
 class Task03(prism.task.PrismTask):
 
@@ -24,19 +16,9 @@ class Task03(prism.task.PrismTask):
         return lines
 
     # Run
-    def run(self, tasks, hooks):
-        """
-        Execute task.
-
-        args:
-            tasks: used to reference output of other tasks --> tasks.ref('...')
-            hooks: built-in Prism hooks. These include:
-            - hooks.dbt_ref --> for getting dbt tasks as a pandas DataFrame
-            - hooks.sql     --> for executing sql query using an adapter in profile YML
-            - hooks.spark   --> for accessing SparkSession
-        returns:
-            task output
-        """
-        _ = pd.read_csv(tasks.ref('module01.py'))
-        _ = pd.read_csv(tasks.ref('module02.py'))
-        return 'Hello from task 3!'
+    def run(self):
+        d1 = CurrentRun.ref("module01.Task01")
+        assert isinstance(d1, pd.DataFrame)
+        d2 = CurrentRun.ref("module02.Task02")
+        assert isinstance(d2, pd.DataFrame)
+        return "Hello from task 3!"
