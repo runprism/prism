@@ -1,30 +1,12 @@
 import datetime
-from pathlib import Path
 from typing import Any, Dict, List, Literal
 
-from sqlalchemy import ForeignKey, create_engine
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-    relationship,
-    backref,
-    sessionmaker,
-    scoped_session,
-)
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, backref, mapped_column, relationship
 from sqlalchemy.types import JSON
 
 # Prism-specific imports
-from prism.constants import INTERNAL_FOLDER
 from prism.db.factory import ThreadLocalSessionFactory
-
-
-# SQLAlchemy base objects
-engine = create_engine(f"sqlite:///{Path(INTERNAL_FOLDER).resolve()}/prism.db")
-session_factory = sessionmaker()
-Session = scoped_session(session_factory)
-Session.configure(bind=engine)
-session = Session()
 
 
 class Base(DeclarativeBase):
@@ -48,8 +30,10 @@ class Run(Base):
     run_slug: Mapped[str] = mapped_column(primary_key=True, nullable=False)
     run_date: Mapped[datetime.datetime] = mapped_column(nullable=False)
     logs_path: Mapped[str] = mapped_column(nullable=False)
-    status: Mapped[Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED"]] = (
-        mapped_column(nullable=True)
+    status: Mapped[
+        Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED"]
+    ] = mapped_column(
+        nullable=True
     )  # noqa: E501
     taskruns: Mapped[List["TaskRun"]] = relationship(backref="run")
     ctx: Mapped[Dict[str, Any]] = mapped_column(nullable=False)
@@ -71,8 +55,10 @@ class TaskRun(Base):
     __tablename__ = "taskruns"
     run_slug: Mapped[str] = mapped_column(ForeignKey("runs.run_slug"), primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"), primary_key=True)
-    status: Mapped[Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "SKIPPED"]] = (
-        mapped_column(nullable=False)
+    status: Mapped[
+        Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "SKIPPED"]
+    ] = mapped_column(
+        nullable=False
     )  # noqa: E501
 
 
