@@ -149,7 +149,7 @@ class _DagExecutor(DbMixin):
         self._wait_and_return = False
         self.error_event: Optional[BaseException] = None
 
-        def callback(result: Union[PrismTask | BaseException]):
+        def callback(result: Union[PrismTask, BaseException]):
             if isinstance(result, BaseException):
                 self._wait_and_return = True
                 self.error_event = result
