@@ -52,7 +52,7 @@ class _DagExecutor(DbMixin):
         # Number of processes used to run concurrent tasks
         self.threads = threads
 
-    def exec_single(self, task: _CompiledTask) -> Union[PrismTask | Exception]:
+    def exec_single(self, task: _CompiledTask) -> Union[PrismTask, Exception]:
         """
         Callback used to get results of task execution in Pool
         """

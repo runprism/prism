@@ -1,3 +1,6 @@
+from pathlib import Path
+
+# Prism imports
 import prism.task
 import prism.target
 import prism.decorators
@@ -9,7 +12,7 @@ class ExampleTask(prism.task.PrismTask):
 
     # Run
     @prism.decorators.target(
-        type=prism.target.Txt, loc=CurrentRun.ctx("OUTPUT") / "hello_world.txt"
+        type=prism.target.Txt, loc=Path(CurrentRun.ctx("OUTPUT")) / "hello_world.txt"
     )
     def run(self):
         return "Hello, world!"

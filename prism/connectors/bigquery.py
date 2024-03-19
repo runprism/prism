@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Any, List, Literal, Union, Optional
+from typing import Any, List, Literal, Union, Optional, Tuple
 import pandas as pd
 from pathlib import Path
 
@@ -65,7 +65,7 @@ class BigQueryConnector(Connector):
             df: pd.DataFrame = job.to_dataframe()
             return df
         data = job.result()
-        res: List[tuple[Any, ...]] = []
+        res: List[Tuple[Any, ...]] = []
         for row in data:
             res.append(row)
         return res
