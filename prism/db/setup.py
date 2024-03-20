@@ -3,14 +3,18 @@ from typing import Any, Dict, List, Literal
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, backref, mapped_column, relationship
-from sqlalchemy.types import JSON
+from sqlalchemy.types import JSON, String
 
 # Prism-specific imports
 from prism.db.factory import ThreadLocalSessionFactory
 
 
 class Base(DeclarativeBase):
-    type_annotation_map = {Dict[str, Any]: JSON}
+    type_annotation_map = {
+        Dict[str, Any]: JSON,
+        Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED"]: String,
+        Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "SKIPPED"]: String,
+    }
 
 
 # Models
@@ -55,9 +59,7 @@ class TaskRun(Base):
     task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"), primary_key=True)
     status: Mapped[
         Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "SKIPPED"]
-    ] = mapped_column(
-        nullable=False
-    )  # noqa: E501
+    ] = mapped_column(nullable=False)  # noqa: E501
 
 
 class Ref(Base):
