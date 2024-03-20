@@ -1,16 +1,13 @@
 # Standard library imports
-from typing import Any, List, Literal, Union, Optional, Tuple
-import pandas as pd
 from pathlib import Path
+from typing import Any, List, Literal, Optional, Tuple, Union
+
+import pandas as pd
+
+from prism.utils import requires_dependencies
 
 # Prism-specific imports
 from .base import Connector
-from prism.utils import requires_dependencies
-
-
-####################
-# Class definition #
-####################
 
 
 class BigQueryConnector(Connector):
