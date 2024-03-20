@@ -1,18 +1,17 @@
 # General package imports
-import re
-import os
 import copy
 import math
+import os
+import re
 import time
 from dataclasses import dataclass
-from typing import Literal, Optional
 from pathlib import Path
+from typing import Literal, Optional
 
 # Prism imports
 import prism.constants
 import prism.exceptions
 import prism.logging.loggers
-
 
 # Terminal width
 TERMINAL_WIDTH = 80
@@ -129,9 +128,10 @@ class CreatingPrismProjectTemplate(Event):
 
 @dataclass
 class RunningWithPrismEvent(Event):
-
     def message(self):
-        return f"[bold]Running with Prism [magenta]v{prism.constants.VERSION}[/magenta]..."  # noqa: E501
+        return (
+            f"[bold]Running with Prism [magenta]v{prism.constants.VERSION}[/magenta]..."  # noqa: E501
+        )
 
 
 @dataclass
@@ -178,14 +178,12 @@ class RunStatusEvent(Event):
 
 @dataclass
 class SuccessCallbackEvent(Event):
-
     def message(self):
         return "[bold]Running [green]on_success[/green] callbacks...[/bold]"
 
 
 @dataclass
 class FailureCallbackEvent(Event):
-
     def message(self):
         return "[bold]Running [red]on_failure[/red] callbacks...[/bold]"
 
@@ -200,7 +198,6 @@ class CurrentProjectDirEvent(Event):
 
 @dataclass
 class SettingUpProfileEvent(Event):
-
     def message(self):
         return "Setting up profile..."
 
@@ -277,12 +274,13 @@ class ServingDocsEvent(Event):
     port: int
 
     def message(self):
-        return f"Serving docs at [bold yellow]http://127.0.0.1:{self.port}[/bold yellow]"  # noqa: E501
+        return (
+            f"Serving docs at [bold yellow]http://127.0.0.1:{self.port}[/bold yellow]"  # noqa: E501
+        )
 
 
 @dataclass
 class ServingDocsExitInfo(Event):
-
     def message(self) -> str:
         return "Press [bold yellow]Ctrl+C[/bold yellow] to exit"
 
@@ -301,7 +299,6 @@ class DelayEvent(Event):
 
 @dataclass
 class DocsReloadedEvent(Event):
-
     def message(self):
         return "Project has been re-compiled. Press [bold yellow]Cmd+Shift+R[/bold yellow] to reload your graph"  # noqa: E501
 

@@ -1,5 +1,5 @@
-from typing import Optional
 from functools import reduce
+from typing import Optional
 
 # Prism imports
 from prism.task import PrismTask
@@ -30,7 +30,6 @@ def task(
     """
 
     def decorator_task(func):
-
         def wrapper_task(task_id: Optional[str] = task_id, bool_run: bool = True):
             assert task_id
             new_task = PrismTask(task_id=task_id, func=func, bool_run=bool_run)
@@ -47,7 +46,9 @@ def task(
                 if len(targets) == 0:
                     pass
                 decorated_func = reduce(
-                    lambda x, y: y(x), reversed(targets), new_task.run  # type: ignore
+                    lambda x, y: y(x),
+                    reversed(targets),
+                    new_task.run,  # type: ignore
                 )
                 new_task.run = bind(new_task, decorated_func)  # type: ignore
 

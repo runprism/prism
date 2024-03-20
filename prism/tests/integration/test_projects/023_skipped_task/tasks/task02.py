@@ -1,14 +1,14 @@
 from pathlib import Path
 
+import prism.decorators
+import prism.target
+
 # Prism infrastructure imports
 import prism.task
-import prism.target
-import prism.decorators
 from prism.runtime import CurrentRun
 
 
 class Task02(prism.task.PrismTask):
-
     # Run
     @prism.decorators.target(
         type=prism.target.Txt, loc=Path(CurrentRun.ctx("OUTPUT")) / "task02.txt"

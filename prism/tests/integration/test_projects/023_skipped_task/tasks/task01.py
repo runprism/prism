@@ -1,15 +1,15 @@
 # Other imports
 from pathlib import Path
 
+import prism.decorators
+import prism.target
+
 # Prism infrastructure imports
 import prism.task
-import prism.target
-import prism.decorators
 from prism.runtime import CurrentRun
 
 
 class Task01(prism.task.PrismTask):
-
     def done(self):
         return (Path(CurrentRun.ctx("OUTPUT")) / "task01.txt").is_file()
 

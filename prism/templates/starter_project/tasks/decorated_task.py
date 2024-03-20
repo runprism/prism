@@ -2,10 +2,7 @@ from pathlib import Path
 
 # Prism imports
 import prism.target
-from prism.decorators import (
-    task,
-    target,
-)
+from prism.decorators import target, task
 from prism.runtime import CurrentRun
 
 
@@ -14,7 +11,7 @@ from prism.runtime import CurrentRun
     targets=[
         target(
             type=prism.target.Txt,
-            loc=Path(CurrentRun.ctx("OUTPUT")) / "hello_world.txt"
+            loc=Path(CurrentRun.ctx("OUTPUT")) / "hello_world.txt",
         )
     ],
 )

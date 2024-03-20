@@ -1,17 +1,15 @@
-from io import StringIO
 import logging
-from logging import Handler, StreamHandler
-from logging.handlers import RotatingFileHandler
-from logging import Formatter
-from pathlib import Path
 import re
-from typing import List, Literal, Optional, Union
 import sys
+from io import StringIO
+from logging import Formatter, Handler, StreamHandler
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from typing import List, Literal, Optional, Union
 
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.theme import Theme
-
 
 CONSOLE: Console
 DEFAULT_LOGGER: logging.Logger
@@ -133,7 +131,9 @@ def set_up_logger(
         # class (used in our tests).
         if fpath and not isinstance(fpath, StringIO):
             file_handler = RotatingFileHandler(
-                filename=fpath, maxBytes=1024 * 1024 * 10, backupCount=10  # 10Mb
+                filename=fpath,
+                maxBytes=1024 * 1024 * 10,
+                backupCount=10,  # 10Mb
             )
             file_handler.setFormatter(FileHandlerFormatter())
             handlers.append(file_handler)

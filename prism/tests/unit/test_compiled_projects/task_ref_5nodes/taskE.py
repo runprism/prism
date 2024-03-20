@@ -1,9 +1,8 @@
-from prism.task import PrismTask
 from prism.runtime import CurrentRun
+from prism.task import PrismTask
 
 
 class Taske(PrismTask):
-
     def run(self):
         return (
             CurrentRun.ref("taskA.Taska")

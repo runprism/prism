@@ -1,15 +1,16 @@
 from pathlib import Path
 
+import pyspark.sql.functions as F
+
 # Spark
 from pyspark.sql import SparkSession
-import pyspark.sql.functions as F
+
+import prism.decorators
+import prism.target
 
 # Prism imports
 import prism.task
-import prism.target
-import prism.decorators
 from prism.runtime import CurrentRun
-
 
 spark = (
     SparkSession.builder.appName("spark-test")
@@ -20,7 +21,6 @@ spark = (
 
 
 class PysparkTask(prism.task.PrismTask):
-
     # Run
     @prism.decorators.target(
         type=prism.target.PandasCsv,

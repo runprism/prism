@@ -3,7 +3,6 @@ from prism.runtime import CurrentRun
 
 
 class Task11(prism.task.PrismTask):
-
     def run(self):
         return (
             CurrentRun.ref("task07.Task07a")

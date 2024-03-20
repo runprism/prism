@@ -1,14 +1,14 @@
 import pandas as pd
 
+import prism.decorators
+import prism.target
+
 # Prism imports
 import prism.task
-import prism.target
-import prism.decorators
 from prism.runtime import CurrentRun
 
 
 class Task03(prism.task.PrismTask):
-
     def get_txt_output(self, path):
         with open(path) as f:
             lines = f.read()

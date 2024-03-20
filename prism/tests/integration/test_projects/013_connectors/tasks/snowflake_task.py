@@ -1,14 +1,14 @@
 from pathlib import Path
 
+import prism.decorators
+import prism.target
+
 # Prism imports
 import prism.task
-import prism.target
-import prism.decorators
 from prism.runtime import CurrentRun
 
 
 class SnowflakeTask(prism.task.PrismTask):
-
     # Run
     @prism.decorators.target(
         type=prism.target.PandasCsv,

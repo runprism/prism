@@ -1,14 +1,15 @@
 # Standard library imports
-from multiprocessing.dummy import Pool
 import time
+from multiprocessing.dummy import Pool
 from typing import Optional, Union
+
+import prism.logging.events
 
 # Prism-specific imports
 from prism.db.mixins import DbMixin
-from prism.engine.compiler import _CompiledDag
 from prism.engine.compiled_task import _CompiledTask
+from prism.engine.compiler import _CompiledDag
 from prism.logging.execution import _ExecutionEventManager
-import prism.logging.events
 from prism.task import PrismTask
 
 
@@ -171,7 +172,6 @@ class _DagExecutor(DbMixin):
             async_results = {}
             with Pool(processes=self.threads) as pool:
                 while self.compiled_tasks != []:
-
                     # Get first task to execute
                     curr = self.compiled_tasks[0]
                     refs = curr.refs

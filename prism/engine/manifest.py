@@ -12,10 +12,9 @@ Table of Contents
 
 # Standard library imports
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict, List
-import re
-
 
 ####################
 # Class definition #
@@ -74,7 +73,6 @@ class TaskManifest:
         # If task lives in a nested directory, then the directory name should be the
         # first key.
         else:
-
             # Create necessary nested directory keys
             base_level = self.manifest_dict["tasks"]
             for _k in task_module_no_py_split[:-1]:

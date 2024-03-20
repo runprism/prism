@@ -1,11 +1,10 @@
-import prism.task
 import prism.decorators
+import prism.task
 from prism.runtime import CurrentRun
 
 
 # Class-based task
 class Task07a(prism.task.PrismTask):
-
     def run(self):
         return (
             CurrentRun.ref("task04.Task04")

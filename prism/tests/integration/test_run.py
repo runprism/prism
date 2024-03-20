@@ -1,28 +1,28 @@
 # Standard library imports
-from io import StringIO
 import os
-import pandas as pd
+from io import StringIO
 from pathlib import Path
-import pytest
 from typing import Literal
 
-# Prism imports
-import prism.exceptions
-from prism.client import PrismProject
-import prism.logging.loggers
-import prism.logging.events
+import pandas as pd
+import pytest
 
 # SQLAlchemy
 from sqlalchemy import select
+
+# Prism imports
+import prism.exceptions
+import prism.logging.events
+import prism.logging.loggers
+from prism.client import PrismProject
 from prism.db.factory import ThreadLocalSessionFactory
 from prism.db.setup import Project, Ref
 from prism.tests.integration.integration_utils import (
-    _previous_console_output,
     _console_mocker,
-    _remove_files_in_output,
     _file_as_str,
+    _previous_console_output,
+    _remove_files_in_output,
 )
-
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
@@ -463,7 +463,7 @@ def test_concurrency(monkeypatch):
     _remove_files_in_output(wkdir)
 
 
-def test_runtime_ctx_overrids_client_ctx(monkeypatch):
+def test_runtime_ctx_overrides_client_ctx(monkeypatch):
     # Set working directory
     wkdir = Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks"
     os.chdir(wkdir)
@@ -496,7 +496,7 @@ def test_runtime_ctx_overrids_client_ctx(monkeypatch):
 
     # Now run (with the run context)
     client.run(
-        runtime_ctx={"OUTPUT": wkdir / "OUTPUT"},
+        runtime_ctx={"OUTPUT": wkdir / "output"},
         rich_logging=False,
         log_file=StringIO(),
     )
@@ -753,10 +753,7 @@ def test_connectors(monkeypatch):
     _remove_files_in_output(wkdir)
 
     # Define some connectors
-    from prism.connectors import (
-        PostgresConnector,
-        SnowflakeConnector,
-    )
+    from prism.connectors import PostgresConnector, SnowflakeConnector
 
     postgres_connector = PostgresConnector(
         id="postgres-connector",

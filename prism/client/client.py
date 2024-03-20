@@ -5,10 +5,10 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 # Prism-specific imports
 from prism.admin import generate_run_id, generate_run_slug
-from prism.connectors.base import Connector
-from prism.constants import INTERNAL_FOLDER
 from prism.client.runner import ProjectRunner
 from prism.client.visualizer import PrismVisualizer
+from prism.connectors.base import Connector
+from prism.constants import INTERNAL_FOLDER
 from prism.db.mixins import DbMixin
 from prism.logging import set_up_logger
 
@@ -76,8 +76,10 @@ class PrismProject(DbMixin):
         from pathlib import Path
         from prism.client import PrismProject
 
+
         def print_success():
             print("Success!")
+
 
         project = PrismProject(
             tasks_dir=Path.cwd() / "tasks",  # default task directory

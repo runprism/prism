@@ -1,9 +1,9 @@
 # Standard library imports
 
 # Prism imports
-from prism.target import Txt
-from prism.decorators import task, target_iterator
+from prism.decorators import target_iterator, task
 from prism.runtime import CurrentRun
+from prism.target import Txt
 
 
 # Task
@@ -21,7 +21,6 @@ def load():
     # Names
     names = {}
     for ppl in data["people"]:
-
         # Formatted
         name = ppl["name"].lower().replace(" ", "_")
         names[f"{name}.txt"] = ppl["name"]

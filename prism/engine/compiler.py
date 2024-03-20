@@ -1,12 +1,12 @@
-import networkx as nx
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+
+import networkx as nx
 
 # Prism-specific imports
 import prism.exceptions
-from prism.engine.module import _PrismModule
 from prism.engine.compiled_task import _CompiledTask
-
+from prism.engine.module import _PrismModule
 
 # DiGraph type
 if TYPE_CHECKING:
@@ -383,7 +383,6 @@ class _DagCompiler:
         # Otherwise, the user has selected to run a subset of the tasks. Identify all
         # tasks upstream (and potentially downstream) of `user_arg_tasks`.
         else:
-
             # Keep only the dependencies, and create a topological sort.
             all_nodes = self.get_node_dependencies(dag, user_arg_task_ids)
 
@@ -392,14 +391,11 @@ class _DagCompiler:
                 all_nodes.extend(self.get_node_successors(dag, user_arg_task_ids))
 
             subgraph = dag.subgraph(list(set(all_nodes)))
-            all_topological_sorts = nx.algorithms.dag.all_topological_sorts(
-                subgraph
-            )  # noqa: E501
+            all_topological_sorts = nx.algorithms.dag.all_topological_sorts(subgraph)  # noqa: E501
             topological_sort = next(all_topological_sorts)
 
         # Add each task to manifest
         for elem in topological_sort:
-
             # Raise error if node not in project
             if elem not in all_task_ids:
                 raise prism.exceptions.CompileException(

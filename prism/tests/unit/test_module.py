@@ -1,12 +1,12 @@
 # Standard library imports
 import ast
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Prism imports
 import prism.exceptions
-from prism.engine.module import _PrismModule, _get_func_args
-
+from prism.engine.module import _get_func_args, _PrismModule
 
 # Paths
 UNIT_TEST_WKDIR = Path(__file__).parent
@@ -178,9 +178,7 @@ def test_other_classes_functions():
     )
     cls_prism_tasks = cls_module.prism_task_nodes
     assert len(cls_prism_tasks.keys()) == 1
-    assert (
-        OTHER_CLASSES.name.replace(".py", "") + ".OnlyPrismTask" in cls_prism_tasks
-    )  # noqa: E501
+    assert OTHER_CLASSES.name.replace(".py", "") + ".OnlyPrismTask" in cls_prism_tasks  # noqa: E501
 
     # Task is a function that is a decorated function
     dec_module = _PrismModule(
@@ -367,7 +365,9 @@ def test_no_run_function_in_cls():
     # Parsing should raise an error
     with pytest.raises(prism.exceptions.ParserException) as cm:
         cls_module.parse(cls_expected_key)
-    cls_expected_msg = f"Error in task `{cls_expected_key}` in `{NO_RUN_FUNC}`: no run function!"  # noqa: E501
+    cls_expected_msg = (
+        f"Error in task `{cls_expected_key}` in `{NO_RUN_FUNC}`: no run function!"  # noqa: E501
+    )
     assert str(cm.value) == cls_expected_msg
 
 

@@ -10,14 +10,14 @@ Table of Contents
 # Imports #
 ###########
 
+import inspect
+
 # Standard library imports
 from pathlib import Path
 
 # Prism imports
 import prism.exceptions
 from prism.task import PrismTask
-import inspect
-
 
 #####################
 # Target decorators #
@@ -31,9 +31,7 @@ def target(*, type, loc, **target_kwargs):
     """
 
     def decorator_target(func):
-
         def wrapper_target_dec(self):
-
             # This will only ever be called inside a PrismTask
             if not isinstance(self, PrismTask):
                 raise prism.exceptions.RuntimeException(
@@ -62,7 +60,6 @@ def target(*, type, loc, **target_kwargs):
 
             # Now, we've hit the `run` function
             else:
-
                 # Confirm function name
                 if func.__name__ != "run":
                     raise prism.exceptions.RuntimeException(
@@ -71,7 +68,6 @@ def target(*, type, loc, **target_kwargs):
 
                 # If the task should be run in full, then call the run function
                 if self.bool_run and not self.is_done:
-
                     # When using `target` as a decorator, `run` is a function. When
                     # using `target` as an argument to the `task()` decorator, `run` is
                     # a bound method.
@@ -103,7 +99,6 @@ def target(*, type, loc, **target_kwargs):
 
                     # If return type is not a Tuple, we expect a single target
                     else:
-
                         # Initialize an instance of the target class and save the object
                         # using the target's `save` method
                         target = type(obj, loc)
@@ -143,9 +138,7 @@ def target_iterator(*, type, loc, **kwargs):
     """
 
     def decorator_target_iterator(func):
-
         def wrapper(self):
-
             # This will only ever be called inside a PrismTask
             if not isinstance(self, PrismTask):
                 raise prism.exceptions.RuntimeException(

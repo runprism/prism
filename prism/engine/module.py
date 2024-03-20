@@ -1,10 +1,11 @@
 import ast
-import astor
-from dataclasses import dataclass
 import os
-from pathlib import Path
 import re
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+
+import astor
 
 # Prism imports
 import prism.constants
@@ -142,8 +143,7 @@ class _PrismModule:
             if isinstance(node, ast.FunctionDef):
                 decorators = [self._get_decorator_name(d) for d in node.decorator_list]
                 if (
-                    "task" in decorators
-                    or "prism.decorators.task" in decorators  # noqa: W503
+                    "task" in decorators or "prism.decorators.task" in decorators  # noqa: W503
                 ):
                     tasks.append(node)
         return tasks
@@ -165,7 +165,6 @@ class _PrismModule:
         # one of its recursive calls. In this case, walk through the assign object and
         # find the names / constants.
         if isinstance(node, ast.Assign):
-
             # We eventually want to find names and constants. The order of the names
             # should exactly match the order of the constants. E.g., if the user says
             # VAR1, VAR2 = 30, 60, then the first name object will be VAR1 and the first

@@ -1,6 +1,7 @@
-from pathlib import Path
-import pytest
 import os
+from pathlib import Path
+
+import pytest
 
 # Prism imports
 from prism.callbacks import _PrismCallback
@@ -32,5 +33,7 @@ def test_good_callback():
 def test_callback_with_args():
     with pytest.raises(ValueError) as cm:
         _PrismCallback(example_callback_with_args)
-    expected_msg = "Callback function `example_callback_with_args` cannot have any arguments."  # noqa: E501
+    expected_msg = (
+        "Callback function `example_callback_with_args` cannot have any arguments."  # noqa: E501
+    )
     assert str(cm.value) == expected_msg

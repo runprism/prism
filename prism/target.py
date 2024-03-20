@@ -14,14 +14,12 @@ Table of Contents
 # Prism imports
 import prism.exceptions
 
-
 #####################
 # Class definitions #
 #####################
 
 
 class PrismTarget:
-
     def __init__(self, obj, loc):
         self.obj = obj
         self.loc = loc
@@ -39,7 +37,6 @@ class PrismTarget:
 
 
 class PandasCsv(PrismTarget):
-
     def save(self, **kwargs):
         self.obj.to_csv(self.loc, **kwargs)
 
@@ -52,7 +49,6 @@ class PandasCsv(PrismTarget):
 
 
 class NumpyTxt(PrismTarget):
-
     def save(self, **kwargs):
         import numpy as np
 
@@ -67,7 +63,6 @@ class NumpyTxt(PrismTarget):
 
 
 class Txt(PrismTarget):
-
     def save(self, **kwargs):
         with open(self.loc, "w") as f:
             f.write(self.obj, **kwargs)
@@ -81,7 +76,6 @@ class Txt(PrismTarget):
 
 
 class MatplotlibPNG(PrismTarget):
-
     def save(self, **kwargs):
         self.obj.savefig(self.loc, **kwargs)
 
@@ -94,7 +88,6 @@ class MatplotlibPNG(PrismTarget):
 
 
 class JSON(PrismTarget):
-
     def save(self, **kwargs):
         import json
 

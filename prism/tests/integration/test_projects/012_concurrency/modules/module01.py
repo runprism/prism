@@ -1,15 +1,16 @@
 import time
+
 import pandas as pd
+
+import prism.decorators
+import prism.target
 
 # Prism imports
 import prism.task
-import prism.target
-import prism.decorators
 from prism.runtime import CurrentRun
 
 
 class Task01(prism.task.PrismTask):
-
     # Run
     @prism.decorators.target(
         type=prism.target.PandasCsv,
