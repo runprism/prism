@@ -37,6 +37,8 @@ def console_print(msg: Union[List[str], str], **kwargs) -> None:
     except IndexError:
         if not isinstance(msg, str):
             CONSOLE.print("\n" + "".join(msg), **kwargs)
+        else:
+            CONSOLE.print(msg, **kwargs)
         return None
 
     # For tracebacks

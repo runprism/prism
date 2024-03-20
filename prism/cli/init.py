@@ -1,14 +1,15 @@
 # Standard library imports
 import shutil
-import click
 from pathlib import Path
 from typing import Literal, Optional
+
+import click
+
+import prism.constants
 
 # Prism-specific imports
 import prism.db.setup
 import prism.exceptions
-import prism.constants
-from prism.logging.loggers import set_up_logger, console_print
 from prism.logging.events import (
     CreatingPrismProjectTemplate,
     InitSuccessfulEvent,
@@ -16,8 +17,8 @@ from prism.logging.events import (
     fire_init_events,
     fire_tail_events,
 )
+from prism.logging.loggers import console_print, set_up_logger
 from prism.templates.starter_project import STARTER_PROJECT_TEMPLATE_DIR
-
 
 TASK_COMPLETE_MSG = """      ______
    ____  __ \_____(_)________ _______
@@ -31,8 +32,8 @@ using Python!
 To get started, navigate to your newly created project "{project_name}" and try
 running the following commands:
     > python main.py
-    > prism run -e ./main.py
-    > prism graph -e ./main.py
+    > prism run
+    > prism graph
 
 Consult the documentation here for more information on how to get started.
     {docs_url}

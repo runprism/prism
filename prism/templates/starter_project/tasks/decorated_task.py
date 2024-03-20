@@ -11,7 +11,7 @@ from prism.runtime import CurrentRun
     targets=[
         target(
             type=prism.target.Txt,
-            loc=Path(CurrentRun.ctx("OUTPUT")) / "hello_world.txt",
+            loc=Path(CurrentRun.ctx("OUTPUT", "output")).resolve() / "hello_world.txt",
         )
     ],
 )
