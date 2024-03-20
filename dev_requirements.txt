@@ -5,6 +5,4 @@
 -e .[presto]
 -e .[trino]
 -e .[pyspark]
--e .[dbt]
--e .[docker]
--e .[testing]
+-e .[dev]
