@@ -166,10 +166,11 @@ class PrismProject(DbMixin):
         - `full_refresh`: run all the tasks, regardless of whether or not they are
             already `done`.
         - `log_level`: logging level, one of `info`, `warn`, `error`, `debug`, or
-            `critical`
-        - `rich_logging`: beatify logs in the console with the `rich` package. Default
-            is True
-        - `log_file`: file in which to save the logs. Default is None.
+            `critical`.
+        - `rich_logging`: beautify logs in the console with the `rich` package. Default
+            is `True`.
+        - `log_file`: file in which to save the logs. If `None`, then Prism will default
+            to a file within `~/.prism/logs/`.
 
         returns:
         None
