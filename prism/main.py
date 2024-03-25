@@ -1,17 +1,17 @@
 import json
 import sys
 from pathlib import Path
+from typing import Any, Dict, Iterable, Literal, Optional
+
 import rich
 import rich_click as click
-from typing import Any, Dict, Literal, Optional, Iterable
 
 # Prism imports
 import prism.constants
 import prism.exceptions
-from prism.client.client import PrismProject
-from prism.cli.init import initialize_project
 import prism.logging.loggers
-
+from prism.cli.init import initialize_project
+from prism.client.client import PrismProject
 
 # Use markdown for --help
 click.rich_click.USE_MARKDOWN = True
@@ -194,9 +194,9 @@ def run(
 
     <br>Examples:
     - prism run
-    - prism run -t task01.py -t task02.py
-    - prism run -t task01 --all-downstream
-    - prism run --context '{"hi": 1}'
+    - prism run -t task01.Task01 -t task02.Task02
+    - prism run -t task01.Task01 --all-downstream
+    - prism run --runtime-ctx '{"hi": 1}'
     """
     project_dir = Path.cwd()
     try:
@@ -253,20 +253,20 @@ def run(
     help="Project version.",
     multiple=False,
 )
-@click.option(
-    "--connector",
-    type=str,
-    help="""Import path to the connector instances to use for your project. These can be
-            accessed at runtime `CurrentRun.conn(...)`.""",
-    multiple=True,
-)
-@click.option(
-    "--concurrency",
-    type=int,
-    help="""Number of threads to use when running tasks. Default is `1` (i.e.,
-            single-threaded)""",
-    default=1,
-)
+# @click.option(
+#     "--connector",
+#     type=str,
+#     help="""Import path to the connector instances to use for your project. These can be
+#             accessed at runtime `CurrentRun.conn(...)`.""",
+#     multiple=True,
+# )
+# @click.option(
+#     "--concurrency",
+#     type=int,
+#     help="""Number of threads to use when running tasks. Default is `1` (i.e.,
+#             single-threaded)""",
+#     default=1,
+# )
 @click.option(
     "--tasks-dir",
     type=str,
@@ -276,14 +276,14 @@ def run(
     default=Path.cwd() / "tasks",
     required=True,
 )
-@click.option(
-    "--package-lookups",
-    type=str,
-    help="""Additional directories / modules to look within when importing modules and
-            functions in your code. The `tasks_dir` and its parent are automatically
-            added to this list.""",
-    multiple=True,
-)
+# @click.option(
+#     "--package-lookups",
+#     type=str,
+#     help="""Additional directories / modules to look within when importing modules and
+#             functions in your code. The `tasks_dir` and its parent are automatically
+#             added to this list.""",
+#     multiple=True,
+# )
 @click.option(
     "--port",
     "-p",
@@ -316,10 +316,7 @@ def graph(
     project_id: Optional[str],
     project_name: Optional[str],
     project_version: Optional[str],
-    connector: Iterable[str],
-    concurrency: int,
     tasks_dir: str,
-    package_lookups: Iterable[str],
     port: int,
     open_window: bool,
     hot_reload: bool,
@@ -334,10 +331,7 @@ def graph(
         id=project_id if project_id else f"{project_dir.name.lower()}-{version}",
         name=project_name if project_name else f"{project_dir.name.lower()}",
         version=version,
-        connectors=list(connector),
-        concurrency=concurrency,
         tasks_dir=tasks_dir,
-        package_lookups=list(package_lookups),
     )
     prism_project.graph(
         port=port,
