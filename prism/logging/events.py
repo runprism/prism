@@ -151,7 +151,7 @@ class FoundTasksModulesEvent(Event):
 
     def message(self):
         if self.run_slug:
-            return f"[bold]Found [magenta]{self.num_tasks}[/magenta] task(s) in [magenta]{self.num_modules}[/magenta] module(s) in job [magenta]{self.run_slug}[/magenta]..."  # noqa: E501
+            return f"[bold]Found [magenta]{self.num_tasks}[/magenta] task(s) in [magenta]{self.num_modules}[/magenta] module(s) in run [magenta]{self.run_slug}[/magenta]..."  # noqa: E501
         else:
             return f"[bold]Found [magenta]{self.num_tasks}[/magenta] task(s) in [magenta]{self.num_modules}[/magenta] module(s)..."  # noqa: E501
 

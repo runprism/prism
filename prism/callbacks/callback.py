@@ -1,11 +1,11 @@
-import inspect
 import importlib
+import inspect
 from typing import Any, Callable
 
 
 class _PrismCallback:
     """
-    Callbacks allow users to call specific functions when a job successfully executes or
+    Callbacks allow users to call specific functions when a run successfully executes or
     when a project fails. This is a super thin wrapper around the actual callback
     function.
     """
@@ -19,7 +19,7 @@ class _PrismCallback:
 
         # Check if the argument as any args. If it does, raise an error. For now, users
         # cannot specify arguments in a callback function. They can access information
-        # about the job that triggered the callback via the `CurrentRun` object.
+        # about the run that triggered the callback via the `CurrentRun` object.
         signature = inspect.signature(self.callback_func)
         args = list(signature.parameters.keys())
         if len(args) > 0:

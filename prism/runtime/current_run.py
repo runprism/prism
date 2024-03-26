@@ -1,5 +1,4 @@
-from typing import Any, Dict, List, Union, Optional
-
+from typing import Any, Dict, List, Optional, Union
 
 # Prism-specific imports
 from prism.connectors.base import Connector
@@ -45,8 +44,8 @@ class _CurrentRun:
         """
         Get the value associated with context variable `key`. Context variables can be
         set in two places: when instantiated the PrismProject (with the `ctx` keyword
-        argument) and when creating the run job (with the `runtime_ctx` keyword argument
-        in the PrismProject's `create_run_job` method).
+        argument) and when creating the run (with the `runtime_ctx` keyword argument
+        in the PrismProject's `run` method).
 
         args:
             key: variable to retrieve
@@ -72,7 +71,7 @@ class _CurrentRun:
             prism.exception.RefDoesNotExistException if the task ID is not found
         """
         if task_id not in self._refs.keys():
-            raise ValueError(f"task ID `{task_id}` not found in job `{self.run_id}`!")
+            raise ValueError(f"task ID `{task_id}` not found in run `{self.run_id}`!")
         return self._refs[task_id]
 
     def conn(self, connector_id: str) -> Connector:
@@ -90,7 +89,7 @@ class _CurrentRun:
         """
         if connector_id not in self.connectors.keys():
             raise ValueError(
-                f"connector ID `{connector_id}` not found job `{self.run_id}`!"
+                f"connector ID `{connector_id}` not found run `{self.run_id}`!"
             )
         return self.connectors[connector_id]
 
@@ -98,7 +97,7 @@ class _CurrentRun:
 if __name__ != "__main__":
     # Create a `CurrentRun` object. This is the object that users import within their
     # task modules. Here, we are relying on Python's import caching to ensure that the
-    # refs persist across tasks. When the user creates a job, we automatically import
+    # refs persist across tasks. When the user creates a run, we automatically import
     # this module and create the `CurrentRun` object. Then, when users import CurrentRun
     # within their tasks, Python will not re-import and re-create a new CurrentRun
     # object. Rather, it will recognize that a CurrentRun object already exists and use

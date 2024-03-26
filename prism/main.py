@@ -129,7 +129,7 @@ def init(project_name, log_level):
     "-s",
     multiple=True,
     type=str,
-    help="""Callback to run if the job succeeds. Use import paths to specify the
+    help="""Callback to run if the run succeeds. Use import paths to specify the
             callback. You can specify multiple callbacks as follows: `-s <callback1> -s
             <callback2>`""",
 )
@@ -138,7 +138,7 @@ def init(project_name, log_level):
     "-f",
     multiple=True,
     type=str,
-    help="""Callback to run if the job fails. Use import paths to specify the callback.
+    help="""Callback to run if the run fails. Use import paths to specify the callback.
             You can specify multiple callbacks as follows: `-f <callback1> -f
             <callback2>`""",
 )

@@ -116,7 +116,7 @@ class _DagCompiler:
 
         # Tasks can only be executed if their predecessors are explicitly run or have
         # targets. For example, if our DAG is A --> B --> C and we call
-        # `create_job_run(..., task_ids=["C"]`, then Prism will parse the execution
+        # `PrismProject.run(..., task_ids=["C"]`, then Prism will parse the execution
         # order, instantiate but NOT execute tasks A and B, and then run task C. In
         # other words, A and B will always be instantiated; the --all-upstream argument
         # controls whether A and B are executed.

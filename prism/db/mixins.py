@@ -1,11 +1,11 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Literal, List, Union
+from typing import Any, Dict, List, Literal, Union
 
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 
 from prism.db.factory import ThreadLocalSessionFactory
-from prism.db.setup import Project, Run, Ref, Task, Target, TaskRun
+from prism.db.setup import Project, Ref, Run, Target, Task, TaskRun
 
 
 class DbMixin:
@@ -175,7 +175,7 @@ class DbMixin:
                 return None
 
             # New TaskRun — we create this TaskRun when all the tasks are compiled and
-            # the job is executed. Therefore, the task should start with status
+            # the run is executed. Therefore, the task should start with status
             # `PENDING`. We dynamically update this status at runtime
             tr = TaskRun(run_slug=run_slug, task_id=task_id, status="PENDING")
             session.add(tr)

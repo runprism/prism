@@ -44,7 +44,7 @@ class PrismProject(DbMixin):
 
         args:
         - `id`: unique ID to give this project. If not specified, then Prism will create
-            an ID for you. This job ID will be in the format `{project dir}-{version}`
+            an ID for you. This ID will be in the format `{project dir}-{version}`
         - `name`: human-readable name to give this project. If not specified, then all
             Prism will create a name for you. This name will be the name of the project
             directory.
@@ -61,11 +61,11 @@ class PrismProject(DbMixin):
         - `package_lookups`: additional directories / modules to look within when
             importing modules and functions in your code. The `tasks_dir` and its parent
             are automatically added to this list.
-        - `on_success`: list of callbacks to run when the job succeeds. Callbacks should
+        - `on_success`: list of callbacks to run when the run succeeds. Callbacks should
             be functions that do not accept any argument. Callbacks should either be
             specified as a function or as a string representing the import path to the
             function.
-        - `on_failure`: list of callbacks to run when the job fails. Callbacks should
+        - `on_failure`: list of callbacks to run when the run fails. Callbacks should
             be functions that do not accept any argument. Callbacks should either be
             specified as a function or as a string representing the import path to the
             function.
@@ -147,8 +147,8 @@ class PrismProject(DbMixin):
         PrismProject's `ctx`.
 
         args:
-        - `run_id`: unique ID to give this job. If not specified, then Prism will create
-            an ID for you. This job ID will be in the format `{project ID}-{uuid}`
+        - `run_id`: unique ID to give this run. If not specified, then Prism will create
+            an ID for you. This run ID will be in the format `{project ID}-{uuid}`
         - `task_ids`: list of task IDs to run. If not specified, then all tasks
             are run. Tasks are retrieved from the `tasks_dir` path specified in the
             PrismProject's instantiation.
@@ -159,9 +159,9 @@ class PrismProject(DbMixin):
             upstream of those specified in `task_ids`. Default is `False`.
         - `all_tasks_downstream`: boolean controlling whether to run all tasks
             downstream of those specified in `task_ids`. Default is `True`.
-        - `on_success`: list of callbacks to run when the job succeeds. These are run
+        - `on_success`: list of callbacks to run when the run succeeds. These are run
             in addition to the callbacks specified in the project's instantiation.
-        - `on_failure`: list of callbacks to run when the job fails. These are run
+        - `on_failure`: list of callbacks to run when the run fails. These are run
             in addition to the callbacks specified in the project's instantiation.
         - `full_refresh`: run all the tasks, regardless of whether or not they are
             already `done`.

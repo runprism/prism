@@ -818,7 +818,7 @@ def test_connectors(monkeypatch):
             rich_logging=False,
             log_file=StringIO(),
         )
-    expected_message_substr = "connector ID `snowflake_connector` not found job"
+    expected_message_substr = "connector ID `snowflake_connector` not found run"
     assert expected_message_substr in str(cm.value)
 
     # Logs
