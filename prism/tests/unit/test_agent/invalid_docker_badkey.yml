@@ -1,5 +1,0 @@
-bad_toplevel_key:
-  type: docker
-  requirements: requirements.txt
-  env:
-    env_var_1: value1

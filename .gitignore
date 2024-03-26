@@ -20,6 +20,4 @@ dist/
 # Testing
 .mypy_cache
 .pytest_cache
-
-
-# EOF
+.ruff_cache

@@ -1,19 +1,19 @@
-
 # Standard library imports
 import requests
 import json
 
 # Prism imports
-import prism_project
 from prism.decorators import task, target
 from prism.target import JSON
+from prism.runtime import CurrentRun
 
 
 # Task
 @task(
-    targets=[target(type=JSON, loc=prism_project.OUTPUT / 'todos.json')],
+    task_id="extract_task",
+    targets=[target(type=JSON, loc=CurrentRun.ctx("OUTPUT") / "todos.json")],
 )
-def extract(tasks, hooks):
+def extract():
     url = "https://jsonplaceholder.typicode.com/todos"
     resp = requests.get(url)
     return json.loads(resp.text)

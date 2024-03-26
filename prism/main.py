@@ -1,97 +1,17 @@
-"""
-Argument parser
-
-Table of Contents
-- Imports
-- Util functions
-- Arg parser
-"""
-
-###########
-# Imports #
-###########
-
-import rich_click as click
-import argparse
-import re
 import json
 import sys
-from typing import Any, Optional, List
+from pathlib import Path
+from typing import Any, Dict, Iterable, Literal, Optional
+
+import rich
+import rich_click as click
 
 # Prism imports
 import prism.constants
-import prism.cli.init
-import prism.cli.run
-import prism.cli.compile
-import prism.cli.connect
-import prism.cli.create_agent
-import prism.cli.create_task
-import prism.cli.create_trigger
-import prism.cli.graph
-import prism.cli.agent
-import prism.cli.spark_submit
 import prism.exceptions
-from prism.ui import (
-    RED,
-    YELLOW,
-    RESET
-)
-
-
-##################
-# Util functions #
-##################
-
-def _check_vars_format(inputted_vars):
-    for v in inputted_vars:
-        if not re.findall(r'^(.)+=(.)+$', v):
-            raise prism.exceptions.ArgumentException(
-                message=f"invalid argument -v `{v}`... should be formatted as a key-value pair like VAR=VALUE"  # noqa: E501
-            )
-    vars_dict = {
-        v.split("=")[0]: v.split("=")[1] for v in inputted_vars
-    }
-    return vars_dict
-
-
-def _check_context(inputted_vars, inputted_context):
-    # Context must be a valid JSON
-    _ = json.loads(inputted_context)
-    if len(inputted_vars) > 0 and inputted_context != '{}':
-        raise prism.exceptions.ArgumentException(
-            message="`vars` and `context` are mutually exclusive arguments"
-        )
-
-
-def _process_tasks(inputted_tasks) -> Optional[List[Any]]:
-    processed_tasks = []
-    for m in list(inputted_tasks):
-        processed = m
-
-        # If the user adds tasks/ at the beginning of their tasks (for auto-fill
-        # purposes), then just remove that prefix.
-        if len(re.findall(r'^tasks\/', processed)) > 0:
-            click.echo(
-                f"{RED}ArgumentError: remove `tasks/` from your --task argument `{m}`{RESET}"  # noqa: E501
-            )
-            sys.exit(1)
-
-        # If the user wants to run a specific task and puts .py at the end, fire a
-        # warning.
-        if len(re.findall(r'\.py$', processed)) > 0:
-            click.echo(
-                f'{YELLOW}ArgumentWarning: `.py` in --task arguments will be an error in a future version of Prism.{RESET}'  # noqa: E501
-            )
-        processed_tasks.append(processed)
-
-    if len(processed_tasks) > 0:
-        return processed_tasks
-    return None
-
-
-##############
-# Arg parser #
-##############
+import prism.logging.loggers
+from prism.cli.init import initialize_project
+from prism.client.client import PrismProject
 
 # Use markdown for --help
 click.rich_click.USE_MARKDOWN = True
@@ -102,954 +22,323 @@ def cli():
     pass
 
 
-def invoke(args: Optional[List[str]] = None, bool_return: bool = False):
-    """
-    Thin wrapper around `main`
-    """
-    res = cli(args, standalone_mode=False)
-    # If the result is an exit code, then exit (this happens with `--help`)
-    if isinstance(res, int):
-        sys.exit(res)
-
-    # Otherwise, if we want to return our result, then return it
-    if bool_return:
-        return res
-
-    # If we don't want to return the result, then exit with an error code if we
-    # encountered an error in the process of executing our argument.
-    if res.has_error:
+@cli.command()
+@click.option("--project-name", type=str, help="""Project name""", required=False)
+@click.option(
+    "--log-level",
+    "-l",
+    type=click.Choice(["info", "warning", "error", "debug", "critical"]),
+    default="info",
+    help="""Set the log level""",
+    required=False,
+)
+def init(project_name, log_level):
+    """Initialize a Prism project."""
+    try:
+        initialize_project(project_name, log_level)
+    except Exception:
+        prism.logging.loggers.CONSOLE.print_exception(
+            show_locals=False, suppress=[prism], width=120
+        )
         sys.exit(1)
-    else:
-        sys.exit(0)
 
 
 @cli.command()
+@click.option(
+    "--project-id",
+    type=str,
+    help="Project ID.",
+    multiple=False,
+)
 @click.option(
     "--project-name",
     type=str,
-    help="""Project name""",
-    required=False
+    help="Project name.",
+    multiple=False,
 )
 @click.option(
-    "--minimal",
-    is_flag=True,
-    help="""Create minimal project (just `prism_project.py` and `tasks`)""",
-    default=False,
-    required=False
+    "--project-version",
+    type=str,
+    help="Project version.",
+    multiple=False,
 )
 @click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-def init(project_name, minimal, log_level):
-    """Initialize a Prism project.
-    """
-    # Namespace
-    ns = argparse.Namespace()
-    ns.project_name = project_name
-    ns.minimal = minimal
-    ns.log_level = log_level
-
-    # Instantiate and run task
-    task = prism.cli.init.InitTask(ns)
-    result = task.run()
-    return result
-
-
-@cli.command()
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
+    "--connector",
+    type=str,
+    help="""Import path to the connector instances to use for your project. These can be
+            accessed at runtime `CurrentRun.conn(...)`.""",
+    multiple=True,
 )
 @click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
+    "--concurrency",
+    type=int,
+    help="""Number of threads to use when running tasks. Default is `1` (i.e.,
+            single-threaded)""",
+    default=1,
 )
-def compile(
-    log_level,
-    full_tb,
-):
-    """Parse the tasks.ref(...) calls, construct the DAG, and generate the manifest.
-
-    <br>Examples:
-    - prism compile
-    - prism compile -l debug
-    """
-    # Namespace
-    ns = argparse.Namespace()
-    ns.full_tb = full_tb
-    ns.log_level = log_level
-    ns.which = 'compile'
-
-    # Instantiate and run task
-    task = prism.cli.compile.CompileTask(ns)
-    result = task.run()
-    return result
-
-
-@cli.command()
 @click.option(
-    '--type', '-t',
-    type=click.Choice(prism.constants.VALID_ADAPTERS),
-    help="Connection type",
+    "--tasks-dir",
+    type=str,
+    help="""Directory containing tasks. Default is the "tasks" folder in the current
+            directory.""",
+    multiple=False,
+    default=Path.cwd() / "tasks",
     required=True,
 )
 @click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
-)
-@click.option(
-    '--vars', '-v',
-    help="Variables as key value pairs. These overwrite variables in prism_project.py. All values are intepreted as strings.",  # noqa: E501
-    multiple=True
-)
-@click.option(
-    '--context',
+    "--package-lookups",
     type=str,
-    help="Context as a dictionary. Must be a valid JSON. These overwrite variables in prism_project.py",  # noqa: E501
-    default='{}'
-)
-def connect(
-    type,
-    log_level,
-    full_tb,
-    vars,
-    context,
-):
-    """Connect your Prism project to third-party adapters (e.g., Snowflake, BigQuery,
-    PySpark, etc.).
-
-    <br>Examples:
-    - prism connect --type snowflake
-    - prism connect --type snowflake -v PROFILE_YML_PATH=/Users/.prism/profile.yml
-    - prism connect --type snowflake --context '{"PROFILE_YML_PATH", "/Users/.prism/profile.yml"}'
-    """  # noqa
-    # Check `vars` and `context`
-    vars_dict = _check_vars_format(vars)
-    _check_context(vars, context)
-
-    # Namespace
-    ns = argparse.Namespace()
-    ns.type = type
-    ns.full_tb = full_tb
-    ns.log_level = log_level
-    ns.vars = vars_dict
-    ns.context = context
-    ns.which = 'connect'
-
-    # Instantiate and run task
-    task = prism.cli.connect.ConnectTask(ns)
-    result = task.run()
-    return result
-
-
-@cli.command()
-@click.option(
-    '--task', '-t',
-    type=str,
-    help="Tasks to execute. You can specify multiple tasks with as follows: `-t <your_first_task> -t <your_second_task>`.",  # noqa: E501
+    help="""Additional directories / modules to look within when importing modules and
+            functions in your code. The `tasks_dir` and its parent are automatically
+            added to this list.""",
     multiple=True,
-    default=[]
 )
 @click.option(
-    '--all-downstream',
-    is_flag=True,
-    help="Execute all tasks downstream of tasks specified with `--task`"
+    "--task",
+    "-t",
+    type=str,
+    help="""Task ID to run. If not specified, then all tasks are run.
+            Tasks are retrieved from the `tasks_dir` path specified in the
+            `PrismProject` instance. You can specify multiple tasks with as
+            follows: `-t <your_first_task> -t <your_second_task>`.""",
+    multiple=True,
 )
 @click.option(
-    '--all-upstream',
+    "--runtime-ctx",
+    "-c",
+    type=str,
+    help="""Runtime context as a dictionary. Must be a valid JSON. These overwrite
+            variables in the `PrismProject` context""",
+    default="{}",
+)
+@click.option(
+    "--all-tasks-upstream",
+    "-u",
     is_flag=True,
     type=bool,
-    help="Execute all tasks upstream of tasks specified with `--task`"
+    help="Execute all tasks upstream of tasks specified with `--task`",
 )
 @click.option(
-    '--full-refresh',
+    "--all-tasks-downstream",
+    "-d",
+    is_flag=True,
+    help="Execute all tasks downstream of tasks specified with `--task`",
+)
+@click.option(
+    "--on-success",
+    "-s",
+    multiple=True,
+    type=str,
+    help="""Callback to run if the run succeeds. Use import paths to specify the
+            callback. You can specify multiple callbacks as follows: `-s <callback1> -s
+            <callback2>`""",
+)
+@click.option(
+    "--on-failure",
+    "-f",
+    multiple=True,
+    type=str,
+    help="""Callback to run if the run fails. Use import paths to specify the callback.
+            You can specify multiple callbacks as follows: `-f <callback1> -f
+            <callback2>`""",
+)
+@click.option(
+    "--full-refresh",
     is_flag=True,
     default=False,
     type=bool,
-    help="Run tasks from scratch (even the ones that are considered `done`)"
+    help="Run all the tasks, regardless of whether or not they are already `done`",
 )
 @click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
+    "--log-level",
+    "-l",
+    type=click.Choice(["info", "warning", "error", "debug", "critical"]),
     default="info",
     help="""Set the log level""",
-    required=False
+    required=False,
 )
 @click.option(
-    '--full-tb',
+    "--disable-rich-logging",
     is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
+    help="""Disable default logging behavior, whereby logs are beautified in the console
+            with the `rich` package.""",
+    default=False,
 )
 @click.option(
-    '--vars', '-v',
-    help="Variables as key value pairs. These overwrite variables in prism_project.py. All values are intepreted as strings.",  # noqa: E501
-    multiple=True
-)
-@click.option(
-    '--context',
+    "--log-file",
     type=str,
-    help="Context as a dictionary. Must be a valid JSON. These overwrite variables in prism_project.py",  # noqa: E501
-    default='{}'
+    help="""File in which to save the logs. Default is None.""",
+    required=False,
 )
 def run(
-    task,
-    all_downstream,
-    all_upstream,
-    full_refresh,
-    log_level,
-    full_tb,
-    vars,
-    context
+    project_id: Optional[str],
+    project_name: Optional[str],
+    project_version: Optional[str],
+    connector: Iterable[str],
+    concurrency: int,
+    tasks_dir: str,
+    package_lookups: Iterable[str],
+    task: Iterable[str],
+    runtime_ctx: str,
+    all_tasks_upstream: bool,
+    all_tasks_downstream: bool,
+    on_success: Iterable[str],
+    on_failure: Iterable[str],
+    full_refresh: bool,
+    log_level: Literal["info", "warning", "error", "debug", "critical"],
+    disable_rich_logging: bool,
+    log_file: Optional[str],
 ):
-    """Execute your Prism project.
+    """Run your Prism project. This is the CLI equivalent of calling
+    `PrismProject.run(...)` in your Python script.
 
     <br>Examples:
     - prism run
-    - prism run -t task01.py -t task02.py
-    - prism run -t task01 --all-downstream
-    - prism run -v VAR1=VALUE1 -v VAR2=VALUE2
-    - prism run --context '{"hi": 1}'
+    - prism run -t task01.Task01 -t task02.Task02
+    - prism run -t task01.Task01 --all-downstream
+    - prism run --runtime-ctx '{"hi": 1}'
     """
-    # Convert tuple of tasks to list
-    tasks_list: Optional[List[Any]] = _process_tasks(task)
+    project_dir = Path.cwd()
+    try:
+        runtime_ctx_json: Dict[str, Any] = json.loads(runtime_ctx)
+    except Exception:
+        if disable_rich_logging:
+            raise
+        else:
+            console = rich.console.Console()
+            console.print_exception()
+            sys.exit(1)
 
-    # Check `vars` and `context`
-    vars_dict = _check_vars_format(vars)
-    _check_context(vars, context)
-
-    # Namespace
-    ns = argparse.Namespace()
-    ns.tasks = tasks_list
-    ns.all_downstream = all_downstream
-    ns.all_upstream = all_upstream
-    ns.full_refresh = full_refresh
-    ns.full_tb = full_tb
-    ns.log_level = log_level
-    ns.vars = vars_dict
-    ns.context = context
-    ns.which = 'run'
-
-    # Instantiate and run task
-    task = prism.cli.run.RunTask(ns)
-    result = task.run()
-    return result
-
-
-@cli.group()
-def create():
-    """Create and/or update project components (e.g., tasks, triggers, agents).
-    """
-    pass
-
-
-@create.command('agent')
-@click.option(
-    '--type', '-t',
-    type=click.Choice(prism.constants.VALID_AGENTS),
-    required=True,
-    help="Agent type"
-)
-@click.option(
-    '--file', '-f',
-    type=str,
-    required=False,
-    help="File path for agent YML configuration. Default is `./agent.yml`.",
-    default="./agent.yml",
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
-)
-def create_agent(
-    type,
-    file,
-    log_level,
-    full_tb,
-):
-    """Create an agent YML configuration file
-
-    <br>Examples:
-    - prism create agent --type docker
-    - prism create agent --type ec2 --file ./agents/ec2.yml
-    """
-
-    # Namespace
-    ns = argparse.Namespace()
-    ns.type = type
-    ns.file = file
-    ns.full_tb = full_tb
-    ns.log_level = log_level
-    ns.which = 'agent'
-
-    # Need these for the base task to run
-    ns.vars = None
-    ns.context = '{}'
-
-    # Instantiate and run task
-    task = prism.cli.create_agent.CreateAgentTask(ns)
-    result = task.run()
-    return result
-
-
-@create.command('task')
-@click.option(
-    '--type', '-t',
-    type=click.Choice(prism.constants.VALID_TASK_TYPES),
-    required=False,
-    help="Task type. Default is `python`",
-    default="python",
-)
-@click.option(
-    '--decorated',
-    is_flag=True,
-    required=False,
-    help="If specified, the task will be a decorated function",
-    default=False,
-)
-@click.option(
-    '--number',
-    type=int,
-    required=False,
-    default=1,
-    help="""Number of tasks to create. Default is 1.""",
-)
-@click.option(
-    '--name',
-    type=str,
-    required=False,
-    default="new_task",
-    help="""
-    Task name. If only a single task is requested, then the task will be named
-    `<task_name>.py`. If multiple tasks are requested, then the tasks will be named
-    `<task_name>_<number>.py`. Tasks should have short, all-lowercase names. Underscores
-    can be used in the task name if it improves readability.
-    """
-)
-@click.option(
-    '--dir',
-    type=str,
-    required=False,
-    default="",
-    help="""
-    Folder within the `tasks` directory in which the new tasks should live. If not
-        specified, then new tasks will be dumpted into `tasks/`
-    """
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
-)
-def create_task(
-    type,
-    decorated,
-    number,
-    name,
-    dir,
-    log_level,
-    full_tb
-):
-    """Create new tasks for your project.
-
-    <br>Examples:
-    - prism create task --type python
-    - prism create task --n 3 --name extract_step
-    """
-
-    # Check the task name
-    if len(re.findall(r'^[a-z0-9\_]+$', name)) == 0:
-        raise prism.exceptions.ArgumentException(
-            message=f"invalid task name `{name}`...the task name can only contain lowercase alpha-numeric characters and underscores"  # noqa: E501
-        )
-
-    # Namespace
-    ns = argparse.Namespace()
-    ns.type = type
-    ns.decorated = decorated
-    ns.number = number
-    ns.name = name
-    ns.dir = dir
-    ns.log_level = log_level
-    ns.full_tb = full_tb
-    ns.which = 'task'
-
-    # Need these for the base task to run
-    ns.vars = None
-    ns.context = '{}'
-
-    # Instantiate and run task
-    task = prism.cli.create_task.CreateTaskTask(ns)
-    result = task.run()
-    return result
-
-
-@create.command('trigger')
-@click.option(
-    '--type', '-t',
-    type=click.Choice(["function"]),
-    required=False,
-    help="Trigger type. Default is `function`",
-    default="function",
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
-)
-@click.option(
-    '--vars', '-v',
-    help="Variables as key value pairs. These overwrite variables in prism_project.py. All values are intepreted as strings.",  # noqa: E501
-    multiple=True
-)
-@click.option(
-    '--context',
-    type=str,
-    help="Context as a dictionary. Must be a valid JSON. These overwrite variables in prism_project.py",  # noqa: E501
-    default='{}'
-)
-def create_trigger(
-    type,
-    log_level,
-    full_tb,
-    vars,
-    context
-):
-    """Create a triggers YML file at the TRIGGERS_YML_PATH in `prism_project.py`.
-
-    <br>Examples:
-    - prism create trigger
-    - prism create trigger -v TRIGGERS_YML_PATH=/Users/.prism/triggers.yml
-    - prism create trigger --context '{"TRIGGERS_YML_PATH": "/Users/.prism/triggers.yml"}'
-    """  # noqa
-    # Check `vars` and `context`
-    vars_dict = _check_vars_format(vars)
-    _check_context(vars, context)
-
-    # Namespace
-    ns = argparse.Namespace()
-    ns.type = type
-    ns.log_level = log_level
-    ns.full_tb = full_tb
-    ns.which = 'trigger'
-    ns.vars = vars_dict
-    ns.context = context
-
-    # Instantiate and run task
-    task = prism.cli.create_trigger.CreateTriggerTask(ns)
-    result = task.run()
-    return result
+    version = project_version if project_version else "1.0"
+    prism_project = PrismProject(
+        id=project_id if project_id else f"{project_dir.name.lower()}-{version}",
+        name=project_name if project_name else f"{project_dir.name.lower()}",
+        version=version,
+        connectors=list(connector),
+        concurrency=concurrency,
+        tasks_dir=tasks_dir,
+        package_lookups=list(package_lookups),
+    )
+    prism_project.run(
+        run_id=None,
+        task_ids=list(task),
+        runtime_ctx=runtime_ctx_json,
+        all_tasks_downstream=all_tasks_downstream,
+        all_tasks_upstream=all_tasks_upstream,
+        on_success=list(on_success) if list(on_success) else None,
+        on_failure=list(on_failure) if list(on_failure) else None,
+        full_refresh=full_refresh,
+        log_level=log_level,
+        rich_logging=False if disable_rich_logging else True,
+        log_file=log_file,
+    )
 
 
 @cli.command()
 @click.option(
-    "--port", "-p",
+    "--project-id",
+    type=str,
+    help="Project ID.",
+    multiple=False,
+)
+@click.option(
+    "--project-name",
+    type=str,
+    help="Project name.",
+    multiple=False,
+)
+@click.option(
+    "--project-version",
+    type=str,
+    help="Project version.",
+    multiple=False,
+)
+# @click.option(
+#     "--connector",
+#     type=str,
+#     help="""Import path to the connector instances to use for your project. These can be
+#             accessed at runtime `CurrentRun.conn(...)`.""",
+#     multiple=True,
+# )
+# @click.option(
+#     "--concurrency",
+#     type=int,
+#     help="""Number of threads to use when running tasks. Default is `1` (i.e.,
+#             single-threaded)""",
+#     default=1,
+# )
+@click.option(
+    "--tasks-dir",
+    type=str,
+    help="""Directory containing tasks. Default is the "tasks" folder in the current
+            directory.""",
+    multiple=False,
+    default=Path.cwd() / "tasks",
+    required=True,
+)
+# @click.option(
+#     "--package-lookups",
+#     type=str,
+#     help="""Additional directories / modules to look within when importing modules and
+#             functions in your code. The `tasks_dir` and its parent are automatically
+#             added to this list.""",
+#     multiple=True,
+# )
+@click.option(
+    "--port",
+    "-p",
     type=int,
-    default=8080,
-    required=False,
-    help="Port to use for HTTP request; default is 8080",
+    help="""Port used by the webserver for launching the UI. Default is 8000.""",
+    default=8000,
 )
 @click.option(
-    "--no-browser",
-    is_flag=True,
-    default=False,
-    help="""
-    Overwrite default behavior and do not open a tab in the default web browser with
-    the docs UI.
-    """
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
+    "--open-window",
     is_flag=True,
     type=bool,
-    help="Show the full traceback when an error occurs"
+    help="Open the visualizer UI in a new window in your default web browswer.",
+    default=True,
+)
+@click.option(
+    "--hot-reload",
+    is_flag=True,
+    help="Update the project's graph after each local change",
+    default=True,
+)
+@click.option(
+    "--log-level",
+    "-l",
+    type=click.Choice(["info", "warning", "error", "debug", "critical"]),
+    default="info",
+    help="""Set the log level""",
+    required=False,
 )
 def graph(
-    port,
-    no_browser,
-    log_level,
-    full_tb,
+    project_id: Optional[str],
+    project_name: Optional[str],
+    project_version: Optional[str],
+    tasks_dir: str,
+    port: int,
+    open_window: bool,
+    hot_reload: bool,
+    log_level: Literal["info", "warning", "error", "debug", "critical"],
 ):
-    """Visualize your Prism project as a DAG in an interactive UI.
-
-    <br>Examples:
-    - prism graph
-    - prism graph --no-browser --port 3000
+    """Launch the Prism Visualizer UI to view your project as a graph. This is the CLI
+    equivalent of calling `PrismProject.graph(...)` in your Python script.
     """
-    # Namespace
-    ns = argparse.Namespace()
-    ns.port = port
-    ns.no_browser = no_browser
-    ns.log_level = log_level
-    ns.full_tb = full_tb
-    ns.which = 'graph'
-
-    # Need these for the compile subclass task to run
-    ns.all_downstream = True
-    ns.all_upstream = True
-
-    # Need these for the base task to run
-    ns.vars = None
-    ns.context = '{}'
-
-    # Instantiate and run task
-    task = prism.cli.graph.GraphTask(ns)
-    result = task.run()
-    return result
-
-
-@cli.group()
-def agent():
-    """Execute your Prism using third-party agents, (e.g., Docker containers, EC2
-    instances, etc.).
-    """
-    pass
-
-
-@agent.command('apply')
-@click.option(
-    "--file", "-f",
-    required=True,
-    type=str,
-    help="Path to agent configuration YML"
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
-)
-def agent_apply(
-    file,
-    log_level,
-    full_tb,
-):
-    """Build your agent using a configuration YML.
-
-    <br>Examples:
-    - prism agent apply -f ./ec2.yml
-    - prism agent apply -f /Users/docker.yml
-    """
-    # Namespace
-    ns = argparse.Namespace()
-    ns.file = file
-    ns.log_level = log_level
-    ns.full_tb = full_tb
-    ns.which = 'agent-apply'
-
-    # Need these for the base task to run
-    ns.vars = None
-    ns.context = '{}'
-
-    # Instantiate and run task
-    task = prism.cli.agent.AgentTask(ns)
-    result = task.run()
-    return result
-
-
-@agent.command('run')
-@click.option(
-    "--file", "-f",
-    required=True,
-    type=str,
-    help="Path to agent configuration YML"
-)
-@click.option(
-    '--task', '-t',
-    type=str,
-    help="Tasks to execute. You can specify multiple tasks with as follows: `-t <your_first_task> -t <your_second_task>`.",  # noqa: E501
-    multiple=True,
-    default=[]
-)
-@click.option(
-    '--all-downstream',
-    is_flag=True,
-    help="Execute all tasks downstream of tasks specified with `--task`"
-)
-@click.option(
-    '--all-upstream',
-    is_flag=True,
-    type=bool,
-    help="Execute all tasks upstream of tasks specified with `--task`"
-)
-@click.option(
-    '--full-refresh',
-    is_flag=True,
-    default=False,
-    type=bool,
-    help="Run tasks from scratch (even the ones that are considered `done`)"
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
-)
-@click.option(
-    '--vars', '-v',
-    help="Variables as key value pairs. These overwrite variables in prism_project.py. All values are intepreted as strings.",  # noqa: E501
-    multiple=True
-)
-@click.option(
-    '--context',
-    type=str,
-    help="Context as a dictionary. Must be a valid JSON. These overwrite variables in prism_project.py",  # noqa: E501
-    default='{}'
-)
-def agent_run(
-    file,
-    task,
-    all_downstream,
-    all_upstream,
-    full_refresh,
-    log_level,
-    full_tb,
-    vars,
-    context
-):
-    """Run your project using an agent.
-
-    <br>Examples:
-    - prism agent run -f ./ec2.yml --task task01.py --task task02.py
-    - prism agent run -f ./docker.yml --t task01
-    - prism agent run -f /Users/docker.yml --vars VAR1=VALUE1
-    """
-    # Namespace
-    ns = argparse.Namespace()
-
-    # Convert tuple of tasks to list
-    tasks_list: Optional[List[Any]] = _process_tasks(task)
-
-    # Check `vars` and `context`
-    vars_dict = _check_vars_format(vars)
-    _check_context(vars, context)
-
-    # Namespace
-    ns = argparse.Namespace()
-    ns.file = file
-    ns.tasks = tasks_list
-    ns.all_downstream = all_downstream
-    ns.all_upstream = all_upstream
-    ns.full_refresh = full_refresh
-    ns.full_tb = full_tb
-    ns.log_level = log_level
-    ns.vars = vars_dict
-    ns.context = context
-    ns.which = 'agent-run'
-
-    # Instantiate and run task
-    task = prism.cli.agent.AgentTask(ns)
-    result = task.run()
-    return result
-
-
-@agent.command('build')
-@click.option(
-    "--file", "-f",
-    required=True,
-    type=str,
-    help="Path to agent configuration YML"
-)
-@click.option(
-    '--task', '-t',
-    type=str,
-    help="Tasks to execute. You can specify multiple tasks with as follows: `-t <your_first_task> -t <your_second_task>`.",  # noqa: E501
-    multiple=True,
-    default=[]
-)
-@click.option(
-    '--all-downstream',
-    is_flag=True,
-    help="Execute all tasks downstream of tasks specified with `--task`"
-)
-@click.option(
-    '--all-upstream',
-    is_flag=True,
-    type=bool,
-    help="Execute all tasks upstream of tasks specified with `--task`"
-)
-@click.option(
-    '--full-refresh',
-    is_flag=True,
-    default=False,
-    type=bool,
-    help="Run tasks from scratch (even the ones that are considered `done`)"
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
-)
-@click.option(
-    '--vars', '-v',
-    help="Variables as key value pairs. These overwrite variables in prism_project.py. All values are intepreted as strings.",  # noqa: E501
-    multiple=True
-)
-@click.option(
-    '--context',
-    type=str,
-    help="Context as a dictionary. Must be a valid JSON. These overwrite variables in prism_project.py",  # noqa: E501
-    default='{}'
-)
-def agent_build(
-    file,
-    task,
-    all_downstream,
-    all_upstream,
-    full_refresh,
-    log_level,
-    full_tb,
-    vars,
-    context
-):
-    """Build your agent using a configuration YML and then run your project on the newly
-    created agent.
-
-    <br>Examples:
-    - prism agent build -f ./ec2.yml
-    - prism agent build -f /Users/docker.yml --context '{"HI": 1}'
-    """
-    # Namespace
-    ns = argparse.Namespace()
-
-    # Convert tuple of tasks to list
-    tasks_list: Optional[List[Any]] = _process_tasks(task)
-
-    # Check `vars` and `context`
-    vars_dict = _check_vars_format(vars)
-    _check_context(vars, context)
-
-    # Namespace
-    ns = argparse.Namespace()
-    ns.file = file
-    ns.tasks = tasks_list
-    ns.all_downstream = all_downstream
-    ns.all_upstream = all_upstream
-    ns.full_refresh = full_refresh
-    ns.full_tb = full_tb
-    ns.log_level = log_level
-    ns.vars = vars_dict
-    ns.context = context
-    ns.which = 'agent-build'
-
-    # Instantiate and run task
-    task = prism.cli.agent.AgentTask(ns)
-    result = task.run()
-    return result
-
-
-@agent.command('delete')
-@click.option(
-    "--file", "-f",
-    required=True,
-    type=str,
-    help="Path to agent configuration YML"
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs"
-)
-def agent_delete(
-    file,
-    log_level,
-    full_tb,
-):
-    """Delete your agent.
-
-    <br>Examples:
-    - prism agent delete -f ./ec2.yml
-    - prism graph delete -f /Users/agents.yml
-    """
-    # Namespace
-    ns = argparse.Namespace()
-    ns.file = file
-    ns.log_level = log_level
-    ns.full_tb = full_tb
-    ns.which = 'agent-delete'
-
-    # Need these for the base task to run
-    ns.vars = None
-    ns.context = '{}'
-
-    # Instantiate and run task
-    task = prism.cli.agent.AgentTask(ns)
-    result = task.run()
-    return result
-
-
-@cli.command('spark-submit')
-@click.option(
-    '--task', '-t',
-    type=str,
-    help="Tasks to execute. You can specify multiple tasks with as follows: `-t <your_first_task> -t <your_second_task>`.",  # noqa: E501
-    multiple=True,
-    default=[]
-)
-@click.option(
-    '--all-downstream',
-    is_flag=True,
-    help="Execute all tasks downstream of tasks specified with `--task`."
-)
-@click.option(
-    '--all-upstream',
-    is_flag=True,
-    type=bool,
-    help="Execute all tasks upstream of tasks specified with `--task`."
-)
-@click.option(
-    '--full-refresh',
-    is_flag=True,
-    default=False,
-    type=bool,
-    help="Run tasks from scratch (even the ones that are considered `done`)"
-)
-@click.option(
-    '--log-level', '-l',
-    type=click.Choice(['info', 'warn', 'error', 'debug']),
-    default="info",
-    help="""Set the log level.""",
-    required=False
-)
-@click.option(
-    '--full-tb',
-    is_flag=True,
-    type=bool,
-    help="Show the full traceback when an error occurs."
-)
-@click.option(
-    '--vars', '-v',
-    help="Variables as key value pairs. These overwrite variables in prism_project.py. All values are intepreted as strings.",  # noqa: E501
-    multiple=True
-)
-@click.option(
-    '--context',
-    type=str,
-    help="Context as a dictionary. Must be a valid JSON. These overwrite variables in prism_project.py.",  # noqa: E501
-    default='{}'
-)
-def spark_submit(
-    task,
-    all_downstream,
-    all_upstream,
-    full_refresh,
-    log_level,
-    full_tb,
-    vars,
-    context
-):
-    """Execute your Prism project as a PySpark job.
-
-    <br>Examples:
-    - prism spark-submit
-    - prism spark-submit -t task01.py -t task02.py
-    - prism spark-submit -t task01 --all-downstream
-    - prism spark-submit -v VAR1=VALUE1 -v VAR2=VALUE2
-    - prism spark-submit --context '{"hi": 1}'
-    """
-    # Convert tuple of tasks to list
-    tasks_list: Optional[List[Any]] = _process_tasks(task)
-
-    # Check `vars` and `context`
-    vars_dict = _check_vars_format(vars)
-    _check_context(vars, context)
-
-    # Namespace
-    ns = argparse.Namespace()
-    ns.tasks = tasks_list
-    ns.all_downstream = all_downstream
-    ns.all_upstream = all_upstream
-    ns.full_refresh = full_refresh
-    ns.full_tb = full_tb
-    ns.log_level = log_level
-    ns.vars = vars_dict
-    ns.context = context
-    ns.which = 'spark-submit'
-
-    # Instantiate and run task
-    task = prism.cli.spark_submit.SparkSubmitTask(ns)
-    result = task.run()
-    return result
+    project_dir = Path.cwd()
+    version = project_version if project_version else "1.0"
+    prism_project = PrismProject(
+        id=project_id if project_id else f"{project_dir.name.lower()}-{version}",
+        name=project_name if project_name else f"{project_dir.name.lower()}",
+        version=version,
+        tasks_dir=tasks_dir,
+    )
+    prism_project.graph(
+        port=port,
+        open_window=open_window,
+        hot_reload=hot_reload,
+        log_level=log_level,
+    )
 
 
 if __name__ == "__main__":

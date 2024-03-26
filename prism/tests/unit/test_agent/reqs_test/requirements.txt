@@ -1,3 +1,0 @@
-# This doesn't actually get installed
-pandas
-numpy

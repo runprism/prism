@@ -1,4 +1,4 @@
-name: mypy and flake8
+name: mypy and ruff
 
 on:
   - push
@@ -9,18 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.7
+    - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: '3.10'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r style_requirements.txt     
+        pip install -e .[dev]
     - name: mypy
       run: |
-        mypy   prism/agents/ prism/cli/ prism/client/ prism/event_managers/ prism/infra/ prism/mixins/ prism/parsers/ prism/profiles/ prism/spark/ prism/constants.py prism/decorators/ prism/exceptions.py prism/prism_logging.py prism/main.py prism/target.py prism/task.py prism/ui.py
-        flake8 prism/agents/ prism/cli/ prism/client/ prism/event_managers/ prism/infra/ prism/mixins/ prism/parsers/ prism/profiles/ prism/spark/ prism/constants.py prism/decorators/ prism/exceptions.py prism/prism_logging.py prism/main.py prism/target.py prism/task.py prism/ui.py
-
-
-# EOF
+        mypy       prism/callbacks/ prism/cli/ prism/client/ prism/connectors/ prism/db/ prism/decorators/ prism/engine/ prism/logging/ prism/runtime/ prism/exceptions.py prism/main.py prism/target.py prism/task.py prism/utils.py
+        ruff check prism/callbacks/ prism/cli/ prism/client/ prism/connectors/ prism/db/ prism/decorators/ prism/engine/ prism/logging/ prism/runtime/ prism/exceptions.py prism/main.py prism/target.py prism/task.py prism/utils.py

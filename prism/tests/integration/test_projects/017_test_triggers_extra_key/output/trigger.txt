@@ -1,1 +1,0 @@
-This is outputted from the trigger function!

@@ -1,7 +1,6 @@
 from prism.task import PrismTask  # noqa
 
 
-class NoPrismTask():
-
-    def run(self, tasks, hooks):
-        return 'hi'
+class NoPrismTask:
+    def run(self):
+        return "hi"

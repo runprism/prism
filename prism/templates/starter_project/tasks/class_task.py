@@ -1,39 +1,20 @@
-"""
-In this script, we...
-"""
+from pathlib import Path
 
-###########
-# Imports #
-###########
-
-# Prism infrastructure imports
-import prism.task
-import prism.target
 import prism.decorators
+import prism.target
 
-# Prism project imports
-import prism_project
+# Prism imports
+import prism.task
+from prism.runtime import CurrentRun
 
-
-###################
-# Task definition #
-###################
 
 class ExampleTask(prism.task.PrismTask):
+    task_id = "example-class-task"
 
     # Run
-    @prism.decorators.target(type=prism.target.Txt, loc=prism_project.OUTPUT / 'hello_world.txt')
-    def run(self, tasks, hooks):
-        """
-        Execute task.
-
-        args:
-            tasks: used to reference output of other tasks --> tasks.ref('...')
-            hooks: hooks used to augment Prism functionality. These include:
-                hooks.sql     --> for executing sql query using an adapter in profile YML
-                hooks.spark   --> for accessing SparkSession (if pyspark specified in profile YML)
-                hooks.dbt_ref --> for getting dbt models as a pandas DataFrame
-        returns:
-            task output
-        """
+    @prism.decorators.target(
+        type=prism.target.Txt,
+        loc=Path(CurrentRun.ctx("OUTPUT", "output")).resolve() / "hello_world.txt",
+    )
+    def run(self):
         return "Hello, world!"

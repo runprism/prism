@@ -1,2 +1,2 @@
-def task_function(tasks, hooks):
+def task_function():
     return "hi"

@@ -34,7 +34,7 @@ THREADS = 2
 
 
 # Profile directory and name
-PROFILE_YML_PATH = Path(__file__).parent / 'profile.yml'
+PROFILE_YML_PATH = Path(__file__).parent / "profile.yml"
 PROFILE = None  # name of profile within `profiles.yml`
 
 
@@ -43,11 +43,11 @@ PRISM_LOGGER = logging.getLogger("PRISM_LOGGER")
 
 
 # Other variables / parameters. Make sure to capitalize all of these!
-VAR_1 = {'a': 'b'}
+VAR_1 = {"a": "b"}
 VAR_2 = 200
-VAR_3 = '2015-01-01'
+VAR_3 = "2015-01-01"
 
 # Paths
 WKDIR = Path(__file__).parent
-DATA = WKDIR / 'data'
-OUTPUT = WKDIR / 'output'
+DATA = WKDIR / "data"
+OUTPUT = WKDIR / "output"

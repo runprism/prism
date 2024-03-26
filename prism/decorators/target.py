@@ -10,34 +10,28 @@ Table of Contents
 # Imports #
 ###########
 
+import inspect
+
 # Standard library imports
 from pathlib import Path
 
 # Prism imports
 import prism.exceptions
 from prism.task import PrismTask
-import prism.infra.hooks
-import prism.infra.task_manager
-import inspect
-
 
 #####################
 # Target decorators #
 #####################
 
-def target(*, type, loc, **kwargs):
+
+def target(*, type, loc, **target_kwargs):
     """
     Decorator to use if user wishes to save the output of a task to an external location
     (e.g., a data warehouse, an S3 bucket, or a local filepath).
     """
 
     def decorator_target(func):
-
-        def wrapper_target_dec(self,
-            task_manager: prism.infra.task_manager.PrismTaskManager,
-            hooks: prism.infra.hooks.PrismHooks
-        ):
-
+        def wrapper_target_dec(self):
             # This will only ever be called inside a PrismTask
             if not isinstance(self, PrismTask):
                 raise prism.exceptions.RuntimeException(
@@ -52,7 +46,7 @@ def target(*, type, loc, **kwargs):
                 self.types.append(type)
                 self.locs.append(loc)
                 try:
-                    self.kwargs.append(kwargs)
+                    self.kwargs.append(target_kwargs)
                 except TypeError:
                     self.kwargs.append({})
 
@@ -60,13 +54,12 @@ def target(*, type, loc, **kwargs):
                 # this one. If a function has `n` targets, then this will happen n-1
                 # times until the `run` function is reached.
                 if not inspect.ismethod(func):
-                    return func(self, task_manager, hooks)
+                    return func(self)
                 else:
-                    return func(task_manager, hooks)
+                    return func()
 
             # Now, we've hit the `run` function
             else:
-
                 # Confirm function name
                 if func.__name__ != "run":
                     raise prism.exceptions.RuntimeException(
@@ -75,18 +68,17 @@ def target(*, type, loc, **kwargs):
 
                 # If the task should be run in full, then call the run function
                 if self.bool_run and not self.is_done:
-
                     # When using `target` as a decorator, `run` is a function. When
                     # using `target` as an argument to the `task()` decorator, `run` is
                     # a bound method.
                     if not inspect.ismethod(func):
-                        obj = func(self, task_manager, hooks)
+                        obj = func(self)
                     else:
-                        obj = func(task_manager, hooks)
+                        obj = func()
                     self.types.append(type)
                     self.locs.append(loc)
                     try:
-                        self.kwargs.append(kwargs)
+                        self.kwargs.append(target_kwargs)
                     except TypeError:
                         self.kwargs.append({})
 
@@ -98,7 +90,7 @@ def target(*, type, loc, **kwargs):
                             temp_t = zipped[1]
                             temp_l = zipped[2]
                             temp_k = zipped[3]
-                            target = temp_t(temp_o, temp_l, hooks)  # type: ignore
+                            target = temp_t.from_args(temp_o, temp_l)
                             target.save(**temp_k)
 
                         # If a target is set, just assume that the user wants to
@@ -107,11 +99,10 @@ def target(*, type, loc, **kwargs):
 
                     # If return type is not a Tuple, we expect a single target
                     else:
-
                         # Initialize an instance of the target class and save the object
                         # using the target's `save` method
-                        target = type(obj, loc, hooks)
-                        target.save(**kwargs)
+                        target = type(obj, loc)
+                        target.save(**target_kwargs)
 
                         # Return the object
                         return obj
@@ -127,13 +118,13 @@ def target(*, type, loc, **kwargs):
                     if len(self.locs) > 1:
                         all_objs = []
                         for _loc, _type in zip(self.locs, self.types):
-                            target = _type.open(_loc, hooks)
+                            target = _type.open(_loc)
                             all_objs.append(target.obj)
                         return tuple(all_objs)
 
                     # For single-target case, return single loc
                     else:
-                        return self.types[0].open(self.locs[0], hooks).obj
+                        return self.types[0].open(self.locs[0]).obj
 
         return wrapper_target_dec
 
@@ -147,12 +138,7 @@ def target_iterator(*, type, loc, **kwargs):
     """
 
     def decorator_target_iterator(func):
-
-        def wrapper(self,
-            task_manager: prism.infra.task_manager.PrismTaskManager,
-            hooks: prism.infra.hooks.PrismHooks
-        ):
-
+        def wrapper(self):
             # This will only ever be called inside a PrismTask
             if not isinstance(self, PrismTask):
                 raise prism.exceptions.RuntimeException(
@@ -167,9 +153,9 @@ def target_iterator(*, type, loc, **kwargs):
 
             if self.bool_run:
                 if not inspect.ismethod(func):
-                    objs = func(self, task_manager, hooks)
+                    objs = func(self)
                 else:
-                    objs = func(task_manager, hooks)
+                    objs = func()
                 if not isinstance(objs, dict):
                     raise prism.exceptions.RuntimeException(
                         message="output of run function should be dict mapping name --> object to save"  # noqa: E501
@@ -182,12 +168,13 @@ def target_iterator(*, type, loc, **kwargs):
 
                 # Iterate through objects and save them out
                 for name, obj in objs.items():
-                    target = type(obj, Path(loc) / name, hooks)
+                    target = type(obj, Path(loc) / name)
                     target.save(**kwargs)
 
                 return loc
             else:
                 return loc
+
         return wrapper
 
     return decorator_target_iterator

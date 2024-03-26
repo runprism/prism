@@ -47,7 +47,7 @@ def generate_run_slug() -> str:
     slug = coolname.generate_slug(2)
 
     # Regenerate words if they include ignored words
-    while IGNORE_LIST.intersection(slug.split('-')):
+    while IGNORE_LIST.intersection(slug.split("-")):
         slug = coolname.generate_slug(2)
 
     return f'{slug}-{uuid_short.replace("-", "")}'

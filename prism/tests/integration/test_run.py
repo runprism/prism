@@ -1,1553 +1,973 @@
-"""
-Integration tests.
-
-Table of Contents:
-- Imports
-- Test case directory and paths
-- Expected events
-- Test case class definition
-"""
-
-###########
-# Imports #
-###########
-
 # Standard library imports
-from io import StringIO
-import pytest
-import json
-import pandas as pd
 import os
+from io import StringIO
 from pathlib import Path
-import shutil
-from typing import Dict, List
+from typing import Literal
+
+import pandas as pd
+import pytest
+
+# SQLAlchemy
+from sqlalchemy import select
 
 # Prism imports
-from click.testing import CliRunner
-from prism.main import cli
-from prism.prism_logging import string_stream_handler
-import prism.tests.integration.integration_test_class as integration_test_class
-
-
-#################################
-# Test case directory and paths #
-#################################
+import prism.exceptions
+import prism.logging.events
+import prism.logging.loggers
+from prism.client import PrismProject
+from prism.db.factory import ThreadLocalSessionFactory
+from prism.db.setup import Project, Ref
+from prism.tests.integration.integration_utils import (
+    _console_mocker,
+    _file_as_str,
+    _previous_console_output,
+    _remove_files_in_output,
+)
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
-TEST_PROJECTS = Path(TEST_CASE_WKDIR) / 'test_projects'
-
-
-###################
-# Expected events #
-###################
-
-def _execution_events_tasks(task_names_statuses: dict) -> list:
-    """
-    Create list for execution events
-
-    args:
-        task_names_statuses: dict mapping event_name --> event_status
-    returns:
-        list of execution events
-    """
-    results = []
-    for k, v in task_names_statuses.items():
-        results.append(f'ExecutionEvent - {k} - RUN')
-        results.append(f'ExecutionEvent - {k} - {v}')
-    return results
-
-
-def _run_task_end_events(end_event_name: str) -> list:
-    """
-    Create list for events marking the end of the run task
-
-    args:
-        end_event_name: name of end event
-    returns:
-        list of events marking end of run task
-    """
-    return [
-        'EmptyLineEvent',
-        end_event_name,
-        'SeparatorEvent'
-    ]
-
-
-# Starting events for a successful run task. We will only run tasks that successfully
-# compile, since we have dealt with compile edge cases in the `test_compile` integration
-# tests.
-run_success_starting_events = [
-    'SeparatorEvent',
-    'TaskRunEvent',
-    'CurrentProjectDirEvent',
-    'EmptyLineEvent',
-    'ExecutionEvent - parsing prism_project.py - RUN',
-    'ExecutionEvent - parsing prism_project.py - DONE',
-    'ExecutionEvent - task DAG - RUN',
-    'ExecutionEvent - task DAG - DONE',
-    'ExecutionEvent - creating pipeline, DAG executor - RUN',
-    'ExecutionEvent - creating pipeline, DAG executor - DONE',
-    'EmptyLineEvent'
-]
-
-
-simple_project_all_tasks_expected_events = run_success_starting_events + \
-    ['TasksHeaderEvent'] + \
-    _execution_events_tasks({'module03.Task03': 'ERROR'}) + \
-    _run_task_end_events('PrismExceptionErrorEvent')
-
-simple_project_no_null_all_tasks_expected_events = run_success_starting_events + \
-    ['TasksHeaderEvent'] + \
-    _execution_events_tasks({
-        'module01.Task01': 'DONE',
-        'module02.Task02': 'DONE',
-        'module03.Task03': 'DONE',
-        'module04.Task04': 'DONE',
-    }) + _run_task_end_events('TaskSuccessfulEndEvent')
-
-
-##############################
-# Test case class definition #
-##############################
-
-class TestRunIntegration(integration_test_class.IntegrationTestCase):
-
-    def test_simple_project_all_tasks(self):
-        """
-        `prism run` on simple project with a null task output
-        """
-        self.maxDiff = None
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '004_simple_project'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Execute command
-        args = ['run']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
-
-        # Check events
-        self.assertEqual(
-            ' | '.join(simple_project_all_tasks_expected_events),
-            runtask_run_results
-        )
-
-        # Check manifest.json
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("module01", "Task01", manifest)
-        task02_refs = self._load_task_refs("module02", "Task02", manifest)
-        task03_refs = self._load_task_refs("module03", "Task03", manifest)
-        self.assertEqual([], task01_refs)
-        self.assertEqual(['module01.Task01'], task02_refs)
-        self.assertEqual([], task03_refs)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_simple_project_no_null_modules_all_tasks(self):
-        """
-        `prism run` on simple project with no null task outputs
-        """
-        self.maxDiff = None
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null_modules'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Execute command
-        args = ['run']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        self.assertEqual(
-            ' | '.join(simple_project_no_null_all_tasks_expected_events),
-            runtask_run_results
-        )
-        self.assertTrue(Path(wkdir / 'output' / 'task01.txt').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'task02.txt').is_file())
-
-        # Check contents
-        task01_txt = self._file_as_str(Path(wkdir / 'output' / 'task01.txt'))
-        task02_txt = self._file_as_str(Path(wkdir / 'output' / 'task02.txt'))
-        self.assertEqual('Hello from task 1!', task01_txt)
-        self.assertEqual(
-            'Hello from task 1!' + '\n' + 'Hello from task 2!',
-            task02_txt
-        )
-
-        # Check that certain messages are logged
-        msg1 = "WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism"  # noqa: E501
-        msg2 = "WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism."  # noqa: E501
-        msg3 = "WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism."  # noqa: E501
-        msg4 = "WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism."  # noqa: E501
-        logs = new_streamer.getvalue()
-        for msg in [msg1, msg2, msg3, msg4]:
-            self.assertTrue(msg in logs)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_simple_project_no_null_tasks_all_tasks(self):
-        """
-        `prism run` on simple project with no null task outputs
-        """
-        self.maxDiff = None
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null_tasks'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Execute command
-        args = ['run']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        self.assertEqual(
-            ' | '.join(simple_project_no_null_all_tasks_expected_events),
-            runtask_run_results
-        )
-        self.assertTrue(Path(wkdir / 'output' / 'task01.txt').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'task02.txt').is_file())
-
-        # Check contents
-        task01_txt = self._file_as_str(Path(wkdir / 'output' / 'task01.txt'))
-        task02_txt = self._file_as_str(Path(wkdir / 'output' / 'task02.txt'))
-        self.assertEqual('Hello from task 1!', task01_txt)
-        self.assertEqual(
-            'Hello from task 1!' + '\n' + 'Hello from task 2!',
-            task02_txt
-        )
-
-        # Check logs should't contain any warning
-        msg1 = "WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism"  # noqa: E501
-        msg2 = "WARN  | Found `.py` in a tasks.ref(...) argument in `module02.py`...This will be an error in a future version of Prism."  # noqa: E501
-        msg3 = "WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism."  # noqa: E501
-        msg4 = "WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism."  # noqa: E501
-        logs = new_streamer.getvalue()
-        for msg in [msg1, msg2, msg3, msg4]:
-            self.assertFalse(msg in logs)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_simple_project_no_null_subset(self):
-        """
-        `prism run` on simple project with no null task outputs
-        """
-        self.maxDiff = None
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null_tasks'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # *************** #
-        # Run only task 1 #
-        # *************** #
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Expecatation: task 1 is the first task in the DAG. Therefore, we should
-        # not encounter any errors with this command.
-        args = ['run', '--task', 'module01.py']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks({'module01.Task01': 'DONE'}) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), runtask_run_results)
-
-        # Check the results of the output directory
-        self.assertTrue(Path(wkdir / 'output' / 'task01.txt').is_file())
-        self.assertFalse(Path(wkdir / 'output' / 'task02.txt').is_file())
-        task01_txt = self._file_as_str(Path(wkdir / 'output' / 'task01.txt'))
-        self.assertEqual('Hello from task 1!', task01_txt)
-
-        # Check manifest
-        self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("module01", "Task01", manifest)
-        task02_refs = self._load_task_refs("module02", "Task02", manifest)
-        task03_refs = self._load_task_refs("module03", "Task03", manifest)
-        task04_refs = self._load_task_refs("module04", "Task04", manifest)
-        self.assertEqual([], task01_refs)
-        self.assertEqual(['module01.Task01'], task02_refs)
-        self.assertEqual(['module02.Task02'], task03_refs)
-        self.assertEqual(['module03.Task03'], task04_refs)
-
-        # Logs should have a warning about `.py` in task argument
-        runner = CliRunner()
-        result = runner.invoke(cli, args)
-        expected_msg = "ArgumentWarning: `.py` in --task arguments will be an error in a future version of Prism.\n"  # noqa: E501
-        self.assertEqual(expected_msg, result.output)
-        self.assertEqual(0, result.exit_code)
-
-        # ************** #
-        # Execute task 2 #
-        # ************** #
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Expecatation: task 2 depends on task 1. However, since we just ran task
-        # 1, and the output of task 1 is stored in a target, we do not need to re-run
-        # task 1 in order to run task 2. Therefore, we should not encounter any
-        # errors with this command.
-
-        # Execute command
-        args = ['run', '--task', 'module02', '--full-tb']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks({'module02.Task02': 'DONE'}) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), runtask_run_results)
-
-        # Check the results of the output directory
-        self.assertTrue(Path(wkdir / 'output' / 'task02.txt').is_file())
-        with open(Path(wkdir / 'output' / 'task02.txt'), 'r') as f:
-            task02_txt = f.read()
-        f.close()
-        self.assertEqual(
-            'Hello from task 1!' + '\n' + 'Hello from task 2!', task02_txt
-        )
-
-        # ************************************************* #
-        # Execute task 4 (with and without `all-upstream` #
-        # ************************************************* #
-
-        # Expectation: task 4 depends on task 3. However, the output of task 3 is
-        # not stored in a target. Therefore, running task 4 without including
-        # 'all-upstream' should cause an error.
-
-        # -------------------------------------
-        # Execute command without `all-upstream`
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        args = ['run', '--task', 'module04']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks({'module04.Task04': 'ERROR'}) + \
-            _run_task_end_events('PrismExceptionErrorEvent')
-        self.assertEqual(' | '.join(expected_events), runtask_run_results)
-
-        # -----------------------------------
-        # Execute command with `all-upstream`
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        self._remove_compiled_dir(wkdir)
-        self._remove_files_in_output(wkdir)
-        args = ['run', '--task', 'module04', '--all-upstream']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        self.assertEqual(
-            ' | '.join(simple_project_no_null_all_tasks_expected_events),
-            runtask_run_results
-        )
-
-        # Check the results of the output directory
-        self.assertTrue(Path(wkdir / 'output' / 'task01.txt').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'task02.txt').is_file())
-        task02_txt = self._file_as_str(Path(wkdir / 'output' / 'task02.txt'))
-        self.assertEqual(
-            'Hello from task 1!' + '\n' + 'Hello from task 2!', task02_txt
-        )
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_project_nested_task_dirs(self):
-        """
-        `prism run` in a project with directories in the tasks folder
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '010_project_nested_module_dirs'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Helper function
-        def check_tasks_1_2_results():
-            """
-            Helper function to check the results of running tasks 1 and 2. We will use
-            this a couple of times.
-            """
-            # Check that .compiled directory is formed
-            self.assertTrue(Path(wkdir / '.compiled').is_dir())
-            self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
-
-            # Check that outputs are created
-            self.assertTrue(Path(wkdir / 'output' / 'task01.txt').is_file())
-            self.assertTrue(Path(wkdir / 'output' / 'task02.txt').is_file())
-            with open(Path(wkdir / 'output' / 'task02.txt'), 'r') as f:
-                task02_txt = f.read()
-            f.close()
-            self.assertEqual(
-                'Hello from task 1!' + '\n' + 'Hello from task 2!',
-                task02_txt
-            )
-
-        # **************************************************** #
-        # Execute all tasks in extract folder using '*' syntax #
-        # **************************************************** #
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Run Prism
-        args = ['run', '--task', 'extract/*']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(
-                {
-                    'extract/module01.Task01': 'DONE',
-                    'extract/module02.Task02': 'DONE'
-                }) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check manifest
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        extract_task01_refs = self._load_task_refs(
-            "extract/module01",
-            "Task01",
-            manifest
-        )
-        extract_task02_refs = self._load_task_refs(
-            "extract/module02",
-            "Task02",
-            manifest
-        )
-        load_task03_refs = self._load_task_refs(
-            "load/module03",
-            "Task03",
-            manifest
-        )
-        task04_refs = self._load_task_refs(
-            "module04",
-            "Task04",
-            manifest
-        )
-        self.assertEqual(
-            [], extract_task01_refs
-        )
-        self.assertEqual(
-            ["extract/module01.Task01"], extract_task02_refs
-        )
-        self.assertEqual(
-            ["extract/module02.Task02"], load_task03_refs
-        )
-        self.assertEqual(
-            ["load/module03.Task03"], task04_refs
-        )
-
-        # Check results
-        check_tasks_1_2_results()
-
-        # Remove all files in the compiled and output directory
-        self._remove_compiled_dir(wkdir)
-        self._remove_files_in_output(wkdir)
-
-        # *************************************************************** #
-        # Execute all tasks in extract /load folder using explicit syntax #
-        # *************************************************************** #
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        args = [
-            'run',
-            '--task',
-            'extract/module01.Task01',
-            '--task',
-            'extract/module02',
-            '--task',
-            'load/module03.Task03'
-        ]
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(
-                {
-                    'extract/module01.Task01': 'DONE',
-                    'extract/module02.Task02': 'DONE',
-                    'load/module03.Task03': 'DONE',
-                }) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check results
-        check_tasks_1_2_results()
-
-        # Remove all files in the compiled and output directory
-        self._remove_compiled_dir(wkdir)
-        self._remove_files_in_output(wkdir)
-
-        # ***************** #
-        # Execute all tasks #
-        # ***************** #
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        args = ['run']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(
-                {
-                    'extract/module01.Task01': 'DONE',
-                    'extract/module02.Task02': 'DONE',
-                    'load/module03.Task03': 'DONE',
-                    'module04.Task04': 'DONE'
-                }) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check output of tasks 1 and 2
-        check_tasks_1_2_results()
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_bad_task_ref(self):
-        """
-        `prism run` fails in a project with a bad mod ref
-        """
-        self.maxDiff = None
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '011_bad_task_ref'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        if Path(wkdir / '.compiled').is_dir():
-            shutil.rmtree(Path(wkdir / '.compiled'))
-
-        args = ['run']
-        run_run = self._run_prism(args)
-        run_run_results = run_run.get_results()
-        expected_events = [
-            'SeparatorEvent',
-            'TaskRunEvent',
-            'CurrentProjectDirEvent',
-            'EmptyLineEvent',
-            'ExecutionEvent - parsing prism_project.py - RUN',
-            'ExecutionEvent - parsing prism_project.py - DONE',
-            'ExecutionEvent - task DAG - RUN',
-            'ExecutionEvent - task DAG - ERROR',
-        ] + _run_task_end_events('PrismExceptionErrorEvent')
-        self.assertEqual(' | '.join(expected_events), run_run_results)
-
-        # The .compiled directory will be created
-        self.assertTrue(Path(wkdir / '.compiled').is_dir())
-
-        # But, the manifest file will not be
-        self.assertFalse(Path(wkdir / '.compiled' / 'manifest.json').is_file())
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_concurrency(self):
-        """
-        Test concurrent behavior when threads>1
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '012_concurrency'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        if Path(wkdir / '.compiled').is_dir():
-            shutil.rmtree(Path(wkdir / '.compiled'))
-        self.maxDiff = None
-        args = ['run']
-        self._run_prism(args)
-
-        # Get times
-        task2_times = pd.read_csv(wkdir / 'output' / 'task02.csv')
-        task1_times = pd.read_csv(wkdir / 'output' / 'task01.csv')
-
-        # Task 1 and 2 should start at the same time
-        task2_start_time = int(task2_times['start_time'][0])
-        task1_start_time = int(task1_times['start_time'][0])
-        self.assertTrue(abs(task2_start_time - task1_start_time) <= 1)
-
-        # Task 2 should finish before task 1
-        task2_end_time = int(task2_times['end_time'][0])
-        task1_end_time = int(task1_times['end_time'][0])
-        self.assertTrue(task2_end_time < task1_end_time)
-        self.assertTrue(abs(10 - (task1_end_time - task2_end_time)) <= 1)
-
-        msg1 = "WARN  | `modules` should be renamed to `tasks`...this will be an error in a future version of Prism"  # noqa: E501
-        msg2 = "WARN  | Found `.py` in a tasks.ref(...) argument in `module04.py`...This will be an error in a future version of Prism."  # noqa: E501
-        msg3 = "WARN  | Found `.py` in a tasks.ref(...) argument in `module03.py`...This will be an error in a future version of Prism."  # noqa: E501
-        logs = new_streamer.getvalue()
-        for msg in [msg1, msg2, msg3]:
-            self.assertTrue(msg in logs)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove stuff in output to avoid recommitting to github
-        self._remove_files_in_output(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_concurrency_local(self):
-        """
-        Test concurrent behavior when threads>1
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '012_concurrency_local'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove stuff in output to avoid recommitting to github
-        self._remove_files_in_output(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        if Path(wkdir / '.compiled').is_dir():
-            shutil.rmtree(Path(wkdir / '.compiled'))
-        self.maxDiff = None
-
-        # Run Prism
-        args = [
-            'run',
-            "--task", "local_tasks.local_task3",
-            "--all-upstream"
-        ]
-        self._run_prism(args)
-
-        # Confirm appropriate outputs were created
-        for path in [
-            Path(wkdir / 'output' / 'local_task2.csv'),
-            Path(wkdir / 'output' / 'local_task1.csv')
-        ]:
-            self.assertTrue(path.is_file())
-        self.assertFalse(Path(wkdir / 'output' / 'non_local_task.txt').is_file())
-
-        # Check times
-        task2_times = pd.read_csv(wkdir / 'output' / 'local_task2.csv')
-        task1_times = pd.read_csv(wkdir / 'output' / 'local_task1.csv')
-
-        # Task 1 and 2 should start at the same time
-        task2_start_time = int(task2_times['start_time'][0])
-        task1_start_time = int(task1_times['start_time'][0])
-        self.assertTrue(abs(task2_start_time - task1_start_time) <= 1)
-
-        # Task 2 should finish before task 1
-        task2_end_time = int(task2_times['end_time'][0])
-        task1_end_time = int(task1_times['end_time'][0])
-        self.assertTrue(task2_end_time < task1_end_time)
-        self.assertTrue(abs(10 - (task1_end_time - task2_end_time)) <= 1)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove stuff in output to avoid recommitting to github
-        self._remove_files_in_output(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_user_context_cli(self):
-        """
-        Test that CLI user context works as expected
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null_tasks'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        if Path(wkdir / '.compiled').is_dir():
-            shutil.rmtree(Path(wkdir / '.compiled'))
-        self.maxDiff = None
-
-        # Remove files in output folder
-        self._remove_files_in_output(wkdir)
-
-        # New output path
-        output_path = str(wkdir.parent)
-        self.assertFalse((Path(output_path) / 'task01.txt').is_file())
-        args = ['run', '--task', 'module01', '--vars', f'OUTPUT={output_path}']
-        self._run_prism(args)
-
-        # Get output
-        self.assertTrue((Path(output_path) / 'task01.txt').is_file())
-        task01_txt = self._file_as_str(Path(output_path) / 'task01.txt')
-        self.assertEqual('Hello from task 1!', task01_txt)
-        os.unlink(Path(output_path) / 'task01.txt')
-
-        # Re-run to place output in normal directory
-        args = ['run']
-        self._run_prism(args)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_all_downstream(self):
-        """
-        Test that `all-downstream` argument functions as expected
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null_tasks'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run all tasks downstream of module01.py
-        args = ['run', '--task', 'module01', '--all-downstream']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(
-                {
-                    'module01.Task01': 'DONE',
-                    'module02.Task02': 'DONE',
-                    'module03.Task03': 'DONE',
-                    'module04.Task04': 'DONE',
-                }) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check manifest
-        self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / '.compiled' / 'manifest.json').is_file())
-        manifest = self._load_manifest(Path(wkdir / '.compiled' / 'manifest.json'))
-        task01_refs = self._load_task_refs("module01", "Task01", manifest)
-        task02_refs = self._load_task_refs("module02", "Task02", manifest)
-        task03_refs = self._load_task_refs("module03", "Task03", manifest)
-        task04_refs = self._load_task_refs("module04", "Task04", manifest)
-        self.assertEqual([], task01_refs)
-        self.assertEqual(["module01.Task01"], task02_refs)
-        self.assertEqual(["module02.Task02"], task03_refs)
-        self.assertEqual(["module03.Task03"], task04_refs)
-
-        # Check that outputs are created
-        self.assertTrue(Path(wkdir / 'output' / 'task01.txt').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'task02.txt').is_file())
-        with open(Path(wkdir / 'output' / 'task02.txt'), 'r') as f:
-            task02_txt = f.read()
-        f.close()
-        self.assertEqual(
-            'Hello from task 1!' + '\n' + 'Hello from task 2!',
-            task02_txt
-        )
-
-        # Remove all files in the compiled directory
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def _check_trigger_output(self, wkdir: Path):
-        """
-        Our test trigger function outputs a .txt file to the wkdir / 'output' folder.
-        Check that this exists.
-        """
-        self.assertTrue(Path(wkdir / '.compiled').is_dir())
-        self.assertTrue(Path(wkdir / 'output' / 'trigger.txt').is_file())
-        with open(Path(wkdir / 'output' / 'trigger.txt'), 'r') as f:
-            trigger_txt = f.read()
-        self.assertEqual('This is outputted from the trigger function!', trigger_txt)
-
-    def _check_trigger_events(self,
-        execution_event_dict: Dict[str, str],
-        circa_trigger_header_event: List[str] = ['TriggersHeaderEvent'],
-        final_status: str = "DONE"
-    ):
-        """
-        Triggers kick of a predictable set of events. Check that these exist.
-        """
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(execution_event_dict) + \
-            ["EmptyLineEvent"] + \
-            circa_trigger_header_event + \
-            [
-                "ExecutionEvent - test_trigger_function - RUN",  # noqa: E501
-                f"ExecutionEvent - test_trigger_function - {final_status}",  # noqa: E501
-            ]
-        return expected_events
-
-    def test_trigger_on_success(self):
-        """
-        Test on_success trigger
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '014_test_triggers_normal'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run all tasks downstream of module01.py
-        args = ['run', '--task', 'module01']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = self._check_trigger_events(
-            {'module01.Task01': 'DONE'}
-        ) + _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check manifest / output
-        self._check_trigger_output(wkdir)
-
-        # Remove all files in the compiled directory
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_trigger_on_failure(self):
-        """
-        Test on_failure trigger
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '014_test_triggers_normal'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run all tasks downstream of module01.py
-        args = ['run', '--task', 'module02']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = self._check_trigger_events(
-            {'module02.Task02': 'ERROR'},
-            ["ExecutionErrorEvent", "TriggersHeaderEvent"]
-        ) + ["SeparatorEvent"]
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check manifest / output
-        self._check_trigger_output(wkdir)
-
-        # Remove all files in the compiled directory
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_trigger_no_directory(self):
-        """
-        Test trigger function when there is no `TRIGGERS_YML_PATH` in prism_project.py
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '015_test_triggers_no_dir'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run all tasks downstream of module01.py
-        args = ['run', '--task', 'module01']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = self._check_trigger_events(
-            {'module01.Task01': 'DONE'},
-            ["TriggersHeaderEvent", "TriggersPathNotDefined"]
-        ) + _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check that manifest was created
-        self._check_trigger_output(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_bad_trigger(self):
-        """
-        Test trigger function with a bad trigger
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '016_test_triggers_error'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run all tasks downstream of module01.py
-        args = ['run']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = self._check_trigger_events(
-            {'module01.Task01': 'DONE'},
-            ["TriggersHeaderEvent"],
-            'ERROR'
-        ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_triggers_with_extra_key(self):
-        """
-        An extra key in `triggers.yml` should raise a warning
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '017_test_triggers_extra_key'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run all tasks downstream of module01.py
-        args = ['run']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = self._check_trigger_events(
-            {'module01.Task01': 'DONE'},
-            ["TriggersHeaderEvent", "UnexpectedTriggersYmlKeysEvent"]
-        ) + _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check that manifest was created
-        self._check_trigger_output(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_triggers_no_include(self):
-        """
-        A trigger function in an external task/package without an accompanying
-        `include` path will throw an error.
-        """
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '018_test_triggers_no_include'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run all tasks downstream of module01.py
-        args = ['run']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = self._check_trigger_events(
-            {'module01.Task01': 'DONE'},
-            ["TriggersHeaderEvent"],
-            'ERROR'
-        ) + ['EmptyLineEvent', 'ExecutionErrorEvent', 'SeparatorEvent']
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_decorator_tasks_with_targets(self):
-        """
-        `prism run` on a project where all the tasks are functions decorated with
-        `@task`
-        """
-        self.maxDiff = None
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '019_dec_targets'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run
-        args = ['run']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        expected_events = self._check_trigger_events(
-            {
-                'extract.extract': 'DONE',
-                'load.load': 'DONE'
+TEST_PROJECTS = Path(TEST_CASE_WKDIR) / "test_projects"
+
+
+def _validate_simple_project_log_output(output_str: str):
+    num_tasks = 4
+    for i in range(1, 5):
+        assert f"{i} of {num_tasks} RUNNING TASK module0{i}.Task0{i}" in output_str
+        assert f"{i} of {num_tasks} FINISHED TASK module0{i}.Task0{i}" in output_str
+
+
+# Tests
+def test_simple_project_all_tasks(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "004_simple_project"
+    os.chdir(wkdir)
+
+    # Mock the `fire_console_event` function
+    prev_console_output = _previous_console_output()
+    _console_mocker(monkeypatch)
+
+    # Create client and run
+    client = PrismProject(
+        id="simple-project",
+        tasks_dir=wkdir / "modules",
+    )
+    with pytest.raises(prism.exceptions.RuntimeException) as cm:
+        client.run(
+            runtime_ctx={
+                "OUTPUT": wkdir / "output",
             },
-        ) + _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), runtask_run_results)
-
-        # Check output of 'extract' task
-        self.assertTrue(Path(wkdir / 'output' / 'todos.json').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'second_target.txt').is_file())
-
-        # Astros JSON file
-        with open(Path(wkdir / 'output' / 'todos.json'), 'r') as f:
-            todos_str = f.read()
-        todos_dict = json.loads(todos_str)
-        self.assertEqual(len(todos_dict), 200)
-
-        # Dummy second target text file
-        with open(Path(wkdir / 'output' / 'second_target.txt'), 'r') as f:
-            second_target = f.read()
-        self.assertEqual(second_target, "second target")
-
-        # Check output of 'load' task
-        for i in range(1, 201):
-            self.assertTrue(Path(wkdir / 'output' / f'todo_{i}.txt').is_file())
-            with open(Path(wkdir / 'output' / f'todo_{i}.txt'), 'r') as f:
-                contents = f.read()
-            self.assertEqual(contents, todos_dict[i - 1]['title'])
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-        self._remove_files_in_output(wkdir)
-
-        # Set up the working directory
-        self._set_up_wkdir()
-
-    def test_decorator_tasks_with_retries(self):
-        """
-        `prism run` on a project where all the tasks are functions decorated with
-        `@task` and the user wants to retry a task
-        """
-        self.maxDiff = None
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '020_dec_retries'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Run
-        args = ['run']
-        runtask_run = self._run_prism(args)
-        runtask_run_results = runtask_run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(
-                {
-                    'extract.extract': 'DONE',
-                    'load.load': 'ERROR'
-                },
-            ) + \
-            ['DelayEvent'] + \
-            _execution_events_tasks(
-                {'load.load (RETRY 1)': 'ERROR'}
-            ) + \
-            [
-                "EmptyLineEvent",
-                "ExecutionErrorEvent",
-                "TriggersHeaderEvent",
-                "ExecutionEvent - test_trigger_function - RUN",
-                "ExecutionEvent - test_trigger_function - DONE",
-                "SeparatorEvent"
-            ]
-        self.assertEqual(' | '.join(expected_events), runtask_run_results)
-
-        # Check output of 'extract' task
-        self.assertTrue(Path(wkdir / 'output' / 'todos.json').is_file())
-        with open(Path(wkdir / 'output' / 'todos.json'), 'r') as f:
-            todos_str = f.read()
-        todos_dict = json.loads(todos_str)
-        self.assertEqual(len(todos_dict), 200)
-
-        # Output of 'load' task was not created
-        # Check output of 'load' task
-        for i in range(1, 201):
-            self.assertFalse(Path(wkdir / 'output' / f'todo_{i}.txt').is_file())
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-        self._remove_files_in_output(wkdir)
-
-        # Set up the working directory
-        self._set_up_wkdir()
-
-    def test_simple_project_tasks_prefix_in_arg(self):
-        """
-        `prism run` on simple project where `tasks/` is included in the `--task`
-        CLI argument
-        """
-        self.maxDiff = None
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '005_simple_project_no_null_tasks'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Execute command. Remove the `.py` from the command as well.
-        args = [
-            'run',
-            '--task', 'tasks/module01',
-            '--task', 'tasks/module02',
-            '--task', 'tasks/module03',
-            '--task', 'tasks/module04',
-        ]
-        with pytest.raises(SystemExit) as cm:
-            self._run_prism(args)
-        self.assertEqual(cm.value.code, 1)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_project_local_tasks(self):
-        """
-        `prism run` on a project with local tasks works as expected
-        """
-        self.maxDiff = None
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '021_project_with_local_tasks'
-        os.chdir(wkdir)
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-        self.assertFalse(Path(wkdir / 'output' / 'all_countries.json').is_file())
-        self.assertFalse(Path(wkdir / 'output' / 'independent_countries.json').is_file())  # noqa: E501
-
-        # Execute command.
-        args = ['run']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(
-                {
-                    'extract.extract': 'DONE',
-                    'transform_load.transform': 'DONE',
-                    'transform_load.load': 'DONE',
-                }) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check output
-        self.assertTrue(Path(wkdir / 'output' / 'all_countries.json').is_file())
-        self.assertTrue(Path(wkdir / 'output' / 'independent_countries.json').is_file())
-        with open(Path(wkdir / 'output' / 'all_countries.json'), 'r') as f:
-            all_countries = json.loads(f.read())
-        with open(Path(wkdir / 'output' / 'independent_countries.json'), 'r') as f:
-            independent_countries = json.loads(f.read())
-        self.assertEqual(all_countries[-1]["name"]["common"], "Åland Islands")
-        self.assertEqual(independent_countries[0]["name"]["common"], "Afghanistan")
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
-
-    def test_project_local_tasks_specific_module(self):
-        """
-        Using the `--task` argument on a prism project with local tasks will run all the
-        tasks in the requested module.
-        """
-        self.maxDiff = None
-
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '021_project_with_local_tasks'
-        os.chdir(wkdir)
-
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
-
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
-
-        # ------------------------------------------
-        # Execute command. First, run just `extract`
-
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
-
-        self.assertFalse(Path(wkdir / 'output' / 'all_countries.json').is_file())  # noqa: E501
-        args = [
-            'run',
-            '--task', 'extract'
-        ]
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(
-                {
-                    'extract.extract': 'DONE',
-                }) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
-
-        # Check output
-        self.assertTrue(Path(wkdir / 'output' / 'all_countries.json').is_file())
-        self.assertFalse(
-            Path(wkdir / 'output' / 'independent_countries.json').is_file()
+            rich_logging=False,
+            log_file=StringIO(),
         )
-        with open(Path(wkdir / 'output' / 'all_countries.json'), 'r') as f:
-            all_countries = json.loads(f.read())
-        self.assertEqual(all_countries[-1]["name"]["common"], "Åland Islands")
+    expected_msg = "`run` method must produce a non-null output"
+    assert str(cm.value) == expected_msg
 
-        # ------------------------------------------
-        # Now, execute transform_load
+    # Check logs / other events
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str.replace(prev_console_output, "")
+    assert "Running with Prism" in output_str
+    assert "Found 3 task(s) in 3 module(s)" in output_str
+    assert "Parsing task dependencie" in output_str
+    assert "FINISHED parsing task dependencie" in output_str
+    assert "1 of 3 RUNNING TASK module03.Task03" in output_str
+    assert "1 of 3 ERROR IN TASK module03.Task03" in output_str
 
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
 
-        args = [
-            'run',
-            '--task', 'transform_load'
-        ]
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks(
-                {
-                    'transform_load.transform': 'DONE',
-                    'transform_load.load': 'DONE',
-                }) + \
-            _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
+def test_simple_project_no_null_all_tasks(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
 
-        # Check output
-        self.assertTrue(Path(wkdir / 'output' / 'independent_countries.json').is_file())
-        with open(Path(wkdir / 'output' / 'independent_countries.json'), 'r') as f:
-            independent_countries = json.loads(f.read())
-        self.assertEqual(independent_countries[0]["name"]["common"], "Afghanistan")
+    # Remove all files in the output directory
+    _remove_files_in_output(wkdir)
 
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
+    # Current output in console
+    prev_console_output = _previous_console_output()
 
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
+    # Create client and run
+    client = PrismProject(
+        id="simple-project-no-null-output",
+        tasks_dir=wkdir / "tasks",
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
 
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
+    # Check outputs
+    task01_txt = _file_as_str(Path(wkdir / "output" / "task01.txt"))
+    task02_txt = _file_as_str(Path(wkdir / "output" / "task02.txt"))
+    assert "Hello from task 1!" == task01_txt
+    assert "Hello from task 1!" + "\n" + "Hello from task 2!" == task02_txt
 
-    def test_project_local_tasks_bad_ref(self):
+    # Check logs / other events
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    _validate_simple_project_log_output(output_str)
+
+
+def test_database(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove all files in the output directory
+    _remove_files_in_output(wkdir)
+
+    # Create client and run
+    client = PrismProject(
+        id="simple-project-db-test",
+        tasks_dir=wkdir / "tasks",
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Refs in database
+    factory = ThreadLocalSessionFactory()
+    with factory.create_thread_local_session() as session:
+        project_stmt = select(Project).where(Project.local_path == str(wkdir))
+        res = factory.execute_thread_local_stmt(project_stmt, session)
+        project_id = res[0].id
+
+        ref_stmt = select(Ref).where(Ref.project_id == project_id)
+        res = factory.execute_thread_local_stmt(ref_stmt, session)
+    assert len(res) == 3
+    refs = []
+    for r in res:
+        refs.append((r.source_id, r.target_id))
+    assert ("module01.Task01", "module02.Task02") in refs
+    assert ("module02.Task02", "module03.Task03") in refs
+    assert ("module03.Task03", "module04.Task04") in refs
+
+
+def test_simple_project_no_null_subset(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove all files in the output directory
+    _remove_files_in_output(wkdir)
+
+    # *************** #
+    # Run only task 1 #
+    # *************** #
+    prev_console_output = _previous_console_output()
+
+    # Create client and run. Expecatation: task 1 is the first task in the DAG.
+    # Therefore, we should not encounter any errors with this command.
+    client = PrismProject(
+        id="simple-project-no-null-output",
+        tasks_dir=wkdir / "tasks",
+    )
+    client.run(
+        task_ids=["module01.Task01"],
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Check outputs
+    task01_txt = _file_as_str(Path(wkdir / "output" / "task01.txt"))
+    assert "Hello from task 1!" == task01_txt
+    assert not (Path(wkdir / "output" / "task02.txt")).is_file()
+
+    # Check logs / other events
+    task1_output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    task1_output_str = task1_output_str.replace(prev_console_output, "")
+    assert "1 of 1 RUNNING TASK module01.Task01" in task1_output_str
+    assert "1 of 1 FINISHED TASK module01.Task01" in task1_output_str
+    assert "RUNNING TASK module02.Task02" not in task1_output_str
+    assert "FINISHED TASK module02.Task02" not in task1_output_str
+
+    # ************** #
+    # Execute task 2 #
+    # ************** #
+    prev_console_output = _previous_console_output()
+
+    # Create client and run. Expecatation: task 2 depends on task 1. However, since we
+    # just ran task 1, and the output of task 1 is stored in a target, we do not need to
+    # re-run task 1 in order to run task 2. Therefore, we should not encounter any
+    # errors with this command.
+    client = PrismProject(
+        id="simple-project-no-null-output",
+        tasks_dir=wkdir / "tasks",
+    )
+    client.run(
+        task_ids=["module02.Task02"],
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Check outputs
+    assert (Path(wkdir / "output" / "task02.txt")).is_file()
+    task02_txt = _file_as_str(Path(wkdir / "output" / "task02.txt"))
+    assert "Hello from task 1!" + "\n" + "Hello from task 2!" == task02_txt
+
+    # Check logs / other events
+    task2_output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    task2_output_str = task2_output_str.replace(prev_console_output, "")
+    assert "1 of 1 RUNNING TASK module02.Task02" in task2_output_str
+    assert "1 of 1 FINISHED TASK module02.Task02" in task2_output_str
+    assert "RUNNING TASK module01.Task01" not in task2_output_str
+    assert "FINISHED TASK module01.Task01" not in task2_output_str
+
+    # *********************************************** #
+    # Execute task 4 (with and without `all-upstream` #
+    # *********************************************** #
+    prev_console_output = _previous_console_output()
+
+    # Create client and run. Expectation: task 4 depends on task 3. However, the output
+    # of task 3 is not stored in a target. Therefore, running task 4 without including
+    # 'all-upstream' should cause an error.
+    client = PrismProject(
+        id="simple-project-no-null-output",
+        tasks_dir=wkdir / "tasks",
+    )
+    with pytest.raises(prism.exceptions.RuntimeException) as cm:
+        client.run(
+            task_ids=["module04.Task04"],
+            all_tasks_upstream=False,
+            runtime_ctx={
+                "OUTPUT": wkdir / "output",
+            },
+            rich_logging=False,
+            log_file=StringIO(),
+        )
+    expected_msg = "cannot access the output of `Task03` without either explicitly running task or setting a target"  # noqa: E501
+    assert str(cm.value) == expected_msg
+
+    # Execute command with `all-upstream`
+    _remove_files_in_output(wkdir)
+    prev_console_output = _previous_console_output()
+    client.run(
+        task_ids=["module04.Task04"],
+        all_tasks_upstream=True,
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Check outputs
+    task01_txt = _file_as_str(Path(wkdir / "output" / "task01.txt"))
+    task02_txt = _file_as_str(Path(wkdir / "output" / "task02.txt"))
+    assert "Hello from task 1!" == task01_txt
+    assert "Hello from task 1!" + "\n" + "Hello from task 2!" == task02_txt
+
+    # Check logs / other events
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    _validate_simple_project_log_output(output_str)
+
+
+def test_project_nested_task_dirs(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "010_project_nested_module_dirs"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove all files in the output directory
+    _remove_files_in_output(wkdir)
+
+    # Helper function
+    def check_tasks_1_2_results():
         """
-        A bad `tasks.ref(...)` call to a local task will cause an error.
+        Helper function to check the results of running tasks 1 and 2. We will use
+        this a couple of times.
         """
-        self.maxDiff = None
+        # Check that outputs are created
+        assert Path(wkdir / "output" / "task01.txt").is_file()
+        assert Path(wkdir / "output" / "task02.txt").is_file()
+        with open(Path(wkdir / "output" / "task02.txt"), "r") as f:
+            task02_txt = f.read()
+        expected_content = "Hello from task 1!" + "\n" + "Hello from task 2!"
+        assert task02_txt == expected_content
 
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '022_project_with_bad_local_tasks'
-        os.chdir(wkdir)
+    # **************************************************** #
+    # Execute all tasks in extract folder using '*' syntax #
+    # **************************************************** #
+    prev_console_output = _previous_console_output()
 
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
+    # Create project
+    client = PrismProject(
+        id="project-with-nested-directories",
+        tasks_dir=wkdir / "tasks",
+    )
+    client.run(
+        task_ids=["extract/*"],
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
 
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
+    # Check results
+    check_tasks_1_2_results()
 
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
+    # Check logs
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    assert "RUNNING TASK extract/module01.Task01" in output_str
+    assert "FINISHED TASK extract/module01.Task01" in output_str
+    assert "RUNNING TASK extract/module02.Task02" in output_str
+    assert "FINISHED TASK extract/module02.Task02" in output_str
+    assert "RUNNING TASK load/module03.Task03" not in output_str
+    assert "FINISHED TASK load/module03.Task03" not in output_str
+    assert "RUNNING TASK module04.Task04" not in output_str
+    assert "FINISHED TASK module04.Task04" not in output_str
 
-        # ------------------------------------------
-        # Execute command.
-        self.assertFalse(Path(wkdir / 'output' / 'all.json').is_file())  # noqa: E501
-        self.assertFalse(Path(wkdir / 'output' / 'independent_countries.json').is_file())  # noqa: E501
-        args = ['run']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = [
-            'SeparatorEvent',
-            'TaskRunEvent',
-            'CurrentProjectDirEvent',
-            'EmptyLineEvent',
-            'ExecutionEvent - parsing prism_project.py - RUN',
-            'ExecutionEvent - parsing prism_project.py - DONE',
-            'ExecutionEvent - task DAG - RUN',
-            'ExecutionEvent - task DAG - ERROR',
-            'EmptyLineEvent',
-            'PrismExceptionErrorEvent',
-            'SeparatorEvent'
-        ]
-        self.assertEqual(' | '.join(expected_events), run_results)
+    # Remove all files in the compiled and output directory
+    _remove_files_in_output(wkdir)
 
-        # Check output
-        self.assertFalse(Path(wkdir / 'output' / 'all.json').is_file())  # noqa: E501
-        self.assertFalse(Path(wkdir / 'output' / 'independent_countries.json').is_file())  # noqa: E501
+    # *************************************************************** #
+    # Execute all tasks in extract /load folder using explicit syntax #
+    # *************************************************************** #
+    prev_console_output = _previous_console_output()
 
-        # Error
-        logs = new_streamer.getvalue()
-        msg = "Are you trying to access a task in the same module? If so, use only the task name as your tasks.ref() argument and set `local = True`"  # noqa: E501
-        self.assertTrue(msg in logs)
+    # Create project
+    client = PrismProject(
+        id="project-with-nested-directories",
+        tasks_dir=wkdir / "tasks",
+    )
+    client.run(
+        task_ids=[
+            "extract/module01.Task01",
+            "extract/module02.Task02",
+            "load/module03.Task03",
+        ],
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
 
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
+    # Check results
+    check_tasks_1_2_results()
 
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
+    # Check logs
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    assert "RUNNING TASK extract/module01.Task01" in output_str
+    assert "FINISHED TASK extract/module01.Task01" in output_str
+    assert "RUNNING TASK extract/module02.Task02" in output_str
+    assert "FINISHED TASK extract/module02.Task02" in output_str
+    assert "RUNNING TASK load/module03.Task03" in output_str
+    assert "FINISHED TASK load/module03.Task03" in output_str
 
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
+    # Remove all files in the compiled and output directory
+    _remove_files_in_output(wkdir)
 
-    def test_project_with_skipped_task(self):
-        """
-        If the `done` method is satisfied, then the task is skipped.
-        """
-        self.maxDiff = None
+    # ***************** #
+    # Execute all tasks #
+    # ***************** #
+    prev_console_output = _previous_console_output()
 
-        # Set working directory
-        wkdir = Path(TEST_PROJECTS) / '023_skipped_task'
-        os.chdir(wkdir)
+    # Create project
+    client = PrismProject(
+        id="project-with-nested-directories",
+        tasks_dir=wkdir / "tasks",
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
 
-        # Update logger streamer
-        new_streamer = StringIO()
-        string_stream_handler.setStream(new_streamer)
+    # Check output of tasks 1 and 2
+    check_tasks_1_2_results()
 
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
 
-        # Check that previous output exists
-        self.assertFalse((wkdir / 'output' / 'task01.txt').is_file())
-        self.assertFalse((wkdir / 'output' / 'task02.txt').is_file())
+def test_bad_task_ref(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "011_bad_task_ref"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
 
-        # ------------------------------------------
-        # Execute command. This should run both tasks
+    # Create project
+    client = PrismProject(
+        id="project-with-bad-ref",
+        tasks_dir=wkdir / "modules",
+    )
+    with pytest.raises(prism.exceptions.CompileException) as cm:
+        client.run(
+            runtime_ctx={
+                "OUTPUT": wkdir / "output",
+            },
+            rich_logging=False,
+            log_file=StringIO(),
+        )
+    expected_msg = "task `extract/this_is_an_error` not found in project"
+    assert str(cm.value) == expected_msg
 
-        args = ['run']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks({
-                'task01.Task01': 'DONE',
-                'task02.Task02': 'DONE',
-            }) + _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
 
-        # Check new output
-        self.assertTrue((wkdir / 'output' / 'task01.txt').is_file())
-        self.assertTrue((wkdir / 'output' / 'task02.txt').is_file())
+def test_concurrency(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "012_concurrency"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
 
-        # ------------------------------------------
-        # Execute the command again. This should skip task 1
+    # Remove files in output
+    _remove_files_in_output(wkdir)
 
-        args = ['run']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks({
-                'task01.Task01': 'SKIP',
-                'task02.Task02': 'DONE',
-            }) + _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
+    # Create project
+    client = PrismProject(
+        id="project-with-concurrency",
+        concurrency=2,
+        tasks_dir=wkdir / "modules",
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
 
-        # ------------------------------------------
-        # Execute the command again with `--full-refresh. Task 1 should be
-        # executed again
+    # Get times
+    task2_times = pd.read_csv(wkdir / "output" / "task02.csv")
+    task1_times = pd.read_csv(wkdir / "output" / "task01.csv")
 
-        args = ['run', '--full-refresh']
-        run = self._run_prism(args)
-        run_results = run.get_results()
-        expected_events = run_success_starting_events + \
-            ['TasksHeaderEvent'] + \
-            _execution_events_tasks({
-                'task01.Task01': 'DONE',
-                'task02.Task02': 'DONE',
-            }) + _run_task_end_events('TaskSuccessfulEndEvent')
-        self.assertEqual(' | '.join(expected_events), run_results)
+    # Task 1 and 2 should start at the same time
+    task2_start_time = int(task2_times["start_time"][0])
+    task1_start_time = int(task1_times["start_time"][0])
+    assert abs(task2_start_time - task1_start_time) <= 1
 
-        # Remove the .compiled directory, if it exists
-        self._remove_compiled_dir(wkdir)
+    # Task 2 should finish before task 1
+    task2_end_time = int(task2_times["end_time"][0])
+    task1_end_time = int(task1_times["end_time"][0])
+    assert task2_end_time < task1_end_time
+    assert abs(10 - (task1_end_time - task2_end_time)) <= 1
 
-        # Remove all files in the output directory
-        self._remove_files_in_output(wkdir)
+    # Remove files in output
+    _remove_files_in_output(wkdir)
 
-        # Set up wkdir for the next test case
-        self._set_up_wkdir()
+
+def test_runtime_ctx_overrides_client_ctx(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+    # Create project and run (without a run context)
+    client = PrismProject(
+        id="project-overrides-test",
+        concurrency=2,
+        tasks_dir=wkdir / "tasks",
+        ctx={"OUTPUT": wkdir},
+    )
+    client.run(
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Check outputs
+    assert not (Path(wkdir / "output" / "task01.txt")).is_file()
+    assert not (Path(wkdir / "output" / "task02.txt")).is_file()
+    task01_txt = _file_as_str(Path(wkdir / "task01.txt"))
+    task02_txt = _file_as_str(Path(wkdir / "task02.txt"))
+    assert "Hello from task 1!" == task01_txt
+    assert "Hello from task 1!" + "\n" + "Hello from task 2!" == task02_txt
+    os.unlink(Path(wkdir / "task01.txt"))
+    os.unlink(Path(wkdir / "task02.txt"))
+
+    # Now run (with the run context)
+    client.run(
+        runtime_ctx={"OUTPUT": wkdir / "output"},
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+    assert not (Path(wkdir / "task01.txt")).is_file()
+    assert not (Path(wkdir / "task02.txt")).is_file()
+    task01_txt = _file_as_str(Path(wkdir / "output" / "task01.txt"))
+    task02_txt = _file_as_str(Path(wkdir / "output" / "task02.txt"))
+    assert "Hello from task 1!" == task01_txt
+    assert "Hello from task 1!" + "\n" + "Hello from task 2!" == task02_txt
+
+
+def test_all_downstream(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+    # Previous console output
+    prev_console_output = _previous_console_output()
+
+    # Create project and run (without a run context)
+    client = PrismProject(
+        id="project-overrides-test",
+        concurrency=2,
+        tasks_dir=wkdir / "tasks",
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        task_ids=["module01.Task01"],
+        all_tasks_downstream=True,
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Check that outputs are created
+    assert Path(wkdir / "output" / "task01.txt").is_file()
+    assert Path(wkdir / "output" / "task02.txt").is_file()
+
+    # Check outputs
+    task01_txt = _file_as_str(Path(wkdir / "output" / "task01.txt"))
+    task02_txt = _file_as_str(Path(wkdir / "output" / "task02.txt"))
+    assert "Hello from task 1!" == task01_txt
+    assert "Hello from task 1!" + "\n" + "Hello from task 2!" == task02_txt
+
+    # Check logs / other events
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    _validate_simple_project_log_output(output_str)
+
+
+def helper_for_testing_callbacks(
+    monkeypatch,
+    project_dir: Path,
+    tasks_dir: Path,
+    callback_type: Literal["success", "failure"],
+    in_client: bool = True,
+):
+    # Set working directory
+    wkdir = project_dir
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    def callback_fn():
+        with open(wkdir / f"{callback_type}_callback.txt", "w") as f:
+            f.write(f"This was a {callback_type}!")
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+    if (wkdir / f"{callback_type}_callback.txt").is_file():
+        os.unlink(wkdir / f"{callback_type}_callback.txt")
+
+    # Previous console output
+    prev_console_output = _previous_console_output()
+
+    # Client and runtime keyword arguments
+    project_id = (
+        f"{callback_type}-callback-in-client"
+        if in_client
+        else f"{callback_type}-callback-in-runtime"
+    )  # noqa: E501
+    project_kwargs = {
+        "id": project_id,
+        "tasks_dir": tasks_dir,
+    }
+    runtime_kwargs = {
+        "runtime_ctx": {
+            "OUTPUT": wkdir / "output",
+        },
+        "rich_logging": False,
+        "log_file": StringIO(),
+    }
+    if in_client:
+        project_kwargs[f"on_{callback_type}"] = [callback_fn]
+    else:
+        runtime_kwargs[f"on_{callback_type}"] = [callback_fn]
+
+    # Create project and run
+    client = PrismProject(**project_kwargs)  # type: ignore
+    try:
+        client.run(**runtime_kwargs)  # type: ignore
+    except Exception:
+        pass
+
+    # Callback output exists
+    assert (wkdir / f"{callback_type}_callback.txt").is_file()
+    callback_txt = _file_as_str(wkdir / f"{callback_type}_callback.txt")
+    assert f"This was a {callback_type}!" == callback_txt
+    os.unlink(wkdir / f"{callback_type}_callback.txt")
+
+    # Check logs / other events
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    assert f"Running on_{callback_type} callbacks" in output_str
+    assert "Running callback_fn callback" in output_str
+    assert "FINISHED running callback_fn callback" in output_str
+
+
+def test_success_callbacks_in_client(monkeypatch):
+    helper_for_testing_callbacks(
+        monkeypatch,
+        project_dir=Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks",
+        tasks_dir=Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks" / "tasks",
+        callback_type="success",
+    )
+
+
+def test_failure_callbacks_in_client(monkeypatch):
+    helper_for_testing_callbacks(
+        monkeypatch,
+        project_dir=Path(TEST_PROJECTS) / "004_simple_project",
+        tasks_dir=Path(TEST_PROJECTS) / "004_simple_project" / "modules",
+        callback_type="failure",
+    )
+
+
+def test_success_callbacks_in_runtime(monkeypatch):
+    helper_for_testing_callbacks(
+        monkeypatch,
+        project_dir=Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks",
+        tasks_dir=Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks" / "tasks",
+        callback_type="success",
+        in_client=False,
+    )
+
+
+def test_failure_callbacks_in_runtime(monkeypatch):
+    helper_for_testing_callbacks(
+        monkeypatch,
+        project_dir=Path(TEST_PROJECTS) / "004_simple_project",
+        tasks_dir=Path(TEST_PROJECTS) / "004_simple_project" / "modules",
+        callback_type="failure",
+        in_client=False,
+    )
+
+
+def test_callbacks_with_import_path(monkeypatch):
+    wkdir = Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+    # Previous console output
+    prev_console_output = _previous_console_output()
+
+    # Create project and run
+    client = PrismProject(
+        id="callback-using-import-path",
+        tasks_dir=wkdir / "tasks",
+        on_success=["additional_package.cli_callbacks.print_success"],
+        package_lookups=[TEST_PROJECTS.parent],
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Check logs / other events
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    assert "Running on_success callbacks" in output_str
+    assert "Running print_success callback" in output_str
+    assert "FINISHED running print_success callback" in output_str
+
+
+def test_runtime_and_client_callback(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "005_simple_project_no_null_tasks"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    def callback_fn1():
+        with open(wkdir / "on_success_callback1.txt", "w") as f:
+            f.write("This was a on_success, output 1!")
+
+    def callback_fn2():
+        with open(wkdir / "on_success_callback2.txt", "w") as f:
+            f.write("This was a on_success, output 2!")
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+    # Previous console output
+    prev_console_output = _previous_console_output()
+
+    # Create project and run (without a run context)
+    client = PrismProject(
+        id="project-runtime-and-client-callbacks",
+        tasks_dir=wkdir / "tasks",
+        on_success=[callback_fn1],
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+        on_success=[callback_fn2],
+    )
+
+    # Console output
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    assert "Running on_success callbacks" in output_str
+
+    # Callback outputs and logs
+    for output in [1, 2]:
+        assert (wkdir / f"on_success_callback{output}.txt").is_file()
+        callback_txt = _file_as_str(wkdir / f"on_success_callback{output}.txt")
+        assert f"This was a on_success, output {output}!" == callback_txt
+        os.unlink(wkdir / f"on_success_callback{output}.txt")
+
+        # Check logs / other events
+        assert f"Running callback_fn{output} callback" in output_str
+        assert f"FINISHED running callback_fn{output} callback" in output_str
+
+
+def test_connectors(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "013_connectors"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+    # Define some connectors
+    from prism.connectors import PostgresConnector, SnowflakeConnector
+
+    postgres_connector = PostgresConnector(
+        id="postgres-connector",
+        user=os.environ["POSTGRES_USER"],
+        password=os.environ["POSTGRES_PASSWORD"],
+        port=5432,
+        host=os.environ["POSTGRES_HOST"],
+        database=os.environ["POSTGRES_DB"],
+        autocommit=True,
+    )
+    snowflake_connector = SnowflakeConnector(
+        id="snowflake-connector",
+        user=os.environ["SNOWFLAKE_USER"],
+        password=os.environ["SNOWFLAKE_PASSWORD"],
+        account=os.environ["SNOWFLAKE_ACCOUNT"],
+        role=os.environ["SNOWFLAKE_ROLE"],
+        warehouse=os.environ["SNOWFLAKE_WAREHOUSE"],
+        database=os.environ["SNOWFLAKE_DATABASE"],
+        schema=os.environ["SNOWFLAKE_SCHEMA"],
+    )
+
+    # Previous console output
+    prev_console_output = _previous_console_output()
+
+    # Create project
+    client = PrismProject(
+        id="project-connectors",
+        tasks_dir=wkdir / "tasks",
+        connectors=[
+            postgres_connector,
+            snowflake_connector,
+        ],
+    )
+
+    # Run the ones without the bad adapter
+    client.run(
+        task_ids=[
+            "postgres_task.PostgresTask",
+            "snowflake_task.SnowflakeTask",
+            "spark_task.PysparkTask",
+        ],
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Check outputs
+    assert (wkdir / "output" / "sample_postgres_data.csv").is_file()
+    assert (wkdir / "output" / "machinery_sample.csv").is_file()
+    assert (wkdir / "output" / "household_sample.csv").is_file()
+    assert (wkdir / "output" / "machinery_sample_filtered.csv").is_file()
+    assert (wkdir / "output" / "household_sample_filtered.csv").is_file()
+
+    # Run with a bad adapter. This should raise an error.
+    with pytest.raises(ValueError) as cm:
+        client.run(
+            runtime_ctx={
+                "OUTPUT": wkdir / "output",
+            },
+            rich_logging=False,
+            log_file=StringIO(),
+        )
+    expected_message_substr = "connector ID `snowflake_connector` not found run"
+    assert expected_message_substr in str(cm.value)
+
+    # Logs
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    assert "ERROR IN TASK bad_adapter.BadAdapterTask" in output_str
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+
+def test_connectors_with_import_path(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "013_connectors"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+    # Create project
+    client = PrismProject(
+        id="project-connectors",
+        tasks_dir=wkdir / "tasks",
+        connectors=[
+            "additional_package.cli_connectors.snowflake_connector",
+            "additional_package.cli_connectors.postgres_connector",
+        ],
+        package_lookups=[TEST_PROJECTS.parent],
+    )
+
+    # Run the ones without the bad adapter
+    client.run(
+        task_ids=[
+            "postgres_task.PostgresTask",
+            "snowflake_task.SnowflakeTask",
+        ],
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Check outputs
+    assert (wkdir / "output" / "sample_postgres_data.csv").is_file()
+    assert (wkdir / "output" / "machinery_sample.csv").is_file()
+    assert (wkdir / "output" / "household_sample.csv").is_file()
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+
+def test_package_lookups(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "014_project_with_package_lookup"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+    # Create project and run (without a run context)
+    client = PrismProject(
+        id="project-package-lookups",
+        tasks_dir=wkdir / "tasks",
+        package_lookups=[TEST_CASE_WKDIR],
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Output file should have been created
+    file_str_value = _file_as_str(wkdir / "output" / "task01.txt")
+    expected_value = "Hello from module01.Task01"
+    assert file_str_value == expected_value
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+
+def test_retries(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "020_dec_retries"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+    # Previous console output
+    prev_console_output = _previous_console_output()
+
+    # Create project and run (without a run context)
+    client = PrismProject(
+        id="project-retries",
+        tasks_dir=wkdir / "tasks",
+        package_lookups=[TEST_CASE_WKDIR],
+    )
+    with pytest.raises(NameError) as cm:
+        client.run(
+            runtime_ctx={
+                "OUTPUT": wkdir / "output",
+            },
+            rich_logging=False,
+            log_file=StringIO(),
+        )
+    expected_msg = "name 'hi' is not defined"
+    assert expected_msg == str(cm.value)
+
+    # Output
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    assert "RUNNING TASK load.load" in output_str
+    assert "ERROR IN TASK load.load" in output_str
+    assert "load.load failed...restarting immediately" in output_str
+    assert "RUNNING TASK load.load (RETRY 1)" in output_str
+    assert "ERROR IN TASK load.load (RETRY 1)" in output_str
+
+    # Remove files in output folder
+    _remove_files_in_output(wkdir)
+
+
+def test_skip_task(monkeypatch):
+    # Set working directory
+    wkdir = Path(TEST_PROJECTS) / "023_skipped_task"
+    os.chdir(wkdir)
+    _console_mocker(monkeypatch)
+
+    # Previous console output
+    prev_console_output = _previous_console_output()
+
+    # Create project and run (without a run context)
+    client = PrismProject(
+        id="project-skip", tasks_dir=wkdir / "tasks", package_lookups=[TEST_CASE_WKDIR]
+    )
+    client.run(
+        runtime_ctx={
+            "OUTPUT": wkdir / "output",
+        },
+        rich_logging=False,
+        log_file=StringIO(),
+    )
+
+    # Output
+    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+    output_str = output_str.replace(prev_console_output, "")
+    assert "SKIPPING TASK task01.Task01" in output_str
