@@ -60,7 +60,7 @@ ____ / ____/ /  / (__  ) / / / / / _____
 Welcome to Prism, the easiest way to create clean, modular data pipelines
 using Python!
 
-To get started, navigate to your newly created project "testsd" and try
+To get started, navigate to your newly created project "my_first_project" and try
 running the following commands:
     > python main.py
     > prism run
