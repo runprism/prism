@@ -391,7 +391,7 @@ class _DagCompiler:
                 all_nodes.extend(self.get_node_successors(dag, user_arg_task_ids))
 
             subgraph = dag.subgraph(list(set(all_nodes)))
-            all_topological_sorts = nx.algorithms.dag.all_topological_sorts(subgraph)  # noqa: E501
+            all_topological_sorts = nx.algorithms.dag.all_topological_sorts(subgraph)  # type: ignore # noqa: E501
             topological_sort = next(all_topological_sorts)
 
         # Add each task to manifest
