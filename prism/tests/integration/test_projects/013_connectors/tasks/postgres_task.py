@@ -5,14 +5,14 @@ import prism.target
 
 # Prism imports
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Connection, Context
 
 
 class PostgresTask(prism.task.PrismTask):
     # Run
     @prism.decorators.target(
         type=prism.target.PandasCsv,
-        loc=Path(CurrentRun.ctx("OUTPUT")) / "sample_postgres_data.csv",
+        loc=Path(Context("OUTPUT")) / "sample_postgres_data.csv",
         index=False,
     )
     def run(self):
@@ -26,6 +26,6 @@ class PostgresTask(prism.task.PrismTask):
             , last_name
         LIMIT 10
         """
-        conn = CurrentRun.conn("postgres-connector")
+        conn = Connection("postgres-connector")
         df = conn.execute_sql(sql=sql, return_type="pandas")
         return df

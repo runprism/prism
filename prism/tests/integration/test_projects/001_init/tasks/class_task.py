@@ -1,7 +1,7 @@
-import prism.task
-import prism.target
 import prism.decorators
-from prism.runtime import CurrentRun
+import prism.target
+import prism.task
+from prism.runtime import Context
 
 
 class ExampleTask(prism.task.PrismTask):
@@ -9,7 +9,7 @@ class ExampleTask(prism.task.PrismTask):
 
     # Run
     @prism.decorators.target(
-        type=prism.target.Txt, loc=CurrentRun.ctx("OUTPUT") / "hello_world.txt"
+        type=prism.target.Txt, loc=Context("OUTPUT") / "hello_world.txt"
     )
     def run(self):
         return "Hello, world!"

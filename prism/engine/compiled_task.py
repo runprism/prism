@@ -3,9 +3,10 @@ import importlib
 import re
 from typing import List, Literal, Optional, Tuple, Union
 
+import prism.exceptions
+
 # Prism-specific imports
 from prism.db.mixins import DbMixin
-import prism.exceptions
 from prism.engine.module import _PrismModule
 from prism.task import PrismTask
 
@@ -144,11 +145,6 @@ class _CompiledTask(DbMixin):
         assert self.run_slug is not None
         super().create_task_run(self.run_slug, self.task_id)
 
-        runtime = importlib.import_module("prism.runtime")
-        # TODO: clean up this error
-        if not hasattr(runtime, "CurrentRun"):
-            raise ValueError("runtime does not have `CurrentRun` attribute!")
-
         # Instantiate class and check if the task is already done
         prism_task = self.instantiate_task_class(explicit_run)
         is_done = prism_task.done()
@@ -165,7 +161,6 @@ class _CompiledTask(DbMixin):
             super().update_task_run_status(
                 self.run_slug, prism_task.task_id, "SUCCEEDED"
             )
-        runtime.CurrentRun._set_task_output_value(self.task_id, prism_task.get_output())
 
         # Return the task... we don't use the task for anything, but it helps our event
         # manager know that we ran a task.

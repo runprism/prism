@@ -6,13 +6,13 @@ import prism.target
 
 # Prism imports
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Context
 
 
 class Task01(prism.task.PrismTask):
     # Run
     @prism.decorators.target(
-        type=prism.target.Txt, loc=CurrentRun.ctx("OUTPUT") / "task01.txt"
+        type=prism.target.Txt, loc=Context("OUTPUT") / "task01.txt"
     )
     def run(self):
         return task1_return()

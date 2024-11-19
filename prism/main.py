@@ -66,7 +66,7 @@ def init(project_name, log_level):
     "--connector",
     type=str,
     help="""Import path to the connector instances to use for your project. These can be
-            accessed at runtime `CurrentRun.conn(...)`.""",
+            accessed at runtime `prism.runtime.Connection(...)`.""",
     multiple=True,
 )
 @click.option(
@@ -253,20 +253,6 @@ def run(
     help="Project version.",
     multiple=False,
 )
-# @click.option(
-#     "--connector",
-#     type=str,
-#     help="""Import path to the connector instances to use for your project. These can be
-#             accessed at runtime `CurrentRun.conn(...)`.""",
-#     multiple=True,
-# )
-# @click.option(
-#     "--concurrency",
-#     type=int,
-#     help="""Number of threads to use when running tasks. Default is `1` (i.e.,
-#             single-threaded)""",
-#     default=1,
-# )
 @click.option(
     "--tasks-dir",
     type=str,
@@ -276,14 +262,6 @@ def run(
     default=Path.cwd() / "tasks",
     required=True,
 )
-# @click.option(
-#     "--package-lookups",
-#     type=str,
-#     help="""Additional directories / modules to look within when importing modules and
-#             functions in your code. The `tasks_dir` and its parent are automatically
-#             added to this list.""",
-#     multiple=True,
-# )
 @click.option(
     "--port",
     "-p",

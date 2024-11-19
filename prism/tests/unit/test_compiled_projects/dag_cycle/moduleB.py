@@ -1,11 +1,7 @@
-from prism.runtime import CurrentRun
+from prism.runtime import Ref
 from prism.task import PrismTask
 
 
 class Taskb(PrismTask):
     def run(self):
-        return (
-            CurrentRun.ref("moduleA.Taska")
-            + CurrentRun.ref("moduleE.Taske")
-            + " This is task B."
-        )  # noqa: E501
+        return Ref("moduleA.Taska") + Ref("moduleE.Taske") + " This is task B."  # noqa: E501

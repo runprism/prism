@@ -1,12 +1,12 @@
-from prism.runtime import CurrentRun
+from prism.runtime import Ref
 from prism.task import PrismTask
 
 
 class Taske(PrismTask):
     def run(self):
         return (
-            CurrentRun.ref("taskA.Taska")
-            + CurrentRun.ref("taskC.Taskc")
-            + CurrentRun.ref("taskD.Taskd")
+            Ref("taskA.Taska")
+            + Ref("taskC.Taskc")
+            + Ref("taskD.Taskd")
             + " This is task E."
         )  # noqa

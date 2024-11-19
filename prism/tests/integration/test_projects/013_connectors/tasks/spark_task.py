@@ -10,7 +10,7 @@ import prism.target
 
 # Prism imports
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Context, Ref
 
 spark = (
     SparkSession.builder.appName("spark-test")
@@ -24,16 +24,16 @@ class PysparkTask(prism.task.PrismTask):
     # Run
     @prism.decorators.target(
         type=prism.target.PandasCsv,
-        loc=Path(CurrentRun.ctx("OUTPUT")) / "machinery_sample_filtered.csv",
+        loc=Path(Context("OUTPUT")) / "machinery_sample_filtered.csv",
         index=False,
     )
     @prism.decorators.target(
         type=prism.target.PandasCsv,
-        loc=Path(CurrentRun.ctx("OUTPUT")) / "household_sample_filtered.csv",
+        loc=Path(Context("OUTPUT")) / "household_sample_filtered.csv",
         index=False,
     )
     def run(self):
-        dfs = CurrentRun.ref("snowflake_task.SnowflakeTask")
+        dfs = Ref("snowflake_task.SnowflakeTask")
         machinery_df_pd = dfs[0]
         household_df_pd = dfs[1]
 

@@ -1,11 +1,7 @@
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Ref
 
 
 class Task04(prism.task.PrismTask):
     def run(self):
-        return (
-            CurrentRun.ref("task02.Task02")
-            + CurrentRun.ref("task03.Task03")
-            + "This is task 04. "
-        )  # noqa: E501
+        return Ref("task02.Task02") + Ref("task03.Task03") + "This is task 04. "  # noqa: E501

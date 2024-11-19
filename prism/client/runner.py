@@ -1,28 +1,29 @@
-from datetime import datetime
 import importlib
+import re
+import sys
+import traceback
+from datetime import datetime
 from io import StringIO
 from pathlib import Path
-import re
-import traceback
 from typing import Any, Callable, Dict, List, Union
-import sys
+
+import prism.logging.execution
+import prism.logging.loggers
+from prism.callbacks.callback import _PrismCallback
 
 # Prism-specific imports
 from prism.client.parser import ProjectParser
-from prism.callbacks.callback import _PrismCallback
 from prism.connectors.base import Connector
 from prism.db.mixins import DbMixin
 from prism.engine.executor import _DagExecutor
 from prism.engine.module import _PrismModule
-import prism.logging.execution
 from prism.logging.events import (
-    fire_header_events,
-    fire_section_event,
     fire_callback_events,
     fire_empty_line_event,
+    fire_header_events,
+    fire_section_event,
     fire_tail_events,
 )
-import prism.logging.loggers
 
 
 class ProjectRunner(DbMixin):
@@ -137,14 +138,18 @@ class ProjectRunner(DbMixin):
             self.project_dir, self.tasks_dir, self.all_tasks_downstream
         )
 
-        # Create CurrentRun object. This takes advantage of Python's import caching.
-        runtime = importlib.import_module("prism.runtime")
+        # Create runtime objects. This takes advantage of Python's import caching.
         # TODO: clean up this error
-        if not hasattr(runtime, "CurrentRun"):
-            raise ValueError("runtime does not have `CurrentRun` attribute!")
-        runtime.CurrentRun._setup(
-            run_id=self.run_id, runtime_ctx=self.runtime_ctx, connectors=self.connectors
-        )
+        runtime = importlib.import_module("prism.runtime")
+        if not hasattr(runtime, "Ref"):
+            raise ValueError("runtime does not have `Ref` attribute!")
+        if not hasattr(runtime, "Context"):
+            raise ValueError("runtime does not have `Context` attribute!")
+        if not hasattr(runtime, "Connection"):
+            raise ValueError("runtime does not have `Connection` attribute!")
+        runtime.Ref._setup(run_id=self.run_id, ref_data={})
+        runtime.Context._setup(run_id=self.run_id, runtime_ctx=self.runtime_ctx)
+        runtime.Connection._setup(run_id=self.run_id, connectors=self.connectors)
 
     def _parse_all_modules(
         self,

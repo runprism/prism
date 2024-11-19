@@ -5,14 +5,14 @@ import prism.target
 
 # Prism imports
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Context, Ref
 
 
 class Task02(prism.task.PrismTask):
     # Run
     @prism.decorators.target(
-        type=prism.target.Txt, loc=Path(CurrentRun.ctx("OUTPUT")) / "task02.txt"
+        type=prism.target.Txt, loc=Path(Context("OUTPUT")) / "task02.txt"
     )
     def run(self):
-        lines = CurrentRun.ref("module01.Task01")
+        lines = Ref("module01.Task01")
         return lines + "\n" + "Hello from task 2!"

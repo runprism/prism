@@ -5,7 +5,7 @@ import prism.target
 
 # Prism imports
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Ref
 
 
 class Task03(prism.task.PrismTask):
@@ -17,8 +17,8 @@ class Task03(prism.task.PrismTask):
 
     # Run
     def run(self):
-        d1 = CurrentRun.ref("module01.Task01")
+        d1 = Ref("module01.Task01")
         assert isinstance(d1, pd.DataFrame)
-        d2 = CurrentRun.ref("module02.Task02")
+        d2 = Ref("module02.Task02")
         assert isinstance(d2, pd.DataFrame)
         return "Hello from task 3!"

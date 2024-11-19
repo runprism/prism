@@ -5,14 +5,14 @@ import prism.target
 
 # Prism imports
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Connection, Context
 
 
 class BadAdapterTask(prism.task.PrismTask):
     # Run
     @prism.decorators.target(
         type=prism.target.PandasCsv,
-        loc=Path(CurrentRun.ctx("OUTPUT")) / "bad_adapter.csv",
+        loc=Path(Context("OUTPUT")) / "bad_adapter.csv",
         index=False,
     )
     def run(self):
@@ -24,6 +24,6 @@ class BadAdapterTask(prism.task.PrismTask):
             C_MKTSEGMENT = 'MACHINERY'
         LIMIT 50
         """
-        conn = CurrentRun.conn("snowflake_connector")
+        conn = Connection("snowflake_connector")
         df = conn.execute_sql(sql=sql, return_type="pandas")
         return df

@@ -1,15 +1,15 @@
-from prism.runtime import CurrentRun
+from prism.runtime import Ref
 from prism.task import PrismTask
 
 
 class TasksRefs(PrismTask):
     def func_0(self):
-        return CurrentRun.ref("func_0")
+        return Ref("func_0")
 
     def run(self):
-        _ = CurrentRun.ref("hello")
-        _ = CurrentRun.ref("world")
+        _ = Ref("hello")
+        _ = Ref("world")
         return "hi"
 
     def func_1(self):
-        return CurrentRun.ref("func_1")
+        return Ref("func_1")

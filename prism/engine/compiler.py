@@ -17,7 +17,7 @@ else:
 
 class _CompiledDag:
     """
-    Compiled DAG. This object stores the _CompiledTask instances associated with each
+    Compiled project. This object stores the _CompiledTask instances associated with each
     task in the project.
     """
 
@@ -82,7 +82,7 @@ class _CompiledDag:
 
 class _DagCompiler:
     """
-    Class that takes the `CurrentRun.ref(...)` calls and builds a topological sort for
+    Class that takes the `Ref(...)` calls and builds a topological sort for
     the tasks. For more information on topological sorts, check out here:
     https://en.wikipedia.org/wiki/Topological_sorting
     """
@@ -233,7 +233,7 @@ class _DagCompiler:
         Create nodes / edges from task connections
 
         args:
-            task_refs: connections defined via `CurrentRun.ref(...)` in tasks
+            task_refs: connections defined via `Ref(...)` in tasks
         outputs:
             nodes: list of nodes (tasks)
             edges: list of edges (tuple of nodes, i.e. tasks)
@@ -345,7 +345,7 @@ class _DagCompiler:
         parsed_module_objs: List[_PrismModule],
     ) -> Tuple[DiGraphType, List[str]]:
         """
-        Parse all `CurrentRun.ref(...) calls, create the DAG, and create a topological
+        Parse all `Ref(...) calls, create the DAG, and create a topological
         sort of the DAG
 
         args:

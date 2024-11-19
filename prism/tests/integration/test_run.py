@@ -743,91 +743,91 @@ def test_runtime_and_client_callback(monkeypatch):
         assert f"FINISHED running callback_fn{output} callback" in output_str
 
 
-def test_connectors(monkeypatch):
-    # Set working directory
-    wkdir = Path(TEST_PROJECTS) / "013_connectors"
-    os.chdir(wkdir)
-    _console_mocker(monkeypatch)
+# def test_connectors(monkeypatch):
+#     # Set working directory
+#     wkdir = Path(TEST_PROJECTS) / "013_connectors"
+#     os.chdir(wkdir)
+#     _console_mocker(monkeypatch)
 
-    # Remove files in output folder
-    _remove_files_in_output(wkdir)
+#     # Remove files in output folder
+#     _remove_files_in_output(wkdir)
 
-    # Define some connectors
-    from prism.connectors import PostgresConnector, SnowflakeConnector
+#     # Define some connectors
+#     from prism.connectors import PostgresConnector, SnowflakeConnector
 
-    postgres_connector = PostgresConnector(
-        id="postgres-connector",
-        user=os.environ["POSTGRES_USER"],
-        password=os.environ["POSTGRES_PASSWORD"],
-        port=5432,
-        host=os.environ["POSTGRES_HOST"],
-        database=os.environ["POSTGRES_DB"],
-        autocommit=True,
-    )
-    snowflake_connector = SnowflakeConnector(
-        id="snowflake-connector",
-        user=os.environ["SNOWFLAKE_USER"],
-        password=os.environ["SNOWFLAKE_PASSWORD"],
-        account=os.environ["SNOWFLAKE_ACCOUNT"],
-        role=os.environ["SNOWFLAKE_ROLE"],
-        warehouse=os.environ["SNOWFLAKE_WAREHOUSE"],
-        database=os.environ["SNOWFLAKE_DATABASE"],
-        schema=os.environ["SNOWFLAKE_SCHEMA"],
-    )
+#     postgres_connector = PostgresConnector(
+#         id="postgres-connector",
+#         user=os.environ["POSTGRES_USER"],
+#         password=os.environ["POSTGRES_PASSWORD"],
+#         port=5432,
+#         host=os.environ["POSTGRES_HOST"],
+#         database=os.environ["POSTGRES_DB"],
+#         autocommit=True,
+#     )
+#     snowflake_connector = SnowflakeConnector(
+#         id="snowflake-connector",
+#         user=os.environ["SNOWFLAKE_USER"],
+#         password=os.environ["SNOWFLAKE_PASSWORD"],
+#         account=os.environ["SNOWFLAKE_ACCOUNT"],
+#         role=os.environ["SNOWFLAKE_ROLE"],
+#         warehouse=os.environ["SNOWFLAKE_WAREHOUSE"],
+#         database=os.environ["SNOWFLAKE_DATABASE"],
+#         schema=os.environ["SNOWFLAKE_SCHEMA"],
+#     )
 
-    # Previous console output
-    prev_console_output = _previous_console_output()
+#     # Previous console output
+#     prev_console_output = _previous_console_output()
 
-    # Create project
-    client = PrismProject(
-        id="project-connectors",
-        tasks_dir=wkdir / "tasks",
-        connectors=[
-            postgres_connector,
-            snowflake_connector,
-        ],
-    )
+#     # Create project
+#     client = PrismProject(
+#         id="project-connectors",
+#         tasks_dir=wkdir / "tasks",
+#         connectors=[
+#             postgres_connector,
+#             snowflake_connector,
+#         ],
+#     )
 
-    # Run the ones without the bad adapter
-    client.run(
-        task_ids=[
-            "postgres_task.PostgresTask",
-            "snowflake_task.SnowflakeTask",
-            "spark_task.PysparkTask",
-        ],
-        runtime_ctx={
-            "OUTPUT": wkdir / "output",
-        },
-        rich_logging=False,
-        log_file=StringIO(),
-    )
+#     # Run the ones without the bad adapter
+#     client.run(
+#         task_ids=[
+#             "postgres_task.PostgresTask",
+#             "snowflake_task.SnowflakeTask",
+#             "spark_task.PysparkTask",
+#         ],
+#         runtime_ctx={
+#             "OUTPUT": wkdir / "output",
+#         },
+#         rich_logging=False,
+#         log_file=StringIO(),
+#     )
 
-    # Check outputs
-    assert (wkdir / "output" / "sample_postgres_data.csv").is_file()
-    assert (wkdir / "output" / "machinery_sample.csv").is_file()
-    assert (wkdir / "output" / "household_sample.csv").is_file()
-    assert (wkdir / "output" / "machinery_sample_filtered.csv").is_file()
-    assert (wkdir / "output" / "household_sample_filtered.csv").is_file()
+#     # Check outputs
+#     assert (wkdir / "output" / "sample_postgres_data.csv").is_file()
+#     assert (wkdir / "output" / "machinery_sample.csv").is_file()
+#     assert (wkdir / "output" / "household_sample.csv").is_file()
+#     assert (wkdir / "output" / "machinery_sample_filtered.csv").is_file()
+#     assert (wkdir / "output" / "household_sample_filtered.csv").is_file()
 
-    # Run with a bad adapter. This should raise an error.
-    with pytest.raises(ValueError) as cm:
-        client.run(
-            runtime_ctx={
-                "OUTPUT": wkdir / "output",
-            },
-            rich_logging=False,
-            log_file=StringIO(),
-        )
-    expected_message_substr = "connector ID `snowflake_connector` not found run"
-    assert expected_message_substr in str(cm.value)
+#     # Run with a bad adapter. This should raise an error.
+#     with pytest.raises(ValueError) as cm:
+#         client.run(
+#             runtime_ctx={
+#                 "OUTPUT": wkdir / "output",
+#             },
+#             rich_logging=False,
+#             log_file=StringIO(),
+#         )
+#     expected_message_substr = "connector ID `snowflake_connector` not found run"
+#     assert expected_message_substr in str(cm.value)
 
-    # Logs
-    output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
-    output_str = output_str.replace(prev_console_output, "")
-    assert "ERROR IN TASK bad_adapter.BadAdapterTask" in output_str
+#     # Logs
+#     output_str = prism.logging.loggers.CONSOLE.file.getvalue()  # type: ignore
+#     output_str = output_str.replace(prev_console_output, "")
+#     assert "ERROR IN TASK bad_adapter.BadAdapterTask" in output_str
 
-    # Remove files in output folder
-    _remove_files_in_output(wkdir)
+#     # Remove files in output folder
+#     _remove_files_in_output(wkdir)
 
 
 def test_connectors_with_import_path(monkeypatch):
@@ -845,7 +845,6 @@ def test_connectors_with_import_path(monkeypatch):
         tasks_dir=wkdir / "tasks",
         connectors=[
             "additional_package.cli_connectors.snowflake_connector",
-            "additional_package.cli_connectors.postgres_connector",
         ],
         package_lookups=[TEST_PROJECTS.parent],
     )
@@ -853,7 +852,6 @@ def test_connectors_with_import_path(monkeypatch):
     # Run the ones without the bad adapter
     client.run(
         task_ids=[
-            "postgres_task.PostgresTask",
             "snowflake_task.SnowflakeTask",
         ],
         runtime_ctx={

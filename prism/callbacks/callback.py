@@ -19,7 +19,7 @@ class _PrismCallback:
 
         # Check if the argument as any args. If it does, raise an error. For now, users
         # cannot specify arguments in a callback function. They can access information
-        # about the run that triggered the callback via the `CurrentRun` object.
+        # about the run that triggered the callback via runtime objects.
         signature = inspect.signature(self.callback_func)
         args = list(signature.parameters.keys())
         if len(args) > 0:

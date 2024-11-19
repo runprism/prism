@@ -7,14 +7,14 @@ import prism.target
 
 # Prism imports
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Context
 
 
 class Task01(prism.task.PrismTask):
     # Run
     @prism.decorators.target(
         type=prism.target.PandasCsv,
-        loc=CurrentRun.ctx("OUTPUT") / "task01.csv",
+        loc=Context("OUTPUT") / "task01.csv",
         index=False,
     )
     def run(self):

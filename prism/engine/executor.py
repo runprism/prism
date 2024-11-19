@@ -1,5 +1,7 @@
 # Standard library imports
+import importlib
 import time
+from multiprocessing import Manager
 from multiprocessing.dummy import Pool
 from typing import Optional, Union
 
@@ -150,10 +152,17 @@ class _DagExecutor(DbMixin):
         self._wait_and_return = False
         self.error_event: Optional[BaseException] = None
 
+        # Runtime object
+        runtime = importlib.import_module("prism.runtime")
+        if not hasattr(runtime, "Ref"):
+            raise ValueError("runtime does not have `Ref` attribute!")
+
         def callback(result: Union[PrismTask, BaseException]):
             if isinstance(result, BaseException):
                 self._wait_and_return = True
                 self.error_event = result
+            else:
+                runtime.Ref._set_task_output_value(result.task_id, result.get_output())
             return
 
         # If single-threaded, just run the tasks in order
@@ -169,6 +178,9 @@ class _DagExecutor(DbMixin):
         # If the pool has multiple threads, then iterate through tasks and add them to
         # the Pool
         else:
+            manager = Manager()
+            shared_memory = manager.dict()
+            runtime.Ref._refs = shared_memory  # type: ignore
             async_results = {}
             with Pool(processes=self.threads) as pool:
                 while self.compiled_tasks != []:

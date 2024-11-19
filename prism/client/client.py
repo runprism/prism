@@ -50,10 +50,11 @@ class PrismProject(DbMixin):
             directory.
         - `version`: project version. Defaults to 1.0.
         - `connectors`: list of connectors to use in your project. These can be accessed
-            at runtime `CurrentRun.conn(...)`. Using connectors prevents you from having
-            to define your connection class in each module. Connectors should either be
-            specified as a Connector object or as a string representing the import path
-            to the Connector object.
+            at runtime `prism.runtime.Connection(...)`. Connectors are not required, but
+            enable users to easily use Singletons in their projects. That is, using
+            connectors prevents you from having to define your connection class in each
+            module. Connectors should either be specified as a Connector object or as a
+            string representing the import path to the Connector object.
         - `concurrency`: number of threads to use when running tasks. Default is `1`
             (i.e., single-threaded)
         - `tasks_dir`: directory containing tasks. Default is the "tasks" folder in the

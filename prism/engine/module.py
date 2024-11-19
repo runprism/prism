@@ -33,7 +33,7 @@ def _get_func_args(func: ast.FunctionDef) -> List[str]:
 class _Ref:
     """
     Source refers to the referenced task and target refers to the task that calls
-    `CurrentRun.ref(...)`. This is how the ref will be represented in the topological
+    `Ref(...)`. This is how the ref will be represented in the topological
     sort.
     """
 
@@ -402,13 +402,13 @@ class _PrismModule:
 
     def get_task_id_from_ref_call(self, parent_task_id: str, ref_call: ast.Call) -> str:
         """
-        Parse the args / kwargs `CurrentRun.ref(...)` calls and get the argument
+        Parse the args / kwargs `Ref(...)` calls and get the argument
         value. The argument value should be a string, and it represents a task ID whose
         output the user wants to retrieve.
 
         args:
             parent_task_id: task ID of the parent task (i.e., the task that contains the
-                `CurrentRun.ref()` call))
+                `Ref()` call))
             ref_call: `PrismRef.get` call as an ast.Call object
         returns:
             task_id
@@ -417,19 +417,19 @@ class _PrismModule:
         kwargs = ref_call.keywords
         if len(args) + len(kwargs) > 1:
             raise prism.exceptions.ReferenceException(
-                message=f"too many arguments in `CurrentRun.ref()` in task `{parent_task_id}`"  # noqa: E501
+                message=f"too many arguments in `Ref()` in task `{parent_task_id}`"  # noqa: E501
             )
 
         # Check args
         for _arg in args:
             if not hasattr(_arg, "value"):
                 raise prism.exceptions.PrismASTException(
-                    call_name="CurrentRun.ref()", attribute="value"
+                    call_name="Ref()", attribute="value"
                 )
             task_id_arg = _arg.value
             if not isinstance(task_id_arg, str):
                 raise prism.exceptions.ReferenceException(
-                    message=f"Error in `CurrentRun.ref()` call in `{parent_task_id}`: `task_id` must be a string!"  # noqa: E501
+                    message=f"Error in `Ref()` call in `{parent_task_id}`: `task_id` must be a string!"  # noqa: E501
                 )
             return task_id_arg
 
@@ -439,18 +439,18 @@ class _PrismModule:
                 tmp_value = _kw.value.value
                 if _kw.arg != "task_id":
                     raise prism.exceptions.ReferenceException(
-                        message=f"Error in `CurrentRun.ref()` call in `{parent_task_id}`: unrecognized argument `{_kw.arg}`"  # noqa: E501
+                        message=f"Error in `Ref()` call in `{parent_task_id}`: unrecognized argument `{_kw.arg}`"  # noqa: E501
                     )
                 task_id_kw = tmp_value
                 if not isinstance(task_id_kw, str):
                     raise prism.exceptions.ReferenceException(
-                        message=f"Error in `CurrentRun.ref()` call in `{parent_task_id}`: `task_id` must be a string!"  # noqa: E501
+                        message=f"Error in `Ref()` call in `{parent_task_id}`: `task_id` must be a string!"  # noqa: E501
                     )
                 return task_id_kw
 
         # If nothing has been returned, raise
         raise prism.exceptions.ReferenceException(
-            message=f"could not parse task ID from `CurrentRun.ref()` in task `{parent_task_id}`"  # noqa: E501
+            message=f"could not parse task ID from `Ref()` in task `{parent_task_id}`"  # noqa: E501
         )
 
     def get_task_ids_from_refs(
@@ -459,18 +459,18 @@ class _PrismModule:
         func: ast.FunctionDef,
     ) -> List[str]:
         """
-        Parse task IDs within `CurrentRun.ref(...)` calls within `func`. Note that these
+        Parse task IDs within `Ref(...)` calls within `func`. Note that these
         could appear within the functions arguments / keyword arguments or within the
         function definition itself.
 
         args:
             func: run function represented as an ast.FunctionDef object
         returns:
-            list of task IDs used in `CurrentRun.ref(...)` cals
+            list of task IDs used in `Ref(...)` cals
         """
         task_ids: List[str] = []
 
-        # `CurrentRun.ref(...)` calls are represented as ast.Call objects. Iterate
+        # `Ref(...)` calls are represented as ast.Call objects. Iterate
         # through function calls
         all_call_objs = [n for n in ast.walk(func) if isinstance(n, ast.Call)]
         for c in all_call_objs:
@@ -498,7 +498,7 @@ class _PrismModule:
                                     break
                                 current_obj = current_obj.value
 
-                    # If it is a `CurrentRun.ref(...)` call, then parse the task ID
+                    # If it is a `Ref(...)` call, then parse the task ID
                     if bool_is_ref_call:
                         ref_task_arg = self.get_task_id_from_ref_call(
                             parent_task_id=parent_task_id, ref_call=c
@@ -649,10 +649,10 @@ class _PrismModule:
 
     def parse(self, task_id: str) -> _ModuleRefsAndTargets:
         """
-        Parse all `CurrentRun.ref(...)` calls in `task_id`
+        Parse all `Ref(...)` calls in `task_id`
 
         args:
-            task_id: task ID in which to look for `CurrentRun.ref(...)` calls
+            task_id: task ID in which to look for `Ref(...)` calls
         returns:
             task references as a dictionary
         """
@@ -690,7 +690,7 @@ class _PrismModule:
         # Parse targets
         target_locs = self.get_targets(node, run_func)
 
-        # Iterate through all functions and get `CurrentRun.ref(...)` calls
+        # Iterate through all functions and get `Ref(...)` calls
         curr_task_funcs = self.get_all_funcs(node)
         curr_task_refs: List[_Ref] = []
         for func in curr_task_funcs:

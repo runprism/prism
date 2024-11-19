@@ -2,11 +2,11 @@
 import prism.decorators
 import prism.target
 import prism.task
-from prism.runtime import CurrentRun
+from prism.runtime import Ref
 
 
 class Task03(prism.task.PrismTask):
     # Run
     def run(self):
-        lines = CurrentRun.ref("extract/module02.Task02")
+        lines = Ref("extract/module02.Task02")
         return lines + "\n" + "Hello from task 3!"

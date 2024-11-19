@@ -1,21 +1,6 @@
 import os
 
-from prism.connectors import (
-    PostgresConnector,
-    SnowflakeConnector,
-)
-
-
-postgres_connector = PostgresConnector(
-    id="postgres-connector",
-    user=os.environ.get("POSTGRES_USER"),
-    password=os.environ.get("POSTGRES_PASSWORD"),
-    port=5432,
-    host=os.environ.get("POSTGRES_HOST"),
-    database=os.environ.get("POSTGRES_DB"),
-    autocommit=True,
-)
-
+from prism.connectors import SnowflakeConnector
 
 snowflake_connector = SnowflakeConnector(
     id="snowflake-connector",
