@@ -55,4 +55,4 @@ class _Connection:
 
 
 if __name__ != "__main__":
-    Connection: _Connection = _Connection({})
+    Connection: _Connection = _Connection()

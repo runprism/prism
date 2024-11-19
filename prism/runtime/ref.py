@@ -41,4 +41,4 @@ class _Ref:
 
 
 if __name__ != "__main__":
-    Ref: _Ref = _Ref({})
+    Ref: _Ref = _Ref()

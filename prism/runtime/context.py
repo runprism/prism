@@ -49,4 +49,4 @@ class _Context:
 
 
 if __name__ != "__main__":
-    Context: _Context = _Context({})
+    Context: _Context = _Context()
