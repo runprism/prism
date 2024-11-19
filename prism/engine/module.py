@@ -30,7 +30,7 @@ def _get_func_args(func: ast.FunctionDef) -> List[str]:
 
 
 @dataclass
-class _Ref:
+class _TaskRef:
     """
     Source refers to the referenced task and target refers to the task that calls
     `Ref(...)`. This is how the ref will be represented in the topological
@@ -43,7 +43,7 @@ class _Ref:
 
 @dataclass
 class _ModuleRefsAndTargets:
-    refs: List[_Ref]
+    refs: List[_TaskRef]
     targets: List[str]
 
 
@@ -409,7 +409,7 @@ class _PrismModule:
         args:
             parent_task_id: task ID of the parent task (i.e., the task that contains the
                 `Ref()` call))
-            ref_call: `PrismRef.get` call as an ast.Call object
+            ref_call: `Ref` as an ast.Call object
         returns:
             task_id
         """
@@ -453,6 +453,40 @@ class _PrismModule:
             message=f"could not parse task ID from `Ref()` in task `{parent_task_id}`"  # noqa: E501
         )
 
+    def _is_ref_call(self, call: ast.Call) -> bool:
+        # The call object can be an ast.Name, i.e.,
+        # ```python`
+        # from prism.runtime import Ref
+        # ...
+        # def test_fn():
+        #     task_id = Ref(...)
+        # ```
+
+        # OR, an ast.Attribute, .e.,
+        # ```python`
+        # import prism.runtime
+        # ...
+        # def test_fn():
+        #     task_id = prism.runtime.Ref(...)
+        # ```
+        # Handle ast.name
+        if isinstance(call.func, ast.Name):
+            if call.func.id == "Ref":
+                return True
+
+        # If it's an attribute, make sure it's being called by prism.runtime
+        elif isinstance(call.func, ast.Attribute):
+            if call.func.attr == "Ref":
+                current_obj: ast.expr = call.func.value
+                while isinstance(current_obj, ast.Attribute):
+                    current_obj = current_obj.value
+                if isinstance(current_obj, ast.Name) and current_obj.id in [
+                    "prism",
+                    "runtime",
+                ]:
+                    return True
+        return False
+
     def get_task_ids_from_refs(
         self,
         parent_task_id: str,
@@ -474,41 +508,19 @@ class _PrismModule:
         # through function calls
         all_call_objs = [n for n in ast.walk(func) if isinstance(n, ast.Call)]
         for c in all_call_objs:
-            bool_is_ref_call: bool = False
+            try:
+                # If it is a `Ref(...)` call, then parse the task ID
+                bool_is_ref_call = self._is_ref_call(c)
+                if bool_is_ref_call:
+                    ref_task_arg = self.get_task_id_from_ref_call(
+                        parent_task_id=parent_task_id, ref_call=c
+                    )
+                    task_ids.append(ref_task_arg)
 
-            # The call object must be an ast.Attribute, and the value of this attribute
-            # must be "ref". If it isn't, then we don't care about it.
-            if not isinstance(c.func, ast.Attribute):
+            # If we encounter an Attribute error, then the call object producing the
+            # error is not of interest to us. Skip.
+            except AttributeError:
                 continue
-            else:
-                try:
-                    if c.func.attr == "ref":
-                        # Make sure that the `CurrentRun` object is calling the `ref`
-                        # attribute.
-                        current_obj = c.func.value
-                        if isinstance(current_obj, ast.Name):
-                            if current_obj.id == "CurrentRun":
-                                bool_is_ref_call = True
-                        elif isinstance(current_obj, ast.Attribute):
-                            while hasattr(current_obj, "value") and isinstance(
-                                current_obj, ast.Attribute
-                            ):  # noqa: W503
-                                if current_obj.attr == "CurrentRun":
-                                    bool_is_ref_call = True
-                                    break
-                                current_obj = current_obj.value
-
-                    # If it is a `Ref(...)` call, then parse the task ID
-                    if bool_is_ref_call:
-                        ref_task_arg = self.get_task_id_from_ref_call(
-                            parent_task_id=parent_task_id, ref_call=c
-                        )
-                        task_ids.append(ref_task_arg)
-
-                # If we encounter an Attribute error, then the call object producing the
-                # error is not of interest to us. Skip.
-                except AttributeError:
-                    continue
 
         return task_ids
 
@@ -692,10 +704,10 @@ class _PrismModule:
 
         # Iterate through all functions and get `Ref(...)` calls
         curr_task_funcs = self.get_all_funcs(node)
-        curr_task_refs: List[_Ref] = []
+        curr_task_refs: List[_TaskRef] = []
         for func in curr_task_funcs:
             curr_func_task_refs = self.get_task_ids_from_refs(task_id, func)
-            ref_objs = [_Ref(target=task_id, source=r) for r in curr_func_task_refs]
+            ref_objs = [_TaskRef(target=task_id, source=r) for r in curr_func_task_refs]
             curr_task_refs.extend(ref_objs)
 
         return _ModuleRefsAndTargets(refs=curr_task_refs, targets=target_locs)
