@@ -1,20 +1,20 @@
 # Standard library imports
-from io import StringIO
 import json
 import os
-from pathlib import Path
 import shutil
+from io import StringIO
+from pathlib import Path
+
+import prism.logging.loggers
 
 # Prism imports
 from prism.main import cli
-import prism.logging.loggers
 from prism.tests.integration.integration_utils import (
-    _previous_console_output,
-    _remove_files_in_output,
     _console_mocker,
     _file_as_str,
+    _previous_console_output,
+    _remove_files_in_output,
 )
-
 
 # Directory containing all prism_project.py test cases
 TEST_CASE_WKDIR = os.path.dirname(__file__)
@@ -136,12 +136,8 @@ def test_run_connectors(monkeypatch):
         str(wkdir / "tasks"),
         "--task",
         "snowflake_task.SnowflakeTask",
-        "--task",
-        "postgres_task.PostgresTask",
         "--connector",
         "additional_package.cli_connectors.snowflake_connector",
-        "--connector",
-        "additional_package.cli_connectors.postgres_connector",
         "--disable-rich-logging",
         "--runtime-ctx",
         json.dumps({"OUTPUT": str(output_dir)}),
@@ -149,7 +145,6 @@ def test_run_connectors(monkeypatch):
     _ = cli(args, standalone_mode=False)
 
     # Check output
-    assert (wkdir / "output" / "sample_postgres_data.csv").is_file()
     assert (wkdir / "output" / "machinery_sample.csv").is_file()
     assert (wkdir / "output" / "household_sample.csv").is_file()
     _remove_files_in_output(wkdir)

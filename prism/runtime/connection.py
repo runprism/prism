@@ -23,6 +23,7 @@ class _Connection:
         pass
 
     def _set_connectors(self, connectors: List[Connector]):
+        self.connectors: Dict[str, Connector] = {}
         for conn in connectors:
             self.connectors[conn.id] = conn
 
