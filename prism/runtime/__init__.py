@@ -8,5 +8,6 @@
 # allows a task's output to persist across tasks.
 
 from .connection import *  # noqa: F401, F403
+from .context import *  # noqa: F401, F403
 from .current_run import *  # noqa: F401, F403
 from .ref import *  # noqa: F401, F403
