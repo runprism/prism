@@ -10,9 +10,8 @@ class _Connection:
         from prism.runtime import Connection
     ```
 
-    Connection stores contextual variables for that tasks can access during runtime.
-    This includes variables that the user specifies in their client definition and
-    connectors.
+    Connection stores Singleton connections to external data sources, e.g., Snowflake,
+    Redshift, Postgres, etc.ß
     """
 
     run_id: str

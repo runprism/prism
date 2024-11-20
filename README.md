@@ -32,7 +32,7 @@ Here are some of Prism's main features:
 - **Intuitive logging**: Prism automatically logs events for parsing the configuration files, compiling the tasks and creating the DAG, and executing the tasks. No configuration is required.
 - **Flexible CLI**: Users can instantiate, compile, and run projects using a simple, but powerful command-line interface.
 - **“Batteries included”**: Prism comes with all the essentials needed to get up and running quickly. Users can create and run their first DAG in less than 2 minutes.
-- **Integrations**: Prism integrates with several tools that are popular in the data community, including Snowflake, Google BigQuery, Redshift, PySpark, and dbt. We're adding more integrations every day, so let us know what you'd like to see!
+- **Integrations**: Prism integrates with several tools that are popular in the data community, including Snowflake, Google BigQuery, Redshift, and PySpark. We're adding more integrations every day, so let us know what you'd like to see!
 
 
 ## Getting Started
