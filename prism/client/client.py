@@ -3,6 +3,8 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
+from rich.console import Console
+
 # Prism-specific imports
 from prism.admin import generate_run_id, generate_run_slug
 from prism.client.runner import ProjectRunner
@@ -25,6 +27,8 @@ class PrismProject(DbMixin):
     on_failure: List[Union[str, Callable[[], Any]]]
     ctx: Dict[str, Any]
     project_dir: Path
+
+    _console: Console
 
     def __init__(
         self,
@@ -195,7 +199,7 @@ class PrismProject(DbMixin):
             )  # noqa: E501
         if isinstance(log_file, Path):
             Path(log_file).parent.mkdir(exist_ok=True)
-        console = set_up_logger(log_level, log_file, rich_logging)
+        self._console = set_up_logger(log_level, log_file, rich_logging)
         self.ctx.update(runtime_ctx)
 
         # Add the tasks directory (and its parent) to the `package_lookups` attribute
@@ -225,6 +229,6 @@ class PrismProject(DbMixin):
             on_success=on_success + self.on_success,
             on_failure=on_failure + self.on_failure,
             full_refresh=full_refresh,
-            console=console,
+            console=self._console,
         )
         runner.run()

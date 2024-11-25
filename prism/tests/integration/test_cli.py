@@ -1,6 +1,7 @@
 # Standard library imports
 import json
 import os
+import re
 import shutil
 from io import StringIO
 from pathlib import Path
@@ -86,14 +87,12 @@ def test_run_callbacks():
         with mock.patch(
             "prism.logging.events.fire_console_event"
         ) as mock_fire_console_event:
-            import re
-
             mock_console.return_value = MockConsole()
             mock_fire_console_event.side_effect = (
                 lambda x,
                 sleep=0.01,
                 log_level="info": mock_console.return_value.messages.append(
-                    re.sub(r"\[[\/a-z\s]+\]", "", x.message())
+                    re.sub(r"\[[\/a-z0-9\s]+\]", "", x.message())
                 )
             )
 
