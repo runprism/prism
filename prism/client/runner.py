@@ -7,6 +7,8 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Union
 
+from rich.console import Console
+
 import prism.logging.execution
 import prism.logging.loggers
 from prism.callbacks.callback import _PrismCallback
@@ -44,6 +46,7 @@ class ProjectRunner(DbMixin):
     on_success: List[Union[str, Callable[[], Any]]]
     on_failure: List[Union[str, Callable[[], Any]]]
     full_refresh: bool
+    console: Console
 
     on_success_callbacks: List[_PrismCallback]
     on_failure_callbacks: List[_PrismCallback]
@@ -68,6 +71,7 @@ class ProjectRunner(DbMixin):
         on_success: List[Union[str, Callable[[], Any]]],
         on_failure: List[Union[str, Callable[[], Any]]],
         full_refresh: bool,
+        console: Console,
     ):
         self.project_dir = project_dir
         self.project_id = project_id
@@ -84,6 +88,7 @@ class ProjectRunner(DbMixin):
         self.on_success = on_success
         self.on_failure = on_failure
         self.full_refresh = full_refresh
+        self.console = console
 
         # Update database
         if isinstance(log_file, StringIO):
@@ -190,6 +195,7 @@ class ProjectRunner(DbMixin):
             for mod in parsed_module_objs:
                 num_tasks += len(mod.prism_task_nodes.keys())
             fire_header_events(
+                console=self.console,
                 project_id=self.project_id,
                 run_slug=self.run_slug,
                 num_tasks=num_tasks,
@@ -232,7 +238,7 @@ class ProjectRunner(DbMixin):
             )
 
             # Execute the tasks in their topological sort
-            fire_section_event(section_title="Tasks")
+            fire_section_event(console=self.console, section_title="Tasks")
             dag_executor = _DagExecutor(
                 compiled_dag=compiled_dag,
                 user_arg_all_upstream=self.all_tasks_upstream,
@@ -245,11 +251,9 @@ class ProjectRunner(DbMixin):
 
             # Callbacks
             if self.on_success_callbacks:
-                fire_section_event(section_title="Callbacks")
+                fire_section_event(console=self.console, section_title="Callbacks")
                 fire_callback_events(self.run_slug, "on_success")
-                fire_empty_line_event()
-
-                # fire_section_event()
+                fire_empty_line_event(self.console)
                 for scb in self.on_success_callbacks:
                     scb_em = prism.logging.execution._ExecutionEventManager(
                         idx=None,
@@ -302,15 +306,15 @@ class ProjectRunner(DbMixin):
             for dmod in mods_to_del:
                 del sys.modules[str(dmod)]
 
-            fire_tail_events()
+            fire_tail_events(self.console)
             return None
         except Exception:
             super().update_run_status(self.run_slug, self.project_id, "FAILED")
 
             if self.on_failure_callbacks:
-                fire_section_event(section_title="Callbacks")
+                fire_section_event(console=self.console, section_title="Callbacks")
                 fire_callback_events(self.run_slug, "on_failure")
-                fire_empty_line_event()
+                fire_empty_line_event(self.console)
                 for fcb in self.on_failure_callbacks:
                     fcb_em = prism.logging.execution._ExecutionEventManager(
                         idx=None,
@@ -326,6 +330,9 @@ class ProjectRunner(DbMixin):
                     sys.path.remove(str(path))
                 except ValueError:
                     pass
+
+            if self.rich_logging:
+                self.console.print_exception(show_locals=False, width=120)
 
             # In addition, remove all the task modules that were imported
             mods_to_del = []
@@ -350,12 +357,9 @@ class ProjectRunner(DbMixin):
             # Silently log the traceback so that it appears in our file
             exc_type, exc_value, tb = sys.exc_info()
             tb_stack = traceback.format_exception(exc_type, exc_value, tb, limit=None)
-            prism.logging.loggers.console_print(tb_stack)
+            prism.logging.loggers.console_print(self.console, tb_stack)
 
             if self.rich_logging:
-                prism.logging.loggers.CONSOLE.print_exception(
-                    show_locals=False, width=120
-                )
                 sys.exit(1)
             else:
                 raise

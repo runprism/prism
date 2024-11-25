@@ -7,9 +7,6 @@ import rich
 import rich_click as click
 
 # Prism imports
-import prism.constants
-import prism.exceptions
-import prism.logging.loggers
 from prism.cli.init import initialize_project
 from prism.client.client import PrismProject
 
@@ -37,9 +34,8 @@ def init(project_name, log_level):
     try:
         initialize_project(project_name, log_level)
     except Exception:
-        prism.logging.loggers.CONSOLE.print_exception(
-            show_locals=False, suppress=[prism], width=120
-        )
+        console = rich.console.Console()
+        console.print_exception()
         sys.exit(1)
 
 

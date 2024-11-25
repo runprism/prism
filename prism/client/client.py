@@ -116,7 +116,7 @@ class PrismProject(DbMixin):
         hot_reload: bool = True,
         log_level: Literal["info", "warning", "error", "debug", "critical"] = "info",
     ):
-        set_up_logger(log_level, None)
+        console = set_up_logger(log_level, None)
         visualizer = PrismVisualizer(
             project_id=self.id,
             project_dir=self.project_dir,
@@ -124,6 +124,7 @@ class PrismProject(DbMixin):
             port=port,
             open_window=open_window,
             hot_reload=hot_reload,
+            console=console,
         )
         visualizer.graph()
 
@@ -194,7 +195,7 @@ class PrismProject(DbMixin):
             )  # noqa: E501
         if isinstance(log_file, Path):
             Path(log_file).parent.mkdir(exist_ok=True)
-        set_up_logger(log_level, log_file, rich_logging)
+        console = set_up_logger(log_level, log_file, rich_logging)
         self.ctx.update(runtime_ctx)
 
         # Add the tasks directory (and its parent) to the `package_lookups` attribute
@@ -224,5 +225,6 @@ class PrismProject(DbMixin):
             on_success=on_success + self.on_success,
             on_failure=on_failure + self.on_failure,
             full_refresh=full_refresh,
+            console=console,
         )
         runner.run()

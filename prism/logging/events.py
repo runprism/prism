@@ -1,5 +1,6 @@
 # General package imports
 import copy
+import logging
 import math
 import os
 import re
@@ -8,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Optional
 
+from rich.console import Console
+
 # Prism imports
 import prism.constants
 import prism.exceptions
@@ -15,6 +18,9 @@ import prism.logging.loggers
 
 # Terminal width
 TERMINAL_WIDTH = 80
+
+
+logger = logging.getLogger("prism")
 
 
 # Util functions
@@ -319,47 +325,38 @@ def fire_console_event(
     """
     if event is not None:
         if log_level == "info":
-            prism.logging.loggers.DEFAULT_LOGGER.info(
-                event.message(), extra={"highlighter": None}
-            )
+            logger.info(event.message(), extra={"highlighter": None})
         elif log_level == "warning":
-            prism.logging.loggers.DEFAULT_LOGGER.warning(
-                event.message(), extra={"highlighter": None}
-            )
+            logger.warning(event.message(), extra={"highlighter": None})
         elif log_level == "error":
-            prism.logging.loggers.DEFAULT_LOGGER.error(
-                event.message(), extra={"highlighter": None}
-            )
+            logger.error(event.message(), extra={"highlighter": None})
         elif log_level == "debug":
-            prism.logging.loggers.DEFAULT_LOGGER.debug(
-                event.message(), extra={"highlighter": None}
-            )
+            logger.debug(event.message(), extra={"highlighter": None})
         elif log_level == "critical":
-            prism.logging.loggers.DEFAULT_LOGGER.critical(
-                event.message(), extra={"highlighter": None}
-            )
+            logger.critical(event.message(), extra={"highlighter": None})
 
     # Sleep
     time.sleep(sleep)
 
 
-def fire_init_events():
+def fire_init_events(console: Console):
     # These are super similar to the header events, but we don't want to log them, we
     # want to print them.
-    prism.logging.loggers.console_print("[bold]" + "━" * 100 + "[/bold]")
-    prism.logging.loggers.console_print(RunningWithPrismEvent().message())
+    prism.logging.loggers.console_print(console, "[bold]" + "━" * 100 + "[/bold]")
+    prism.logging.loggers.console_print(console, RunningWithPrismEvent().message())
 
 
-def fire_empty_line_event(n: int = 1) -> None:
+def fire_empty_line_event(console: Console, n: int = 1) -> None:
     """
     Fire an empty line in the console
     """
-    if prism.logging.loggers.DEFAULT_LOGGER.level <= 20:
+    if logger.level <= 20:
         for _ in range(n):
-            prism.logging.loggers.console_print("")
+            prism.logging.loggers.console_print(console, "")
 
 
 def fire_header_events(
+    console: Console,
     project_id: Optional[str],
     run_slug: Optional[str],
     num_modules: Optional[int],
@@ -368,7 +365,7 @@ def fire_header_events(
     """
     Fire an empty line in the console
     """
-    prism.logging.loggers.console_print("[bold]" + "━" * 100 + "[/bold]")
+    prism.logging.loggers.console_print(console, "[bold]" + "━" * 100 + "[/bold]")
     fire_console_event(RunningWithPrismEvent())
     if project_id and run_slug:
         fire_console_event(CreatingRunEvent(run_slug=run_slug, project_id=project_id))
@@ -378,27 +375,27 @@ def fire_header_events(
                 num_tasks=num_tasks, num_modules=num_modules, run_slug=run_slug
             )
         )
-    fire_empty_line_event()
+    fire_empty_line_event(console)
 
 
-def fire_section_event(section_title: str):
-    fire_empty_line_event()
+def fire_section_event(console: Console, section_title: str):
+    fire_empty_line_event(console)
     prism.logging.loggers.console_print(
-        SectionEvent(section_title=section_title).message()
+        console, SectionEvent(section_title=section_title).message()
     )
 
 
-def fire_serving_docs_events(address: str, port: int):
-    fire_empty_line_event()
+def fire_serving_docs_events(console: Console, address: str, port: int):
+    fire_empty_line_event(console)
     fire_console_event(ServingDocsEvent(address=address, port=port), log_level="info")
     fire_console_event(ServingDocsExitInfo(), log_level="info")
-    fire_empty_line_event()
+    fire_empty_line_event(console)
 
 
-def fire_reload_docs_event():
-    fire_empty_line_event()
-    fire_console_event(DocsReloadedEvent())
-    fire_empty_line_event()
+def fire_reload_docs_event(console: Console):
+    fire_empty_line_event(console)
+    fire_console_event(console, DocsReloadedEvent())
+    fire_empty_line_event(console)
 
 
 def fire_callback_events(
@@ -412,10 +409,10 @@ def fire_callback_events(
         fire_console_event(FailureCallbackEvent())
 
 
-def fire_tail_events() -> None:
+def fire_tail_events(console: Console) -> None:
     """
     Fire an empty line in the console
     """
-    fire_empty_line_event()
-    prism.logging.loggers.console_print("[bold green]Done![/bold green]")
-    prism.logging.loggers.console_print("[bold]" + "━" * 100 + "[/bold]")
+    fire_empty_line_event(console)
+    prism.logging.loggers.console_print(console, "[bold green]Done![/bold green]")
+    prism.logging.loggers.console_print(console, "[bold]" + "━" * 100 + "[/bold]")

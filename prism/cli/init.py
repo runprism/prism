@@ -55,13 +55,13 @@ def initialize_project(
     returns:
         None
     """
-    set_up_logger(log_level, None)
-    fire_init_events()
+    console = set_up_logger(log_level, None)
+    fire_init_events(console)
 
     # If the project name wasn't provided by the user, prompt them
     if project_name is None:
         project_name = click.prompt("What is the desired project name?")
-        fire_empty_line_event()
+        fire_empty_line_event(console)
 
     # Set up the database
     prism.db.setup.setup()
@@ -74,19 +74,20 @@ def initialize_project(
 
     # Template directory
     template_dir = STARTER_PROJECT_TEMPLATE_DIR
-    console_print(CreatingPrismProjectTemplate(project_dir).message())
+    console_print(console, CreatingPrismProjectTemplate(project_dir).message())
     shutil.copytree(
         template_dir,
         project_dir,
         ignore=shutil.ignore_patterns(*prism.constants.IGNORE_FILES),
     )
-    fire_empty_line_event()
+    fire_empty_line_event(console)
     console_print(
+        console,
         InitSuccessfulEvent(
             msg=TASK_COMPLETE_MSG.format(
                 project_name=project_name, docs_url="docs.runprism.com"
             )
-        ).message()
+        ).message(),
     )
-    fire_tail_events()
+    fire_tail_events(console)
     return None

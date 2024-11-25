@@ -1,31 +1,33 @@
-from http.server import SimpleHTTPRequestHandler
 import os
-from pathlib import Path
-from typing import List, Union
 import shutil
-from socketserver import TCPServer
-import sys
 import signal
+import sys
 import webbrowser
+from http.server import SimpleHTTPRequestHandler
+from pathlib import Path
+from socketserver import TCPServer
+from typing import List, Union
 
-from watchdog.observers.api import BaseObserver
-from watchdog.observers import Observer
+from rich.console import Console
 from watchdog.events import PatternMatchingEventHandler
+from watchdog.observers import Observer
+from watchdog.observers.api import BaseObserver
+
+import prism.logging.execution
+import prism.logging.loggers
 
 # Prism-specific imports
 from prism.client.parser import ProjectParser
 from prism.docs import DOCS_INDEX_FILE_DIR
 from prism.engine.compiler import _CompiledDag
-from prism.engine.manifest import TaskManifest, Manifest
-import prism.logging.execution
+from prism.engine.manifest import Manifest, TaskManifest
 from prism.logging.events import (
-    fire_header_events,
-    fire_serving_docs_events,
     fire_empty_line_event,
-    fire_tail_events,
+    fire_header_events,
     fire_reload_docs_event,
+    fire_serving_docs_events,
+    fire_tail_events,
 )
-import prism.logging.loggers
 
 
 class PrismVisualizer(object):
@@ -35,6 +37,7 @@ class PrismVisualizer(object):
     port: int
     open_window: bool
     hot_reload: bool
+    console: Console
 
     project_parser: ProjectParser
     observer: BaseObserver
@@ -47,6 +50,7 @@ class PrismVisualizer(object):
         port: int,
         open_window: bool,
         hot_reload: bool,
+        console: Console,
     ):
         self.project_id = project_id
         self.project_dir = project_dir
@@ -54,6 +58,7 @@ class PrismVisualizer(object):
         self.port = port
         self.open_window = open_window
         self.hot_reload = hot_reload
+        self.console = console
 
         # Project parser
         self.project_parser = ProjectParser(self.project_dir, self.tasks_dir, True)
@@ -242,7 +247,5 @@ class PrismVisualizer(object):
                 httpd.server_close()
             return None
         except Exception:
-            prism.logging.loggers.CONSOLE.print_exception(
-                show_locals=False, suppress=[prism], width=120
-            )
+            self.console.print_exception(show_locals=False, suppress=[prism], width=120)
             sys.exit(1)
