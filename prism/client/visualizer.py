@@ -172,7 +172,7 @@ class PrismVisualizer(object):
             DOCS_INDEX_FILE_DIR, build_dir, dirs_exist_ok=True
         )
         self.create_manifest(compiled_dag, docs_dir)
-        fire_reload_docs_event()
+        fire_reload_docs_event(self.console)
 
     def graph(self):
         try:
@@ -231,7 +231,7 @@ class PrismVisualizer(object):
             os.chdir(build_dir)
             port = self.port
             address = "127.0.0.1"
-            fire_serving_docs_events(address, port)
+            fire_serving_docs_events(self.console, address, port)
 
             # mypy doesn't think SimpleHTTPRequestHandler is ok here, but it is
             httpd = TCPServer((address, port), SimpleHTTPRequestHandler)
