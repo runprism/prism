@@ -394,7 +394,7 @@ def fire_serving_docs_events(console: Console, address: str, port: int):
 
 def fire_reload_docs_event(console: Console):
     fire_empty_line_event(console)
-    fire_console_event(console, DocsReloadedEvent())
+    fire_console_event(DocsReloadedEvent())
     fire_empty_line_event(console)
 
 

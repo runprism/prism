@@ -182,6 +182,7 @@ class PrismVisualizer(object):
             for mod in parsed_module_objs:
                 num_tasks += len(mod.prism_task_nodes.keys())
             fire_header_events(
+                self.console,
                 project_id=self.project_id,
                 run_slug=None,
                 num_tasks=num_tasks,
@@ -215,10 +216,10 @@ class PrismVisualizer(object):
 
             # Send clean messages when Ctrl+C is pressed
             def handler(signum, frame):
-                fire_empty_line_event()
+                fire_empty_line_event(self.console)
                 res = input("Shutdown the Prism docs server (y/n)? ")
                 if res == "y":
-                    fire_tail_events()
+                    fire_tail_events(self.console)
                     if self.hot_reload:
                         self.observer.stop()
                     sys.exit(0)
